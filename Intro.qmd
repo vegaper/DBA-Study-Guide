@@ -1,27 +1,25 @@
 ---
-title: "Untitled"
+title: "Introducción a las Redes"
 ---
 
-# Introducción a las Redes
-
-## Definiciones
+# Definiciones
 
 -   **Red Informática:** Es un conjunto de ordenadores y otros dispositivos conectados entre sí para compartir información, recursos y servicios .
 -   **LAN (Red de Área Local):** Es una red de acceso privado, muy rápida y segura, que abarca un área geográfica pequeña, como una casa o una oficina .
 -   **Wi-Fi:** Tecnología que permite la conexión inalámbrica de dispositivos dentro de una LAN mediante ondas de radio, evitando tener que usar cables físicos .
 -   **Fibra Óptica:** Es el medio físico de transmisión de datos más rápido y estable actualmente, utilizando hilos de vidrio o plástico muy finos por los que se envían pulsos de luz .
 
-## Identificación y Direccionamiento de Dispositivos
+# Identificación y Direccionamiento de Dispositivos
 
 Para comunicarse, los dispositivos necesitan tanto identificadores físicos como lógicos.
 
-### Dirección Física: MAC (Media Access Control)
+## Dirección Física: MAC (Media Access Control)
 
 -   La dirección MAC es el identificador físico y único que tiene cada tarjeta de red de fábrica. Es como la "huella dactilar" del hardware de tu ordenador y nunca cambia .
 -   Solo permite caracteres hexadecimales. **Ejemplo:** `00:1A:2B:3C:4D:5E`
 -   *Nota sobre el enrutamiento:* Aunque la MAC de tu dispositivo es fija, la "MAC de destino" en la cabecera de los datos cambia continuamente dependiendo de hacia dónde se mueva la petición en la red (por ejemplo, de tu aplicación a tu router).
 
-### Dirección Lógica: IP (Internet Protocol)
+## Dirección Lógica: IP (Internet Protocol)
 
 -   La dirección IP es una dirección lógica asignada a un dispositivo dentro de una red para que pueda ser localizado.
 -   A diferencia de la MAC, la IP cambia dependiendo de la red a la que te conectes, y también cambia con el tiempo a no ser que sea una IP fija. Una analogía puede ser una persona, que puede tener distintos números de teléfono, el fijo de casa, el del móvil, o el del trabajo.
@@ -42,7 +40,7 @@ Según su persistencia:
 
 -   **IP Dinámica:** Es una dirección IP que cambia cada cierto tiempo . El protocolo encargado de configurar esta IP cada vez se llama **DHCP** (Dynamic Host Configuration Protocol) .
 
-### NAT (Network Address Translation)
+## NAT (Network Address Translation)
 
 NAT es el protocolo que traduce tu dirección privada a la pública en IPv4 .
 
@@ -52,7 +50,7 @@ NAT es el protocolo que traduce tu dirección privada a la pública en IPv4 .
 
 \* Si se da el caso de que dos equipos de la misma red utilizan el mismo puerto a la vez, NAT asigna un puerto distinto a una de las peticiones de salida para evitar que se confundan, y lo registra en su tabla .
 
-## Conversión Binaria
+# Conversión Binaria
 
 Para entender cómo funcionan las direcciones IP y las máscaras de red, primero debemos entender cómo "piensan" los ordenadores. Las máquinas no entienden nuestros números del 0 al 9 (sistema decimal); solo entienden de encendido y apagado, lo que se representa con **1 (encendido)** y **0 (apagado)**. A esto se le llama **sistema binario** .
 
@@ -64,7 +62,7 @@ Como hemos visto, una dirección IPv4 se divide en 4 bloques de 8 bits (1 byte) 
 
 El valor máximo que puede tener un bloque de 8 bits es **255** (que es el resultado de sumar todos los valores de la tabla: 128+64+32+16+8+4+2+1) . Si todos los bits están en `0`, el valor es **0** .
 
-#### Cómo convertir de Binario a Decimal (El método de la suma)
+### Cómo convertir de Binario a Decimal (El método de la suma)
 
 Esta es la parte más sencilla. Si te dan un número binario de 8 bits, solo tienes que colocarlo debajo de nuestra tabla mágica y **sumar los valores que tengan un 1**. Los que tengan un 0, se ignoran.
 
@@ -78,7 +76,7 @@ Esta es la parte más sencilla. Si te dan un número binario de 8 bits, solo tie
 -   Paso 2: Sumamos esos valores: **32 + 8 + 2 + 1 = 43** .
 -   *Resultado:* El binario `00101011` es el número **43** en decimal .
 
-#### Cómo convertir de Decimal a Binario (El método de la resta)
+### Cómo convertir de Decimal a Binario (El método de la resta)
 
 Para hacer el camino inverso, tomamos nuestro número decimal y vamos recorriendo la tabla de izquierda a derecha (desde el 128 hasta el 1), haciéndonos siempre la misma pregunta: **¿Puedo restar el valor de la tabla a mi número actual?**
 
@@ -110,11 +108,11 @@ Si juntamos todos los unos y ceros que hemos ido poniendo, obtenemos el resultad
 
 \* *Resultado:* El número 172 en decimal es **`10101100`** en binario.
 
-## Subnetting
+# Subnetting
 
 La Máscara de Subred nos indica cuál es la parte de la IP que identifica a la red y cuál a los dispositivos .
 
-### Entendiendo las Máscaras de Subred
+## Entendiendo las Máscaras de Subred
 
 La **Máscara de Subred** es un parámetro vital que acompaña siempre a una dirección IP.
 
@@ -184,7 +182,7 @@ Cuando un bloque de 8 bits tiene todos sus unos encendidos (**`11111111`**), la 
 
 -   **Resultado decimal:** **`255.255.255.192`**.
 
-### **Direcciones IP reservadas en toda red:**
+## **Direcciones IP reservadas en toda red:**
 
 1\. **Dirección de Red:** Es la primera IP, reservada para identificar la red y no la puede llevar ningún equipo .
 
@@ -192,7 +190,7 @@ Cuando un bloque de 8 bits tiene todos sus unos encendidos (**`11111111`**), la 
 
 3\. **Puerta de Enlace Predeterminada:** Generalmente se le da la primera dirección disponible (ej. `192.168.1.1`) y corresponde al router \[7, 11\].
 
-#### Calculando IPs de Red, Broadcast y Puerta de Enlace
+### Calculando IPs de Red, Broadcast y Puerta de Enlace
 
 Para entender cómo se calculan estas tres direcciones fundamentales, vamos a ver varios ejemplos con distintas máscaras de subred, desde las más sencillas hasta las más complejas.
 
@@ -235,7 +233,7 @@ Aquí es donde se complica, porque la red no termina en un punto exacto, sino en
     -   Para saber cuál es la red real, aplicamos la lógica binaria (AND) cruzando la IP con la máscara. La regla es sencilla: solo da `1` si ambos bits son `1`. Veámoslo en una tabla bit a bit:
 
     | Posición / Valor    |   128   |   64    |   32    |   16    |    8    |    4    |    2    |    1    |
-    |:--------------------|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|
+    |:-------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
     | **IP (Valor: 5)**   |   `0`   |   `0`   |   `0`   |   `0`   |   `0`   |   `1`   |   `0`   |   `1`   |
     | **Máscara (/23)**   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `0`   |
     | **Resultado (Red)** | **`0`** | **`0`** | **`0`** | **`0`** | **`0`** | **`1`** | **`0`** | **`0`** |
@@ -265,7 +263,7 @@ En el ejemplo anterior faltaba espacio, pero aquí ocurre lo contrario: un solo 
 
 -   **Dirección de Broadcast:** Como la red empezó en el 128 y le quedaban 7 bits disponibles para los hosts eso es $(2^7)$ = 128 posiciones para los hosts, llega hasta el final del bloque natural. El broadcast es la última IP antes del 256 ficticio. Resultado: **192.168.1.255**.
 
-### Ejercicio Resuelto: Subnetting
+## Ejercicio Resuelto: Subnetting
 
 ¿Están las IPs `192.168.1.127/25` y `192.168.1.129/25` en la misma red?
 
@@ -311,7 +309,17 @@ En el ejemplo anterior faltaba espacio, pero aquí ocurre lo contrario: un solo 
 
 \* **¿Cuántas IPs nos quedan disponibles para los hosts?** Dado que la subred tiene 128 direcciones en total y hay que restar siempre 2 (la IP de Red y la de Broadcast), quedan **126 IPs disponibles** para hosts en cada subred .
 
-## El Modelo TCP/IP y el Viaje de los Datos
+## Usando la consola para ver los detalles de red
+
+Podemos usar la consola de comandos para ver la información sobre nuestra red usando el comando ipconfig:
+
+![](images/Picture1.jpg)
+
+La ip que se muestra ahí es nuestra ip privada, para ver la pública podemos usar internet, hay muchas páginas que nos muestran nuestra ip, simplemente pregunta a google cual es mi ip.
+
+Hay información que no se muestra usando solo ipconfig, como por ejemplo la MAC (aparece como dirección física), para ver más información podemos usar ipconfig /all
+
+# El Modelo TCP/IP y el Viaje de los Datos
 
 El Modelo TCP/IP es el modelo práctico real en el que se basa Internet hoy en día y consta de 4 capas . Los datos bajan por las capas en el emisor (**Encapsulamiento**, añadiendo etiquetas) y suben en el receptor (**Desencapsulamiento**, retirando etiquetas) .
 
@@ -332,9 +340,9 @@ El Modelo TCP/IP es el modelo práctico real en el que se basa Internet hoy en d
 >
 > \* *Frase:* **D**e **S**ábado **P**or **T**arde .
 
-## 5. Capa de Transporte: Puertos y Protocolos (TCP vs UDP)
+# Capa de Transporte: Puertos y Protocolos (TCP vs UDP)
 
-### Puertos Lógicos: Las "Puertas" de las Aplicaciones
+## Puertos Lógicos: Las "Puertas" de las Aplicaciones
 
 Si la Dirección IP es como la dirección postal del servidor, los puertos lógicos son los "números de puerta" o apartamentos dentro de ese edificio. Permiten que los datos de muchas aplicaciones distintas (como tener varias pestañas del navegador abiertas, actualizaciones o aplicaciones de streaming) lleguen a su destino exacto dentro del mismo dispositivo al mismo tiempo .
 
@@ -347,7 +355,7 @@ Si la Dirección IP es como la dirección postal del servidor, los puertos lógi
 
 \* **Puertos Registrados (del 1024 al 49151):** Son puertos que empresas de software piden que se les asigne para sus aplicaciones particulares. \* *Ejemplo:* Los servidores de bases de datos usarán un puerto distinto, por ejemplo **MySQL usa el 3306** . Por lo tanto, entran en esta categoría y no en la de puertos bien conocidos.
 
-**🛠️ Consejos de Gestión y Seguridad para el DBA:**
+**️ Consejos de Gestión y Seguridad para el DBA:**
 
 \* **El Firewall es el vigilante:** Para que tu servidor de base de datos MySQL reciba peticiones externas, ese puerto tiene que estar abierto en el Firewall, que se encarga de controlar qué puertos lo están .
 
@@ -355,16 +363,22 @@ Si la Dirección IP es como la dirección postal del servidor, los puertos lógi
 
 \* **Resolución de problemas (Troubleshooting):** Puedes usar la consola de comandos (cmd) para verificar qué conexiones hay activas a un puerto . Por ejemplo, `netstat -an | find ":443"` mostrará las conexiones web, y si filtras por el puerto `22` cuando te conectas a un servidor puedes ver tu petición de conexión.
 
-### TCP vs UDP
+Podemos usar la consola de comandos para ver qué conexiones hay en un puerto, por ejemplo para ver las conexiones al puerto 443 usamos `netstat -an | find ":443"`
+
+![](images/Picture2.jpg)
+
+esto nos indica el protocolo, la dirección y puerto de origen y la dirección y puerto de destino.
+
+## TCP vs UDP
 
 | Características          | TCP (Transmission Control Protocol)                                                           | UDP (User Datagram Protocol)                                                            |
-|:-------------------------|:----------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------|
+|:-----------------|:---------------------------|:-------------------------|
 | **Conexión**             | Protocolo orientado a conexión y fiable .                                                     | Protocolo no orientado a conexión y rápido .                                            |
 | **Funcionamiento**       | Comprueba que todos los datos lleguen completos y en orden; vuelve a pedir lo que se pierda . | Envía segmentos de forma continua sin comprobar si llegan, priorizando el tiempo real . |
 | **Uso en Base de Datos** | **Esencial.** No podemos permitirnos perder registros o datos .                               | Rara vez usado en almacenamiento .                                                      |
 | **Ejemplos**             | Consultar bases de datos, descargar archivos, enviar emails .                                 | Videollamadas, streaming, juegos online .                                               |
 
-## Protocolos de la Capa de Aplicación
+# Protocolos de la Capa de Aplicación
 
 Son las reglas que usan los programas del usuario para tareas concretas:
 
@@ -381,4 +395,3 @@ Son las reglas que usan los programas del usuario para tareas concretas:
 \* **DNS (Domain Name System):** Traduce un nombre de dominio legible para los humanos (como `google.com`) a su dirección IP numérica real .
 
 \* **VPN (Virtual Private Network):** Crea un túnel seguro y cifrado sobre una red pública . Permite el teletrabajo seguro simulando que tu equipo está conectado localmente a la red de la empresa para gestionar bases de datos .
-
