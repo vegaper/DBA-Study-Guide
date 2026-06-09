@@ -1,0 +1,157 @@
+---
+title: "CONCEPTOS DE ORDENADORES Y SERVIDORES DE PROPOSITO GENERAL."
+---
+
+Físicamente, un ordenador de escritorio, un portátil y un servidor corporativo están compuestos por los mismos tipos de componentes esenciales (procesador, memoria, almacenamiento). La diferencia fundamental no radica en su naturaleza física, sino en el **servicio y la carga de trabajo** para los que están diseñados, así como en su redundancia, potencia y tolerancia a fallos.
+
+------------------------------------------------------------------------
+
+# Definiciones y Funcionalidad de la Infraestructura Básica
+
+Para comprender la arquitectura de cualquier sistema informático, es necesario diferenciar sus dos pilares básicos:
+
+-   **Hardware:** Es la parte física y tangible del sistema. Incluye todos los componentes electrónicos, electromecánicos y mecánicos (circuitos, cables, carcasas, discos).
+-   **Software:** Es el soporte lógico e intangible. Está compuesto por el conjunto de programas, instrucciones y reglas informáticas que permiten al hardware ejecutar tareas específicas.
+
+### Componentes Clave del Sistema
+
+A nivel de componentes, un equipo de propósito general se articula en torno a los siguientes elementos esenciales:
+
+-   **CPU (Central Processing Unit / Unidad Central de Procesamiento):** Es el "cerebro" del sistema. Su función es interpretar y ejecutar las instrucciones de los programas informáticos mediante operaciones lógicas y aritméticas.
+-   **RAM (Random Access Memory / Memoria de Acceso Aleatorio):** Es la memoria principal del sistema. Almacena de forma temporal los datos y los programas que la CPU está ejecutando en el momento actual. Es de acceso aleatorio porque se puede leer o escribir en cualquier posición de memoria con el mismo tiempo de espera, sin seguir un orden secuencial.
+-   **Placa Base (Motherboard):** Es la tarjeta de circuito impreso principal a la que se conectan todos los componentes del ordenador. Actúa como el sistema nervioso central, interconectando la CPU, la RAM, el almacenamiento y los periféricos.
+-   **Almacenamiento Secundario:** A diferencia de la RAM, es no volátil (mantiene la información al apagar el equipo). Su evolución tecnológica incluye:
+    -   **HDD (Hard Disk Drive):** Discos mecánicos tradicionales que graban datos en platos magnéticos giratorios. Son lentos pero económicos para grandes volúmenes de datos.
+    -   **SSD (Solid State Drive):** Unidades de estado sólido basadas en memoria flash (chips). No tienen partes móviles, lo que reduce el tiempo de acceso drásticamente.
+    -   **NVMe (Non-Volatile Memory Express):** Es un protocolo de comunicación optimizado para SSDs de alta velocidad que se conectan directamente al bus PCIe, eliminando los cuellos de botella de las conexiones SATA tradicionales.
+-   **E/S (Entrada/Salida) y Periféricos:** Dispositivos que permiten la interacción del sistema con el exterior.
+    -   *Entrada:* Introducen datos al sistema (teclado, ratón, escáner, sensores de bases de datos).
+    -   *Salida:* Muestran los resultados del procesamiento (monitor, impresora).
+    -   *Mixtos:* Dispositivos de red (tarjetas de red, routers) que envían y reciben datos simultáneamente.
+-   **Firmware (BIOS / UEFI):** Es el software básico de bajo nivel integrado directamente en un chip de la placa base (generalmente una memoria Flash). Su función es inicializar y chequear el hardware durante el arranque (proceso POST) y servir de puente entre el hardware y el Sistema Operativo.
+    -   *BIOS (Basic Input/Output System):* El estándar clásico (heredado de los años 80).
+    -   *UEFI (Unified Extensible Firmware Interface):* El estándar moderno. Soporta discos de más de 2 TB, interfaz gráfica de usuario, inicio seguro (Secure Boot) y tiempos de arranque mucho más rápidos.
+
+------------------------------------------------------------------------
+
+# El Microprocesador (CPU) y su Arquitectura Interna
+
+El microprocesador no es un bloque único, sino un conjunto de subsistemas especializados que trabajan en milisegundos:
+
+![](/images/c42a5e37-c81d-4d47-a8cf-8d961b1915fa.jpeg)
+
+-   **Unidad de Control (UC):** Es la encargada de dirigir el flujo de datos e instrucciones dentro de la CPU y hacia el resto de componentes del ordenador. Coordina las etapas del ciclo de instrucción.
+-   **ALU / UAL (Arithmetic Logic Unit / Unidad Aritmético-Lógica):** Es el circuito digital encargado de realizar las operaciones matemáticas elementales (suma, resta, multiplicación) y las operaciones lógicas (AND, OR, NOT, comparaciones).
+-   **FPU (Floating Point Unit / Unidad de Coma Flotante):** Coprocesador matemático especializado exclusivamente en realizar operaciones con números decimales (coma flotante) y cálculos científicos complejos de alta precisión.
+-   **Registros:** Pequeñas celdas de memoria de velocidad ultra alta ubicadas dentro de la propia CPU. Almacenan los datos que la ALU está procesando de forma inmediata.
+-   **Contador de Programas (PC - Program Counter):** Un registro especial de la CPU que almacena la dirección de memoria de la *siguiente* instrucción que debe ser leída y ejecutada.
+-   **Caché Interna:** Memoria de acceso ultra rápido integrada en el procesador. Funciona como un búfer intermedio que almacena los datos y las instrucciones de la RAM que se usan con más frecuencia, evitando que el procesador tenga que esperar a la memoria RAM (que es mucho más lenta).
+-   **Buses Internos:** Las autopistas de datos de cobre o silicio por las que viaja la información dentro del procesador. Se dividen en tres tipos:
+    -   *Bus de Datos:* Transporta la información real que se está procesando.
+    -   *Bus de Direcciones:* Indica la posición exacta de memoria donde se debe leer o escribir un dato.
+    -   *Bus de Control:* Transmite las señales de sincronización y las órdenes (lectura, escritura, interrupciones).
+
+------------------------------------------------------------------------
+
+# Ciclo de Ejecución y Rendimiento del Procesador
+
+## El Ciclo Básico de Instrucción
+
+Cada tarea que realiza un procesador se divide en micro-pasos repetidos de manera cíclica e indefinida a lo largo de cinco etapas consecutivas:
+
+1.  **Fetch (Captura/Lectura):** La Unidad de Control busca la instrucción apuntada por el Contador de Programas (PC) en la memoria principal (o la caché) y la trae a los registros del procesador.
+2.  **Decode (Decodificación):** La Unidad de Control interpreta los bits de la instrucción para saber qué operación se solicita (por ejemplo, si es una suma, un salto o un almacenamiento de datos) y qué componentes necesitará.
+3.  **Execute (Ejecución):** Los componentes de la CPU pertinentes (como la ALU o la FPU) realizan la operación física indicada por la instrucción.
+4.  **Memory (Acceso a Memoria):** Si la instrucción requiere leer o escribir datos adicionales en la memoria RAM, este acceso se gestiona en esta fase.
+5.  **Write Back (Escritura):** El resultado de la operación ejecutada se escribe y consolida en los registros de la CPU o en la memoria principal para su posterior uso.
+
+## Factores Determinantes del Rendimiento
+
+El rendimiento de una CPU no depende únicamente de un único factor, sino de la combinación de los siguientes elementos:
+
+-   **Frecuencia de Reloj (Velocidad en GHz):** Determina cuántos ciclos de instrucción puede realizar el procesador por segundo. El reloj emite pulsos eléctricos constantes para sincronizar todos los componentes de la CPU.
+
+    -   $1 \text{ Hz} = 1 \text{ ciclo por segundo.}$
+    -   $1 \text{ KHz} = 1.000 \text{ ciclos por segundo.}$
+    -   $1 \text{ GHz (GigaHercio)} = 1.000.000.000 \text{ (mil millones) de ciclos por segundo.}$
+    -   *Ejemplo:* Un procesador a $3.5 \text{ GHz}$ puede realizar 3.500 millones de ciclos de reloj por segundo.
+
+-   **Núcleos (Cores) e Hilos (Threads):**
+
+    -   *Núcleos:* Son las unidades de procesamiento físicas e independientes que contiene un chip. Un procesador "Multicore" contiene varias CPUs reales dentro de la misma pastilla de silicio.
+    -   *Hilos (Hilos de ejecución / Threads):* Es una tecnología lógica (como Hyper-Threading de Intel o SMT de AMD) que permite a un único núcleo físico simular que es dos núcleos virtuales, gestionando dos tareas en paralelo al aprovechar los tiempos muertos de espera.
+
+-   **Arquitecturas Modernas de Núcleos:** Las CPUs de hoy en día distribuyen el trabajo en núcleos especializados:
+
+    -   **P-Cores (Performance Cores):** Núcleos de alto rendimiento optimizados para tareas pesadas en primer plano que requieren la mínima latencia (como consultas intensivas a bases de datos o procesamiento en lote). Consumen mucha energía.
+    -   **E-Cores (Efficient Cores):** Núcleos más pequeños y de bajo consumo diseñados para procesar tareas secundarias o en segundo plano (servicios del sistema operativo, sincronizaciones) de manera eficiente.
+    -   **NPU (Neural Processing Unit):** Un coprocesador especializado diseñado específicamente para acelerar algoritmos de Inteligencia Artificial y Machine Learning de forma local (procesamiento de redes neuronales), liberando de esa carga a la CPU y la GPU.
+
+-   **La Memoria Caché y sus Niveles:** Funciona en una estructura jerárquica de tres niveles (L1, L2 y L3) para maximizar la velocidad:
+
+    -   **L1:** Es la más rápida, pero la más pequeña (unos pocos kilobytes). Está integrada directamente en el corazón de cada núcleo. Se divide en L1d (datos) y L1i (instrucciones).
+    -   **L2:** Un poco más lenta que la L1, pero con mayor capacidad (varios megabytes). Suele seguir estando dedicada a cada núcleo de forma individual.
+    -   **L3:** La más lenta de las tres (aunque muchísimo más rápida que la RAM) y la de mayor tamaño. La característica principal de la L3 es que es **compartida** por todos los núcleos del procesador.
+
+    > **Principio de Funcionamiento:** Cada núcleo consulta primero su L1; si no encuentra el dato, busca en su L2; si no está, va a la L3 compartida; y si falla en los tres niveles, se ve obligado a buscar en la memoria RAM, lo que genera una penalización de tiempo de espera (latencia).
+
+## Especificaciones de los Procesadores en Servidores
+
+En un entorno de producción (servidores corporativos y de bases de datos), las prioridades cambian drásticamente respecto a un ordenador personal. En los servidores se busca maximizar:
+
+-   **Gran soporte para memoria RAM:** Capacidad de gestionar terabytes de memoria principal.
+
+-   **Compatibilidad con memoria ECC (Error Correcting Code):** Tipo de memoria RAM especial que detecta y corrige automáticamente errores de corrupción de datos de un solo bit en tiempo real, evitando cuelgues del sistema en entornos críticos.
+
+-   **Mayor número de núcleos físicos:** Permite procesar miles de peticiones simultáneas de red.
+
+-   **Soporte Multiprocesador:** Placas base diseñadas con 2, 4 o más zócalos (sockets) para instalar múltiples procesadores físicos independientes trabajando en paralelo.
+
+-   **Líneas PCIe masivas:** Para interconectar múltiples controladoras de discos NVMe de alta velocidad y tarjetas de red de fibra de 10Gbps o superiores.
+
+------------------------------------------------------------------------
+
+# Memoria RAM y Jerarquía de Memorias
+
+La memoria RAM es el área de trabajo activa del sistema operativo. Tiene tres propiedades fundamentales: es de **acceso aleatorio**, es **ultra rápida** y es **volátil** (toda la información se borra instantáneamente al interrumpir el suministro eléctrico).
+
+## El problema de la falta de RAM: Memoria SWAP
+
+Si abrimos demasiadas aplicaciones o cargamos una base de datos pesada y la memoria RAM se llena por completo, el Sistema Operativo utiliza una técnica llamada **Memoria Virtual o SWAP (Espacio de Intercambio)**.
+
+\* **Cómo funciona:** El sistema operativo coge una porción del disco duro (HDD o SSD) y la simula como si fuera memoria RAM para evitar que el equipo se bloquee.
+
+\* **Consecuencia:** Como los discos de almacenamiento son órdenes de magnitud más lentos que la RAM, el rendimiento del sistema sufre una **caída drástica y notable (cuello de botella)**, haciendo que las aplicaciones dejen de responder con fluidez.
+
+## Evolución de los Tipos de RAM
+
+### La estructura interna (El motor)
+
+Antes de hablar de DDR, la tecnología pasó por tres etapas para ver cómo guardaba la información y cómo se comunicaba con la placa:
+
+-   **DRAM (Dynamic RAM):** La abuela de las memorias. Guarda los datos en minúsculos "almacenes" (condensadores) que pierden energía continuamente. Por eso necesita que un circuito la esté **refrescando** miles de veces por segundo. ¿Su gran problema? Iba "a su bola", no estaba coordinada con el ritmo del procesador. La CPU le pedía un dato y tenía que quedarse esperando a que la DRAM respondiera.**Uso principal:** La memoria RAM general del equipo.
+-   **SDRAM (Synchronous DRAM):** Aquí está la clave. La **"S"** significa **Síncrona**. Alguien dijo: *"Oye, vamos a hacer que la DRAM interna se sincronice con el reloj del sistema"*. A partir de ese momento, la memoria y el procesador empezaron a bailar al mismo ritmo. **Esta tecnología (chips que se sincronizan) fue tan buena que se convirtió en el estándar para siempre.** Toda la RAM que usas hoy en día sigue siendo, por dentro, de tipo SDRAM
+
+```{=html}
+<!-- -->
+```
+-   **SRAM (Static RAM):** No necesita refrescar sus datos constantemente para mantenerlos. Es extremadamente rápida y eficiente, pero su fabricación es muy costosa y ocupa mucho espacio físico en el silicio. **Uso principal:** Memoria caché de la CPU.
+
+### La velocidad exterior:
+
+La memoria estándar actual es la **SDRAM (Synchronous Dynamic RAM)**, la cual se sincroniza con el reloj de la CPU para evitar tiempos de espera. Su evolución se basa en la tecnología **DDR (Double Data Rate)**, que es capaz de enviar el doble de datos por cada ciclo de reloj (aprovechando tanto el flanco de subida como el de bajada de la señal eléctrica).
+
+La cronología de evolución técnica es: $$\text{SDRAM} \rightarrow \text{DDR} \rightarrow \text{DDR2} \rightarrow \text{DDR3} \rightarrow \text{DDR4} \rightarrow \text{DDR5}$$
+
+> **Nota de Compatibilidad Crítica:** Los módulos de memoria DDR **no son retrocompatibles entre generaciones**. Cada generación tiene una muesca física en una posición diferente del conector y trabaja a voltajes distintos. Un módulo de memoria DDR4 no puede instalarse físicamente en una ranura de placa base diseñada para DDR5, ni viceversa.
+
+------------------------------------------------------------------------
+
+# Memorias xPROM y Firmware
+
+Las memorias de tipo **ROM (Read Only Memory)** son memorias de solo lectura, no volátiles, diseñadas originalmente para albergar el código de arranque del sistema que nunca debía ser modificado. Con el tiempo, han evolucionado para permitir actualizaciones seguras de software de sistema (firmware):
+
+-   **PROM (Programmable ROM):** Se fabrica completamente en blanco y solo se puede programar **una única vez** utilizando un dispositivo eléctrico especial (quemador de ROM). Una vez escrita, no se puede modificar ni borrar. **Uso histórico:** Primeras BIOS de ordenadores.
+-   **EPROM (Erasable Programmable ROM):** Se puede programar digitalmente, pero permite el borrado exponiendo el chip de silicio de forma directa a una fuente potente de **luz ultravioleta** a través de una pequeña ventana de cristal de cuarzo en su parte superior. Tras el borrado, se puede volver a reescribir.
+-   **EEPROM (Electrically Erasable Programmable ROM):** Supuso una revolución al permitir que el borrado y la reprogramación se realizaran de forma puramente **eléctrica**, sin necesidad de extraer el chip de la placa base ni usar luz ultravioleta. Sin embargo, el proceso de escritura de datos era lento y se realizaba byte a byte.
+-   **Memoria Flash:** Es una variante y evolución moderna y avanzada de la memoria EEPROM. Permite la lectura y la escritura de múltiples posiciones de memoria en un solo bloque o sector (de ahí su nombre "Flash", por su rapidez). Es la tecnología base que se utiliza hoy en día para almacenar la **BIOS/UEFI** de las placas modernas (permitiendo las actualizaciones de BIOS fácilmente), así como en los discos **SSD**, memorias **USB** y tarjetas SD.
