@@ -155,3 +155,11 @@ Las memorias de tipo **ROM (Read Only Memory)** son memorias de solo lectura, no
 -   **EPROM (Erasable Programmable ROM):** Se puede programar digitalmente, pero permite el borrado exponiendo el chip de silicio de forma directa a una fuente potente de **luz ultravioleta** a través de una pequeña ventana de cristal de cuarzo en su parte superior. Tras el borrado, se puede volver a reescribir.
 -   **EEPROM (Electrically Erasable Programmable ROM):** Supuso una revolución al permitir que el borrado y la reprogramación se realizaran de forma puramente **eléctrica**, sin necesidad de extraer el chip de la placa base ni usar luz ultravioleta. Sin embargo, el proceso de escritura de datos era lento y se realizaba byte a byte.
 -   **Memoria Flash:** Es una variante y evolución moderna y avanzada de la memoria EEPROM. Permite la lectura y la escritura de múltiples posiciones de memoria en un solo bloque o sector (de ahí su nombre "Flash", por su rapidez). Es la tecnología base que se utiliza hoy en día para almacenar la **BIOS/UEFI** de las placas modernas (permitiendo las actualizaciones de BIOS fácilmente), así como en los discos **SSD**, memorias **USB** y tarjetas SD.
+
+### Lo que un DBA de verdad necesita recordar:
+
+-   **Memoria ECC (Error Correcting Code):** Si vas a comprar o configurar un servidor para producción, la RAM **tiene** que ser ECC. Un bit que se corrompa por culpa de la energía estática en una RAM normal puede corromperte un índice de la base de datos o tirarte el servicio abajo.
+
+-   **El peligro de la SWAP:** Si tu base de datos empieza a ir lenta de golpe, lo primero que miras es si el sistema operativo está usando *swap*. En el momento en que los datos se desbordan de la RAM y el servidor empieza a usar el disco como memoria virtual, el rendimiento de tus consultas SQL se va a caer a plomo.
+
+-   **P-Cores vs E-Cores (Arquitectura CPU):** Cuando configures el paralelismo de tu motor de bases de datos o las licencias por núcleo, tienes que saber cuántos "Performance Cores" reales tienes. Meter hilos de ejecución de consultas pesadas en un "Efficient Core" es desperdiciar potencia.
