@@ -32,6 +32,175 @@ A nivel de componentes, un equipo de propósito general se articula en torno a l
     -   *BIOS (Basic Input/Output System):* El estándar clásico (heredado de los años 80).
     -   *UEFI (Unified Extensible Firmware Interface):* El estándar moderno. Soporta discos de más de 2 TB, interfaz gráfica de usuario, inicio seguro (Secure Boot) y tiempos de arranque mucho más rápidos.
 
+## Interfaces de entrada/Salida
+
+-   **Conector**: Parte física donde se enchufa algo (USB, HDMI, RJ45...)
+-   **Puerto**: Puerto de conexión físico o lógico. Si es físico se está refieriendo a un conector
+-   **Interfaz**: Reglas físicas y lógicas de comunicación.
+    -   Interfaces Internas (Dentro de la torre/servidor)
+        -   SATA (Serial ATA): El cable y conector estándar de toda la vida para discos duros mecánicos (HDD) y SSDs de 2.5 pulgadas. Es fiable, pero hoy en día es el "cuello de botella" en velocidad.
+        -   PCIe (Peripheral Component Interconnect Express): El bus principal y más rápido de la placa base. Son las ranuras largas donde se pinchan las tarjetas gráficas, tarjetas de red de alta velocidad y los adaptadores para SSDs modernos.
+        -   M.2: Es un formato físico miniatura (parece un paquete de chicles plano). Se conecta directamente pegado a la placa base y se usa para SSDs modernos (usando el protocolo ultrarrápido NVMe) o tarjetas Wi-Fi en portátiles.
+        -   U.2 / U.3: Son los conectores de "gama alta" equivalentes al M.2 pero diseñados exclusivamente para servidores empresariales. Permiten conectar SSDs NVMe muy potentes con cables y sacarlos "en caliente" sin apagar el servidor.
+        -   SAS (Serial Attached SCSI): El "hermano mayor y profesional" del SATA. Es una interfaz de conexión para discos duros diseñada para servidores de bases de datos de alto rendimiento, preparada para estar leyendo y escribiendo datos 24/7 sin fallar.
+    -   Interfaces Externas (Periféricos y conexiones fuera de la caja)
+        -   USB / USB4 (Universal Serial Bus): El conector universal por excelencia para ratones, teclados, pendrives, etc. Sus últimas versiones (USB-C / USB4) son tan rápidas que pueden transmitir datos masivos, energía e imagen a la vez.
+        -   HDMI / DisplayPort: Los cables dedicados exclusivamente a mandar vídeo y audio desde el ordenador al monitor. HDMI es el estándar de las televisiones, y DisplayPort es el estándar informático preferido para monitores de altísima resolución o muchos hercios.
+        -   Ethernet RJ45: La clavija clásica de plástico transparente con un "clic" para el cable de red. Es la forma física de conectar tu ordenador por cable al router o al switch para tener una conexión a internet o red local (LAN) estable y rápida.
+        -   Thunderbolt: Una tecnología desarrollada por Intel y Apple. Físicamente usa el mismo conector que un USB-C, pero por dentro es una "autopista" muchísimo más rápida. Permite cosas extremas como conectar varias pantallas 4K en cadena o conectar una tarjeta gráfica externa a un portátil.
+-    **Bus**: Canal Compartido entre componentes.
+-    **Protocolo**: Reglas de comunicación entre dispositivos.
+
+Vamos a separarlo con una analogía que no falla. Imagina que dos empresas (el procesador y un disco duro, por ejemplo) tienen que trabajar juntas y pasarse mercancía de un lado a otro.
+
+-   El **Conector o Puerto** es la parte puramente física. Es el muelle de carga de la fábrica. Tiene una forma y un tamaño concretos para que los camiones encajen y no puedas meter el enchufe al revés.
+
+-   El **Protocolo** es la parte puramente lógica. Es el "idioma" que hablan los trabajadores y las reglas del intercambio: *"yo te paso dos cajas, tú me firmas un albarán para confirmar que las tienes, y luego te paso otras dos"*.
+
+-   La **Interfaz** es **el acuerdo completo**. Es el estándar que define *ambas* cosas a la vez: cómo es la conexión física (los pines, el cable, el voltaje) y cómo es la comunicación lógica (la velocidad, el formato de los datos, el idioma).
+
+Un ejemplo para aterrizarlo
+
+Piensa en la interfaz **SATA** (la típica de los discos duros antiguos). Cuando dices que un disco es SATA, no solo te refieres a que usa ese cablecito de plástico con forma de "L". Te refieres a que usa ese cable *y además* habla el idioma "SATA" con la placa base para transmitir los datos a una velocidad concreta. Es el paquete entero.
+
+**¿Por qué existen tantas interfaces distintas (USB, PCIe, HDMI\...)?** Porque no todos los componentes necesitan el mismo nivel de exigencia:
+
+-   Un teclado solo necesita enviar datos muy simples y lentos (las letras que pulsas). Por eso usa la interfaz **USB**, que físicamente es un enchufe pequeño y lógicamente es un idioma muy universal y fácil de gestionar.
+
+-   Un disco duro moderno de alto rendimiento para bases de datos necesita mover gigabytes de información en milisegundos. Por eso usa la interfaz **PCIe** (o M.2), que físicamente es una ranura con muchísimos conectores dorados pegada a la placa base, y lógicamente es una "autopista" de múltiples carriles directos al procesador.
+
+Básicamente, la interfaz es el **"contrato" total** que firman dos piezas de hardware para poder conectarse y entenderse sin problemas.
+
+## Controladoras y Drivers
+
+Una **controladora** es el componente (hardware) encargado de gestionar un dispositivo o un conjunto de dispositivos. Actúa como intermediario entre el sistema y el hardware real, permitiendo que el equipo pueda usarlo correctamente. Puede estar ubicada en varios sitios:
+
+-   Integrada en la **placa base** (muy común en PCs y servidores).
+
+-   Integrada en el **propio dispositivo** (por ejemplo, un SSD NVMe).
+
+-   En una **tarjeta de expansión** (como una controladora RAID dedicada).
+
+-   Incluso dentro del **procesador** (controladoras de memoria modernas).
+
+### Tipos habituales de controladoras
+
+-   **SATA:** controla discos duros y SSD SATA.
+
+-   **USB:** gestiona puertos y dispositivos USB.
+
+-   **Red:** controla la interfaz de red (Ethernet o Wi‑Fi).
+
+-   **Gráfica:** gestiona la salida de vídeo y el procesamiento gráfico.
+
+-   **RAID:** combina varios discos para mejorar rendimiento o tolerancia a fallos.
+
+-   **NVMe:** controla SSDs de alta velocidad conectados por PCIe.
+
+### Drivers
+
+Un **driver** es el software que permite que el sistema operativo se comunique con el hardware. Sin el driver adecuado, el dispositivo **no funciona** o funciona de forma limitada.
+
+#### Importancia en servidores En entornos de servidor, los drivers son especialmente críticos en:
+
+-   Controladoras RAID
+-   Tarjetas de red
+-   Adaptadores de almacenamiento (SAS, NVMe, Fibre Channel)
+
+Antes de instalar un sistema operativo en un servidor, es fundamental **verificar la compatibilidad de los drivers**, ya que un driver incorrecto puede impedir que el sistema detecte discos, redes o almacenamiento externo.
+
+## Dispositivos de Interconexión de Red: Hub, Switch y Router
+
+Los dispositivos de interconexión permiten construir y organizar redes locales, así como conectarlas entre sí o con redes externas. Los tres más comunes son el **hub**, el **switch** y el **router**, cada uno con funciones y niveles de inteligencia diferentes dentro del modelo OSI. \### Hub Un hub es un dispositivo de red muy básico que simplemente repite todo el tráfico que recibe por cualquiera de sus puertos hacia todos los demás puertos. \#### Cómo funciona - No "entiende" direcciones MAC ni IP. - No decide a quién enviar los datos: los difunde a todos. - Genera muchas colisiones y congestión en redes grandes.
+
+#### Relación con los puertos
+
+-   Sus puertos funcionan como simples puntos de conexión eléctrica.
+-   No distinguen qué dispositivo está conectado en cada puerto.
+-   Todo lo que entra por un puerto se replica a **todos los demás**, sin filtrado. \#### Características clave
+-   Capa OSI: Capa 1 (Física).
+-   No ofrece seguridad ni segmentación.
+-   Obsoleto en la mayoría de entornos profesionales.
+
+#### Cuándo se usaba
+
+-   Redes pequeñas y antiguas donde el tráfico era mínimo. \### Switch Un switch es un dispositivo de red que conecta equipos dentro de una misma red local (LAN) y envía los datos solo al puerto donde está el destinatario. \#### Cómo funciona
+-   Aprende las direcciones MAC de los dispositivos conectados.
+-   Construye una tabla MAC para reenviar tráfico de forma eficiente.
+-   Reduce colisiones y mejora el rendimiento respecto a un hub. \#### Relación con los puertos
+-   Cada puerto se asocia a una **dirección MAC** aprendida dinámicamente.
+-   El switch construye una **tabla MAC** que relaciona *puerto ↔ dispositivo*.
+-   Esto permite reenviar los datos **solo al puerto correcto**, reduciendo colisiones y mejorando el rendimiento. \#### Características clave
+-   Capa OSI: Capa 2 (Enlace), aunque existen switches de Capa 3.
+-   Permite segmentación mediante VLANs.
+-   Es el estándar actual para redes LAN.
+
+#### Ventajas
+
+-   Más rápido, seguro y eficiente que un hub.
+-   Permite mayor control del tráfico interno.
+
+### Router
+
+Un router es el dispositivo encargado de interconectar redes distintas y decidir por qué camino deben viajar los paquetes para llegar a su destino. \#### Cómo funciona - Trabaja con direcciones IP. - Mantiene tablas de enrutamiento para decidir la mejor ruta. - Es el dispositivo que normalmente actúa como puerta de enlace predeterminada. \#### Relación con los puertos - Sus puertos representan **interfaces de red independientes**, cada una con su **propia dirección IP**. - Cada puerto pertenece a una **red distinta** (por ejemplo, WAN y LAN). - El router utiliza estos puertos para **interconectar redes** y decidir la ruta que deben seguir los paquetes. \#### Características clave - Capa OSI: Capa 3 (Red). - Permite conectar: - LAN ↔ Internet\
+- LAN ↔ LAN\
+- Subredes internas entre sí - Puede incluir funciones adicionales: NAT, firewall, DHCP, etc.
+
+#### Ejemplo típico
+
+En una casa o empresa pequeña, el router: - Conecta la red local a Internet. - Asigna IPs (si tiene DHCP). - Hace NAT para que varios dispositivos compartan una sola IP pública. \## Puntos de Acceso (Access Point)
+
+Un **Punto de Acceso** o **Access Point (AP)** es un dispositivo de red que permite conectar dispositivos inalámbricos (móviles, portátiles, tablets, IoT...) a una red local (LAN). Su función principal es **convertir la red cableada en una red Wi‑Fi**, actuando como puente entre ambos medios. A diferencia de un router doméstico, un AP **no enruta tráfico** ni asigna direcciones IP por sí mismo (a menos que sea un modelo híbrido). Su misión es puramente **proporcionar conectividad inalámbrica** dentro de una red ya existente. \### Funciones principales - **Proveer acceso Wi‑Fi** a dispositivos inalámbricos. - **Convertir tráfico inalámbrico en tráfico cableado** y viceversa. - **Gestionar múltiples clientes** simultáneamente. - **Controlar la potencia, canales y estándares Wi‑Fi** (2.4 GHz, 5 GHz, 6 GHz según modelo). - **Extender la cobertura** de una red LAN sin crear una red nueva. \### Cómo funciona 1. El AP se conecta por cable Ethernet a un switch o router. 2. Emite una o varias redes Wi‑Fi (SSID). 3. Los dispositivos se conectan al AP mediante radiofrecuencia. 4. El AP envía ese tráfico al switch/router para que llegue al resto de la red o a Internet. \### Relación con el modelo OSI y TCP/IP - **OSI:** Trabaja principalmente en **Capa 2 (Enlace)**, igual que un switch, pero usando radio en lugar de cable. - **TCP/IP (tu curso):** Pertenece a la **Capa Física / Enlace de Datos**. - No opera en Capa 3, por lo que **no enruta** ni actúa como puerta de enlace. \### Tipos de Access Point - **AP autónomos:** Funcionan de forma independiente, configurados uno a uno. - **AP gestionados:** Controlados por un **Controlador Wi‑Fi** o por la nube (muy usados en empresas). - **AP domésticos integrados en routers:** Lo que la mayoría de usuarios tiene en casa (router + switch + AP en un solo aparato). \### Diferencias con otros dispositivos - **No es un router:** No asigna IP, no enruta, no hace NAT. - **No es un repetidor Wi‑Fi:** El repetidor copia la señal; el AP crea una red nueva conectada por cable. - **Se parece a un switch inalámbrico:** Conecta dispositivos, pero usando Wi‑Fi en vez de puertos Ethernet. \### Ventajas - Amplía la cobertura Wi‑Fi de forma profesional. - Permite conectar muchos dispositivos sin saturar un router doméstico. - Ofrece mejor rendimiento y estabilidad que los repetidores.
+
+### Cuándo se usa
+
+-   Oficinas, centros educativos, almacenes, hoteles.
+-   Viviendas grandes con cableado estructurado.
+-   Cualquier entorno donde se necesite **Wi‑Fi estable y escalable**. \## Comparativa entre Router, Switch, Access Point y Repetidor
+
+Para entender mejor el papel de cada dispositivo dentro de una red, es útil compararlos directamente. Aunque algunos equipos domésticos combinan varias funciones en un solo aparato, a nivel profesional cada dispositivo cumple una misión específica. \### Tabla comparativa
+
+| Dispositivo           | Función principal                                    | Capa OSI        | Capa TCP/IP          | Inteligencia                                | Uso típico                                   |
+|------------|------------|------------|------------|------------|------------|
+| **Router**            | Conecta redes distintas y enruta tráfico entre ellas | Capa 3 (Red)    | Capa de Red          | Enruta IP, NAT, puerta de enlace            | Salida a Internet, interconexión de subredes |
+| **Switch**            | Conecta dispositivos dentro de la misma LAN          | Capa 2 (Enlace) | Capa Física / Enlace | Aprende MAC, segmenta tráfico               | Redes modernas cableadas                     |
+| **Access Point (AP)** | Proporciona conectividad Wi‑Fi dentro de una LAN     | Capa 2 (Enlace) | Capa Física / Enlace | Gestiona clientes Wi‑Fi, puente inalámbrico | Ampliar cobertura Wi‑Fi profesional          |
+| **Repetidor Wi‑Fi**   | Amplifica y retransmite una señal Wi‑Fi existente    | Capa 1--2       | Capa Física / Enlace | Copia la señal sin cable                    | Extender Wi‑Fi en casas pequeñas             |
+
+## Diferencias clave entre los dispositivos
+
+### Router
+
+-   Conecta **redes distintas**.
+-   Asigna IP (si tiene DHCP).
+-   Hace NAT para salir a Internet.
+-   Es la **puerta de enlace** de la red. \### Switch
+-   Conecta dispositivos **dentro de la misma red**.
+-   Usa direcciones **MAC** para enviar tráfico solo al puerto correcto.
+-   Reduce colisiones y mejora el rendimiento.
+
+### Access Point (AP)
+
+-   Proporciona **Wi‑Fi** a una red cableada.
+
+-   No enruta ni asigna IP (salvo modelos híbridos).
+
+-   Actúa como un **switch inalámbrico**. \### Repetidor Wi‑Fi
+
+-   No crea una red nueva.
+
+-   Solo **repite** la señal Wi‑Fi existente.
+
+-   Reduce el ancho de banda disponible al dividirlo entre recepción y retransmisión. \## Cuándo usar cada uno
+
+-   **Router:** cuando necesitas conectar tu red a Internet o unir varias subredes.
+
+-   **Switch:** cuando necesitas más puertos Ethernet o segmentar tráfico interno.
+
+-   **Access Point:** cuando necesitas ampliar la cobertura Wi‑Fi de forma profesional y estable.
+
+-   **Repetidor:** cuando no puedes tirar cable y solo necesitas ampliar señal de forma sencilla.
+
 ------------------------------------------------------------------------
 
 # El Microprocesador (CPU) y su Arquitectura Interna
@@ -50,6 +219,73 @@ El microprocesador no es un bloque único, sino un conjunto de subsistemas espec
     -   *Bus de Datos:* Transporta la información real que se está procesando.
     -   *Bus de Direcciones:* Indica la posición exacta de memoria donde se debe leer o escribir un dato.
     -   *Bus de Control:* Transmite las señales de sincronización y las órdenes (lectura, escritura, interrupciones).
+
+## El juego de instrucciones (ISA)
+
+El **ISA (Instruction Set Architecture)** es el conjunto de instrucciones que un procesador entiende y puede ejecutar. Define el "idioma" de la CPU: cómo se representan las instrucciones, cómo se accede a memoria, qué registros existen y qué operaciones están permitidas. El ISA es la frontera entre **hardware** y **software**:\
+- El hardware implementa el ISA.
+
+-   El software (compiladores, ensamblador, SO) genera instrucciones según ese ISA.
+
+Por eso **un programa compilado para un ISA no funciona en otro**.
+
+### Familias de ISA
+
+Existen varias familias importantes, cada una con su propio conjunto de instrucciones:
+
+-   **x86 / x86‑64 (Intel, AMD)** Arquitectura CISC muy extendida en PCs y servidores.
+-   **ARM / ARM64** Arquitectura RISC usada en móviles, tablets y procesadores Apple Silicon.
+-   **RISC‑V** ISA abierto y modular, cada vez más popular en investigación y hardware embebido.
+-   **MIPS, PowerPC, SPARC** Otras arquitecturas RISC históricas o especializadas. Cada familia tiene su propio ensamblador y su propio lenguaje máquina. \### Tipos de instrucciones
+
+Aunque cada ISA tiene sus particularidades, casi todos incluyen los mismos **tipos básicos de instrucciones**:
+
+-   **Aritméticas y lógicas** `ADD`, `SUB`, `MUL`, `AND`, `OR`, `XOR`...
+
+-   **Movimiento de datos** `MOV`, `LOAD`, `STORE`\
+    (mover datos entre registros y memoria)
+
+-   **Control de flujo** `JMP`, `CALL`, `RET`, `JE`, `JNE`\
+    (saltos, llamadas a funciones, bucles)
+
+-   **Gestión de memoria y pila** `PUSH`, `POP`, direccionamiento, acceso a pila
+
+-   **Instrucciones especiales** Dependientes del ISA: SIMD, criptografía, virtualización, etc.
+
+### Resumen para memorizar
+
+-   **ISA = conjunto de instrucciones de la CPU.**
+-   **Cada arquitectura tiene su propio ISA (x86, ARM, RISC‑V...).** -
+-   **Los tipos de instrucciones suelen ser: aritméticas, movimiento, saltos y especiales.**
+
+## CISC vs RISC
+
+Las arquitecturas **CISC (Complex Instruction Set Computer)** y **RISC (Reduced Instruction Set Computer)** representan dos enfoques distintos en el diseño de procesadores. No son compatibles entre sí porque cada una utiliza un **conjunto de instrucciones diferente**, es decir, un "lenguaje máquina" propio que la otra no puede ejecutar directamente.
+
+### CISC (Complex Instruction Set Computer)
+
+-   Conjunto de instrucciones **amplio y complejo**.
+
+-   Una sola instrucción puede realizar operaciones de alto nivel.
+
+-   Las instrucciones suelen requerir **más ciclos de reloj**, pero hacen más trabajo por instrucción.
+
+-   Ejemplo: **x86 / x86‑64** (Intel, AMD).
+
+### RISC (Reduced Instruction Set Computer)
+
+-   Conjunto de instrucciones **reducido, simple y muy optimizado**.
+-   Cada instrucción realiza una operación básica y suele ejecutarse en **un ciclo de reloj**.
+-   Permite pipelines más eficientes y menor consumo energético.
+-   Ejemplo: **ARM** (móviles, tablets, Apple Silicon, servidores modernos). \### Diferencias clave
+-   **CISC:** instrucciones complejas, hardware más sofisticado, más trabajo por instrucción.
+-   **RISC:** instrucciones simples, ejecución rápida y eficiente, ideal para bajo consumo y alto rendimiento por vatio. \### Por qué no son compatibles Cada arquitectura tiene su **propio conjunto de instrucciones**, su propio formato de registros y su propia forma de acceder a memoria. Un programa compilado para x86 no puede ejecutarse en ARM sin traducción o emulación.
+
+## Lenguaje máquina, ensamblador y lenguajes de alto nivel
+
+El **lenguaje máquina** es el nivel más bajo de programación: una secuencia de **bits (0 y 1)** que la CPU entiende directamente. Cada arquitectura (x86, ARM, etc.) tiene su propio conjunto de instrucciones en binario.
+
+El **ensamblador (assembly)** es una representación más legible del lenguaje máquina. Usa **mnemónicos** como `MOV`, \`ADD
 
 ------------------------------------------------------------------------
 
@@ -119,9 +355,9 @@ La memoria RAM es el área de trabajo activa del sistema operativo. Tiene tres p
 
 Si abrimos demasiadas aplicaciones o cargamos una base de datos pesada y la memoria RAM se llena por completo, el Sistema Operativo utiliza una técnica llamada **Memoria Virtual o SWAP (Espacio de Intercambio)**.
 
-\* **Cómo funciona:** El sistema operativo coge una porción del disco duro (HDD o SSD) y la simula como si fuera memoria RAM para evitar que el equipo se bloquee.
+-   **Cómo funciona:** El sistema operativo coge una porción del disco duro (HDD o SSD) y la simula como si fuera memoria RAM para evitar que el equipo se bloquee.
 
-\* **Consecuencia:** Como los discos de almacenamiento son órdenes de magnitud más lentos que la RAM, el rendimiento del sistema sufre una **caída drástica y notable (cuello de botella)**, haciendo que las aplicaciones dejen de responder con fluidez.
+-   **Consecuencia:** Como los discos de almacenamiento son órdenes de magnitud más lentos que la RAM, el rendimiento del sistema sufre una **caída drástica y notable (cuello de botella)**, haciendo que las aplicaciones dejen de responder con fluidez.
 
 ## Evolución de los Tipos de RAM
 
