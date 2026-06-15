@@ -1,54 +1,392 @@
-## Virtualización: Historia y Concepto
+# Modelos de servicio en la nube: IaaS, PaaS y SaaS
+
+Los servicios en la nube se organizan en tres grandes modelos según el nivel de control que tiene el usuario y el nivel de gestión que ofrece el proveedor. De menor a mayor abstracción:
+
+-   IaaS -- Infraestructura como servicio
+
+-   PaaS -- Plataforma como servicio
+
+-   SaaS -- Software como servicio
+
+A medida que avanzamos hacia SaaS, el proveedor gestiona más cosas y el usuario se preocupa de menos.
+
+## IaaS --- Infrastructure as a Service
+
+El proveedor te da la infraestructura básica: máquinas virtuales, redes, almacenamiento. Tú instalas y gestionas todo lo demás. Se usa cuando necesitas control total sobre el sistema operativo, las aplicaciones y la configuración. Ejemplos: Microsoft Azure: máquinas virtuales (Azure VM), Amazon AWS EC2, Google Compute Engine
+
+Ejemplo cotidiano: Es como alquilar un piso vacío: tú pones los muebles, la decoración y decides cómo usarlo.
+
+## PaaS --- Platform as a Service
+
+El proveedor te da una plataforma lista para desarrollar y desplegar aplicaciones. Tú solo te ocupas del código. ¿Cuándo se usa? Cuando quieres desarrollar aplicaciones sin preocuparte por servidores, actualizaciones o bases de datos. Ejemplos: Azure App Service, Google App Engine, Heroku
+
+Ejemplo cotidiano: Es como alquilar un piso amueblado: tú solo te preocupas de vivir, no de comprar muebles ni hacer reformas.
+
+## SaaS --- Software as a Service
+
+El proveedor ofrece una aplicación completa lista para usar. Tú solo la utilizas desde el navegador o una app. Se usa cuando necesitas una herramienta sin instalar nada ni gestionar servidores. Ejemplos: Microsoft 365 (Word, Excel online), Google Workspace (Gmail, Drive), Dropbox, Salesforce.
+
+Ejemplo cotidiano: Es como alojarte en un hotel: todo está listo, tú solo usas el servicio.
+
+::: summary
+| Modelo   | Significa                   | Qué gestiona el proveedor                      | Qué gestiona el usuario                            | Ejemplos                                     | Analogía                   |
+|------------|------------|------------|------------|------------|------------|
+| **IaaS** | Infrastructure as a Service | Hardware, red, almacenamiento, virtualización  | SO, aplicaciones, configuración, seguridad interna | AWS EC2, Azure VM, Google Compute Engine     | Alquilar un piso vacío     |
+| **PaaS** | Platform as a Service       | Infraestructura + SO + runtime + base de datos | Solo el código y la lógica de la app               | Heroku, Azure App Service, Google App Engine | Alquilar un piso amueblado |
+| **SaaS** | Software as a Service       | Todo: infraestructura, plataforma y aplicación | Solo usar la aplicación                            | Gmail, Office 365, Dropbox                   | Hospedarse en un hotel     |
+:::
+
+```         
+            Nivel de control del usuario
+            ↑
+            │   Más control
+            │
+            │   ┌───────────────────────────────┐
+            │   │            IaaS                │
+            │   │ Infraestructura como servicio  │
+            │   │ Tú gestionas: SO y apps        │
+            │   └───────────────────────────────┘
+            │
+            │   ┌───────────────────────────────┐
+            │   │            PaaS                │
+            │   │ Plataforma como servicio       │
+            │   │ Tú gestionas: solo el código   │
+            │   └───────────────────────────────┘
+            │
+            │   ┌───────────────────────────────┐
+            │   │            SaaS                │
+            │   │ Software como servicio         │
+            │   │ Tú solo usas la aplicación     │
+            │   └───────────────────────────────┘
+            │
+            └────────────────────────────────────────→
+                       Más servicios gestionados
+```
+
+# Virtualización: Historia y Concepto
 
 La virtualización surgió para **aprovechar mejor los recursos** de los servidores.
 
 ### Antes
-Un servidor físico → 1 SO → 1 aplicación  
+
+Un servidor físico → 1 SO → 1 aplicación\
 Resultado: recursos infrautilizados.
 
 ### Ahora
-Un servidor físico → varias máquinas virtuales → múltiples servicios  
+
+Un servidor físico → varias máquinas virtuales → múltiples servicios\
 Resultado: mejor aprovechamiento y menor coste.
 
-*Ejemplo:*  
-En un solo servidor físico podemos tener:
-- Un servidor de bases de datos  
-- Un servidor web  
-- Un servidor de correo  
+*Ejemplo:*\
+En un solo servidor físico podemos tenerr, por ejemplo: un servidor de bases de datos ,un servidor web y un servidor de correo.
 
 ### Tipos de hipervisores
-- **Tipo 1 (bare metal)**  
-  Se instalan directamente sobre el hardware.  
-  Ej.: VMware ESXi, Hyper-V Server, Proxmox.  
-  *Más eficientes.*
 
-- **Tipo 2 (sobre SO)**  
-  Se instalan como una aplicación dentro del SO.  
-  Ejemplos:
-- **VirtualBox** → El más usado en general. Gratuito, fácil, multiplataforma.
-- **VMware Workstation** → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.
-- **Hyper‑V** → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.
-- **Parallels** → Muy usado en Mac, especialmente con Apple Silicon.
-- **QEMU/KVM** → Popular en Linux y servidores, más técnico. 
-  *Menos eficientes.*
+-   **Tipo 1 (bare metal)**\
+    Se instalan directamente sobre el hardware.\
+    Ej.: VMware ESXi, Hyper-V Server, Proxmox.\
+    *Más eficientes.*
+
+-   **Tipo 2 (sobre SO)**\
+    Se instalan como una aplicación dentro del SO.\
+    Ejemplos:
+
+    -   **VirtualBox** → El más usado en general. Gratuito, fácil, multiplataforma.
+
+    -   **VMware Workstation** → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.
+
+    -   **Hyper‑V** → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.
+
+    -   **Parallels** → Muy usado en Mac, especialmente con Apple Silicon.
+
+    -   **QEMU/KVM** → Popular en Linux y servidores, más técnico. *Menos eficientes.*
 
 ### Contenedores
-Más ligeros que las VM.  
-Comparten el kernel del SO anfitrión.  
+
+Más ligeros que las VM.\
+Comparten el kernel del SO anfitrión.\
 Ejemplos: Docker, Podman.
 
----
+------------------------------------------------------------------------
 
-##  Núcleos Virtuales (vCPU)
+## Núcleos Virtuales (vCPU)
 
 Una máquina virtual recibe recursos del servidor físico:
 
-- RAM  
-- Almacenamiento  
-- CPU (vCPU)  
+-   RAM
+-   Almacenamiento
+-   CPU (vCPU)
 
 Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta directamente al rendimiento del motor de base de datos.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.
 
+## Redes en la máquina virtual
+
+Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisores), el programa genera por defecto una red virtual privada llamada NAT (Network Address Translation). Esta red funciona de manera aislada del resto del sistema.
+
+¿Qué significa esto? VirtualBox crea un router virtual interno. Ese router asigna automáticamente direcciones IP privadas a las máquinas virtuales. Normalmente asigna direcciones del tipo: 10.0.2.15 (el ".15" suele ser la primera IP que entrega el DHCP interno).
+
+Esta red no es la misma que la red del ordenador anfitrión.
+
+La máquina virtual no puede comunicarse directamente con:
+
+-   otras máquinas virtuales,
+
+-   otros equipos de la red física,
+
+-   ni siquiera con el propio host.
+
+¿Por qué se hace así? Porque el modo NAT está pensado para:
+
+-   garantizar aislamiento,
+
+-   permitir que la VM tenga acceso a Internet sin exponerla a la red real,
+
+-   evitar conflictos de direcciones IP,
+
+-   simplificar la configuración para usuarios principiantes.
+
+En este modo, la VM "sale a Internet" como si fuera el propio host, pero no es accesible desde fuera.
+
+Resumen La VM recibe una IP privada automática (ej. 10.0.2.15)
+
+Esa IP pertenece a una red virtual interna creada por VirtualBox
+
+```         
+            ┌──────────────────────────────┐
+            │      Ordenador anfitrión      │
+            │      (tu PC real)             │
+            │  IP real: 192.168.1.x         │
+            └──────────────┬───────────────┘
+                           │
+                           │  (No hay conexión directa)
+                           │
+            ┌──────────────┴───────────────┐
+            │     Router virtual NAT        │
+            │  (creado por VirtualBox)      │
+            │  Red interna: 10.0.2.0/24     │
+            │  DHCP interno: asigna IPs      │
+            └──────────────┬───────────────┘
+                           │
+                           │  IP asignada por defecto
+                           ▼
+            ┌──────────────────────────────┐
+            │     Máquina Virtual (VM)      │
+            │     Windows 10                │
+            │     IP: 10.0.2.15             │
+            │     Aislada del host          │
+            │     No accesible desde fuera  │
+            └──────────────────────────────┘
+```
+
+Esa red no se comunica con la red del host
+
+Solo permite que la VM acceda a Internet a través del host
+
+No permite conexiones entrantes hacia la VM
+
+## Otros modos de red en VirtualBox (visión general)
+
+Aunque el modo NAT es el que se usa por defecto y el más sencillo para empezar, VirtualBox ofrece otros modos de red que permiten distintos niveles de comunicación entre la máquina virtual, el host y la red física.
+
+A continuación tienes una explicación breve de los dos modos más comunes además de NAT, junto con diagramas visuales para que tus estudiantes entiendan la diferencia.
+
+### Modo Bridged (Adaptador Puente)
+
+Este modo conecta la máquina virtual directamente a la red física, como si fuera otro ordenador más conectado al router.
+
+¿Qué implica? La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).
+
+Puede comunicarse con:
+
+el host,
+
+otros equipos de la red,
+
+otras VMs en modo puente.
+
+Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
+
+```         
+            ┌──────────────────────────────┐
+            │      Ordenador anfitrión      │
+            │   IP: 192.168.1.20            │
+            └──────────────┬───────────────┘
+                           │
+                 Red física (router)
+                           │
+            ┌──────────────┴───────────────┐
+            │     Máquina Virtual (VM)      │
+            │   IP: 192.168.1.34            │
+            │  (como otro equipo más)       │
+            └──────────────────────────────┘
+```
+
+### Modo Host‑Only
+
+Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.
+
+¿Qué implica? La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
+
+Puede comunicarse solo con el host.
+
+No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
+
+```         
+                ┌───────────────────────────────┐
+                │      Ordenador anfitrión      │
+                │   IP host-only: 192.168.56.1  │
+                └──────────────┬───────────────┘
+                               │
+                     Red privada Host‑Only
+                               │
+                ┌──────────────┴───────────────┐
+                │     Máquina Virtual (VM)      │
+                │   IP: 192.168.56.101          │
+                │  (solo habla con el host)     │
+                └──────────────────────────────┘
+```
+
+### Resumen comparativo rápido 
+
+**Modo NAT:**
+
+-   VM aislada - IP interna (10.0.2.15)
+-   Acceso a Internet - No accesible desde el host
+
+**Modo Bridged:**
+
+-   VM en la misma red que el host
+
+-   IP real de la red (192.168.1.x)
+
+-    Comunicación total con red física
+
+**Modo Host‑Only:**
+
+-   Red privada entre host y VM
+
+-   Sin Internet
+
+-   Comunicación directa host ↔ VM
+
+------------------------------------------------------------------------
+
+::: practica
+## Práctica: Instalar un hypervisor, crear una máquina virtual e instalar Windows 10
+
+## Cambiar privilegios de usuario (si es necesario)
+
+Antes de instalar software de virtualización, asegúrate de que tu cuenta tiene permisos suficientes.\
+Si tu usuario no es administrador, puedes cambiar el tipo de cuenta desde una sesión con privilegios elevados.
+
+### Cambiar permisos de cuentas de usuario (Administrador / Estándar)
+
+Desde una cuenta con derechos de administrador: 1. Abre **Configuración**. 2. Ve a **Cuentas**. 3. Entra en **Otros usuarios**. 4. Selecciona el usuario que quieres modificar. 5. Haz clic en **Cambiar tipo de cuenta**. 6. Selecciona **Administrador**. 7. Acepta los cambios. 8. Reinincia el ordenador
+
+## Habilitar la virtualización (si es necesario)
+
+La virtualización suele venir activada por defecto, pero si no es así, debes habilitarla desde la BIOS/UEFI.\
+Estas instrucciones son para equipos con procesadores **Intel**; en AMD la opción puede tener otro nombre.
+
+### Comprobar si la virtualización ya está activada
+
+Puedes verificarlo desde Windows:
+
+-   Pulsa **Ctrl + Shift + Esc** → pestaña **Rendimiento** → **CPU**\
+    Busca el campo **Virtualización**.\
+    Si aparece *Habilitada*, no necesitas hacer nada.
+
+O bien:
+
+-   Ejecuta `msinfo32`\
+    Revisa el campo **Virtualización habilitada en firmware**.
+
+### Entrar en la BIOS/UEFI
+
+1.  Reinicia el equipo.
+2.  Durante el arranque, pulsa repetidamente una de estas teclas (según fabricante):\
+    **F2**, **Supr**, **Esc**, **F10**, **F12**.
+
+### Activar la opción de virtualización
+
+Una vez dentro de la BIOS/UEFI:
+
+-   Entra en menús como **Advanced**, **Advanced BIOS Features**, **Security**, **CPU Configuration** o **System Configuration**.
+-   Busca opciones como:
+    -   *Intel Virtualization Technology*
+    -   *Intel VT‑x*
+    -   *Intel VT‑d*
+    -   *Virtualization Support*
+-   Cambia el valor a **Enabled**.
+
+### Guardar cambios y reiniciar
+
+-   Selecciona **Save & Exit** o pulsa **F10**.
+-   Confirma los cambios.
+
+### Activar funciones opcionales de Windows (si las necesitas)
+
+Algunos programas requieren componentes adicionales:
+
+1.  Busca en Windows: **Activar o desactivar las características de Windows**.
+2.  Marca según necesidad:
+    -   **Hyper‑V** (solo Windows Pro/Enterprise)
+
+    -   **Plataforma de máquina virtual** (para WSL2)
+
+    -   **Plataforma del hipervisor de Windows**
+
+## Instalar el programa de virtualización (Hipervisor)
+
+Usaremos **Oracle VirtualBox**, disponible en: <https://www.virtualbox.org/wiki/Downloads>
+
+Descarga el paquete correspondiente a tu sistema operativo:
+
+-   Windows hosts
+-   macOS (Intel o Apple Silicon)
+-   Linux distributions
+-   Solaris hosts
+-   También descarga el **VirtualBox Extension Pack**, que añade funciones adicionales.
+-   Instala primero **VirtualBox**.
+-   Después instala el **Extension Pack**.
+
+------------------------------------------------------------------------
+
+## Descargar la ISO de Windows 10
+
+Para obtener la imagen ISO oficial:
+
+1.  Ve a la página de creación de medios:\
+    https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-windows-99a58364-8c02-206f-aa6f-40c3b507420d
+2.  Descarga la herramienta **MediaCreationTool.exe**.
+3.  Ejecútala y acepta los términos.
+4.  Selecciona **Crear medios de instalación**.
+5.  Elige idioma, edición y arquitectura (normalmente **x64**).
+6.  En el último paso, selecciona **Archivo ISO**.
+7.  Guarda el archivo, que tendrá un nombre similar a:\
+    `Win10_22H2_Spanish_x64.iso`
+
+------------------------------------------------------------------------
+
+## Crear una máquina virtual para Windows 10 en Oracle VirtualBox
+
+1.  Abre **Oracle VirtualBox**.
+2.  Haz clic en **Nueva**.
+3.  Configura la máquina virtual:
+    -   **Nombre:** Windows 10
+    -   **RAM:** 4 GB
+    -   **CPU:** 2 núcleos
+    -   **Almacenamiento:** 50 GB
+4.  Cambia el **orden de arranque** a:
+    1.  Disco duro
+    2.  Óptica
+5.  En **Configuración → Almacenamiento**, selecciona el **Puerto SATA1 (unidad óptica)**.
+6.  Carga la **ISO de Windows 10** descargada anteriormente.
+7.  Inicia la máquina virtual.
+8.  Durante la instalación, selecciona la edición **Windows 10 Pro**.
+
+Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows.
+:::

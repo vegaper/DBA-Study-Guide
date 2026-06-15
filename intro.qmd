@@ -184,11 +184,11 @@ Cuando un bloque de 8 bits tiene todos sus unos encendidos (**`11111111`**), la 
 
 ## **Direcciones IP reservadas en toda red:**
 
-1\. **Dirección de Red:** Es la primera IP, reservada para identificar la red y no la puede llevar ningún equipo .
+-   **Dirección de Red:** Es la primera IP, reservada para identificar la red y no la puede llevar ningún equipo.
 
-2\. **Dirección de Broadcast:** Es la última IP disponible (ej. `192.168.1.255`), común a todos los dispositivos . Si se envía información a ella, la reciben todos los equipos .
+-   **Dirección de Broadcast:** Es la última IP disponible (ej. `192.168.1.255`), común a todos los dispositivos . Si se envía información a ella, la reciben todos los equipos .
 
-3\. **Puerta de Enlace Predeterminada (Default Gateway):** La puerta de enlace predeterminada es la dirección IP del router o dispositivo que actúa como punto de salida de la red local hacia otras redes, normalmente Internet. Es el equipo al que un dispositivo envía todo el tráfico destinado a direcciones que no pertenecen a su misma red. Aunque por convención suele asignarse una dirección "cómoda", generalmente la primera dirección disponible (ej. `192.168.1.1`) pero no existe ninguna obligación técnica para que esto sea así . Permite que un dispositivo pueda comunicarse fuera de su red local, por ejemplo, acceder a Internet o a otra subred . Sin una puerta de enlace configurada, el dispositivo solo podrá comunicarse con hosts de su misma red .
+-   **Puerta de Enlace Predeterminada (Default Gateway):** La puerta de enlace predeterminada es la dirección IP del router o dispositivo que actúa como punto de salida de la red local hacia otras redes, normalmente Internet. Es el equipo al que un dispositivo envía todo el tráfico destinado a direcciones que no pertenecen a su misma red. Aunque por convención suele asignarse una dirección "cómoda", generalmente la primera dirección disponible (ej. `192.168.1.1`) pero no existe ninguna obligación técnica para que esto sea así . Permite que un dispositivo pueda comunicarse fuera de su red local, por ejemplo, acceder a Internet o a otra subred . Sin una puerta de enlace configurada, el dispositivo solo podrá comunicarse con hosts de su misma red .
 
 ### Calculando IPs de Red, Broadcast y Puerta de Enlace
 
@@ -233,7 +233,7 @@ Aquí es donde se complica, porque la red no termina en un punto exacto, sino en
     -   Para saber cuál es la red real, aplicamos la lógica binaria (AND) cruzando la IP con la máscara. La regla es sencilla: solo da `1` si ambos bits son `1`. Veámoslo en una tabla bit a bit:
 
     | Posición / Valor    |   128   |   64    |   32    |   16    |    8    |    4    |    2    |    1    |
-    |:--------------------|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|:-------:|
+    |:-------|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
     | **IP (Valor: 5)**   |   `0`   |   `0`   |   `0`   |   `0`   |   `0`   |   `1`   |   `0`   |   `1`   |
     | **Máscara (/23)**   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `1`   |   `0`   |
     | **Resultado (Red)** | **`0`** | **`0`** | **`0`** | **`0`** | **`0`** | **`1`** | **`0`** | **`0`** |
@@ -263,6 +263,7 @@ En el ejemplo anterior faltaba espacio, pero aquí ocurre lo contrario: un solo 
 
 -   **Dirección de Broadcast:** Como la red empezó en el 128 y le quedaban 7 bits disponibles para los hosts eso es $(2^7)$ = 128 posiciones para los hosts, llega hasta el final del bloque natural. El broadcast es la última IP antes del 256 ficticio. Resultado: **192.168.1.255**.
 
+::: practica
 ## Ejercicio Resuelto: Subnetting
 
 ¿Están las IPs `192.168.1.127/25` y `192.168.1.129/25` en la misma red?
@@ -308,6 +309,7 @@ En el ejemplo anterior faltaba espacio, pero aquí ocurre lo contrario: un solo 
 -   **¿Están en la misma red?** No.
 
 -   **¿Cuántas IPs nos quedan disponibles para los hosts?** Dado que la subred tiene 128 direcciones en total y hay que restar siempre 2 (la IP de Red y la de Broadcast), quedan **126 IPs disponibles** para hosts en cada subred .
+:::
 
 ## Usando la consola para ver los detalles de red
 
@@ -351,9 +353,9 @@ Si la Dirección IP es como la dirección postal del servidor, los puertos lógi
 
 **Clasificación de Puertos:**
 
--   **Puertos Bien Conocidos (*Well-Known Ports*, del 0 al 1023):** Son puertos asignados a determinadas cosas básicas y universales a nivel internacional . Al estar estandarizados, cualquier ordenador o navegador del mundo sabe a qué puerto llamar por defecto sin que se lo tengamos que decir. -   *Ejemplos:* **HTTP siempre usa el puerto 80**, **HTTPS el 443** para navegación web segura y **SSH el 22** para conexiones remotas a servidores .
+-   **Puertos Bien Conocidos (*Well-Known Ports*, del 0 al 1023):** Son puertos asignados a determinadas cosas básicas y universales a nivel internacional . Al estar estandarizados, cualquier ordenador o navegador del mundo sabe a qué puerto llamar por defecto sin que se lo tengamos que decir. - *Ejemplos:* **HTTP siempre usa el puerto 80**, **HTTPS el 443** para navegación web segura y **SSH el 22** para conexiones remotas a servidores .
 
--   **Puertos Registrados (del 1024 al 49151):** Son puertos que empresas de software piden que se les asigne para sus aplicaciones particulares. -   *Ejemplo:* Los servidores de bases de datos usarán un puerto distinto, por ejemplo **MySQL usa el 3306** . Por lo tanto, entran en esta categoría y no en la de puertos bien conocidos.
+-   **Puertos Registrados (del 1024 al 49151):** Son puertos que empresas de software piden que se les asigne para sus aplicaciones particulares. - *Ejemplo:* Los servidores de bases de datos usarán un puerto distinto, por ejemplo **MySQL usa el 3306** . Por lo tanto, entran en esta categoría y no en la de puertos bien conocidos.
 
 **️ Consejos de Gestión y Seguridad para el DBA:**
 
@@ -369,14 +371,16 @@ Podemos usar la consola de comandos para ver qué conexiones hay en un puerto, p
 
 esto nos indica el protocolo, la dirección y puerto de origen y la dirección y puerto de destino.
 
+::: summary
 ## TCP vs UDP
 
 | Características          | TCP (Transmission Control Protocol)                                                           | UDP (User Datagram Protocol)                                                            |
-|:-------------------------|:----------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------|
+|:---------------|:----------------------------|:--------------------------|
 | **Conexión**             | Protocolo orientado a conexión y fiable .                                                     | Protocolo no orientado a conexión y rápido .                                            |
 | **Funcionamiento**       | Comprueba que todos los datos lleguen completos y en orden; vuelve a pedir lo que se pierda . | Envía segmentos de forma continua sin comprobar si llegan, priorizando el tiempo real . |
 | **Uso en Base de Datos** | **Esencial.** No podemos permitirnos perder registros o datos .                               | Rara vez usado en almacenamiento .                                                      |
 | **Ejemplos**             | Consultar bases de datos, descargar archivos, enviar emails .                                 | Videollamadas, streaming, juegos online .                                               |
+:::
 
 # Protocolos de la Capa de Aplicación
 
