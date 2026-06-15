@@ -44,11 +44,11 @@ Según su persistencia:
 
 NAT es el protocolo que traduce tu dirección privada a la pública en IPv4 .
 
-\* Cuando haces una petición hacia Internet, tu ordenador utiliza un puerto lógico aleatorio de salida (ej. puerto `P1`) .
+-   Cuando haces una petición hacia Internet, tu ordenador utiliza un puerto lógico aleatorio de salida (ej. puerto `P1`) .
 
-\* NAT cambia tu IP privada por la IP pública, y guarda la información del puerto en una tabla para saber a quién retornar la información .
+-   NAT cambia tu IP privada por la IP pública, y guarda la información del puerto en una tabla para saber a quién retornar la información .
 
-\* Si se da el caso de que dos equipos de la misma red utilizan el mismo puerto a la vez, NAT asigna un puerto distinto a una de las peticiones de salida para evitar que se confundan, y lo registra en su tabla .
+-   Si se da el caso de que dos equipos de la misma red utilizan el mismo puerto a la vez, NAT asigna un puerto distinto a una de las peticiones de salida para evitar que se confundan, y lo registra en su tabla .
 
 # Conversión Binaria
 
@@ -80,9 +80,9 @@ Esta es la parte más sencilla. Si te dan un número binario de 8 bits, solo tie
 
 Para hacer el camino inverso, tomamos nuestro número decimal y vamos recorriendo la tabla de izquierda a derecha (desde el 128 hasta el 1), haciéndonos siempre la misma pregunta: **¿Puedo restar el valor de la tabla a mi número actual?**
 
-\* Si la respuesta es **SÍ**, ponemos un **1**, restamos el valor, y continuamos con lo que nos sobra .
+-   Si la respuesta es **SÍ**, ponemos un **1**, restamos el valor, y continuamos con lo que nos sobra .
 
-\* Si la respuesta es **NO**, ponemos un **0** y pasamos al siguiente número .
+-   Si la respuesta es **NO**, ponemos un **0** y pasamos al siguiente número .
 
 **Ejemplo: Convertir el número decimal `172` a binario .**
 
@@ -106,7 +106,7 @@ Vamos paso a paso de izquierda a derecha con nuestra tabla (128 - 64 - 32 - 16 -
 
 Si juntamos todos los unos y ceros que hemos ido poniendo, obtenemos el resultado:
 
-\* *Resultado:* El número 172 en decimal es **`10101100`** en binario.
+-   *Resultado:* El número 172 en decimal es **`10101100`** en binario.
 
 # Subnetting
 
@@ -118,29 +118,29 @@ La **Máscara de Subred** es un parámetro vital que acompaña siempre a una dir
 
 Mientras que la IP nos dice *quién* es el dispositivo, la máscara nos da información sobre *en qué red* se encuentra ese dispositivo . Su función principal es dividir los 32 bits de una dirección IP en dos partes bien diferenciadas:
 
-1\. **La porción de Red:** Identifica a la red específica a la que pertenece el equipo .
+-   **La porción de Red:** Identifica a la red específica a la que pertenece el equipo .
 
-2\. **La porción de Host:** Identifica al propio dispositivo (el equipo) dentro de esa red concreta .
+-   **La porción de Host:** Identifica al propio dispositivo (el equipo) dentro de esa red concreta .
 
 *(Para entenderlo mejor, imagina un número de teléfono. El código de país y el prefijo provincial serían la "porción de red" que te dice dónde está ubicada la línea, y el resto de los números serían la "porción de host" que identifica a la persona exacta. Gracias a la máscara, tu ordenador sabe exactamente dónde termina su red local y cuándo debe enviar la información a la Puerta de Enlace (el router) para salir a Internet).*
 
 **¿Cómo se representa la máscara de subred?** Se puede expresar de dos maneras distintas que significan exactamente lo mismo:
 
-\* **Notación simplificada (Ejemplo: `/24`):** Nos indica directamente cuántos bits (de los 32 totales) están encendidos e identifican a la red . Si es `/24`, los primeros 24 bits (los tres primeros bloques) son la red .
+-   **Notación simplificada (Ejemplo: `/24`):** Nos indica directamente cuántos bits (de los 32 totales) están encendidos e identifican a la red . Si es `/24`, los primeros 24 bits (los tres primeros bloques) son la red .
 
-\* **Notación decimal (Ejemplo: `255.255.255.0`):** Es la traducción de esos bits a formato decimal, agrupados en 4 bloques para que se parezca a una dirección IP . Por ejemplo, una máscara `/16` equivale a `255.255.0.0` , y una máscara `/25` equivale a `255.255.255.128` .
+-   **Notación decimal (Ejemplo: `255.255.255.0`):** Es la traducción de esos bits a formato decimal, agrupados en 4 bloques para que se parezca a una dirección IP . Por ejemplo, una máscara `/16` equivale a `255.255.0.0` , y una máscara `/25` equivale a `255.255.255.128` .
 
 Ejemplos más comunes:
 
-\* **Máscara /24 (`255.255.255.0`):** Los primeros 24 bits, es decir los primeros 3 bloques de la IP identifican la red, dejando sólo un byte, es decir 8 bits ($2^{8}$) =256 IPs disponibles en el último bloque para los dispositivos. \[10, 12\].
+-   **Máscara /24 (`255.255.255.0`):** Los primeros 24 bits, es decir los primeros 3 bloques de la IP identifican la red, dejando sólo un byte, es decir 8 bits ($2^{8}$) =256 IPs disponibles en el último bloque para los dispositivos. \[10, 12\].
 
-\* **Máscara /16 (`255.255.0.0`):** Los primeros 2 bloques identifican la red, dejando $2^{16}$ es decir, *65,536* IPs disponibles en total \[11, 12\].
+-   **Máscara /16 (`255.255.0.0`):** Los primeros 2 bloques identifican la red, dejando $2^{16}$ es decir, *65,536* IPs disponibles en total \[11, 12\].
 
 Otros casos: pasando de máscaras /24 a /16 pasamos de tener 256 direcciones disponibles a 65,536, puede ser que se decida dejar menos direcciones disponibles, pondremos un par de ejemplos:
 
-\* **Máscara /25 (`255.255.255.128`):** Se toman los primeros 25 bits .
+-   **Máscara /25 (`255.255.255.128`):** Se toman los primeros 25 bits .
 
-\* **Máscara /26 (`255.255.255.192`):** Se toman los primeros 26 bits .
+-   **Máscara /26 (`255.255.255.192`):** Se toman los primeros 26 bits .
 
 Para entender cómo llegamos de una notación como **`/24`** al número **`255.255.255.0`**, debemos recordar que una dirección IPv4 y su máscara tienen 32 bits, divididos en 4 bloques (bytes) de 8 bits cada uno.
 
@@ -277,37 +277,37 @@ En el ejemplo anterior faltaba espacio, pero aquí ocurre lo contrario: un solo 
 
 **2. Analizar la primera IP (`192.168.1.127`):**
 
-\* Pasamos el último byte (`127`) a binario: `01111111`
+-   Pasamos el último byte (`127`) a binario: `01111111`
 
-\* Aplicamos la máscara (`10000000`) usando lógica booleana (AND): `01111111` AND `10000000` = `00000000`
+-   Aplicamos la máscara (`10000000`) usando lógica booleana (AND): `01111111` AND `10000000` = `00000000`
 
-\* Pasamos ese número a decimal: 0
+-   Pasamos ese número a decimal: 0
 
-\* **IP de Red:** `192.168.1.0`
+-   **IP de Red:** `192.168.1.0`
 
-\* **IP de Broadcast:** Es la última dirección antes de la siguiente subred, así que es `192.168.1.127`
+-   **IP de Broadcast:** Es la última dirección antes de la siguiente subred, así que es `192.168.1.127`
 
-\* *Conclusión para la IP 1:* Esta dirección es la IP de Broadcast de la primera subred, por lo que no es una IP que se le pueda dar a un equipo normal.
+-   *Conclusión para la IP 1:* Esta dirección es la IP de Broadcast de la primera subred, por lo que no es una IP que se le pueda dar a un equipo normal.
 
 **3. Analizar la segunda IP (`192.168.1.129`):**
 
-\* Pasamos el último byte (`129`) a binario: `10000001` .
+-   Pasamos el último byte (`129`) a binario: `10000001` .
 
-\* Aplicamos la máscara (`10000000`) mediante lógica booleana: `10000001` AND `10000000` = `10000000`
+-   Aplicamos la máscara (`10000000`) mediante lógica booleana: `10000001` AND `10000000` = `10000000`
 
-\* Lo pasamos a decimal 128
+-   Lo pasamos a decimal 128
 
-\* **IP de Red:** `192.168.1.128` .
+-   **IP de Red:** `192.168.1.128` .
 
-\* **IP de Broadcast:** `192.168.1.255` .
+-   **IP de Broadcast:** `192.168.1.255` .
 
-\* *Conclusión para la IP 2:* Esta sí es una IP válida para un host dentro de la segunda subred .
+-   *Conclusión para la IP 2:* Esta sí es una IP válida para un host dentro de la segunda subred .
 
 **4. Respuestas Finales:**
 
-\* **¿Están en la misma red?** No.
+-   **¿Están en la misma red?** No.
 
-\* **¿Cuántas IPs nos quedan disponibles para los hosts?** Dado que la subred tiene 128 direcciones en total y hay que restar siempre 2 (la IP de Red y la de Broadcast), quedan **126 IPs disponibles** para hosts en cada subred .
+-   **¿Cuántas IPs nos quedan disponibles para los hosts?** Dado que la subred tiene 128 direcciones en total y hay que restar siempre 2 (la IP de Red y la de Broadcast), quedan **126 IPs disponibles** para hosts en cada subred .
 
 ## Usando la consola para ver los detalles de red
 
@@ -330,15 +330,15 @@ El Modelo TCP/IP es el modelo práctico real en el que se basa Internet hoy en d
 
 > **💡 Regla Mnemotécnica para el nombre de la información en orden descendente:**
 >
-> \* **A**plicación $\rightarrow$ **D**atos (**D**e)
+> -   **A**plicación $\rightarrow$ **D**atos (**D**e)
 >
-> \* **T**ransporte $\rightarrow$ **S**egmentos (**S**ábado)
+> -   **T**ransporte $\rightarrow$ **S**egmentos (**S**ábado)
 >
-> \* **R**ed $\rightarrow$ **P**aquetes (**P**or)
+> -   **R**ed $\rightarrow$ **P**aquetes (**P**or)
 >
-> \* **F**ísica $\rightarrow$ **T**ramas / **B**its (**T**arde)
+> -   **F**ísica $\rightarrow$ **T**ramas / **B**its (**T**arde)
 >
-> \* *Frase:* **D**e **S**ábado **P**or **T**arde .
+> -   *Frase:* **D**e **S**ábado **P**or **T**arde .
 
 # Capa de Transporte: Puertos y Protocolos (TCP vs UDP)
 
@@ -351,17 +351,17 @@ Si la Dirección IP es como la dirección postal del servidor, los puertos lógi
 
 **Clasificación de Puertos:**
 
-\* **Puertos Bien Conocidos (*Well-Known Ports*, del 0 al 1023):** Son puertos asignados a determinadas cosas básicas y universales a nivel internacional . Al estar estandarizados, cualquier ordenador o navegador del mundo sabe a qué puerto llamar por defecto sin que se lo tengamos que decir. \* *Ejemplos:* **HTTP siempre usa el puerto 80**, **HTTPS el 443** para navegación web segura y **SSH el 22** para conexiones remotas a servidores .
+-   **Puertos Bien Conocidos (*Well-Known Ports*, del 0 al 1023):** Son puertos asignados a determinadas cosas básicas y universales a nivel internacional . Al estar estandarizados, cualquier ordenador o navegador del mundo sabe a qué puerto llamar por defecto sin que se lo tengamos que decir. -   *Ejemplos:* **HTTP siempre usa el puerto 80**, **HTTPS el 443** para navegación web segura y **SSH el 22** para conexiones remotas a servidores .
 
-\* **Puertos Registrados (del 1024 al 49151):** Son puertos que empresas de software piden que se les asigne para sus aplicaciones particulares. \* *Ejemplo:* Los servidores de bases de datos usarán un puerto distinto, por ejemplo **MySQL usa el 3306** . Por lo tanto, entran en esta categoría y no en la de puertos bien conocidos.
+-   **Puertos Registrados (del 1024 al 49151):** Son puertos que empresas de software piden que se les asigne para sus aplicaciones particulares. -   *Ejemplo:* Los servidores de bases de datos usarán un puerto distinto, por ejemplo **MySQL usa el 3306** . Por lo tanto, entran en esta categoría y no en la de puertos bien conocidos.
 
 **️ Consejos de Gestión y Seguridad para el DBA:**
 
-\* **El Firewall es el vigilante:** Para que tu servidor de base de datos MySQL reciba peticiones externas, ese puerto tiene que estar abierto en el Firewall, que se encarga de controlar qué puertos lo están .
+-   **El Firewall es el vigilante:** Para que tu servidor de base de datos MySQL reciba peticiones externas, ese puerto tiene que estar abierto en el Firewall, que se encarga de controlar qué puertos lo están .
 
-\* **Regla de Oro:** Conviene tener todos los puertos que no estén en uso cerrados por seguridad .
+-   **Regla de Oro:** Conviene tener todos los puertos que no estén en uso cerrados por seguridad .
 
-\* **Resolución de problemas (Troubleshooting):** Puedes usar la consola de comandos (cmd) para verificar qué conexiones hay activas a un puerto . Por ejemplo, `netstat -an | find ":443"` mostrará las conexiones web, y si filtras por el puerto `22` cuando te conectas a un servidor puedes ver tu petición de conexión.
+-   **Resolución de problemas (Troubleshooting):** Puedes usar la consola de comandos (cmd) para verificar qué conexiones hay activas a un puerto . Por ejemplo, `netstat -an | find ":443"` mostrará las conexiones web, y si filtras por el puerto `22` cuando te conectas a un servidor puedes ver tu petición de conexión.
 
 Podemos usar la consola de comandos para ver qué conexiones hay en un puerto, por ejemplo para ver las conexiones al puerto 443 usamos `netstat -an | find ":443"`
 
@@ -382,19 +382,19 @@ esto nos indica el protocolo, la dirección y puerto de origen y la dirección y
 
 Son las reglas que usan los programas del usuario para tareas concretas:
 
-\* **HTTP / HTTPS:** Usados por navegadores web. HTTP envía información en texto plano, mientras que HTTPS es seguro y cifra los datos confidenciales .
+-   **HTTP / HTTPS:** Usados por navegadores web. HTTP envía información en texto plano, mientras que HTTPS es seguro y cifra los datos confidenciales .
 
-\* **SMTP:** Protocolo dedicado exclusivamente a **enviar** correos electrónicos (*Send Mail To People*) .
+-   **SMTP:** Protocolo dedicado exclusivamente a **enviar** correos electrónicos (*Send Mail To People*) .
 
-\* **POP (POP3):** Descarga el correo al ordenador y lo borra del servidor, solo puedes leerlo ahí .
+-   **POP (POP3):** Descarga el correo al ordenador y lo borra del servidor, solo puedes leerlo ahí .
 
-\* **IMAP:** Sincroniza el correo en tiempo real, permaneciendo los mensajes en el servidor para acceder desde cualquier dispositivo .
+-   **IMAP:** Sincroniza el correo en tiempo real, permaneciendo los mensajes en el servidor para acceder desde cualquier dispositivo .
 
-\* **FTP:** Protocolo especializado en la transferencia directa de archivos, muy útil para administradores que suben copias de seguridad de una base de datos al servidor .
+-   **FTP:** Protocolo especializado en la transferencia directa de archivos, muy útil para administradores que suben copias de seguridad de una base de datos al servidor .
 
-\* **DNS (Domain Name System):** Traduce un nombre de dominio legible para los humanos (como `google.com`) a su dirección IP numérica real .
+-   **DNS (Domain Name System):** Traduce un nombre de dominio legible para los humanos (como `google.com`) a su dirección IP numérica real .
 
-\* **VPN (Virtual Private Network):** Crea un túnel seguro y cifrado sobre una red pública . Permite el teletrabajo seguro simulando que tu equipo está conectado localmente a la red de la empresa para gestionar bases de datos .
+-   **VPN (Virtual Private Network):** Crea un túnel seguro y cifrado sobre una red pública . Permite el teletrabajo seguro simulando que tu equipo está conectado localmente a la red de la empresa para gestionar bases de datos .
 
 # Infografic
 
