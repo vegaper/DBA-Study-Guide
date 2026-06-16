@@ -122,9 +122,46 @@ Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta d
 *Ejemplo:*\
 Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.
 
+------------------------------------------------------------------------
+
+## VLAN (virtual LAN, redes virtuales).
+
+Una VLAN (Virtual LAN) es una forma de dividir una red física en varias redes lógicas independientes, aunque todos los dispositivos estén conectados al mismo switch. Es como si crearas “sub‑redes invisibles” dentro de una red más grande.
+
+Una VLAN permite que un grupo de dispositivos se comuniquen como si estuvieran en su propia red privada, aunque físicamente compartan el mismo cableado y los mismos switches.
+
+¿Por qué existen las VLAN? Porque en redes medianas o grandes necesitas orden, seguridad y eficiencia. Sin VLAN, todo estaría mezclado en un único dominio de broadcast, lo que genera ruido, riesgos y mala organización.
+
+Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN.
+Para comunicar VLAN entre sí, necesitas un router o un switch capa 3 (inter‑VLAN routing).
+
+Beneficios principales
+-  Seguridad: Aísla grupos de dispositivos.
+Ejemplo:
+            -  VLAN 10: Administración
+            -  VLAN 20: Invitados
+            -  VLAN 30: Cámaras IP
+Los invitados no pueden ver los equipos de administración.
+
+-   Rendimiento
+	-   Reduce el tráfico innecesario (broadcast).
+	-   Cada VLAN tiene su propio dominio de broadcast.
+-   Organización
+	-   Agrupa dispositivos por función, no por ubicación física.
+	-   Puedes tener PCs en diferentes plantas pero en la misma VLAN.
+-    Ahorro
+	-   No necesitas más switches físicos para separar redes.
+
+Ejemplo: Imagina un switch con 8 puertos:
+Puertos 1–4 → VLAN 10 (Oficina)
+Puertos 5–6 → VLAN 20 (Invitados)
+Puertos 7–8 → VLAN 30 (Cámaras)
+Aunque todos estén en el mismo switch, cada grupo está aislado.
+
+
 ## Redes en la máquina virtual
 
-Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisores), el programa genera por defecto una red virtual privada llamada NAT (Network Address Translation). Esta red funciona de manera aislada del resto del sistema.
+Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisores), el programa genera por defecto una red virtual privada llamada **NAT (Network Address Translation)**. Esta red funciona de manera aislada del resto del sistema.
 
 ¿Qué significa esto? VirtualBox crea un router virtual interno. Ese router asigna automáticamente direcciones IP privadas a las máquinas virtuales. Normalmente asigna direcciones del tipo: 10.0.2.15 (el ".15" suele ser la primera IP que entrega el DHCP interno).
 
@@ -181,11 +218,11 @@ Esa IP pertenece a una red virtual interna creada por VirtualBox
             └──────────────────────────────┘
 ```
 
-Esa red no se comunica con la red del host
+-  Esa red no se comunica con la red del host
 
-Solo permite que la VM acceda a Internet a través del host
+-  Solo permite que la VM acceda a Internet a través del host
 
-No permite conexiones entrantes hacia la VM
+-  No permite conexiones entrantes hacia la VM
 
 ## Otros modos de red en VirtualBox (visión general)
 
@@ -201,11 +238,11 @@ Este modo conecta la máquina virtual directamente a la red física, como si fue
 
 Puede comunicarse con:
 
-el host,
+-  el host,
 
-otros equipos de la red,
+-  otros equipos de la red,
 
-otras VMs en modo puente.
+-  otras VMs en modo puente.
 
 Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
