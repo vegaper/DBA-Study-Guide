@@ -29,11 +29,11 @@ El proveedor ofrece una aplicación completa lista para usar. Tú solo la utiliz
 Ejemplo cotidiano: Es como alojarte en un hotel: todo está listo, tú solo usas el servicio.
 
 ::: summary
-| Modelo   | Significa                   | Qué gestiona el proveedor                      | Qué gestiona el usuario                            | Ejemplos                                     | Analogía                   |
-|------------|------------|------------|------------|------------|------------|
-| **IaaS** | Infrastructure as a Service | Hardware, red, almacenamiento, virtualización  | SO, aplicaciones, configuración, seguridad interna | AWS EC2, Azure VM, Google Compute Engine     | Alquilar un piso vacío     |
-| **PaaS** | Platform as a Service       | Infraestructura + SO + runtime + base de datos | Solo el código y la lógica de la app               | Heroku, Azure App Service, Google App Engine | Alquilar un piso amueblado |
-| **SaaS** | Software as a Service       | Todo: infraestructura, plataforma y aplicación | Solo usar la aplicación                            | Gmail, Office 365, Dropbox                   | Hospedarse en un hotel     |
+| Modelo   | Significa                   | Qué gestiona el proveedor                      | Qué gestiona el usuario                            | Ejemplos                                     |
+|------------|------------|----------------|------------------|----------------------|
+| **IaaS** | Infrastructure as a Service | Hardware, red, almacenamiento, virtualización  | SO, aplicaciones, configuración, seguridad interna | AWS EC2, Azure VM, Google Compute Engine     |
+| **PaaS** | Platform as a Service       | Infraestructura + SO + runtime + base de datos | Solo el código y la lógica de la app               | Heroku, Azure App Service, Google App Engine |
+| **SaaS** | Software as a Service       | Todo: infraestructura, plataforma y aplicación | Solo usar la aplicación                            | Gmail, Office 365, Dropbox                   |
 :::
 
 ```         
@@ -126,38 +126,33 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
 
 ## VLAN (virtual LAN, redes virtuales).
 
-Una VLAN (Virtual LAN) es una forma de dividir una red física en varias redes lógicas independientes, aunque todos los dispositivos estén conectados al mismo switch. Es como si crearas “sub‑redes invisibles” dentro de una red más grande.
+Una VLAN (Virtual LAN) es una forma de dividir una red física en varias redes lógicas independientes, aunque todos los dispositivos estén conectados al mismo switch. Es como si crearas "sub‑redes invisibles" dentro de una red más grande.
 
 Una VLAN permite que un grupo de dispositivos se comuniquen como si estuvieran en su propia red privada, aunque físicamente compartan el mismo cableado y los mismos switches.
 
 ¿Por qué existen las VLAN? Porque en redes medianas o grandes necesitas orden, seguridad y eficiencia. Sin VLAN, todo estaría mezclado en un único dominio de broadcast, lo que genera ruido, riesgos y mala organización.
 
-Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN.
-Para comunicar VLAN entre sí, necesitas un router o un switch capa 3 (inter‑VLAN routing).
+Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN. Para comunicar VLAN entre sí, necesitas un router o un switch capa 3 (inter‑VLAN routing).
 
-Beneficios principales
--  Seguridad: Aísla grupos de dispositivos.
-Ejemplo:
-            -  VLAN 10: Administración
-            -  VLAN 20: Invitados
-            -  VLAN 30: Cámaras IP
-Los invitados no pueden ver los equipos de administración.
+Beneficios principales - Seguridad: Aísla grupos de dispositivos. Ejemplo: - VLAN 10: Administración - VLAN 20: Invitados - VLAN 30: Cámaras IP Los invitados no pueden ver los equipos de administración.
 
 -   Rendimiento
-	-   Reduce el tráfico innecesario (broadcast).
-	-   Cada VLAN tiene su propio dominio de broadcast.
+    -   Reduce el tráfico innecesario (broadcast).
+    -   Cada VLAN tiene su propio dominio de broadcast.
 -   Organización
-	-   Agrupa dispositivos por función, no por ubicación física.
-	-   Puedes tener PCs en diferentes plantas pero en la misma VLAN.
--    Ahorro
-	-   No necesitas más switches físicos para separar redes.
+    -   Agrupa dispositivos por función, no por ubicación física.
+    -   Puedes tener PCs en diferentes plantas pero en la misma VLAN.
+-   Ahorro - No necesitas más switches físicos para separar redes.
 
 Ejemplo: Imagina un switch con 8 puertos:
-Puertos 1–4 → VLAN 10 (Oficina)
-Puertos 5–6 → VLAN 20 (Invitados)
-Puertos 7–8 → VLAN 30 (Cámaras)
-Aunque todos estén en el mismo switch, cada grupo está aislado.
 
+-   Puertos 1--4 → VLAN 10 (Oficina)
+
+-   Puertos 5--6 → VLAN 20 (Invitados)
+
+-   Puertos 7--8 → VLAN 30 (Cámaras)
+
+Aunque todos estén en el mismo switch, cada grupo está aislado.
 
 ## Redes en la máquina virtual
 
@@ -218,13 +213,13 @@ Esa IP pertenece a una red virtual interna creada por VirtualBox
             └──────────────────────────────┘
 ```
 
--  Esa red no se comunica con la red del host
+-   Esa red no se comunica con la red del host
 
--  Solo permite que la VM acceda a Internet a través del host
+-   Solo permite que la VM acceda a Internet a través del host
 
--  No permite conexiones entrantes hacia la VM
+-   No permite conexiones entrantes hacia la VM
 
-## Otros modos de red en VirtualBox (visión general)
+## Otros modos de red en VirtualBox 
 
 Aunque el modo NAT es el que se usa por defecto y el más sencillo para empezar, VirtualBox ofrece otros modos de red que permiten distintos niveles de comunicación entre la máquina virtual, el host y la red física.
 
@@ -234,15 +229,15 @@ A continuación tienes una explicación breve de los dos modos más comunes adem
 
 Este modo conecta la máquina virtual directamente a la red física, como si fuera otro ordenador más conectado al router.
 
-¿Qué implica? La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).
+La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).
 
 Puede comunicarse con:
 
--  el host,
+-   el host,
 
--  otros equipos de la red,
+-   otros equipos de la red,
 
--  otras VMs en modo puente.
+-   otras VMs en modo puente.
 
 Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
@@ -265,11 +260,11 @@ Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
 Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.
 
-¿Qué implica? La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
+-   La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
 
-Puede comunicarse solo con el host.
+-   Puede comunicarse solo con el host.
 
-No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
+-   No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
 
 ```         
                 ┌───────────────────────────────┐
@@ -286,7 +281,7 @@ No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
                 └──────────────────────────────┘
 ```
 
-### Resumen comparativo rápido 
+### Resumen comparativo rápido
 
 **Modo NAT:**
 
@@ -299,7 +294,7 @@ No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
 
 -   IP real de la red (192.168.1.x)
 
--    Comunicación total con red física
+-   Comunicación total con red física
 
 **Modo Host‑Only:**
 
@@ -428,51 +423,66 @@ Para obtener la imagen ISO oficial:
 Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows.
 :::
 
-## # Instalación de Guest Additions (Complementos del Invitado) en VirtualBox
+## Instalación de Guest Additions (Complementos del Invitado) en VirtualBox
 
 Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un paso casi obligatorio si se desea:
 
-- Carpetas compartidas  
-- Copiar y pegar entre host y VM  
-- Pantalla completa  
-- Mejor rendimiento gráfico  
-- Drag & drop  
+-   Carpetas compartidas
+-   Copiar y pegar entre host y VM
+-   Pantalla completa
+-   Mejor rendimiento gráfico
+-   Drag & drop
 
----
+------------------------------------------------------------------------
 
 ## Instalación en una máquina virtual con Windows
 
-1. En la VM, abrir el menú **Dispositivos**.  
-2. Seleccionar **Insertar imagen de CD de los complementos de invitado**.  
-3. Abrir el explorador de archivos.  
-4. En **Este equipo**, aparecerá un CD virtual.  
-5. Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.
+1.  En la VM, abrir el menú **Dispositivos**.\
+2.  Seleccionar **Insertar imagen de CD de los complementos de invitado**.\
+3.  Abrir el explorador de archivos.\
+4.  En **Este equipo**, aparecerá un CD virtual.\
+5.  Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.
 
----
+------------------------------------------------------------------------
 
 ## Instalación de Guest Additions en Linux Ubuntu
 
-1. Insertar la imagen de Guest Additions desde VirtualBox:
-   - Menú **Dispositivos**
-   - **Insertar imagen de CD de los complementos de invitado**
-2. Abrir el explorador de archivos.  
-   - Normalmente aparece una ventana preguntando si se desea ejecutar el instalador.  
-   - Si no aparece, montar el CD manualmente:
-     ```bash
-     sudo mount /dev/cdrom /mnt
-     ```
-3. En **Este equipo**, aparecerá un CD virtual.  
-   - Los ejecutables en Linux terminan en `.sh` en lugar de `.exe`.
-4. Hacer clic derecho en `autorun.sh` y seleccionar **Ejecutar como programa**.  
-   - Si no se permite la ejecución, el sistema avisará que es necesario instalar `bzip2.tar`.
-5. Abrir la terminal y actualizar el repositorio para evitar errores de compilación:
-   ```bash
-   sudo apt update
-   sudo apt upgrade
+1.  Insertar la imagen de Guest Additions desde VirtualBox:
+
+    -   Menú **Dispositivos**
+    -   **Insertar imagen de CD de los complementos de invitado**
+
+2.  Abrir el explorador de archivos.
+
+    -   Normalmente aparece una ventana preguntando si se desea ejecutar el instalador.
+
+    -   Si no aparece, montar el CD manualmente:
+
+        ``` bash
+        sudo mount /dev/cdrom /mnt
+        ```
+
+3.  En **Este equipo**, aparecerá un CD virtual.
+
+    -   Los ejecutables en Linux terminan en `.sh` en lugar de `.exe`.
+
+4.  Hacer clic derecho en `autorun.sh` y seleccionar **Ejecutar como programa**.
+
+    -   Si no se permite la ejecución, el sistema avisará que es necesario instalar `bzip2.tar`.
+
+5.  Abrir la terminal y actualizar el repositorio para evitar errores de compilación:
+
+    ``` bash
+    sudo apt update
+    sudo apt upgrade
     ```
-6. Instalar bzip2
-```bash
-     sudo apt install bzip2
+
+6.  Instalar bzip2
+
+``` bash
+sudo apt install bzip2
 ```
-7. Volver al explorador y ejecutar nuevamente `autorun.sh.`
-En linux, en distros basadas en devian, para ver nuestra ip escribimos $ip ad 
+
+7.  Volver al explorador y ejecutar nuevamente `autorun.sh.`
+
+En linux, en distros basadas en devian, para ver nuestra ip escribimos `ip ad`
