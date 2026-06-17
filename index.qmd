@@ -1,9 +1,41 @@
 ---
 title: "Índice de Contenidos"
-filters:
-  - index-generator.lua
 ---
 
 # Índice del sitio
 
-Este índice se genera automáticamente a partir de la configuración del sitio.
+
+
+```{r}
+#| echo: false
+#| results: asis
+#| warning: false
+#| message: false
+
+# Cargamos la librería (Asegúrate de haber ejecutado install.packages("yaml") en tu consola de RStudio)
+library(yaml)
+
+# Leemos el archivo de configuración YAML de Quarto
+config <- read_yaml("_quarto.yml")
+
+# Extraemos directamente los contenidos de la barra lateral
+sidebar <- config$website$sidebar$contents
+
+# Recorremos cada bloque y generamos el formato Markdown dinámicamente
+for (bloque in sidebar) {
+  # Comprobamos que el elemento es una sección válida
+  if (!is.null(bloque$section)) {
+    
+    # Imprimimos el título de la sección (Nivel 2)
+    cat("##", bloque$section, "\n\n")
+    
+    # Recorremos los temas dentro de esa sección y creamos la lista de enlaces
+    for (item in bloque$contents) {
+      cat("* [", item$text, "](", item$href, ")\n", sep="")
+    }
+    
+    # Añadimos un salto de línea extra por limpieza visual
+    cat("\n")
+  }
+}
+```
