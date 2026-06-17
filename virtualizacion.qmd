@@ -147,15 +147,14 @@ Beneficios principales - Seguridad: Aísla grupos de dispositivos. Ejemplo: - VL
 Ejemplo: Imagina un switch con 8 puertos:
 
 -   Puertos 1--4 → VLAN 10 (Oficina)
-
 -   Puertos 5--6 → VLAN 20 (Invitados)
-
 -   Puertos 7--8 → VLAN 30 (Cámaras)
 
 Aunque todos estén en el mismo switch, cada grupo está aislado.
 
 ## Redes en la máquina virtual
 
+### NAT
 Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisores), el programa genera por defecto una red virtual privada llamada **NAT (Network Address Translation)**. Esta red funciona de manera aislada del resto del sistema.
 
 ¿Qué significa esto? VirtualBox crea un router virtual interno. Ese router asigna automáticamente direcciones IP privadas a las máquinas virtuales. Normalmente asigna direcciones del tipo: 10.0.2.15 (el ".15" suele ser la primera IP que entrega el DHCP interno).
@@ -188,28 +187,25 @@ Esa IP pertenece a una red virtual interna creada por VirtualBox
 
 ```         
             ┌──────────────────────────────┐
-            │      Ordenador anfitrión      │
-            │      (tu PC real)             │
-            │  IP real: 192.168.1.x         │
-            └──────────────┬───────────────┘
-                           │
+            │      Ordenador anfitrión     │
+            │      (tu PC real)            │
+            │  IP real: 192.168.1.x        │
+            └──────────────┬───────────────┘                         
                            │  (No hay conexión directa)
-                           │
             ┌──────────────┴───────────────┐
-            │     Router virtual NAT        │
-            │  (creado por VirtualBox)      │
-            │  Red interna: 10.0.2.0/24     │
-            │  DHCP interno: asigna IPs      │
+            │     Router virtual NAT       │
+            │  (creado por VirtualBox)     │
+            │  Red interna: 10.0.2.0/24    │
+            │  DHCP interno: asigna IPs    │
             └──────────────┬───────────────┘
-                           │
                            │  IP asignada por defecto
                            ▼
             ┌──────────────────────────────┐
-            │     Máquina Virtual (VM)      │
-            │     Windows 10                │
-            │     IP: 10.0.2.15             │
-            │     Aislada del host          │
-            │     No accesible desde fuera  │
+            │     Máquina Virtual (VM)     │
+            │     Windows 10               │
+            │     IP: 10.0.2.15            │
+            │     Aislada del host         │
+            │     No accesible desde fuera │
             └──────────────────────────────┘
 ```
 
@@ -218,12 +214,6 @@ Esa IP pertenece a una red virtual interna creada por VirtualBox
 -   Solo permite que la VM acceda a Internet a través del host
 
 -   No permite conexiones entrantes hacia la VM
-
-## Otros modos de red en VirtualBox 
-
-Aunque el modo NAT es el que se usa por defecto y el más sencillo para empezar, VirtualBox ofrece otros modos de red que permiten distintos niveles de comunicación entre la máquina virtual, el host y la red física.
-
-A continuación tienes una explicación breve de los dos modos más comunes además de NAT, junto con diagramas visuales para que tus estudiantes entiendan la diferencia.
 
 ### Modo Bridged (Adaptador Puente)
 
@@ -243,71 +233,183 @@ Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
 ```         
             ┌──────────────────────────────┐
-            │      Ordenador anfitrión      │
-            │   IP: 192.168.1.20            │
+            │      Ordenador anfitrión     │
+            │   IP: 192.168.1.20           │
             └──────────────┬───────────────┘
                            │
                  Red física (router)
                            │
             ┌──────────────┴───────────────┐
-            │     Máquina Virtual (VM)      │
-            │   IP: 192.168.1.34            │
-            │  (como otro equipo más)       │
+            │     Máquina Virtual (VM)     │
+            │   IP: 192.168.1.34           │
+            │  (como otro equipo más)      │
             └──────────────────────────────┘
 ```
-
-### Modo Host‑Only
+### Modo Sólo anfitrión (Host‑Only)
 
 Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.
-
 -   La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
-
--   Puede comunicarse solo con el host.
-
+-   El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red. 
+-   Puede comunicarse solo con el host y con otras VM en su misma red.
 -   No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
+-   Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms. 
 
 ```         
-                ┌───────────────────────────────┐
-                │      Ordenador anfitrión      │
-                │   IP host-only: 192.168.56.1  │
-                └──────────────┬───────────────┘
-                               │
-                     Red privada Host‑Only
-                               │
-                ┌──────────────┴───────────────┐
-                │     Máquina Virtual (VM)      │
-                │   IP: 192.168.56.101          │
-                │  (solo habla con el host)     │
-                └──────────────────────────────┘
+                         ┌──────────────────────────────────────┐
+                         │          Ordenador anfitrión         │
+                         │                                      │
+                         │  Host‑Only Red A: 192.168.56.1       │
+                         │  Host‑Only Red B: 192.168.57.1       │
+                         └───────────────┬───────────────┬──────┘
+                                         │               │
+                                         │               │
+                               Red A (Host‑Only)   Red B (Host‑Only)
+                                         │               │
+                     ┌───────────────────┘               └───────────────────┐
+                     │                                                       │
+                     ▼                                                       ▼
+            ┌──────────────────────┐                           ┌──────────────────────┐
+            │        VM1           │                           │        VM3           │
+            │  Red A: 192.168.56.10│                           │  Red B: 192.168.57.10│
+            │  Se comunica con VM2 │                           │  Solo habla con host │
+            │  No ve a VM3         │                           │  No ve a VM1 ni VM2  │
+            └──────────────────────┘                           └──────────────────────┘
+                     ▼
+            ┌──────────────────────┐
+            │        VM2           │
+            │  Red A: 192.168.56.11│
+            │  Se comunica con VM1 │
+            │  No ve a VM3         │
+            └──────────────────────┘
+
+```
+### Red NAT (NAT Network)
+La Red NAT es un modo de red diferente al NAT normal. En lugar de crear una red privada aislada para cada máquina virtual, VirtualBox crea una red virtual compartida, donde varias VMs pueden comunicarse entre sí como si estuvieran en una misma LAN virtual, pero sin comunicarse con el host ni con la red física.
+
+En este modo, VirtualBox genera una red interna (por ejemplo, 10.0.2.0/24 o 10.0.3.0/24) y un router virtual que actúa como puerta de enlace para todas las máquinas conectadas a esa Red NAT. Todas las VMs reciben una IP del mismo rango mediante un servidor DHCP interno.
+
+A diferencia del NAT normal:
+
+-   Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).
+-   Las VMs no pueden comunicarse con el host.
+-   Las VMs no son accesibles desde la red física.
+-   Todas comparten la misma salida a Internet a través del router virtual.
+
+Este modo es útil cuando necesitas que varias máquinas virtuales trabajen juntas (por ejemplo, un servidor y un cliente) sin exponerlas a la red real.
 ```
 
-### Resumen comparativo rápido
+                     ┌──────────────────────────────┐
+                     │     Ordenador anfitrión      │
+                     │     (tu PC real)             │
+                     │  Red física: 192.168.1.x     │
+                     └──────────────┬───────────────┘
+                                    │
+                          (No hay conexión directa)
+                                    │
+                     ┌──────────────┴───────────────┐
+                     │     Router virtual NAT       │
+                     │   Red NAT: 10.0.3.0/24       │
+                     │   DHCP interno activo        │
+                     └──────────────┬───────────────┘
+                                    │
+                     ┌──────────────┼───────────────┐
+                     │              │               │
+                     ▼              ▼               ▼
+       ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+       │ VM 1           │  │ VM 2           │  │ VM 3           │
+       │ IP: 10.0.3.10  │  │ IP: 10.0.3.11  │  │ IP: 10.0.3.12  │
+       │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
+       │ No ven al host │  │ No ven al host │  │ No ven al host │
+       └────────────────┘  └────────────────┘  └────────────────┘
+```
+### Red Interna (Internal Network)
+El modo Red Interna crea una red completamente aislada dentro de VirtualBox, donde solo las máquinas virtuales conectadas a esa misma red interna pueden comunicarse entre sí.
+No hay acceso al host, ni a la red física, ni a Internet.
 
-**Modo NAT:**
+A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas.
+Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente: 
+-  Envía una petición DHCP para pedir una dirección IP.
+-  Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida.
+-  Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango:169.254.0.0 – 169.254.255.255. Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: 169.254.5.246
+Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque:
+-  no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA),
+-  no permiten comunicación con el host,
+-  no permiten salir a Internet.
+Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.
 
--   VM aislada - IP interna (10.0.2.15)
--   Acceso a Internet - No accesible desde el host
+Este modo es ideal para laboratorios cerrados, entornos de pruebas, simulaciones de redes o prácticas donde necesitas varias máquinas comunicándose entre sí sin ningún tipo de exposición externa.
 
-**Modo Bridged:**
+Resumen:
+-  Las VMs se ven entre ellas si están en la misma red interna.
+-  No pueden comunicarse con el host.
+-  No tienen acceso a Internet.
+-  No hay DHCP salvo que lo configures tú.
+-  Es la red más aislada de todas.
 
--   VM en la misma red que el host
+```
+                     ┌───────────────────────────────┐
+                     │     Ordenador anfitrión       │
+                     │  (sin acceso a la red interna)│
+                     └───────────────────────────────┘
+                                     
+                            (Aislamiento total)
+                                     
+                     ┌───────────────────────────────┐
+                     │       Red Interna             │
+                     │    (sin router, sin DHCP)     │
+                     └───────────────┬───────────────┘
+                                     │
+                     ┌───────────────┼───────────────┐
+                     │               │               │
+                     ▼               ▼               ▼
+         ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+         │ VM 1           │  │ VM 2           │  │ VM 3           │
+         │ IP manual      │  │ IP manual      │  │ IP manual      │
+         │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
+         │ No ven al host │  │ No ven al host │  │ No ven al host │
+         └────────────────┘  └────────────────┘  └────────────────┘
+```
 
--   IP real de la red (192.168.1.x)
+## Tabla comparativa de modos de red en VirtualBox
 
--   Comunicación total con red física
+| Modo de red        | Comunicación con el host | Comunicación con otras VMs | Comunicación con la red física | Acceso a Internet | Características principales |
+|--------------------|--------------------------|-----------------------------|-------------------------------|-------------------|-----------------------------|
+| **NAT**            | ❌ No                   | ❌ No                      | ❌ No                        | ✔️ Sí            | Aislamiento total. La VM sale a Internet a través del host, pero no es accesible desde fuera. |
+| **Red NAT**        | ❌ No                   | ✔️ Sí                      | ❌ No                        | ✔️ Sí            | Red virtual compartida entre varias VMs. Se ven entre ellas, pero no ven al host ni a la red física. |
+| **Bridged**        | ✔️ Sí                   | ✔️ Sí                      | ✔️ Sí                        | ✔️ Sí            | La VM actúa como un equipo más de la red física. Recibe una IP del router real. Es accesible desde fuera. |
+| **Host‑Only**      | ✔️ Sí                   | ✔️ Sí (misma red Host‑Only) | ❌ No                        | ❌ No            | Red privada entre host y VM. No tiene Internet. Útil para laboratorios locales. |
+| **Red Interna**    | ❌ No                   | ✔️ Sí (misma red interna)  | ❌ No                        | ❌ No            | Red completamente aislada. Solo VMs entre sí. Sin host, sin Internet, sin DHCP salvo que lo configures. |
 
-**Modo Host‑Only:**
+```
+                                 ┌───────────────────────────────┐
+                                 │        Red física real        │
+                                 │       (router 192.168.1.x)    │
+                                 └───────────────┬───────────────┘
+                                                 │
+                                                 │
+     ┌─────────────────────┬─────────────────────┴─────┬─────────────────────┬─────────────────────┐
+     │                     │                           │                     │                     │
+     ▼                     ▼                           ▼                     ▼                     ▼
 
--   Red privada entre host y VM
-
--   Sin Internet
-
--   Comunicación directa host ↔ VM
-
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────────┐
+│       NAT        │  │     Red NAT      │  │   Adaptador      │  │    Host‑Only     │  │   Red Interna     │
+│ (aislado total)  │  │ (VMs juntas)     │  │     Puente       │  │ (host ↔ VM)      │  │(solo VMs entre sí)│
+└──────────────────┘  └──────────────────┘  └──────────────────┘  └──────────────────┘  └───────────────────┘
+          │                      │                     │                      │                     │
+          │                      │                     │                      │                     │
+Host  ❌  ┘         Host  ❌────┘         Host  ✔️────┘         Host  ✔️────┘         Host  ❌────┘
+VMs   ❌  ┘         VMs  ✔️─────┘         VMs  ✔️─────┘         VMs  ✔️─────┘         VMs  ✔️─────┘
+Física❌  ┘         Física❌────┘         Física✔️────┘         Física❌ ───┘         Física❌────┘
+Internet✔️┘         Internet✔️──┘         Internet✔️──┘         Internet❌──┘         Internet❌──┘
+```
+HOST: comunicación entre la VM y el ordenador anfitrión (tu PC).
+VMS: comunicación entre máquinas virtuales dentro del mismo modo de red.
+FÍSICA: acceso a la red física real (router, otros PCs, impresoras).
+INTERNET: posibilidad de salir a Internet desde la VM.
 ------------------------------------------------------------------------
-
 ::: practica
-## Práctica: Instalar un hypervisor, crear una máquina virtual e instalar Windows 10
+
+# Práctica: Instalar un hypervisor, crear una máquina virtual e instalar Windows 10
 
 ## Cambiar privilegios de usuario (si es necesario)
 
