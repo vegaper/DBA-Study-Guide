@@ -21,17 +21,35 @@ config <- read_yaml("_quarto.yml")
 # Extraemos directamente los contenidos de la barra lateral
 sidebar <- config$website$sidebar$contents
 
-# Recorremos cada bloque y generamos el formato Markdown dinámicamente
+# Recorremos cada bloque principal y generamos el formato dinámicamente
 for (bloque in sidebar) {
-  # Comprobamos que el elemento es una sección válida
+  # Comprobamos que el elemento principal es una sección válida
   if (!is.null(bloque$section)) {
     
-    # Imprimimos el título de la sección (Nivel 2)
+    # Imprimimos el título de la sección principal (Nivel 2)
     cat("##", bloque$section, "\n\n")
     
-    # Recorremos los temas dentro de esa sección y creamos la lista de enlaces
+    # Recorremos los elementos dentro de esa sección principal
     for (item in bloque$contents) {
-      cat("* [", item$text, "](", item$href, ")\n", sep="")
+      
+      # Caso A: Es un tema normal con su enlace (Tema 1, Tema 2...)
+      if (!is.null(item$text) && !is.null(item$href)) {
+        cat("* [", item$text, "](", item$href, ")\n", sep="")
+      } 
+      
+      # Caso B: Es una subsección desplegable (como el nuevo Tema 4)
+      else if (!is.null(item$section)) {
+        
+        # Imprimimos el título de la subsección en negrita
+        cat("* **", item$section, "**\n", sep="")
+        
+        # Recorremos los subtemas y les añadimos 4 espacios de sangría
+        if (!is.null(item$contents)) {
+          for (subitem in item$contents) {
+            cat("    * [", subitem$text, "](", subitem$href, ")\n", sep="")
+          }
+        }
+      }
     }
     
     # Añadimos un salto de línea extra por limpieza visual

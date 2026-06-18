@@ -1,0 +1,505 @@
+---
+title: "Guía de Pruebas de Conectividad en Entornos de Virtualización"
+---
+
+# Introducción
+
+La conectividad en un entorno virtualizado no es un único concepto, sino un conjunto de capas que deben funcionar correctamente para que dos máquinas puedan comunicarse. Estas capas incluyen:
+
+-   Conectividad IP
+-   Resolución DNS
+-   Puertos y servicios
+-   Firewall
+-   Rutas y NAT
+
+En el laboratorio tenemos:
+
+-   Un **host físico (Windows)**
+-   Una **VM Windows**
+-   Una **VM Ubuntu**
+-   Distintos **modos de red virtual** (NAT, Adaptador puente, Host-Only, Internal, Red NAT)
+
+El objetivo de este laboratorio es que puedas comprobar, de forma sistemática, la conectividad en todos los sentidos:
+
+-   VM ↔ VM
+-   VM ↔ Internet (con y sin DNS)
+-   VM ↔ Host
+-   Host ↔ VM
+-   VM ↔ LAN real
+-   LAN real ↔ VM
+
+------------------------------------------------------------------------
+
+# Pruebas básicas de conectividad
+
+## Pre-configuración
+
+### Recordatorio cómo ver la ip de nuestras máquinas
+
+#### En ubuntu
+
+``` bash
+ip -br a
+```
+
+resultado
+
+``` bash
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enp0s3           UP             192.168.56.101/24 fe80::a00:27ff:fefc:50ff/64 
+```
+
+La ip de la máquina en este ejemplo es 192.168.56.101
+
+`lo` es Una **dirección IP loopback** (o de bucle invertido) es una dirección IP interna y virtual que un dispositivo utiliza para enviarse tráfico a sí mismo sin involucrar a la red externa. La dirección IPv4 más común es **127.0.0.1** (también conocida como `localhost`).
+
+#### En Windows
+
+``` bash
+ipconfig
+```
+
+la ip será lo que aparezca como Dirección IPv4 en el adapatador que estemos usuando (Ethernet, wifi...)
+
+### Actualizar e instalar complementos
+
+En Ubuntu Desktop (en la Terminal):
+
+``` bash
+sudo apt update
+sudo apt install -y iputils-ping traceroute dnsutils net-tools curl openssh-client openssh-server
+```
+
+-   ping → comprueba conectividad IP básica.
+
+-   traceroute → muestra el camino/saltos hacia un destino.
+
+-   dnsutils (dig, nslookup) → prueba DNS (si "hay red" pero no resuelve nombres).
+
+-   net-tools → utilidades clásicas (ifconfig/netstat; antiguas pero útiles en formación).
+
+-   curl → probar HTTP/HTTPS.
+
+-   openssh-\* → para pruebas de acceso remoto (SSH).
+
+### Levanta un servicio HTTP simple (puerto 8000) en ubuntu
+
+``` bash
+python3 -m http.server 8000 --bind 0.0.0.0
+```
+
+-   Esto crea una web vacía pero perfecta para probar conectividad.
+-   `--bind 0.0.0.0` significa: "escucha por todas las interfaces de red".
+
+Déjalo corriendo en una terminal.
+
+#### Comprueba que escucha:
+
+En Ubuntu, en otra terminal: `ss -lntp | grep 8000`
+
+• `ss -lntp` lista puertos TCP en escucha y el proceso asociado.
+
+### Comprobar que ssh está abierto.
+
+``` bash
+systemctl status ssh
+```
+
+## Métodos de comprobación de comunicación
+
+### Ping
+
+#### Comprobación de conexión a internet
+
+`ping {ip}` envía paquetes ICMP (Echo Request/Reply) para comprobar:
+
+-   Que existe **conectividad IP** entre origen y destino
+-   Latencia (tiempo de ida y vuelta)
+-   Pérdida de paquetes
+
+Para comprobar que tenemos conectividad a internet podemos hacer ping al DNS público de Cloudflare (1.1.1.1), uno de los servidores más rápidos y estables del mundo, por eso se usa mucho para pruebas.
+
+Como ese servidor no está en nuestra red, esto nos prueba que nuestra máquina tiene conectividad con internet.
+
+ejemplo
+
+``` bash
+ping 1.1.1.1
+```
+
+o en linux
+
+``` bash
+ping -c 4 1.1.1.1
+```
+
+La respuesta si hay conexión será similar a
+
+```         
+Haciendo ping a 1.1.1.1 con 32 bytes de datos:
+Respuesta desde 1.1.1.1: bytes=32 tiempo=2ms TTL=55
+Respuesta desde 1.1.1.1: bytes=32 tiempo=2ms TTL=55
+Respuesta desde 1.1.1.1: bytes=32 tiempo=2ms TTL=55
+Respuesta desde 1.1.1.1: bytes=32 tiempo=3ms TTL=55
+
+Estadísticas de ping para 1.1.1.1:
+    Paquetes: enviados = 4, recibidos = 4, perdidos = 0
+    (0% perdidos),
+Tiempos aproximados de ida y vuelta en milisegundos:
+    Mínimo = 2ms, Máximo = 3ms, Media = 2ms
+```
+
+Y si no hay conexión
+
+```         
+Haciendo ping a 1.1.1.1 con 32 bytes de datos:
+PING: error en la transmisión. Error general.
+PING: error en la transmisión. Error general.
+PING: error en la transmisión. Error general.
+PING: error en la transmisión. Error general.
+
+Estadísticas de ping para 1.1.1.1:
+    Paquetes: enviados = 4, recibidos = 0, perdidos = 4
+    (100% perdidos),
+```
+
+Nota: en Red LAN aunque no hay conectividad con el host, porque no hay comunicación bidireccional, un ping desde la VM al host funcionará (si no está bloqueado por otros motivos) pero el host no podrá hacer ping a la VM.
+
+#### Comprobación del DNS
+
+Para probar si el DNS está bien configurado y funcionando podemos hacer ping a una dirección de internet
+
+``` bash
+ping google.es
+```
+
+la respuesta si hay conexión será similar a
+
+```         
+Haciendo ping a google.es [216.58.205.67] con 32 bytes de datos:
+Respuesta desde 216.58.205.67: bytes=32 tiempo=3ms TTL=117
+Respuesta desde 216.58.205.67: bytes=32 tiempo=2ms TTL=117
+Respuesta desde 216.58.205.67: bytes=32 tiempo=3ms TTL=117
+Respuesta desde 216.58.205.67: bytes=32 tiempo=2ms TTL=117
+
+Estadísticas de ping para 216.58.205.67:
+    Paquetes: enviados = 4, recibidos = 4, perdidos = 0
+    (0% perdidos),
+Tiempos aproximados de ida y vuelta en milisegundos:
+    Mínimo = 2ms, Máximo = 3ms, Media = 2ms
+```
+
+y si falla será algo como
+
+``` bash
+La solicitud de ping no pudo encontrar el host google.com. Compruebe el nombre y
+vuelva a intentarlo.
+```
+
+#### Conectividad con otra máquina en la misma red
+
+Si usas la ip de otra máquina virtual o física pero dentro de tu red para comprobar si hay comunicación ten en cuenta:
+
+Si responde → hay conectividad entre las máquinas.
+
+Si no responde → puede ser:
+
+-   Falta de ruta
+
+-   Problema de NAT
+
+-   Firewall bloqueando ICMP (por defecto en Windows): Las máquinas Windows suelen tener el firewall configurado para bloquear ICMP, por lo que ping puede fallar aunque la conectividad IP y los servicios funcionen bien. Por eso vamos a probar otra forma de probar conectividad (el servidor HTTP dummy en Ubuntu).
+
+### Curl contra un servidor HTTP "dummy"
+
+Para evitar el problema del ping bloqueado en Windows, montas un servidor HTTP sencillo, esto es lo que hicimos en la pre-configuración en la VM Ubuntu
+
+Desde la VM Windows (o desde el host), puedes probar:
+
+``` bash
+curl -I http://{IP_UBUNTU}:8000
+```
+
+y la respuesta si hay conexión será similar a:
+
+``` bash
+HTTP/1.0 200 OK Server: SimpleHTTP/0.6 Python/3.14.4 Date: Thu, 18 Jun 2026 10:30:44 GMT Content-type: text/html; charset=utf-8 Content-Length: 1730 
+```
+
+o si falla, será algo como
+
+```         
+curl: (28) Failed to connect to 192.168.56.1 port 8000 after 21077 ms: Could not connect to server 
+```
+
+También puedes hacer la misma comprobación simplemente poniendo la dirección en un navegador. `http://{IP_UBUNTU}:8000`
+
+Esto comprueba:
+
+-   Conectividad IP entre origen y destino
+
+-   Que el puerto 8000 está accesible
+
+-   Que el servicio HTTP está funcionando
+
+-   Que el firewall no bloquea tráfico TCP hacia ese puerto
+
+Es una prueba más completa que ping, porque ya implica una aplicación (HTTP) y un puerto concreto.
+
+### SSH como prueba de conectividad
+
+SSH (Secure Shell) es un protocolo que permite conectarte a otra máquina de forma segura.
+
+Cuando ejecutas:
+
+``` bash
+ssh usuario@{IP}
+```
+
+pasan varias cosas:
+
+1.  La VM intenta abrir una conexión TCP al puerto 22. (SSH usa el puerto 22 por defecto).
+
+2.  El servidor SSH (sshd) responde. Si está activo, te devuelve su "huella digital" (clave pública).
+
+3.  Se negocia un cifrado. Cliente y servidor acuerdan cómo cifrar la sesión.
+
+4.  Te pide autenticación. Puede ser: contraseña, clave privada, certificado
+
+5.  Se abre una terminal remota. A partir de ahí, todo lo que escribes se ejecuta en la máquina remota.
+
+Cuando haces SSH para "probar conectividad", en realidad estás haciendo mucho más que un simple ping. SSH no es una prueba de red básica: es una prueba completa de conexión + autenticación + servicio.
+
+Estás comprobando:
+
+-   Conectividad IP
+
+-   Que el puerto 22/TCP está abierto SSH usa por defecto el puerto 22. Si ese puerto está cerrado, filtrado o redirigido, verás errores como:
+
+    -   Connection timed out
+
+    -   Connection refused
+
+Esto ya te dice si hay un firewall o un bloqueo en el camino.
+
+-   Que el servicio sshd está activo: Aunque la máquina responda al ping, si el servicio sshd está apagado, SSH fallará.
+
+-   Que se puede negociar cifrado y autenticación
+
+Es decir, SSH no solo prueba "si llego", sino también:
+
+-   Que el servicio está levantado
+
+-   Que el puerto no está filtrado
+
+-   Que la sesión segura se puede establecer
+
+SSH es una prueba de conectividad de capa alta, muy útil para validar que la VM es accesible de verdad.
+
+## En la práctica:
+
+### VM ↔ VM
+
+Supongamos VM Windows ↔ VM Ubuntu.
+
+Pruebas típicas:
+
+Desde Ubuntu hacia Windows (si el firewall lo permite)
+
+``` bash
+ping IP_WINDOWS
+```
+
+#### Desde Windows hacia Ubuntu
+
+``` bash
+ping IP_UBUNTU
+```
+
+#### Desde Windows hacia el servidor HTTP dummy en Ubuntu
+
+``` bash
+curl -I http://IP_UBUNTU:8000
+```
+
+#### Desde Windows o desde otra VM hacia Ubuntu por SSH
+
+``` bash
+ssh usuario@IP_UBUNTU
+```
+
+Interpretación si ping falla pero curl funciona:
+
+-   Hay conectividad IP
+
+-   El puerto 8000 está accesible
+
+-   El firewall no bloquea ese tráfico
+
+-   El problema es ICMP bloqueado (firewall), no la red
+
+### VM ↔ Internet
+
+#### Sin DNS
+
+``` bash
+ping 1.1.1.1
+```
+
+Compruebas:
+
+-   Conectividad IP hacia Internet
+
+-   Que el NAT o el router permiten salida
+
+#### Con DNS
+
+Desde la VM (Ubuntu o Windows):
+
+``` bash
+ping google.com
+curl https://google.com
+```
+
+Compruebas:
+
+-   Conectividad IP hacia Internet
+
+-   Resolución DNS (porque usas nombres, no IPs)
+
+-   Que la VM tiene salida a Internet.
+
+**Si ping 1.1.1.1 funciona pero ping google.com no:**
+
+-   La conectividad IP está bien
+
+-   El problema es DNS
+
+Si ninguno funciona:
+
+Problema de salida a Internet
+
+### VM ↔ Host
+
+Desde la VM hacia el host:
+
+``` bash
+ping IP_HOST
+curl http://IP_HOST:PUERTO   # si tienes algún servicio en el host
+```
+
+Desde el host hacia la VM Ubuntu (con servidor dummy):
+
+``` bash
+curl -I http://IP_UBUNTU:8000
+ssh usuario@IP_UBUNTU
+```
+
+Interpretación:
+
+Si VM → Host funciona pero Host → VM no: Probable firewall en la VM
+
+Si nada funciona:
+
+-   Modo de red mal configurado
+
+-   IPs en subredes distintas sin routing
+
+### Host ↔ VM
+
+Desde el host hacia Ubuntu
+
+``` bash
+curl -I http://IP_UBUNTU:8000
+ssh usuario@IP_UBUNTU
+```
+
+### VM ↔ LAN real
+
+Solo funciona si la VM está en modo Adaptador Puente. En Adaptador Puente, la VM tiene una IP de la misma red que los PCs reales.
+
+Desde la VM hacia la LAN:
+
+``` bash
+ping IP_PC_REAL
+ping IP_ROUTER
+curl http://IP_SERVIDOR_LAN
+```
+
+Interpretación:
+
+Si la VM llega a la LAN (router, otros PCs), el modo Adaptador Puente está bien
+
+Si no llega:
+
+-   La VM no está en Adaptador Puente
+
+-   O hay un firewall en la LAN que bloquea
+
+### LAN real ↔ VM
+
+Desde un PC real de la LAN hacia la VM (en Adaptador Puente):
+
+``` bash
+ping IP_VM
+curl -I http://IP_UBUNTU:8000
+ssh usuario@IP_UBUNTU
+```
+
+Interpretación:
+
+Si la LAN llega a la VM:
+
+-   La VM está correctamente en Adaptador Puente
+
+-   No hay firewall bloqueando esos puertos
+
+Si la VM llega a la LAN pero la LAN no llega a la VM:
+
+-   Probable firewall en la VM
+
+## Ejemplos de comandos
+
+### Comprobar salida a Internet sin DNS
+
+``` bash
+ping 1.1.1.1
+
+# Comprobar salida a Internet con DNS
+```bash
+ping google.com
+```
+
+### Probar servidor HTTP dummy en Ubuntu
+
+``` bash
+curl -I http://IP_UBUNTU:8000
+```
+
+### Probar SSH hacia Ubuntu
+
+``` bash
+ssh usuario@IP_UBUNTU
+```
+
+## Resumen final en tabla
+
+```         
++-------------------+-------------------+------------------------------+
+| Escenario         | Herramientas      | Qué comprueba                |
++-------------------+-------------------+------------------------------+
+| VM ↔ VM           | ping, curl, ssh   | IP, puertos, firewall,       |
+|                   |                   | servicios                    |
++-------------------+-------------------+------------------------------+
+| VM ↔ Internet     | ping, curl        | IP + DNS (si usas nombres)   |
++-------------------+-------------------+------------------------------+
+| VM ↔ Host         | curl, ssh         | Conectividad local, firewall |
++-------------------+-------------------+------------------------------+
+| Host ↔ VM         | curl, ssh         | Entrada a la VM              |
++-------------------+-------------------+------------------------------+
+| VM ↔ LAN real     | curl, ssh         | Solo en Bridged, visibilidad |
+|                   |                   | de la LAN                    |
++-------------------+-------------------+------------------------------+
+| LAN real ↔ VM     | curl, ssh         | Visibilidad desde la LAN     |
++-------------------+-------------------+------------------------------+
+```
