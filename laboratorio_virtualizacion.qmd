@@ -61,6 +61,18 @@ ipconfig
 
 la ip será lo que aparezca como Dirección IPv4 en el adapatador que estemos usuando (Ethernet, wifi...)
 
+### Desbloquear ping a máquinas Windows. 
+Por defecto los ping a SO Windows fallarán, están bloqueados por el firewall por defecto. Ping no usa puertos,simplemente usa el protocolo icmp, para bloquear o desbloquear los pings en Windows lo que tenemos que hacer cambiar el bloqueo del protocolo ICMP en el firewall. 
+
+Para permitir los pings a máquinas windows que lo traen cerrado por defecto haz:
+Firewall de Windows Defender > Configuración Avanzada > Reglas de entrada > Nueva Regla
+    Tipo: Personalizada
+    Protocolo y Puertos: Tipo de Protocolo ICMPv4 >Siguiente
+    Cualquier dirección IP > Siguiente
+    Permitir la conexión > Siguiente
+    Dejar activado todo: Dominio, privado y público. > Siguiente
+Ponerle un nombre descriptivo como permitir ping y finalizar
+
 ### Actualizar e instalar complementos
 
 En Ubuntu Desktop (en la Terminal):
@@ -163,7 +175,7 @@ Estadísticas de ping para 1.1.1.1:
     (100% perdidos),
 ```
 
-Nota: en Red LAN aunque no hay conectividad con el host, porque no hay comunicación bidireccional, un ping desde la VM al host funcionará (si no está bloqueado por otros motivos) pero el host no podrá hacer ping a la VM.
+Nota: Tanto en NAT como en Red NAT la VM puede hacer ping a su host, pero el host no puede hacer ping a la VM, por lo tanto no hay comunicación. La VM puede hacer ping al host simplemente porque usa la red del host para poder salir a internet, así que tiene acceso de salida hacia esa red. 
 
 #### Comprobación del DNS
 
