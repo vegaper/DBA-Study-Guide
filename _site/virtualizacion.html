@@ -262,9 +262,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#nat" id="toc-nat" class="nav-link" data-scroll-target="#nat"><span class="header-section-number">2.3.1</span> NAT</a></li>
   <li><a href="#adaptador-puente-bridged" id="toc-adaptador-puente-bridged" class="nav-link" data-scroll-target="#adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged )</a></li>
-  <li><a href="#modo-sólo-anfitrión-hostonly" id="toc-modo-sólo-anfitrión-hostonly" class="nav-link" data-scroll-target="#modo-sólo-anfitrión-hostonly"><span class="header-section-number">2.3.3</span> Modo Sólo anfitrión (Host‑Only)</a></li>
-  <li><a href="#red-nat-nat-network" id="toc-red-nat-nat-network" class="nav-link" data-scroll-target="#red-nat-nat-network"><span class="header-section-number">2.3.4</span> Red NAT (NAT Network)</a></li>
-  <li><a href="#red-interna-internal-network" id="toc-red-interna-internal-network" class="nav-link" data-scroll-target="#red-interna-internal-network"><span class="header-section-number">2.3.5</span> Red Interna (Internal Network)</a></li>
+  <li><a href="#red-nat-nat-network" id="toc-red-nat-nat-network" class="nav-link" data-scroll-target="#red-nat-nat-network"><span class="header-section-number">2.3.3</span> Red NAT (NAT Network)</a></li>
+  <li><a href="#red-interna-internal-network" id="toc-red-interna-internal-network" class="nav-link" data-scroll-target="#red-interna-internal-network"><span class="header-section-number">2.3.4</span> Red Interna (Internal Network)</a></li>
   </ul></li>
   <li><a href="#tabla-comparativa-de-modos-de-red-en-virtualbox" id="toc-tabla-comparativa-de-modos-de-red-en-virtualbox" class="nav-link" data-scroll-target="#tabla-comparativa-de-modos-de-red-en-virtualbox"><span class="header-section-number">2.4</span> Tabla comparativa de modos de red en VirtualBox</a></li>
   </ul></li>
@@ -525,6 +524,7 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
 <li>Solo permite que la VM acceda a Internet a través del host</li>
 <li>No permite conexiones entrantes hacia la VM</li>
 </ul>
+<p><img src="images/NAT.png" class="img-fluid"></p>
 </section>
 <section id="adaptador-puente-bridged" class="level3" data-number="2.3.2">
 <h3 data-number="2.3.2" class="anchored" data-anchor-id="adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged )</h3>
@@ -549,9 +549,7 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
             │   IP: 192.168.1.34           │
             │  (como otro equipo más)      │
             └──────────────────────────────┘</code></pre>
-</section>
-<section id="modo-sólo-anfitrión-hostonly" class="level3" data-number="2.3.3">
-<h3 data-number="2.3.3" class="anchored" data-anchor-id="modo-sólo-anfitrión-hostonly"><span class="header-section-number">2.3.3</span> Modo Sólo anfitrión (Host‑Only)</h3>
+<p><img src="images/Adaptador Puente.png" class="img-fluid"> ### Modo Sólo anfitrión (Host‑Only)</p>
 <p>Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos. - La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x). - El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red. - Puede comunicarse solo con el host y con otras VM en su misma red. - No tiene acceso a la red física ni a Internet (a menos que se combine con NAT). - Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.</p>
 <pre><code>                         ┌──────────────────────────────────────┐
                          │          Ordenador anfitrión         │
@@ -579,9 +577,10 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
             │  Se comunica con VM1 │
             │  No ve a VM3         │
             └──────────────────────┘</code></pre>
+<p><img src="images/Host Only.png" class="img-fluid"></p>
 </section>
-<section id="red-nat-nat-network" class="level3" data-number="2.3.4">
-<h3 data-number="2.3.4" class="anchored" data-anchor-id="red-nat-nat-network"><span class="header-section-number">2.3.4</span> Red NAT (NAT Network)</h3>
+<section id="red-nat-nat-network" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="red-nat-nat-network"><span class="header-section-number">2.3.3</span> Red NAT (NAT Network)</h3>
 <p>La Red NAT es un modo de red diferente al NAT normal. En lugar de crear una red privada aislada para cada máquina virtual, VirtualBox crea una red virtual compartida, donde varias VMs pueden comunicarse entre sí como si estuvieran en una misma LAN virtual, pero sin comunicarse con el host ni con la red física.</p>
 <p>En este modo, VirtualBox genera una red interna (por ejemplo, 10.0.2.0/24 o 10.0.3.0/24) y un router virtual que actúa como puerta de enlace para todas las máquinas conectadas a esa Red NAT. Todas las VMs reciben una IP del mismo rango mediante un servidor DHCP interno.</p>
 <p>A diferencia del NAT normal:</p>
@@ -616,9 +615,10 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
        │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
        │ No ven al host │  │ No ven al host │  │ No ven al host │
        └────────────────┘  └────────────────┘  └────────────────┘</code></pre>
+<p><img src="images/Red NAT.png" class="img-fluid"></p>
 </section>
-<section id="red-interna-internal-network" class="level3" data-number="2.3.5">
-<h3 data-number="2.3.5" class="anchored" data-anchor-id="red-interna-internal-network"><span class="header-section-number">2.3.5</span> Red Interna (Internal Network)</h3>
+<section id="red-interna-internal-network" class="level3" data-number="2.3.4">
+<h3 data-number="2.3.4" class="anchored" data-anchor-id="red-interna-internal-network"><span class="header-section-number">2.3.4</span> Red Interna (Internal Network)</h3>
 <p>El modo Red Interna crea una red completamente aislada dentro de VirtualBox, donde solo las máquinas virtuales conectadas a esa misma red interna pueden comunicarse entre sí. No hay acceso al host, ni a la red física, ni a Internet.</p>
 <p>A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas. Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente: - Envía una petición DHCP para pedir una dirección IP. - Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida. - Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango:169.254.0.0 – 169.254.255.255. Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: 169.254.5.246 Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque: - no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA), - no permiten comunicación con el host, - no permiten salir a Internet. Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.</p>
 <p>Este modo es ideal para laboratorios cerrados, entornos de pruebas, simulaciones de redes o prácticas donde necesitas varias máquinas comunicándose entre sí sin ningún tipo de exposición externa.</p>
@@ -644,6 +644,7 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
          │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
          │ No ven al host │  │ No ven al host │  │ No ven al host │
          └────────────────┘  └────────────────┘  └────────────────┘</code></pre>
+<p><img src="images/Red Interna.png" class="img-fluid"></p>
 </section>
 </section>
 <section id="tabla-comparativa-de-modos-de-red-en-virtualbox" class="level2 page-columns page-full" data-number="2.4">
@@ -985,10 +986,8 @@ https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-wi
 </ul></li>
 </ol>
 <p>4.1. Abrir la terminal y actualizar el repositorio para evitar errores de compilación:</p>
-<pre><code>``` bash
-sudo apt update
-sudo apt upgrade
-```</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>4.2. Instalar bzip2</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install bzip2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>4.3. Volver al explorador y ejecutar nuevamente <code>autorun.sh.</code></p>
