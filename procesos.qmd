@@ -1,0 +1,478 @@
+---
+title: "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+---
+
+# Definiciones
+
+## Procesos
+
+**Un proceso es un programa en ejecución**.
+
+Un proceso incluye:
+
+-   El código del programa.
+-   La memoria que usa (variables, datos, pila, heap).
+-   Sus recursos asignados (CPU, archivos abiertos, puertos, etc.).
+-   Su estado (ejecutándose, esperando, detenido).
+
+Cada proceso tiene un PID (Process ID) único. Ejemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL.
+
+Puede crear subprocesos o threads.
+
+### Subprocesos:
+
+Dentro de cada proceso existen subprocesos (threads), que son las unidadades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario....
+
+El sistema operativo los gestiona mediante un planificador que reparte CPU.
+
+## Servicios
+
+**Un servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas**.
+
+-   Se inician automáticamente al arrancar el sistema (o bajo demanda).
+-   No requieren interacción del usuario.
+-   Suelen ser críticos para el funcionamiento del sistema.
+
+Ejemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).
+
+En Windows: se llaman Servicios. En Linux: se gestionan con `systemd` y se llaman daemons (terminan en "d", como sshd).
+
+## Tareas
+
+**Una tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar**. Una tarea puede conllevar procesos y servicios.
+
+El administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.
+
+Ejemplos: programar copias de seguridad.
+
+## Procesos en Segundo Plano
+
+Son procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.
+
+Pueden ser servicios, demonios o procesos lanzados manualmente.
+
+Ejemplos: sincronización de OneDrive.exe
+
+Un proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).
+
+## Servicios del sistema.
+
+Son los pilares invisibles del SO. Los servicios son procesos especiales que: - Se inician antes de que el usuario inicie sesión - no tienen interfaz gráfica visible - Se administran mediante la Consola de Servicios `services.msc` - Realizan funciones críticas del sistema
+
+**Todos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.**
+
+------------------------------------------------------------------------
+
+::: summary
+**Proceso:** programa en ejecución con recursos asignados.
+
+**Servicio**: proceso del sistema que corre en segundo plano y ofrece funciones.
+
+**Tarea:** unidad de trabajo (proceso, hilo o trabajo programado).
+
+**Proceso en segundo plano**: proceso sin interacción directa con el usuario.
+:::
+
+# Técnicas de Configuración y Ajustes de Sistemas.
+
+## Rendimiento de los Sistemas.
+
+**El rendimiento de un sistema informático es la capacidad de un equipo o servidor para ejecutar sus tareas de forma eficiente, estable y dentro de unos tiempos aceptables**. No debemos confundir rendimiento con "tener un procesador potente": un sistema puede tener una CPU moderna y funcionar mal si tiene poca RAM, disco saturado o procesos mal configurados. Los recurosos principales que debemos observar son CPU, Memoria RAM, Disco, Red, Procesos/Servicios y Sistemas de Archivos.
+
++-------------------+---------------------------------+-----------------------------------------------------+
+| Recurso           | Qué representa                  | Problemas típicos                                   |
++===================+=================================+=====================================================+
+| **CPU**           | Capacidad de cálculo            | Procesos al 100%, hilos bloqueados                  |
++-------------------+---------------------------------+-----------------------------------------------------+
+| **RAM**           | Espacio de trabajo              | Falta de memoria, uso excesivo de swap              |
++-------------------+---------------------------------+-----------------------------------------------------+
+| **Disco**         | Lectura y escritura             | Cola de disco, latencia alta, poco espacio          |
++-------------------+---------------------------------+-----------------------------------------------------+
+| **Red**           | Comunicación                    | Saturación, pérdida de paquetes, errores DNS        |
++-------------------+---------------------------------+-----------------------------------------------------+
+| **Procesos**      | Programas en ejecución          | Fugas de memoria, procesos zombies                  |
++-------------------+---------------------------------+-----------------------------------------------------+
+| **Sis. Archivos** | Organización del almacenamiento | Fragmentación, permisos incorrectos, logs excesivos |
++-------------------+---------------------------------+-----------------------------------------------------+
+
+## Tipos de situaciones de rendimiento
+
+-   **Uso alto normal**: Ej. Ina copia de seguridad programada consumiendo disco de forma esperada.
+-   **Uso alto anómalo**: Ej. Un proceso bloqueado consumiendo CPU indefinidadmente sin motivo
+-   **Saturación**: El recurso no solo se usa mucho, sino que ya no responde con fluidez
+-   **Cuello de botella**: Recurso qeu limita el rendimiento global del sistema completeo.
+
+## Herramientas de Monitorización del Sistema
+
+Windows:
+
+-   Administrador de tareas
+-   Monitor de recursos (resmon ***resource monitor***)
+-   Monitor de rendimiento (perfmo ***performance monitor***) contadores en tiempo real y datos históricos.
+-   Visor de eventos (`eventvwr.msc`)/PowerSeheel/ Sysinternals
+
+### Método general de diagnóstico
+
+Para resolver problemas de rendimiento conviene seguir un método.
+
+\[ OBSERVAR \] → \[ IDENTIFICAR \] → \[ LOCALIZAR \] → \[ DIFERENCIAR \] → \[ APLICAR \]
+
+Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.
+
+### Métricas a observar
+
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| Métrica               | Síntomas                       | Causas típicas               | Qué mirar                     | Herramientas                                               |
++=======================+================================+==============================+===============================+============================================================+
+| **CPU (Procesador)**  | -   Sistema lento              | -   Consultas sin índices    | -   Uso por proceso           | `top`, `htop`, `atop`, `mpstat`, `pidstat`\                |
+|                       |                                |                              |                               | *Win:* Task Manager, Res. Monitor                          |
+|                       | -   Procesos al 100% o picos   | -   Hilos bloqueados o loops | -   Load Average              |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       |                                | -   Exceso de concurrencia   | -   Run Queue                 |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       |                                |                              | -   \% por núcleo             |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| **RAM (Memoria)**     | -   Sistema usando swap        | -   Fugas de memoria         | -   Memoria libre/ocupada     | `free -h`, `vmstat`, `sar -r`, `smem`\                     |
+|                       |                                |                              |                               | *Win:* Resource Monitor, RAMMap                            |
+|                       | -   Procesos matados (OOM)     | -   Buffers/caches altos     | -   Swap in/out               |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Lentitud general           | -   Demasiados procesos      | -   Page Faults               |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| **Disco (I/O)**       | -   Consultas muy lentas       | -   Latencia alta            | -   IOPS y Latencia (ms)      | `iostat`, `iotop`, `dstat`, `df`, `fio`\                   |
+|                       |                                |                              |                               | *Win:* DiskSpd, Resource Monitor                           |
+|                       | -   Tiempos de respuesta altos | -   Cola de disco saturada   | -   Cola de disco (`await`)   |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Procesos esperando I/O     | -   Poco espacio             | -   Espacio disponible        |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       |                                | -   Logs descontrolados      |                               |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| **Procesos**          | -   Sistema "atascado"         | -   Fugas de memoria         | -   Estados (R/S/Z)           | `ps`, `pstree`, `lsof`, `systemctl`\                       |
+|                       |                                |                              |                               | *Win:* strace, procmon                                     |
+|                       | -   Procesos que no terminan   | -   Procesos zombies         | -   Consumo por proceso       |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Consumo excesivo           | -   Deadlocks o bloqueos     | -   Árbol de dependencias     |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| **Red**               | -   Conexiones caídas/lentas   | -   Saturación de ancho      | -   RTT (ping)                | `ping`, `iperf3`, `mtr`, `ss`, `netstat`, `tcpdump`, `dig` |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Timeouts en BBDD           | -   Pérdida de paquetes      | -   Paquetes perdidos         |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Fallos de replicación      | -   DNS lento o fallando     | -   Errores RX/TX             |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       |                                |                              | -   Velocidad real vs teórica |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| **Sist. de Archivos** | -   No se crean archivos       | -   Fragmentación alta       | -   Inodos y espacio libre    | `df -h`, `df -i`, `du -sh`, `find`\                        |
+|                       |                                |                              |                               | *Win:* WinDirStat, TreeSize                                |
+|                       | -   Errores de permisos        | -   Inodos agotados          | -   Crecimiento de logs       |                                                            |
+|                       |                                |                              |                               |                                                            |
+|                       | -   Rendimiento pobre          | -   Logs gigantes            |                               |                                                            |
++-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+
+### Modelos predictivos y análisis de tendencias
+
+Un modelo predictivo en administración de sistemas consiste en observar datos históricos, detectar patrones y anticiparse a problemas. El objectivo es pasar de una administración reactiva a una administración preventiva. Por ejemplo saber cuánto crece el alamacenamiento a diario y preveer cuándo necesitaremos más.
+
+-   **Linea base** (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.
+-   **Umbral**: valor a partir del cual se genera aviso.
+-   **Tendencia**: evolución de una métrica en el tiempo.
+-   **Estacionalidad**: patrón que se repite a lo largo de determinados periodos de tiempo.
+-   **Capacidad**: recursos disponibles para absorver la demanda actual y futura.
+
+Data collector Sets, Get-Counter, logman, WPR/WPA para tendencias y accounting.
+
+### Planes de pruebas de preproducción
+
+Un entorno de preproducción intenta parecerse lo máximo posible a producción, pero sin afectar a usuarios reales ni datos críticos. Su objetivo es validar cambios antes de aplicarlos en producción.
+
+Ejemplos de cambios que deben probarse en preproducción:
+
+-   SO: Instalación, actualización del kernel, parches de seguridad.
+
+-   Bases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.
+
+-   Red y almacenamiento: Cambio de configuración de red, migración de almacenamiento.
+
+-   Aplicaciones: cambio de versión, modificación de políticas de seguridad.
+
+Estructura del plan de pruebas:
+
+```{mermaid}
+
+flowchart LR
+    A([🎯 1.<br>Objetivo]) --> B([🔭 2.<br>Alcance])
+    B --> C([🖥️ 3.<br>Entorno])
+    C --> D([💾 4.<br>Datos de<br>Prueba])
+    D --> E([🛠️ 5.<br>Herramientas])
+    E --> F([📊 6.<br>Métricas])
+    F --> G([📝 7.<br>Escenarios])
+    G --> H([✅ 8.<br>Criterios de<br>Aceptación])
+    H --> I([🔙 9.<br>Reversión])
+    
+    %% Estilos para mantener los tonos de tu web
+    style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px
+    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px
+```
+
+#### Ejemplo de Plan de Pruebas: Ampliación de Memoria en SGBD
+
+1.  🎯 **Objetivo:** Validar que el aumento del parámetro de límite de memoria (`MEM_LIMIT`) asignado al motor de base de datos mejora el tiempo de respuesta de las consultas complejas sin provocar inestabilidad en el sistema operativo del servidor.
+
+2.  🔭 **Alcance:** Las pruebas se limitarán a los nodos de procesamiento de base de datos en preproducción. Se excluyen pruebas de latencia de red y validación de la integridad del almacenamiento físico en disco.
+
+3.  🖥️ **Entorno:** Clúster de preproducción con la misma versión del SGBD y sistema operativo (Linux) que el entorno de producción. Los recursos hardware son escalados a la mitad (CPU/RAM) respecto a producción, por lo que las métricas se evaluarán de forma proporcional.
+
+4.  💾 **Datos de Prueba:** Tablas externas particionadas que simulen el entorno real (por ejemplo, registros históricos de tráfico o telemetría) con un volumen mínimo de 10 millones de filas. Los datos estarán ofuscados y no contendrán información sensible.
+
+5.  🛠️ **Herramientas:** \* **Para carga:** Scripts SQL automatizados lanzados desde terminal.
+
+    -   **Para monitorización de OS:** `top` (CPU), `free -h` (RAM) y `vmstat`.
+    -   **Para SGBD:** Panel de administración del clúster y logs de ejecución de consultas.
+
+6.  📊 **Métricas a observar:** \* Tiempo total de ejecución de la consulta (`duration`).
+
+    -   Picos de consumo de RAM por el proceso de la base de datos (GB).
+    -   Uso de memoria Swap en el sistema operativo (MB/GB).
+    -   Número de fallos o bloqueos por falta de memoria (Errores OOM - *Out of Memory*).
+
+7.  📝 **Escenarios:** \* **Escenario 1 (Línea base):** Lanzar un set de 5 consultas pesadas (que incluyan múltiples `JOIN` y `GROUP BY`) con la configuración original y anotar tiempos.
+
+    -   **Escenario 2 (Carga normal):** Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.
+    -   **Escenario 3 (Prueba de estrés):** Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.
+
+8.  ✅ **Criterios de Aceptación:** El cambio se considerará válido para pasar a producción si:
+
+    -   El tiempo de ejecución de las consultas se reduce en al menos un 15%.
+    -   El sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.
+    -   El uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.
+
+9.  🔙 **Reversión (Rollback):** En caso de fallo o inestabilidad, se ejecutará un script preconfigurado que:
+
+    1.  Restaura el archivo de configuración `.conf` desde el backup generado antes de la prueba.
+    2.  Fuerza un reinicio seguro de los servicios de la base de datos.
+    3.  Ejecuta una consulta de prueba rápida (`SELECT 1`) para verificar que el servicio ha levantado correctamente.
+
+### Herramientas en Windows
+
+#### Administrador de tareas. (Task Manager)
+
+El Administrador de tareas de Windows es una herramienta integrada que permite supervisar y gestionar procesos, rendimiento, usuarios y servicios del sistema. Ofrece vistas simplificadas y técnicas, gráficos en tiempo real y opciones de control como finalizar procesos, ajustar prioridades o gestionar el inicio del sistema. Es esencial para diagnóstico rápido y resolución de problemas en entornos de administración de sistemas y bases de datos.
+
+##### Supervisión de procesos
+
+Permite ver qué programas y servicios están en ejecución, cuánto consumen y quién los ejecuta. Incluye dos vistas:
+
+Procesos → vista simplificada y amigable. Usa la descripción del archivo. Puede estar traducido. Puede agrupar procesos. No es fiable para scripting.
+
+Detalles → vista técnica con información precisa (PID, usuario, ruta, línea de comandos). Usa el nombre real del ejecutable. No está traducido. No está agrupado. Es el que debes usar para diagnóstico y PowerShell.
+
+| Ejecutable real     | Nombre en "Procesos"                 |
+|---------------------|--------------------------------------|
+| `svchost.exe`       | Host de servicio: Sistema local      |
+| `chrome.exe`        | Google Chrome                        |
+| `explorer.exe`      | Explorador de Windows                |
+| `RuntimeBroker.exe` | Administrador de tiempo de ejecución |
+
+##### Análisis del rendimiento
+
+La pestaña Rendimiento muestra gráficos en tiempo real de:
+
+-   CPU
+-   Memoria RAM
+-   Disco
+-   Red
+-   GPU
+
+Es útil para detectar cuellos de botella o comportamientos anómalos.
+
+##### Gestión de aplicaciones
+
+Permite:
+
+-   Finalizar procesos que no responden
+-   Cambiar la prioridad de un proceso
+-   Abrir la ubicación del archivo
+-   Ver dependencias y servicios asociados
+
+##### Control de inicio del sistema
+
+La pestaña Aplicaciones de arranque permite habilitar o deshabilitar programas que se ejecutan al arrancar Windows, ayudando a mejorar el tiempo de arranque y reducir carga innecesaria.
+
+##### Supervisión de usuarios
+
+En entornos multiusuario, muestra:
+
+-   Sesiones activas
+-   Procesos asociados a cada usuario
+-   Consumo de recursos por sesión
+
+##### Gestión de servicios
+
+La pestaña Servicios permite:
+
+-   Ver servicios en ejecución
+-   Iniciar o detener servicios
+-   Abrir la consola de servicios avanzada
+
+------------------------------------------------------------------------
+
+##### Exportar datos del Administrador de Tareas con PowerShell
+
+El Administrador de Tareas de Windows (Task Manager) es una herramienta excelente para la monitorización en tiempo real, pero tiene una gran limitación: **no permite exportar sus datos directamente** a un archivo para analizarlos a posteriori.
+
+Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Administrador de Tareas no saca su información de un solo sitio, sino que mezcla datos de distintas capas del sistema operativo. Para imitarlo en la consola, necesitamos combinar dos fuentes de información:
+
+1.  **`Get-Process`:** Es el comando básico de PowerShell. Nos da información en tiempo real muy rápida (como el uso actual de CPU y Memoria), pero es "superficial". No sabe quién ejecutó el proceso ni con qué parámetros.
+
+2.  **WMI (Windows Management Instrumentation):** Es la base de datos interna y profunda de Windows. Contiene absolutamente todos los metadatos de administración del sistema. Tarda un poco más en consultarse, pero nos da el "chisme" completo: qué usuario lanzó el proceso, la ruta exacta del ejecutable y la línea de comandos utilizada.
+
+**Equivalencia de Columnas: Task Manager vs PowerShell**
+
+Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica:
+
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Columna en Task Manager              | Propiedad PowerShell equivalente | Fuente (WMI / Get-Process / cálculo) | Notas importantes                              |
++======================================+==================================+======================================+================================================+
+| Name                                 | Name                             | Win32_Process                        | Coincide 1:1                                   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| PID                                  | ProcessId                        | Win32_Process                        | Coincide 1:1                                   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Estado                               | ExecutionState                   | Win32_Process                        | Suele venir vacío en Windows modernos          |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Nombre de usuario                    | GetOwner().User + Domain         | Win32_Process (método GetOwner)      | Solo disponible en WMI clásico                 |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| CPU (tiempo acumulado)               | CPU                              | Get-Process                          | No es %CPU, es tiempo total de CPU             |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| CPU (%)                              | Calculado con Get-Counter        | Cálculo manual                       | Task Manager usa muestreo interno              |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Memoria (espacio de trabajo privado) | PrivateMemorySize64              | Get-Process                          | **Esta es la que coincide con Task Manager**   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Working Set (Memoria física total)   | WorkingSet / WorkingSet64        | Get-Process                          | No es "privada", incluye memoria compartida    |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| WorkingSetSize (WMI)                 | WorkingSetSize                   | Win32_Process                        | **NO coincide con Task Manager**               |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Descripción                          | Description                      | Win32_Process                        | Depende del ejecutable                         |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Línea de comandos                    | CommandLine                      | Win32_Process                        | Puede requerir permisos elevados               |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Ruta de acceso de imagen             | ExecutablePath                   | Win32_Process                        | Puede venir vacío en procesos del sistema      |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Número de hilos                      | ThreadCount                      | Win32_Process                        | Coincide                                       |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Uso de archivo de paginación         | PageFileUsage                    | Win32_Process                        | No coincide con "Commit size" del Task Manager |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Memoria virtual                      | VirtualSize                      | Win32_Process                        | No coincide con "Memoria reservada"            |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+
+Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
+
+El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
+
+``` bash
+# Obtenemos los metadatos profundos de todos los procesos vía WMI
+Get-WmiObject Win32_Process | ForEach-Object { 
+    
+    # Extraemos el propietario (Usuario) del proceso actual
+    $owner = $_.GetOwner() 
+    
+    # Buscamos el consumo en tiempo real del proceso actual. 
+    # SilentlyContinue evita errores si el proceso se cierra justo en este milisegundo.
+    $proc = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue          
+    
+    # Construimos nuestro objeto a medida combinando ambas fuentes
+    [PSCustomObject]@{     
+        Name                     = $_.Name     
+        PID                      = $_.ProcessId     
+        Estado                   = $_.ExecutionState     
+        "Nombre de usuario"      = if ($owner.User) { "$($owner.Domain)\$($owner.User)" } else { "SYSTEM" }     
+        CPU                      = if ($proc) { $proc.CPU } else { $null }     
+        "Memoria Privada (KB)"   = if ($proc) { [math]::Round($proc.PrivateMemorySize64 / 1KB) } else { $null }     
+        Descripcion              = $_.Description     
+        "Línea de comandos"      = $_.CommandLine     
+        "Ruta de imagen"         = $_.ExecutablePath 
+    }
+} | Export-Csv "d:\procesos_detallados.csv" -NoTypeInformation -Encoding UTF8
+```
+
+#### Monitor de Servicios services.msc
+
+`services.msc` es la consola gráfica de Windows para administrar los servicios del sistema. Permite ver, iniciar, detener, configurar y diagnosticar servicios que se ejecutan en segundo plano. Es una herramienta esencial para administradores de sistemas, DBA y técnicos de soporte.
+
+![](/images/services.png)
+
+##### Ver el estado de los servicios
+
+Muestra todos los servicios instalados en el sistema, con información clave:
+
+-   Nombre del servicio
+-   Nombre para mostrar
+-   Estado (En ejecución, Detenido, Pausado)
+-   Tipo de inicio (Automático, Manual, Deshabilitado)
+-   Cuenta con la que se ejecuta
+-   Descripción del servicio
+
+Es la vista más completa para entender qué componentes están activos en el sistema.
+
+##### Iniciar, detener y reiniciar servicios
+
+Permite controlar directamente el ciclo de vida de un servicio:
+
+-   Iniciar un servicio detenido
+
+-   Detener un servicio en ejecución
+
+-   Reiniciar servicios que fallan o se quedan bloqueados
+
+-   Pausar / Reanudar (solo algunos servicios lo permiten)
+
+Esto es crítico para diagnosticar problemas de bases de datos, web servers, colas de mensajes, etc.
+
+##### Configurar el tipo de inicio
+
+Puedes definir cómo se comporta un servicio al arrancar Windows:
+
+-   Automático → se inicia con el sistema
+
+-   Automático (inicio retrasado) → se inicia después del arranque
+
+-   Manual → solo se inicia cuando lo solicita una aplicación
+
+-   Deshabilitado → no puede iniciarse
+
+Esto ayuda a optimizar el arranque y evitar cargas innecesarias.
+
+##### Ver dependencias
+
+Cada servicio puede depender de otros. La consola permite ver:
+
+Servicios de los que depende
+
+Servicios que dependen de él
+
+Esto es muy útil para evitar errores al detener servicios críticos.
+
+##### Diagnóstico y resolución de problemas
+
+services.msc permite:
+
+-   Ver si un servicio falla al iniciar
+
+-   Revisar la cuenta de ejecución (LocalSystem, NetworkService, usuario específico)
+
+-   Detectar servicios deshabilitados que deberían estar activos
+
+-   Identificar servicios que consumen recursos en exceso (combinado con Task Manager)
+
+-   Permite verificar si un servicio crítico está detenido o fallando.
+
+::: important
+##### Por qué es importante para un DBA o SysAdmin
+
+-   Muchas bases de datos (SQL Server, MySQL, PostgreSQL, Oracle) se ejecutan como servicios.
+
+-   Permite reiniciar instancias sin reiniciar el servidor.
+
+-   Ayuda a diagnosticar problemas de arranque, permisos o dependencias.
+
+-   Es clave para entornos con múltiples servicios: IIS, colas MSMQ, agentes de backup, antivirus, etc.
+:::
+
+## 

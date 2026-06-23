@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Procesos, Servicios, Tareas y Procesos en Segundo Plano – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a957552743cf229cecd72dbee48e5bde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#definiciones" id="toc-definiciones" class="nav-link active" data-scroll-target="#definiciones"><span class="header-section-number">1</span> Definiciones</a>
+  <ul class="collapse">
+  <li><a href="#procesos" id="toc-procesos" class="nav-link" data-scroll-target="#procesos"><span class="header-section-number">1.1</span> Procesos</a>
+  <ul class="collapse">
+  <li><a href="#subprocesos" id="toc-subprocesos" class="nav-link" data-scroll-target="#subprocesos"><span class="header-section-number">1.1.1</span> Subprocesos:</a></li>
+  </ul></li>
+  <li><a href="#servicios" id="toc-servicios" class="nav-link" data-scroll-target="#servicios"><span class="header-section-number">1.2</span> Servicios</a></li>
+  <li><a href="#tareas" id="toc-tareas" class="nav-link" data-scroll-target="#tareas"><span class="header-section-number">1.3</span> Tareas</a></li>
+  <li><a href="#procesos-en-segundo-plano" id="toc-procesos-en-segundo-plano" class="nav-link" data-scroll-target="#procesos-en-segundo-plano"><span class="header-section-number">1.4</span> Procesos en Segundo Plano</a></li>
+  <li><a href="#servicios-del-sistema." id="toc-servicios-del-sistema." class="nav-link" data-scroll-target="#servicios-del-sistema."><span class="header-section-number">1.5</span> Servicios del sistema.</a></li>
+  </ul></li>
+  <li><a href="#técnicas-de-configuración-y-ajustes-de-sistemas." id="toc-técnicas-de-configuración-y-ajustes-de-sistemas." class="nav-link" data-scroll-target="#técnicas-de-configuración-y-ajustes-de-sistemas."><span class="header-section-number">2</span> Técnicas de Configuración y Ajustes de Sistemas.</a>
+  <ul class="collapse">
+  <li><a href="#rendimiento-de-los-sistemas." id="toc-rendimiento-de-los-sistemas." class="nav-link" data-scroll-target="#rendimiento-de-los-sistemas."><span class="header-section-number">2.1</span> Rendimiento de los Sistemas.</a></li>
+  <li><a href="#tipos-de-situaciones-de-rendimiento" id="toc-tipos-de-situaciones-de-rendimiento" class="nav-link" data-scroll-target="#tipos-de-situaciones-de-rendimiento"><span class="header-section-number">2.2</span> Tipos de situaciones de rendimiento</a></li>
+  <li><a href="#herramientas-de-monitorización-del-sistema" id="toc-herramientas-de-monitorización-del-sistema" class="nav-link" data-scroll-target="#herramientas-de-monitorización-del-sistema"><span class="header-section-number">2.3</span> Herramientas de Monitorización del Sistema</a>
+  <ul class="collapse">
+  <li><a href="#método-general-de-diagnóstico" id="toc-método-general-de-diagnóstico" class="nav-link" data-scroll-target="#método-general-de-diagnóstico"><span class="header-section-number">2.3.1</span> Método general de diagnóstico</a></li>
+  <li><a href="#métricas-a-observar" id="toc-métricas-a-observar" class="nav-link" data-scroll-target="#métricas-a-observar"><span class="header-section-number">2.3.2</span> Métricas a observar</a></li>
+  <li><a href="#modelos-predictivos-y-análisis-de-tendencias" id="toc-modelos-predictivos-y-análisis-de-tendencias" class="nav-link" data-scroll-target="#modelos-predictivos-y-análisis-de-tendencias"><span class="header-section-number">2.3.3</span> Modelos predictivos y análisis de tendencias</a></li>
+  <li><a href="#planes-de-pruebas-de-preproducción" id="toc-planes-de-pruebas-de-preproducción" class="nav-link" data-scroll-target="#planes-de-pruebas-de-preproducción"><span class="header-section-number">2.3.4</span> Planes de pruebas de preproducción</a></li>
+  <li><a href="#herramientas-en-windows" id="toc-herramientas-en-windows" class="nav-link" data-scroll-target="#herramientas-en-windows"><span class="header-section-number">2.3.5</span> Herramientas en Windows</a></li>
+  </ul></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"><span class="header-section-number">2.4</span> </a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Procesos, Servicios, Tareas y Procesos en Segundo Plano</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="definiciones" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Definiciones</h1>
+<section id="procesos" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="procesos"><span class="header-section-number">1.1</span> Procesos</h2>
+<p><strong>Un proceso es un programa en ejecución</strong>.</p>
+<p>Un proceso incluye:</p>
+<ul>
+<li>El código del programa.</li>
+<li>La memoria que usa (variables, datos, pila, heap).</li>
+<li>Sus recursos asignados (CPU, archivos abiertos, puertos, etc.).</li>
+<li>Su estado (ejecutándose, esperando, detenido).</li>
+</ul>
+<p>Cada proceso tiene un PID (Process ID) único. Ejemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL.</p>
+<p>Puede crear subprocesos o threads.</p>
+<section id="subprocesos" class="level3" data-number="1.1.1">
+<h3 data-number="1.1.1" class="anchored" data-anchor-id="subprocesos"><span class="header-section-number">1.1.1</span> Subprocesos:</h3>
+<p>Dentro de cada proceso existen subprocesos (threads), que son las unidadades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario….</p>
+<p>El sistema operativo los gestiona mediante un planificador que reparte CPU.</p>
+</section>
+</section>
+<section id="servicios" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="servicios"><span class="header-section-number">1.2</span> Servicios</h2>
+<p><strong>Un servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas</strong>.</p>
+<ul>
+<li>Se inician automáticamente al arrancar el sistema (o bajo demanda).</li>
+<li>No requieren interacción del usuario.</li>
+<li>Suelen ser críticos para el funcionamiento del sistema.</li>
+</ul>
+<p>Ejemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).</p>
+<p>En Windows: se llaman Servicios. En Linux: se gestionan con <code>systemd</code> y se llaman daemons (terminan en “d”, como sshd).</p>
+</section>
+<section id="tareas" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="tareas"><span class="header-section-number">1.3</span> Tareas</h2>
+<p><strong>Una tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar</strong>. Una tarea puede conllevar procesos y servicios.</p>
+<p>El administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.</p>
+<p>Ejemplos: programar copias de seguridad.</p>
+</section>
+<section id="procesos-en-segundo-plano" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="procesos-en-segundo-plano"><span class="header-section-number">1.4</span> Procesos en Segundo Plano</h2>
+<p>Son procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.</p>
+<p>Pueden ser servicios, demonios o procesos lanzados manualmente.</p>
+<p>Ejemplos: sincronización de OneDrive.exe</p>
+<p>Un proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).</p>
+</section>
+<section id="servicios-del-sistema." class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="servicios-del-sistema."><span class="header-section-number">1.5</span> Servicios del sistema.</h2>
+<p>Son los pilares invisibles del SO. Los servicios son procesos especiales que: - Se inician antes de que el usuario inicie sesión - no tienen interfaz gráfica visible - Se administran mediante la Consola de Servicios <code>services.msc</code> - Realizan funciones críticas del sistema</p>
+<p><strong>Todos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.</strong></p>
+<hr>
+<div class="summary">
+<p><strong>Proceso:</strong> programa en ejecución con recursos asignados.</p>
+<p><strong>Servicio</strong>: proceso del sistema que corre en segundo plano y ofrece funciones.</p>
+<p><strong>Tarea:</strong> unidad de trabajo (proceso, hilo o trabajo programado).</p>
+<p><strong>Proceso en segundo plano</strong>: proceso sin interacción directa con el usuario.</p>
+</div>
+</section>
+</section>
+<section id="técnicas-de-configuración-y-ajustes-de-sistemas." class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Técnicas de Configuración y Ajustes de Sistemas.</h1>
+<section id="rendimiento-de-los-sistemas." class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="rendimiento-de-los-sistemas."><span class="header-section-number">2.1</span> Rendimiento de los Sistemas.</h2>
+<p><strong>El rendimiento de un sistema informático es la capacidad de un equipo o servidor para ejecutar sus tareas de forma eficiente, estable y dentro de unos tiempos aceptables</strong>. No debemos confundir rendimiento con “tener un procesador potente”: un sistema puede tener una CPU moderna y funcionar mal si tiene poca RAM, disco saturado o procesos mal configurados. Los recurosos principales que debemos observar son CPU, Memoria RAM, Disco, Red, Procesos/Servicios y Sistemas de Archivos.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 18%">
+<col style="width: 31%">
+<col style="width: 49%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Recurso</th>
+<th>Qué representa</th>
+<th>Problemas típicos</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>CPU</strong></td>
+<td>Capacidad de cálculo</td>
+<td>Procesos al 100%, hilos bloqueados</td>
+</tr>
+<tr class="even">
+<td><strong>RAM</strong></td>
+<td>Espacio de trabajo</td>
+<td>Falta de memoria, uso excesivo de swap</td>
+</tr>
+<tr class="odd">
+<td><strong>Disco</strong></td>
+<td>Lectura y escritura</td>
+<td>Cola de disco, latencia alta, poco espacio</td>
+</tr>
+<tr class="even">
+<td><strong>Red</strong></td>
+<td>Comunicación</td>
+<td>Saturación, pérdida de paquetes, errores DNS</td>
+</tr>
+<tr class="odd">
+<td><strong>Procesos</strong></td>
+<td>Programas en ejecución</td>
+<td>Fugas de memoria, procesos zombies</td>
+</tr>
+<tr class="even">
+<td><strong>Sis. Archivos</strong></td>
+<td>Organización del almacenamiento</td>
+<td>Fragmentación, permisos incorrectos, logs excesivos</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="tipos-de-situaciones-de-rendimiento" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="tipos-de-situaciones-de-rendimiento"><span class="header-section-number">2.2</span> Tipos de situaciones de rendimiento</h2>
+<ul>
+<li><strong>Uso alto normal</strong>: Ej. Ina copia de seguridad programada consumiendo disco de forma esperada.</li>
+<li><strong>Uso alto anómalo</strong>: Ej. Un proceso bloqueado consumiendo CPU indefinidadmente sin motivo</li>
+<li><strong>Saturación</strong>: El recurso no solo se usa mucho, sino que ya no responde con fluidez</li>
+<li><strong>Cuello de botella</strong>: Recurso qeu limita el rendimiento global del sistema completeo.</li>
+</ul>
+</section>
+<section id="herramientas-de-monitorización-del-sistema" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="herramientas-de-monitorización-del-sistema"><span class="header-section-number">2.3</span> Herramientas de Monitorización del Sistema</h2>
+<p>Windows:</p>
+<ul>
+<li>Administrador de tareas</li>
+<li>Monitor de recursos (resmon <strong><em>resource monitor</em></strong>)</li>
+<li>Monitor de rendimiento (perfmo <strong><em>performance monitor</em></strong>) contadores en tiempo real y datos históricos.</li>
+<li>Visor de eventos (<code>eventvwr.msc</code>)/PowerSeheel/ Sysinternals</li>
+</ul>
+<section id="método-general-de-diagnóstico" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="método-general-de-diagnóstico"><span class="header-section-number">2.3.1</span> Método general de diagnóstico</h3>
+<p>Para resolver problemas de rendimiento conviene seguir un método.</p>
+<p>[ OBSERVAR ] → [ IDENTIFICAR ] → [ LOCALIZAR ] → [ DIFERENCIAR ] → [ APLICAR ]</p>
+<p>Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.</p>
+</section>
+<section id="métricas-a-observar" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="métricas-a-observar"><span class="header-section-number">2.3.2</span> Métricas a observar</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 17%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Métrica</th>
+<th>Síntomas</th>
+<th>Causas típicas</th>
+<th>Qué mirar</th>
+<th>Herramientas</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>CPU (Procesador)</strong></td>
+<td><ul>
+<li><p>Sistema lento</p></li>
+<li><p>Procesos al 100% o picos</p></li>
+</ul></td>
+<td><ul>
+<li><p>Consultas sin índices</p></li>
+<li><p>Hilos bloqueados o loops</p></li>
+<li><p>Exceso de concurrencia</p></li>
+</ul></td>
+<td><ul>
+<li><p>Uso por proceso</p></li>
+<li><p>Load Average</p></li>
+<li><p>Run Queue</p></li>
+<li><p>% por núcleo</p></li>
+</ul></td>
+<td><code>top</code>, <code>htop</code>, <code>atop</code>, <code>mpstat</code>, <code>pidstat</code><br>
+<em>Win:</em> Task Manager, Res. Monitor</td>
+</tr>
+<tr class="even">
+<td><strong>RAM (Memoria)</strong></td>
+<td><ul>
+<li><p>Sistema usando swap</p></li>
+<li><p>Procesos matados (OOM)</p></li>
+<li><p>Lentitud general</p></li>
+</ul></td>
+<td><ul>
+<li><p>Fugas de memoria</p></li>
+<li><p>Buffers/caches altos</p></li>
+<li><p>Demasiados procesos</p></li>
+</ul></td>
+<td><ul>
+<li><p>Memoria libre/ocupada</p></li>
+<li><p>Swap in/out</p></li>
+<li><p>Page Faults</p></li>
+</ul></td>
+<td><code>free -h</code>, <code>vmstat</code>, <code>sar -r</code>, <code>smem</code><br>
+<em>Win:</em> Resource Monitor, RAMMap</td>
+</tr>
+<tr class="odd">
+<td><strong>Disco (I/O)</strong></td>
+<td><ul>
+<li><p>Consultas muy lentas</p></li>
+<li><p>Tiempos de respuesta altos</p></li>
+<li><p>Procesos esperando I/O</p></li>
+</ul></td>
+<td><ul>
+<li><p>Latencia alta</p></li>
+<li><p>Cola de disco saturada</p></li>
+<li><p>Poco espacio</p></li>
+<li><p>Logs descontrolados</p></li>
+</ul></td>
+<td><ul>
+<li><p>IOPS y Latencia (ms)</p></li>
+<li><p>Cola de disco (<code>await</code>)</p></li>
+<li><p>Espacio disponible</p></li>
+</ul></td>
+<td><code>iostat</code>, <code>iotop</code>, <code>dstat</code>, <code>df</code>, <code>fio</code><br>
+<em>Win:</em> DiskSpd, Resource Monitor</td>
+</tr>
+<tr class="even">
+<td><strong>Procesos</strong></td>
+<td><ul>
+<li><p>Sistema “atascado”</p></li>
+<li><p>Procesos que no terminan</p></li>
+<li><p>Consumo excesivo</p></li>
+</ul></td>
+<td><ul>
+<li><p>Fugas de memoria</p></li>
+<li><p>Procesos zombies</p></li>
+<li><p>Deadlocks o bloqueos</p></li>
+</ul></td>
+<td><ul>
+<li><p>Estados (R/S/Z)</p></li>
+<li><p>Consumo por proceso</p></li>
+<li><p>Árbol de dependencias</p></li>
+</ul></td>
+<td><code>ps</code>, <code>pstree</code>, <code>lsof</code>, <code>systemctl</code><br>
+<em>Win:</em> strace, procmon</td>
+</tr>
+<tr class="odd">
+<td><strong>Red</strong></td>
+<td><ul>
+<li><p>Conexiones caídas/lentas</p></li>
+<li><p>Timeouts en BBDD</p></li>
+<li><p>Fallos de replicación</p></li>
+</ul></td>
+<td><ul>
+<li><p>Saturación de ancho</p></li>
+<li><p>Pérdida de paquetes</p></li>
+<li><p>DNS lento o fallando</p></li>
+</ul></td>
+<td><ul>
+<li><p>RTT (ping)</p></li>
+<li><p>Paquetes perdidos</p></li>
+<li><p>Errores RX/TX</p></li>
+<li><p>Velocidad real vs teórica</p></li>
+</ul></td>
+<td><code>ping</code>, <code>iperf3</code>, <code>mtr</code>, <code>ss</code>, <code>netstat</code>, <code>tcpdump</code>, <code>dig</code></td>
+</tr>
+<tr class="even">
+<td><strong>Sist. de Archivos</strong></td>
+<td><ul>
+<li><p>No se crean archivos</p></li>
+<li><p>Errores de permisos</p></li>
+<li><p>Rendimiento pobre</p></li>
+</ul></td>
+<td><ul>
+<li><p>Fragmentación alta</p></li>
+<li><p>Inodos agotados</p></li>
+<li><p>Logs gigantes</p></li>
+</ul></td>
+<td><ul>
+<li><p>Inodos y espacio libre</p></li>
+<li><p>Crecimiento de logs</p></li>
+</ul></td>
+<td><code>df -h</code>, <code>df -i</code>, <code>du -sh</code>, <code>find</code><br>
+<em>Win:</em> WinDirStat, TreeSize</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="modelos-predictivos-y-análisis-de-tendencias" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="modelos-predictivos-y-análisis-de-tendencias"><span class="header-section-number">2.3.3</span> Modelos predictivos y análisis de tendencias</h3>
+<p>Un modelo predictivo en administración de sistemas consiste en observar datos históricos, detectar patrones y anticiparse a problemas. El objectivo es pasar de una administración reactiva a una administración preventiva. Por ejemplo saber cuánto crece el alamacenamiento a diario y preveer cuándo necesitaremos más.</p>
+<ul>
+<li><strong>Linea base</strong> (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.</li>
+<li><strong>Umbral</strong>: valor a partir del cual se genera aviso.</li>
+<li><strong>Tendencia</strong>: evolución de una métrica en el tiempo.</li>
+<li><strong>Estacionalidad</strong>: patrón que se repite a lo largo de determinados periodos de tiempo.</li>
+<li><strong>Capacidad</strong>: recursos disponibles para absorver la demanda actual y futura.</li>
+</ul>
+<p>Data collector Sets, Get-Counter, logman, WPR/WPA para tendencias y accounting.</p>
+</section>
+<section id="planes-de-pruebas-de-preproducción" class="level3" data-number="2.3.4">
+<h3 data-number="2.3.4" class="anchored" data-anchor-id="planes-de-pruebas-de-preproducción"><span class="header-section-number">2.3.4</span> Planes de pruebas de preproducción</h3>
+<p>Un entorno de preproducción intenta parecerse lo máximo posible a producción, pero sin afectar a usuarios reales ni datos críticos. Su objetivo es validar cambios antes de aplicarlos en producción.</p>
+<p>Ejemplos de cambios que deben probarse en preproducción:</p>
+<ul>
+<li><p>SO: Instalación, actualización del kernel, parches de seguridad.</p></li>
+<li><p>Bases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.</p></li>
+<li><p>Red y almacenamiento: Cambio de configuración de red, migración de almacenamiento.</p></li>
+<li><p>Aplicaciones: cambio de versión, modificación de políticas de seguridad.</p></li>
+</ul>
+<p>Estructura del plan de pruebas:</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    A([🎯 1.&lt;br&gt;Objetivo]) --&gt; B([🔭 2.&lt;br&gt;Alcance])
+    B --&gt; C([🖥️ 3.&lt;br&gt;Entorno])
+    C --&gt; D([💾 4.&lt;br&gt;Datos de&lt;br&gt;Prueba])
+    D --&gt; E([🛠️ 5.&lt;br&gt;Herramientas])
+    E --&gt; F([📊 6.&lt;br&gt;Métricas])
+    F --&gt; G([📝 7.&lt;br&gt;Escenarios])
+    G --&gt; H([✅ 8.&lt;br&gt;Criterios de&lt;br&gt;Aceptación])
+    H --&gt; I([🔙 9.&lt;br&gt;Reversión])
+    
+    %% Estilos para mantener los tonos de tu web
+    style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px
+    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<section id="ejemplo-de-plan-de-pruebas-ampliación-de-memoria-en-sgbd" class="level4" data-number="2.3.4.1">
+<h4 data-number="2.3.4.1" class="anchored" data-anchor-id="ejemplo-de-plan-de-pruebas-ampliación-de-memoria-en-sgbd"><span class="header-section-number">2.3.4.1</span> Ejemplo de Plan de Pruebas: Ampliación de Memoria en SGBD</h4>
+<ol type="1">
+<li><p>🎯 <strong>Objetivo:</strong> Validar que el aumento del parámetro de límite de memoria (<code>MEM_LIMIT</code>) asignado al motor de base de datos mejora el tiempo de respuesta de las consultas complejas sin provocar inestabilidad en el sistema operativo del servidor.</p></li>
+<li><p>🔭 <strong>Alcance:</strong> Las pruebas se limitarán a los nodos de procesamiento de base de datos en preproducción. Se excluyen pruebas de latencia de red y validación de la integridad del almacenamiento físico en disco.</p></li>
+<li><p>🖥️ <strong>Entorno:</strong> Clúster de preproducción con la misma versión del SGBD y sistema operativo (Linux) que el entorno de producción. Los recursos hardware son escalados a la mitad (CPU/RAM) respecto a producción, por lo que las métricas se evaluarán de forma proporcional.</p></li>
+<li><p>💾 <strong>Datos de Prueba:</strong> Tablas externas particionadas que simulen el entorno real (por ejemplo, registros históricos de tráfico o telemetría) con un volumen mínimo de 10 millones de filas. Los datos estarán ofuscados y no contendrán información sensible.</p></li>
+<li><p>🛠️ <strong>Herramientas:</strong> * <strong>Para carga:</strong> Scripts SQL automatizados lanzados desde terminal.</p>
+<ul>
+<li><strong>Para monitorización de OS:</strong> <code>top</code> (CPU), <code>free -h</code> (RAM) y <code>vmstat</code>.</li>
+<li><strong>Para SGBD:</strong> Panel de administración del clúster y logs de ejecución de consultas.</li>
+</ul></li>
+<li><p>📊 <strong>Métricas a observar:</strong> * Tiempo total de ejecución de la consulta (<code>duration</code>).</p>
+<ul>
+<li>Picos de consumo de RAM por el proceso de la base de datos (GB).</li>
+<li>Uso de memoria Swap en el sistema operativo (MB/GB).</li>
+<li>Número de fallos o bloqueos por falta de memoria (Errores OOM - <em>Out of Memory</em>).</li>
+</ul></li>
+<li><p>📝 <strong>Escenarios:</strong> * <strong>Escenario 1 (Línea base):</strong> Lanzar un set de 5 consultas pesadas (que incluyan múltiples <code>JOIN</code> y <code>GROUP BY</code>) con la configuración original y anotar tiempos.</p>
+<ul>
+<li><strong>Escenario 2 (Carga normal):</strong> Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.</li>
+<li><strong>Escenario 3 (Prueba de estrés):</strong> Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.</li>
+</ul></li>
+<li><p>✅ <strong>Criterios de Aceptación:</strong> El cambio se considerará válido para pasar a producción si:</p>
+<ul>
+<li>El tiempo de ejecución de las consultas se reduce en al menos un 15%.</li>
+<li>El sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.</li>
+<li>El uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.</li>
+</ul></li>
+<li><p>🔙 <strong>Reversión (Rollback):</strong> En caso de fallo o inestabilidad, se ejecutará un script preconfigurado que:</p>
+<ol type="1">
+<li>Restaura el archivo de configuración <code>.conf</code> desde el backup generado antes de la prueba.</li>
+<li>Fuerza un reinicio seguro de los servicios de la base de datos.</li>
+<li>Ejecuta una consulta de prueba rápida (<code>SELECT 1</code>) para verificar que el servicio ha levantado correctamente.</li>
+</ol></li>
+</ol>
+</section>
+</section>
+<section id="herramientas-en-windows" class="level3" data-number="2.3.5">
+<h3 data-number="2.3.5" class="anchored" data-anchor-id="herramientas-en-windows"><span class="header-section-number">2.3.5</span> Herramientas en Windows</h3>
+<section id="administrador-de-tareas.-task-manager" class="level4" data-number="2.3.5.1">
+<h4 data-number="2.3.5.1" class="anchored" data-anchor-id="administrador-de-tareas.-task-manager"><span class="header-section-number">2.3.5.1</span> Administrador de tareas. (Task Manager)</h4>
+<p>El Administrador de tareas de Windows es una herramienta integrada que permite supervisar y gestionar procesos, rendimiento, usuarios y servicios del sistema. Ofrece vistas simplificadas y técnicas, gráficos en tiempo real y opciones de control como finalizar procesos, ajustar prioridades o gestionar el inicio del sistema. Es esencial para diagnóstico rápido y resolución de problemas en entornos de administración de sistemas y bases de datos.</p>
+<section id="supervisión-de-procesos" class="level5" data-number="2.3.5.1.1">
+<h5 data-number="2.3.5.1.1" class="anchored" data-anchor-id="supervisión-de-procesos"><span class="header-section-number">2.3.5.1.1</span> Supervisión de procesos</h5>
+<p>Permite ver qué programas y servicios están en ejecución, cuánto consumen y quién los ejecuta. Incluye dos vistas:</p>
+<p>Procesos → vista simplificada y amigable. Usa la descripción del archivo. Puede estar traducido. Puede agrupar procesos. No es fiable para scripting.</p>
+<p>Detalles → vista técnica con información precisa (PID, usuario, ruta, línea de comandos). Usa el nombre real del ejecutable. No está traducido. No está agrupado. Es el que debes usar para diagnóstico y PowerShell.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Ejecutable real</th>
+<th>Nombre en “Procesos”</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>svchost.exe</code></td>
+<td>Host de servicio: Sistema local</td>
+</tr>
+<tr class="even">
+<td><code>chrome.exe</code></td>
+<td>Google Chrome</td>
+</tr>
+<tr class="odd">
+<td><code>explorer.exe</code></td>
+<td>Explorador de Windows</td>
+</tr>
+<tr class="even">
+<td><code>RuntimeBroker.exe</code></td>
+<td>Administrador de tiempo de ejecución</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="análisis-del-rendimiento" class="level5" data-number="2.3.5.1.2">
+<h5 data-number="2.3.5.1.2" class="anchored" data-anchor-id="análisis-del-rendimiento"><span class="header-section-number">2.3.5.1.2</span> Análisis del rendimiento</h5>
+<p>La pestaña Rendimiento muestra gráficos en tiempo real de:</p>
+<ul>
+<li>CPU</li>
+<li>Memoria RAM</li>
+<li>Disco</li>
+<li>Red</li>
+<li>GPU</li>
+</ul>
+<p>Es útil para detectar cuellos de botella o comportamientos anómalos.</p>
+</section>
+<section id="gestión-de-aplicaciones" class="level5" data-number="2.3.5.1.3">
+<h5 data-number="2.3.5.1.3" class="anchored" data-anchor-id="gestión-de-aplicaciones"><span class="header-section-number">2.3.5.1.3</span> Gestión de aplicaciones</h5>
+<p>Permite:</p>
+<ul>
+<li>Finalizar procesos que no responden</li>
+<li>Cambiar la prioridad de un proceso</li>
+<li>Abrir la ubicación del archivo</li>
+<li>Ver dependencias y servicios asociados</li>
+</ul>
+</section>
+<section id="control-de-inicio-del-sistema" class="level5" data-number="2.3.5.1.4">
+<h5 data-number="2.3.5.1.4" class="anchored" data-anchor-id="control-de-inicio-del-sistema"><span class="header-section-number">2.3.5.1.4</span> Control de inicio del sistema</h5>
+<p>La pestaña Aplicaciones de arranque permite habilitar o deshabilitar programas que se ejecutan al arrancar Windows, ayudando a mejorar el tiempo de arranque y reducir carga innecesaria.</p>
+</section>
+<section id="supervisión-de-usuarios" class="level5" data-number="2.3.5.1.5">
+<h5 data-number="2.3.5.1.5" class="anchored" data-anchor-id="supervisión-de-usuarios"><span class="header-section-number">2.3.5.1.5</span> Supervisión de usuarios</h5>
+<p>En entornos multiusuario, muestra:</p>
+<ul>
+<li>Sesiones activas</li>
+<li>Procesos asociados a cada usuario</li>
+<li>Consumo de recursos por sesión</li>
+</ul>
+</section>
+<section id="gestión-de-servicios" class="level5" data-number="2.3.5.1.6">
+<h5 data-number="2.3.5.1.6" class="anchored" data-anchor-id="gestión-de-servicios"><span class="header-section-number">2.3.5.1.6</span> Gestión de servicios</h5>
+<p>La pestaña Servicios permite:</p>
+<ul>
+<li>Ver servicios en ejecución</li>
+<li>Iniciar o detener servicios</li>
+<li>Abrir la consola de servicios avanzada</li>
+</ul>
+<hr>
+</section>
+<section id="exportar-datos-del-administrador-de-tareas-con-powershell" class="level5" data-number="2.3.5.1.7">
+<h5 data-number="2.3.5.1.7" class="anchored" data-anchor-id="exportar-datos-del-administrador-de-tareas-con-powershell"><span class="header-section-number">2.3.5.1.7</span> Exportar datos del Administrador de Tareas con PowerShell</h5>
+<p>El Administrador de Tareas de Windows (Task Manager) es una herramienta excelente para la monitorización en tiempo real, pero tiene una gran limitación: <strong>no permite exportar sus datos directamente</strong> a un archivo para analizarlos a posteriori.</p>
+<p>Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Administrador de Tareas no saca su información de un solo sitio, sino que mezcla datos de distintas capas del sistema operativo. Para imitarlo en la consola, necesitamos combinar dos fuentes de información:</p>
+<ol type="1">
+<li><p><strong><code>Get-Process</code>:</strong> Es el comando básico de PowerShell. Nos da información en tiempo real muy rápida (como el uso actual de CPU y Memoria), pero es “superficial”. No sabe quién ejecutó el proceso ni con qué parámetros.</p></li>
+<li><p><strong>WMI (Windows Management Instrumentation):</strong> Es la base de datos interna y profunda de Windows. Contiene absolutamente todos los metadatos de administración del sistema. Tarda un poco más en consultarse, pero nos da el “chisme” completo: qué usuario lanzó el proceso, la ruta exacta del ejecutable y la línea de comandos utilizada.</p></li>
+</ol>
+<p><strong>Equivalencia de Columnas: Task Manager vs PowerShell</strong></p>
+<p>Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 21%">
+<col style="width: 23%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Columna en Task Manager</th>
+<th>Propiedad PowerShell equivalente</th>
+<th>Fuente (WMI / Get-Process / cálculo)</th>
+<th>Notas importantes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Name</td>
+<td>Name</td>
+<td>Win32_Process</td>
+<td>Coincide 1:1</td>
+</tr>
+<tr class="even">
+<td>PID</td>
+<td>ProcessId</td>
+<td>Win32_Process</td>
+<td>Coincide 1:1</td>
+</tr>
+<tr class="odd">
+<td>Estado</td>
+<td>ExecutionState</td>
+<td>Win32_Process</td>
+<td>Suele venir vacío en Windows modernos</td>
+</tr>
+<tr class="even">
+<td>Nombre de usuario</td>
+<td>GetOwner().User + Domain</td>
+<td>Win32_Process (método GetOwner)</td>
+<td>Solo disponible en WMI clásico</td>
+</tr>
+<tr class="odd">
+<td>CPU (tiempo acumulado)</td>
+<td>CPU</td>
+<td>Get-Process</td>
+<td>No es %CPU, es tiempo total de CPU</td>
+</tr>
+<tr class="even">
+<td>CPU (%)</td>
+<td>Calculado con Get-Counter</td>
+<td>Cálculo manual</td>
+<td>Task Manager usa muestreo interno</td>
+</tr>
+<tr class="odd">
+<td>Memoria (espacio de trabajo privado)</td>
+<td>PrivateMemorySize64</td>
+<td>Get-Process</td>
+<td><strong>Esta es la que coincide con Task Manager</strong></td>
+</tr>
+<tr class="even">
+<td>Working Set (Memoria física total)</td>
+<td>WorkingSet / WorkingSet64</td>
+<td>Get-Process</td>
+<td>No es “privada”, incluye memoria compartida</td>
+</tr>
+<tr class="odd">
+<td>WorkingSetSize (WMI)</td>
+<td>WorkingSetSize</td>
+<td>Win32_Process</td>
+<td><strong>NO coincide con Task Manager</strong></td>
+</tr>
+<tr class="even">
+<td>Descripción</td>
+<td>Description</td>
+<td>Win32_Process</td>
+<td>Depende del ejecutable</td>
+</tr>
+<tr class="odd">
+<td>Línea de comandos</td>
+<td>CommandLine</td>
+<td>Win32_Process</td>
+<td>Puede requerir permisos elevados</td>
+</tr>
+<tr class="even">
+<td>Ruta de acceso de imagen</td>
+<td>ExecutablePath</td>
+<td>Win32_Process</td>
+<td>Puede venir vacío en procesos del sistema</td>
+</tr>
+<tr class="odd">
+<td>Número de hilos</td>
+<td>ThreadCount</td>
+<td>Win32_Process</td>
+<td>Coincide</td>
+</tr>
+<tr class="even">
+<td>Uso de archivo de paginación</td>
+<td>PageFileUsage</td>
+<td>Win32_Process</td>
+<td>No coincide con “Commit size” del Task Manager</td>
+</tr>
+<tr class="odd">
+<td>Memoria virtual</td>
+<td>VirtualSize</td>
+<td>Win32_Process</td>
+<td>No coincide con “Memoria reservada”</td>
+</tr>
+</tbody>
+</table>
+<p>Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.</p>
+<p>El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Obtenemos los metadatos profundos de todos los procesos vía WMI</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-WmiObject</span> Win32_Process <span class="kw">|</span> <span class="ex">ForEach-Object</span> { </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Extraemos el propietario (Usuario) del proceso actual</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">$owner</span> = <span class="va">$_</span>.GetOwner<span class="er">(</span><span class="kw">)</span> </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Buscamos el consumo en tiempo real del proceso actual. </span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># SilentlyContinue evita errores si el proceso se cierra justo en este milisegundo.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="va">$proc</span> = Get-Process <span class="at">-Id</span> <span class="va">$_</span>.ProcessId <span class="at">-ErrorAction</span> SilentlyContinue          </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Construimos nuestro objeto a medida combinando ambas fuentes</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="ex">[PSCustomObject]@{</span>     </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="ex">Name</span>                     = <span class="va">$_</span>.Name     </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="ex">PID</span>                      = <span class="va">$_</span>.ProcessId     </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="ex">Estado</span>                   = <span class="va">$_</span>.ExecutionState     </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Nombre de usuario"</span>      = if <span class="er">(</span><span class="va">$owner</span><span class="ex">.User</span><span class="kw">)</span> <span class="kw">{</span> <span class="st">"</span><span class="va">$($owner</span><span class="ex">.Domain</span><span class="va">)</span><span class="dt">\$</span><span class="st">(</span><span class="va">$owner</span><span class="st">.User)"</span> } else { <span class="st">"SYSTEM"</span> }     </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="ex">CPU</span>                      = if <span class="er">(</span><span class="va">$proc</span><span class="kw">)</span> <span class="kw">{</span> <span class="va">$proc</span><span class="ex">.CPU</span> } else { <span class="va">$null</span> }     </span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Memoria Privada (KB)"</span>   = if <span class="er">(</span><span class="va">$proc</span><span class="kw">)</span> <span class="kw">{</span> <span class="ex">[math]::Round</span><span class="er">(</span><span class="va">$proc</span><span class="ex">.PrivateMemorySize64</span> / 1KB<span class="kw">)</span> <span class="kw">}</span> <span class="cf">else</span> <span class="kw">{</span> <span class="va">$null</span> }     </span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="ex">Descripcion</span>              = <span class="va">$_</span>.Description     </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Línea de comandos"</span>      = <span class="va">$_</span>.CommandLine     </span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Ruta de imagen"</span>         = <span class="va">$_</span>.ExecutablePath </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">}</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="kw">}</span> <span class="kw">|</span> <span class="ex">Export-Csv</span> <span class="st">"d:\procesos_detallados.csv"</span> <span class="at">-NoTypeInformation</span> <span class="at">-Encoding</span> UTF8</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="monitor-de-servicios-services.msc" class="level4" data-number="2.3.5.2">
+<h4 data-number="2.3.5.2" class="anchored" data-anchor-id="monitor-de-servicios-services.msc"><span class="header-section-number">2.3.5.2</span> Monitor de Servicios services.msc</h4>
+<p><code>services.msc</code> es la consola gráfica de Windows para administrar los servicios del sistema. Permite ver, iniciar, detener, configurar y diagnosticar servicios que se ejecutan en segundo plano. Es una herramienta esencial para administradores de sistemas, DBA y técnicos de soporte.</p>
+<p><img src=".\images/services.png" class="img-fluid"></p>
+<section id="ver-el-estado-de-los-servicios" class="level5" data-number="2.3.5.2.1">
+<h5 data-number="2.3.5.2.1" class="anchored" data-anchor-id="ver-el-estado-de-los-servicios"><span class="header-section-number">2.3.5.2.1</span> Ver el estado de los servicios</h5>
+<p>Muestra todos los servicios instalados en el sistema, con información clave:</p>
+<ul>
+<li>Nombre del servicio</li>
+<li>Nombre para mostrar</li>
+<li>Estado (En ejecución, Detenido, Pausado)</li>
+<li>Tipo de inicio (Automático, Manual, Deshabilitado)</li>
+<li>Cuenta con la que se ejecuta</li>
+<li>Descripción del servicio</li>
+</ul>
+<p>Es la vista más completa para entender qué componentes están activos en el sistema.</p>
+</section>
+<section id="iniciar-detener-y-reiniciar-servicios" class="level5" data-number="2.3.5.2.2">
+<h5 data-number="2.3.5.2.2" class="anchored" data-anchor-id="iniciar-detener-y-reiniciar-servicios"><span class="header-section-number">2.3.5.2.2</span> Iniciar, detener y reiniciar servicios</h5>
+<p>Permite controlar directamente el ciclo de vida de un servicio:</p>
+<ul>
+<li><p>Iniciar un servicio detenido</p></li>
+<li><p>Detener un servicio en ejecución</p></li>
+<li><p>Reiniciar servicios que fallan o se quedan bloqueados</p></li>
+<li><p>Pausar / Reanudar (solo algunos servicios lo permiten)</p></li>
+</ul>
+<p>Esto es crítico para diagnosticar problemas de bases de datos, web servers, colas de mensajes, etc.</p>
+</section>
+<section id="configurar-el-tipo-de-inicio" class="level5" data-number="2.3.5.2.3">
+<h5 data-number="2.3.5.2.3" class="anchored" data-anchor-id="configurar-el-tipo-de-inicio"><span class="header-section-number">2.3.5.2.3</span> Configurar el tipo de inicio</h5>
+<p>Puedes definir cómo se comporta un servicio al arrancar Windows:</p>
+<ul>
+<li><p>Automático → se inicia con el sistema</p></li>
+<li><p>Automático (inicio retrasado) → se inicia después del arranque</p></li>
+<li><p>Manual → solo se inicia cuando lo solicita una aplicación</p></li>
+<li><p>Deshabilitado → no puede iniciarse</p></li>
+</ul>
+<p>Esto ayuda a optimizar el arranque y evitar cargas innecesarias.</p>
+</section>
+<section id="ver-dependencias" class="level5" data-number="2.3.5.2.4">
+<h5 data-number="2.3.5.2.4" class="anchored" data-anchor-id="ver-dependencias"><span class="header-section-number">2.3.5.2.4</span> Ver dependencias</h5>
+<p>Cada servicio puede depender de otros. La consola permite ver:</p>
+<p>Servicios de los que depende</p>
+<p>Servicios que dependen de él</p>
+<p>Esto es muy útil para evitar errores al detener servicios críticos.</p>
+</section>
+<section id="diagnóstico-y-resolución-de-problemas" class="level5" data-number="2.3.5.2.5">
+<h5 data-number="2.3.5.2.5" class="anchored" data-anchor-id="diagnóstico-y-resolución-de-problemas"><span class="header-section-number">2.3.5.2.5</span> Diagnóstico y resolución de problemas</h5>
+<p>services.msc permite:</p>
+<ul>
+<li><p>Ver si un servicio falla al iniciar</p></li>
+<li><p>Revisar la cuenta de ejecución (LocalSystem, NetworkService, usuario específico)</p></li>
+<li><p>Detectar servicios deshabilitados que deberían estar activos</p></li>
+<li><p>Identificar servicios que consumen recursos en exceso (combinado con Task Manager)</p></li>
+<li><p>Permite verificar si un servicio crítico está detenido o fallando.</p></li>
+</ul>
+</section>
+<section id="por-qué-es-importante-para-un-dba-o-sysadmin" class="level5 important" data-number="2.3.5.2.6">
+<h5 data-number="2.3.5.2.6" class="anchored" data-anchor-id="por-qué-es-importante-para-un-dba-o-sysadmin"><span class="header-section-number">2.3.5.2.6</span> Por qué es importante para un DBA o SysAdmin</h5>
+<ul>
+<li><p>Muchas bases de datos (SQL Server, MySQL, PostgreSQL, Oracle) se ejecutan como servicios.</p></li>
+<li><p>Permite reiniciar instancias sin reiniciar el servidor.</p></li>
+<li><p>Ayuda a diagnosticar problemas de arranque, permisos o dependencias.</p></li>
+<li><p>Es clave para entornos con múltiples servicios: IIS, colas MSMQ, agentes de backup, antivirus, etc.</p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+<section id="section" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="section"><span class="header-section-number">2.4</span> </h2>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
