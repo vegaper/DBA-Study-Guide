@@ -313,84 +313,45 @@ La pestaña Servicios permite:
 -   Abrir la consola de servicios avanzada
 
 ------------------------------------------------------------------------
+::: .importante
+Qué es `svchost.exe` (Service Host)
+svchost.exe es un proceso del sistema operativo Windows cuya función principal es alojar y ejecutar servicios del sistema.
+En lugar de que cada servicio tenga su propio ejecutable, Windows agrupa varios servicios dentro de instancias de svchost.exe para:
 
-##### Exportar datos del Administrador de Tareas con PowerShell
+-   Optimizar el uso de memoria
+-   Mejorar la estabilidad
+-   Aislar servicios críticos
+-   Facilitar la administración
+Windows tiene decenas de servicios: red, audio, actualizaciones, impresión, seguridad, etc.
+Si cada uno tuviera su propio .exe, el sistema sería más pesado y difícil de gestionar.
 
-El Administrador de Tareas de Windows (Task Manager) es una herramienta excelente para la monitorización en tiempo real, pero tiene una gran limitación: **no permite exportar sus datos directamente** a un archivo para analizarlos a posteriori.
+Por eso: Los servicios se implementan como bibliotecas DLL, no como ejecutables. Como las DLL no pueden ejecutarse solas, necesitan un “contenedor”. Ese contenedor es svchost.exe.
+Cada instancia de svchost.exe carga uno o varios servicios definidos en: `HKLM\Software\Microsoft\Windows NT\CurrentVersion\Svchost` 
+Es normal ver 10, 20 o más procesos svchost.exe.
+Cada uno aloja un conjunto distinto de servicios.
+Desde Windows 10, Microsoft incluso separa más los servicios para mejorar la seguridad, así que ver muchos svchost.exe es totalmente normal.
 
-Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Administrador de Tareas no saca su información de un solo sitio, sino que mezcla datos de distintas capas del sistema operativo. Para imitarlo en la consola, necesitamos combinar dos fuentes de información:
+Windows agrupa servicios por función o nivel de criticidad.
+Ejemplos:
 
-1.  **`Get-Process`:** Es el comando básico de PowerShell. Nos da información en tiempo real muy rápida (como el uso actual de CPU y Memoria), pero es "superficial". No sabe quién ejecutó el proceso ni con qué parámetros.
+-   Servicios de red
+-   Servicios de interfaz gráfica
+-   Servicios de seguridad
+-   Servicios del sistema
 
-2.  **WMI (Windows Management Instrumentation):** Es la base de datos interna y profunda de Windows. Contiene absolutamente todos los metadatos de administración del sistema. Tarda un poco más en consultarse, pero nos da el "chisme" completo: qué usuario lanzó el proceso, la ruta exacta del ejecutable y la línea de comandos utilizada.
+Esto permite que si un servicio falla, no se caiga todo el sistema, solo la instancia afectada.
 
-**Equivalencia de Columnas: Task Manager vs PowerShell**
+Normalmente svchost.exe es legítimo, pero si aparece fuera de estas rutas, puede ser sospechoso:
+-   C:\Windows\System32\svchost.exe  ← ruta correcta
+-   C:\Windows\SysWOW64\svchost.exe ← también válida
+Si aparece en otra carpeta, podría ser malware disfrazado.
 
-Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica:
+Cómo ver qué servicios ejecuta cada svchost.exe
+En el Administrador de tareas: Clic derecho en una instancia de svchost.exe. “Ir a servicios”, ahí verás qué servicios están asociados.
+:::
 
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Columna en Task Manager              | Propiedad PowerShell equivalente | Fuente (WMI / Get-Process / cálculo) | Notas importantes                              |
-+======================================+==================================+======================================+================================================+
-| Name                                 | Name                             | Win32_Process                        | Coincide 1:1                                   |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| PID                                  | ProcessId                        | Win32_Process                        | Coincide 1:1                                   |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Estado                               | ExecutionState                   | Win32_Process                        | Suele venir vacío en Windows modernos          |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Nombre de usuario                    | GetOwner().User + Domain         | Win32_Process (método GetOwner)      | Solo disponible en WMI clásico                 |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| CPU (tiempo acumulado)               | CPU                              | Get-Process                          | No es %CPU, es tiempo total de CPU             |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| CPU (%)                              | Calculado con Get-Counter        | Cálculo manual                       | Task Manager usa muestreo interno              |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Memoria (espacio de trabajo privado) | PrivateMemorySize64              | Get-Process                          | **Esta es la que coincide con Task Manager**   |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Working Set (Memoria física total)   | WorkingSet / WorkingSet64        | Get-Process                          | No es "privada", incluye memoria compartida    |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| WorkingSetSize (WMI)                 | WorkingSetSize                   | Win32_Process                        | **NO coincide con Task Manager**               |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Descripción                          | Description                      | Win32_Process                        | Depende del ejecutable                         |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Línea de comandos                    | CommandLine                      | Win32_Process                        | Puede requerir permisos elevados               |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Ruta de acceso de imagen             | ExecutablePath                   | Win32_Process                        | Puede venir vacío en procesos del sistema      |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Número de hilos                      | ThreadCount                      | Win32_Process                        | Coincide                                       |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Uso de archivo de paginación         | PageFileUsage                    | Win32_Process                        | No coincide con "Commit size" del Task Manager |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
-| Memoria virtual                      | VirtualSize                      | Win32_Process                        | No coincide con "Memoria reservada"            |
-+--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+------------------------------------------------------------------------
 
-Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
-
-El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
-
-``` bash
-# Obtenemos los metadatos profundos de todos los procesos vía WMI
-Get-WmiObject Win32_Process | ForEach-Object { 
-    
-    # Extraemos el propietario (Usuario) del proceso actual
-    $owner = $_.GetOwner() 
-    
-    # Buscamos el consumo en tiempo real del proceso actual. 
-    # SilentlyContinue evita errores si el proceso se cierra justo en este milisegundo.
-    $proc = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue          
-    
-    # Construimos nuestro objeto a medida combinando ambas fuentes
-    [PSCustomObject]@{     
-        Name                     = $_.Name     
-        PID                      = $_.ProcessId     
-        Estado                   = $_.ExecutionState     
-        "Nombre de usuario"      = if ($owner.User) { "$($owner.Domain)\$($owner.User)" } else { "SYSTEM" }     
-        CPU                      = if ($proc) { $proc.CPU } else { $null }     
-        "Memoria Privada (KB)"   = if ($proc) { [math]::Round($proc.PrivateMemorySize64 / 1KB) } else { $null }     
-        Descripcion              = $_.Description     
-        "Línea de comandos"      = $_.CommandLine     
-        "Ruta de imagen"         = $_.ExecutablePath 
-    }
-} | Export-Csv "d:\procesos_detallados.csv" -NoTypeInformation -Encoding UTF8
-```
 
 #### Monitor de Servicios services.msc
 
@@ -475,4 +436,125 @@ services.msc permite:
 -   Es clave para entornos con múltiples servicios: IIS, colas MSMQ, agentes de backup, antivirus, etc.
 :::
 
-## 
+### tasklist
+En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar los procesos que se están ejecutando en el equipo local o remoto. La opción `tasklist /svc` nos muestra los procesos con servicios asociados.
+[imagen takslistsvc]
+
+
+### PowerShell para procesos y servicios
+**PowerShell** permite consultar procesos y servicios desde consola. `Get-Process` obtiene los procesos del equipo local, y `Get-Service` obtiene los servicios del equipo.
+`Get-process`: Ver procesos
+`Get-Process | Sort-Object CPU -Descending | Select-Object -First 10`: Ver procesos con más CPU acumulada
+`Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 10`: Ver procesos con más memoria 
+`Get-Service | Where-Object {$_.Status -eq "Running"}`: Ver servicios en ejecución
+`Get-Service | Where-Object {$_.Status -eq "Stopped"}`: Ver servicios detenidos
+[imagen getprocess]
+
+
+##### Exportar datos del Administrador de Tareas con PowerShell
+
+El Administrador de Tareas de Windows (Task Manager) es una herramienta excelente para la monitorización en tiempo real, pero tiene una gran limitación: **no permite exportar sus datos directamente** a un archivo para analizarlos a posteriori.
+
+Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Administrador de Tareas no saca su información de un solo sitio, sino que mezcla datos de distintas capas del sistema operativo. Para imitarlo en la consola, necesitamos combinar dos fuentes de información:
+
+1.  **`Get-Process`:** Es el comando básico de PowerShell. Nos da información en tiempo real muy rápida (como el uso actual de CPU y Memoria), pero es "superficial". No sabe quién ejecutó el proceso ni con qué parámetros.
+
+2.  **WMI (Windows Management Instrumentation):** Es la base de datos interna y profunda de Windows. Contiene absolutamente todos los metadatos de administración del sistema. Tarda un poco más en consultarse, pero nos da el "chisme" completo: qué usuario lanzó el proceso, la ruta exacta del ejecutable y la línea de comandos utilizada.
+
+**Equivalencia de Columnas: Task Manager vs PowerShell**
+
+Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica:
+
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Columna en Task Manager              | Propiedad PowerShell equivalente | Fuente (WMI / Get-Process / cálculo) | Notas importantes                              |
++======================================+==================================+======================================+================================================+
+| Name                                 | Name                             | Win32_Process                        | Coincide 1:1                                   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| PID                                  | ProcessId                        | Win32_Process                        | Coincide 1:1                                   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Estado                               | ExecutionState                   | Win32_Process                        | Suele venir vacío en Windows modernos          |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Nombre de usuario                    | GetOwner().User + Domain         | Win32_Process (método GetOwner)      | Solo disponible en WMI clásico                 |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| CPU (tiempo acumulado)               | CPU                              | Get-Process                          | No es %CPU, es tiempo total de CPU             |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| CPU (%)                              | Calculado con Get-Counter        | Cálculo manual                       | Task Manager usa muestreo interno              |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Memoria (espacio de trabajo privado) | PrivateMemorySize64              | Get-Process                          | **Esta es la que coincide con Task Manager**   |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Working Set (Memoria física total)   | WorkingSet / WorkingSet64        | Get-Process                          | No es "privada", incluye memoria compartida    |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| WorkingSetSize (WMI)                 | WorkingSetSize                   | Win32_Process                        | **NO coincide con Task Manager**               |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Descripción                          | Description                      | Win32_Process                        | Depende del ejecutable                         |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Línea de comandos                    | CommandLine                      | Win32_Process                        | Puede requerir permisos elevados               |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Ruta de acceso de imagen             | ExecutablePath                   | Win32_Process                        | Puede venir vacío en procesos del sistema      |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Número de hilos                      | ThreadCount                      | Win32_Process                        | Coincide                                       |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Uso de archivo de paginación         | PageFileUsage                    | Win32_Process                        | No coincide con "Commit size" del Task Manager |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+| Memoria virtual                      | VirtualSize                      | Win32_Process                        | No coincide con "Memoria reservada"            |
++--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
+
+Administrador de tareas muestra información visual, resumida y orientada al usuario, incluyendo uso de GPU, impacto de inicio, servicios asociados, historial, etc. Get-Process muestra información técnica y detallada a nivel de proceso, ideal para automatización, scripting y administración avanzada, pero no incluye todo lo que muestra el Administrador de tareas.
+Administrador de tareas  
+Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.
+→ Por eso muestra más métricas y más precisas.
+
+Get-Process  
+Usa la clase .NET System.Diagnostics.Process.
+→ Es más limitado, pero muy útil para automatizar.
+
+Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
+
+El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
+
+``` bash
+# Obtenemos los metadatos profundos de todos los procesos vía WMI
+Get-WmiObject Win32_Process | ForEach-Object { 
+    
+    # Extraemos el propietario (Usuario) del proceso actual
+    $owner = $_.GetOwner() 
+    
+    # Buscamos el consumo en tiempo real del proceso actual. 
+    # SilentlyContinue evita errores si el proceso se cierra justo en este milisegundo.
+    $proc = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue          
+    
+    # Construimos nuestro objeto a medida combinando ambas fuentes
+    [PSCustomObject]@{     
+        Name                     = $_.Name     
+        PID                      = $_.ProcessId     
+        Estado                   = $_.ExecutionState     
+        "Nombre de usuario"      = if ($owner.User) { "$($owner.Domain)\$($owner.User)" } else { "SYSTEM" }     
+        CPU                      = if ($proc) { $proc.CPU } else { $null }     
+        "Memoria Privada (KB)"   = if ($proc) { [math]::Round($proc.PrivateMemorySize64 / 1KB) } else { $null }     
+        Descripcion              = $_.Description     
+        "Línea de comandos"      = $_.CommandLine     
+        "Ruta de imagen"         = $_.ExecutablePath 
+    }
+} | Export-Csv "d:\procesos_detallados.csv" -NoTypeInformation -Encoding UTF8
+```
+### Monitor de Recursos (Resmon)
+El monitor de recursos se abre desde la consola de comandos usando `resmon`
+resmon.exe, o Monitor de recursos, es una herramienta avanzada de Windows que permite ver en detalle cómo el sistema utiliza CPU, memoria, disco y red.
+Es más completo que el Administrador de tareas y más visual que usar comandos o PowerShell.
+El Monitor de recursos permite:
+
+-   Ver qué procesos están usando más CPU y por qué.
+-   Identificar bloqueos de disco (qué proceso está usando un archivo).
+-   Ver uso de memoria por proceso, incluyendo memoria física, compartida y privada.
+-   Analizar conexiones de red, puertos abiertos y procesos que los usan.
+-   Detectar cuellos de botella en tiempo real.
+-   Es una herramienta clave para diagnóstico, resolución de problemas y administración avanzada.
+
+![](/images/resmon.png)
+| Sección | Qué muestra / métricas | Para qué sirve |
+|--------|--------------------------|----------------|
+| **CPU** | - Procesos activos<br>- Servicios asociados<br>- Hilos por proceso<br>- Tiempo de CPU<br>- Gráficos en tiempo real | Permite ver si un proceso está saturando el procesador y analizar carga de trabajo. |
+| **Memoria** | - Memoria en uso<br>- Memoria reservada<br>- Memoria compartida<br>- Hard faults (fallos de página)<br>- Uso por proceso | Ofrece un análisis más detallado que el Administrador de tareas para detectar problemas de consumo de RAM. |
+| **Disco** | - Lectura/escritura por proceso<br>- Archivos abiertos por cada proceso<br>- Latencia del disco<br>- Cuellos de botella de almacenamiento | Útil para identificar procesos que bloquean el sistema por I/O o archivos en uso. |
+| **Red** | - Conexiones TCP activas<br>- Puertos usados<br>- Procesos que generan tráfico<br>- Latencia y uso de ancho de banda | Ideal para detectar procesos sospechosos, tráfico anómalo o problemas de red. |
+| **Seguridad y diagnóstico** | - Ver si un proceso es legítimo<br>- Detectar malware que consume CPU o red<br>- Identificar servicios que bloquean archivos<br>- Analizar por qué un programa se cuelga | Herramienta clave para diagnóstico avanzado y resolución de problemas. |
