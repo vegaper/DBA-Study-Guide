@@ -505,7 +505,7 @@ Administrador de tareas muestra información visual, resumida y orientada al usu
 
 **Get-Process**: Usa la clase .NET System.Diagnostics.Process.→ Es más limitado, pero muy útil para automatizar.
 
-----------------
+:::{.ejemplo-practico}
 
 Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
 
@@ -536,7 +536,10 @@ Get-WmiObject Win32_Process | ForEach-Object {
     }
 } | Export-Csv "d:\procesos_detallados.csv" -NoTypeInformation -Encoding UTF8
 ```
+::: 
+
 #### Monitor de Recursos (Resmon)
+
 El monitor de recursos se abre desde la consola de comandos usando `resmon`
 resmon.exe, o Monitor de recursos, es una herramienta avanzada de Windows que permite ver en detalle cómo el sistema utiliza CPU, memoria, disco y red.
 Es más completo que el Administrador de tareas y más visual que usar comandos o PowerShell.
@@ -568,9 +571,10 @@ Resmon desglosa cada recurso con métricas profundas, como:
 | **Red** | Conexiones TCP activas, puertos usados, procesos con tráfico, latencia y ancho de banda | Detectar procesos sospechosos o problemas de red. |
 | **Seguridad y diagnóstico** | Validar procesos legítimos, detectar malware, identificar bloqueos de archivos, analizar cuelgues | Diagnóstico avanzado y resolución de problemas. |
 
+-------------
 **Explicación de los Tipos de Memoria**
 
-| Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo mental |
+| Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo |
 |-----------------|---------------|-------------------------------|----------------|
 | **En uso** | Memoria que están usando activamente procesos, servicios y el sistema. | ❌ No | Programas abiertos ocupando RAM. |
 | **Modificada** | Datos cambiados que aún no se han guardado en disco; deben escribirse antes de liberarse. | ⚠️ No, hasta que se escriba en disco | Datos pendientes de guardar. |
