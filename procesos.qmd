@@ -119,7 +119,7 @@ flowchart LR
     D --> E([ 5.<br>APLICAR])    
     %% Estilos para mantener los tonos de tu web
     style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px
-    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px
+   
 ```
 Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.
 
@@ -329,8 +329,8 @@ La pestaña Servicios permite:
 -   Iniciar o detener servicios
 -   Abrir la consola de servicios avanzada
 
-------------------------------------------------------------------------
-::: nota-importante
+
+::: .nota-importante
 Qué es `svchost.exe` (Service Host)
 svchost.exe es un proceso del sistema operativo Windows cuya función principal es alojar y ejecutar servicios del sistema.
 En lugar de que cada servicio tenga su propio ejecutable, Windows agrupa varios servicios dentro de instancias de svchost.exe para:
@@ -366,9 +366,6 @@ Si aparece en otra carpeta, podría ser malware disfrazado.
 Cómo ver qué servicios ejecuta cada svchost.exe
 En el Administrador de tareas: Clic derecho en una instancia de svchost.exe. “Ir a servicios”, ahí verás qué servicios están asociados.
 :::
-
-------------------------------------------------------------------------
-
 
 #### Monitor de Servicios services.msc
 
@@ -443,17 +440,19 @@ Por qué es importante para un DBA o SysAdmin
 ### tasklist
 En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar los procesos que se están ejecutando en el equipo local o remoto. La opción `tasklist /svc` nos muestra los procesos con servicios asociados.
 
-![](images\tasklistsvc.png)
+![](images/tasklistsvc.png
+)
 
 ### PowerShell para procesos y servicios
 **PowerShell** permite consultar procesos y servicios desde consola. `Get-Process` obtiene los procesos del equipo local, y `Get-Service` obtiene los servicios del equipo.
--   `Get-process`: Ver procesos
--   `Get-Process | Sort-Object CPU -Descending | Select-Object -First 10`: Ver procesos con más CPU acumulada
--   `Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 10`: Ver procesos con más memoria 
--   `Get-Service | Where-Object {$_.Status -eq "Running"}`: Ver servicios en ejecución
--   `Get-Service | Where-Object {$_.Status -eq "Stopped"}`: Ver servicios detenidos
-
-![](images\getprocess.png)
+```
+Get-process # Ver procesos
+Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 # Ver procesos con más CPU acumulada
+Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 10 # Ver procesos con más memoria 
+Get-Service | Where-Object {$_.Status -eq "Running"} # Ver servicios en ejecución
+Get-Service | Where-Object {$_.Status -eq "Stopped"} # Ver servicios detenidos
+```
+![](images/getprocess.png)
 
 ##### Exportar datos del Administrador de Tareas con PowerShell
 
