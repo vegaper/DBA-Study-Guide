@@ -121,51 +121,15 @@ Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta do
 
 ### Métricas a observar
 
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| Métrica               | Síntomas                       | Causas típicas               | Qué mirar                     | Herramientas                                               |
-+=======================+================================+==============================+===============================+============================================================+
-| **CPU (Procesador)**  | -   Sistema lento              | -   Consultas sin índices    | -   Uso por proceso           | `top`, `htop`, `atop`, `mpstat`, `pidstat`\                |
-|                       |                                |                              |                               | *Win:* Task Manager, Res. Monitor                          |
-|                       | -   Procesos al 100% o picos   | -   Hilos bloqueados o loops | -   Load Average              |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       |                                | -   Exceso de concurrencia   | -   Run Queue                 |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       |                                |                              | -   \% por núcleo             |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| **RAM (Memoria)**     | -   Sistema usando swap        | -   Fugas de memoria         | -   Memoria libre/ocupada     | `free -h`, `vmstat`, `sar -r`, `smem`\                     |
-|                       |                                |                              |                               | *Win:* Resource Monitor, RAMMap                            |
-|                       | -   Procesos matados (OOM)     | -   Buffers/caches altos     | -   Swap in/out               |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Lentitud general           | -   Demasiados procesos      | -   Page Faults               |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| **Disco (I/O)**       | -   Consultas muy lentas       | -   Latencia alta            | -   IOPS y Latencia (ms)      | `iostat`, `iotop`, `dstat`, `df`, `fio`\                   |
-|                       |                                |                              |                               | *Win:* DiskSpd, Resource Monitor                           |
-|                       | -   Tiempos de respuesta altos | -   Cola de disco saturada   | -   Cola de disco (`await`)   |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Procesos esperando I/O     | -   Poco espacio             | -   Espacio disponible        |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       |                                | -   Logs descontrolados      |                               |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| **Procesos**          | -   Sistema "atascado"         | -   Fugas de memoria         | -   Estados (R/S/Z)           | `ps`, `pstree`, `lsof`, `systemctl`\                       |
-|                       |                                |                              |                               | *Win:* strace, procmon                                     |
-|                       | -   Procesos que no terminan   | -   Procesos zombies         | -   Consumo por proceso       |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Consumo excesivo           | -   Deadlocks o bloqueos     | -   Árbol de dependencias     |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| **Red**               | -   Conexiones caídas/lentas   | -   Saturación de ancho      | -   RTT (ping)                | `ping`, `iperf3`, `mtr`, `ss`, `netstat`, `tcpdump`, `dig` |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Timeouts en BBDD           | -   Pérdida de paquetes      | -   Paquetes perdidos         |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Fallos de replicación      | -   DNS lento o fallando     | -   Errores RX/TX             |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       |                                |                              | -   Velocidad real vs teórica |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
-| **Sist. de Archivos** | -   No se crean archivos       | -   Fragmentación alta       | -   Inodos y espacio libre    | `df -h`, `df -i`, `du -sh`, `find`\                        |
-|                       |                                |                              |                               | *Win:* WinDirStat, TreeSize                                |
-|                       | -   Errores de permisos        | -   Inodos agotados          | -   Crecimiento de logs       |                                                            |
-|                       |                                |                              |                               |                                                            |
-|                       | -   Rendimiento pobre          | -   Logs gigantes            |                               |                                                            |
-+-----------------------+--------------------------------+------------------------------+-------------------------------+------------------------------------------------------------+
+| Métrica | Síntomas | Causas típicas | Qué mirar | Herramientas |
+|--------|----------|----------------|-----------|--------------|
+| **CPU** | Sistema lento; procesos al 100%; picos constantes | Consultas sin índices; hilos bloqueados; loops; exceso de concurrencia | Uso por proceso; Load Average; Run Queue; % por núcleo | `top`, `htop`, `atop`, `mpstat`, `pidstat` — Win: Task Manager, Resource Monitor |
+| **RAM** | Uso de swap; procesos matados (OOM); lentitud general | Fugas de memoria; demasiados procesos; buffers/caches altos | Memoria libre/ocupada; Swap in/out; Page Faults | `free -h`, `vmstat`, `sar -r`, `smem` — Win: Resource Monitor, RAMMap |
+| **Disco (I/O)** | Consultas lentas; tiempos de respuesta altos; procesos esperando I/O | Latencia alta; cola de disco saturada; poco espacio; logs descontrolados | IOPS; Latencia (ms); Cola de disco (`await`); espacio disponible | `iostat`, `iotop`, `dstat`, `df`, `fio` — Win: DiskSpd, Resource Monitor |
+| **Procesos** | Sistema atascado; procesos que no terminan; consumo excesivo | Fugas de memoria; procesos zombies; deadlocks | Estados (R/S/Z); consumo por proceso; árbol de dependencias | `ps`, `pstree`, `lsof`, `systemctl` — Win: procmon, strace |
+| **Red** | Conexiones lentas; timeouts; fallos de replicación | Saturación de ancho; pérdida de paquetes; DNS lento | RTT; paquetes perdidos; errores RX/TX; velocidad real | `ping`, `iperf3`, `mtr`, `ss`, `netstat`, `tcpdump`, `dig` |
+| **Sistema de archivos** | No se crean archivos; errores de permisos; rendimiento pobre | Fragmentación; inodos agotados; logs gigantes | Inodos libres; espacio; crecimiento de logs | `df -h`, `df -i`, `du -sh`, `find` — Win: WinDirStat, TreeSize |
+
 
 ### Modelos predictivos y análisis de tendencias
 
