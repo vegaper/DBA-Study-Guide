@@ -113,7 +113,7 @@ Windows:
 Para resolver problemas de rendimiento conviene seguir un método.
 ```{mermaid}
 flowchart LR
-    A([ 1.<br>OBSERVAR]) --> B([🔭 2.<br>IDENTIFICAR])
+    A([ 1.<br>OBSERVAR]) --> B([2.<br>IDENTIFICAR])
     B --> C([ 3.<br>LOCALIZAR])
     C --> D([ 4.<br>DIFERENCIAR])
     D --> E([ 5.<br>APLICAR])    
@@ -412,9 +412,8 @@ Esto ayuda a optimizar el arranque y evitar cargas innecesarias.
 
 Cada servicio puede depender de otros. La consola permite ver:
 
-Servicios de los que depende
-
-Servicios que dependen de él
+-   Servicios de los que depende
+-   Servicios que dependen de él
 
 Esto es muy útil para evitar errores al detener servicios críticos.
 
@@ -428,7 +427,7 @@ services.msc permite:
 -   Identificar servicios que consumen recursos en exceso (combinado con Task Manager)
 -   Permite verificar si un servicio crítico está detenido o fallando.
 
-::: .nota-importante 
+:::{.nota-importante}
 Por qué es importante para un DBA o SysAdmin
 
 -   Muchas bases de datos (SQL Server, MySQL, PostgreSQL, Oracle) se ejecutan como servicios.
@@ -440,8 +439,7 @@ Por qué es importante para un DBA o SysAdmin
 ### tasklist
 En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar los procesos que se están ejecutando en el equipo local o remoto. La opción `tasklist /svc` nos muestra los procesos con servicios asociados.
 
-![](images/tasklistsvc.png
-)
+![](images/tasklistsvc.png)
 
 ### PowerShell para procesos y servicios
 **PowerShell** permite consultar procesos y servicios desde consola. `Get-Process` obtiene los procesos del equipo local, y `Get-Service` obtiene los servicios del equipo.
@@ -503,14 +501,10 @@ Al cruzar estas dos herramientas, así es como conseguimos mapear la informació
 +--------------------------------------+----------------------------------+--------------------------------------+------------------------------------------------+
 
 Administrador de tareas muestra información visual, resumida y orientada al usuario, incluyendo uso de GPU, impacto de inicio, servicios asociados, historial, etc. Get-Process muestra información técnica y detallada a nivel de proceso, ideal para automatización, scripting y administración avanzada, pero no incluye todo lo que muestra el Administrador de tareas.
-Administrador de tareas  
-Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.
-→ Por eso muestra más métricas y más precisas.
+**Administrador de tareas**: Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.→ Por eso muestra más métricas y más precisas.
 
-Get-Process  
-Usa la clase .NET System.Diagnostics.Process.
-→ Es más limitado, pero muy útil para automatizar.
-
+**Get-Process**: Usa la clase .NET System.Diagnostics.Process.→ Es más limitado, pero muy útil para automatizar.
+----------------
 Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
 
 El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
@@ -554,6 +548,7 @@ El Monitor de recursos permite:
 -   Es una herramienta clave para diagnóstico, resolución de problemas y administración avanzada.
 
 Resmon desglosa cada recurso con métricas profundas, como:
+
 -   Hilos por proceso
 -   Fallos de página (hard faults)
 -   Latencia de disco
@@ -571,6 +566,7 @@ Resmon desglosa cada recurso con métricas profundas, como:
 | **Red** | Conexiones TCP activas, puertos usados, procesos con tráfico, latencia y ancho de banda | Detectar procesos sospechosos o problemas de red. |
 | **Seguridad y diagnóstico** | Validar procesos legítimos, detectar malware, identificar bloqueos de archivos, analizar cuelgues | Diagnóstico avanzado y resolución de problemas. |
 
+**Explicación de los Tipos de Memoria**
 
 | Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo mental |
 |-----------------|---------------|-------------------------------|----------------|
@@ -601,7 +597,7 @@ Perfmon es la **única** que permite **registrar datos a largo plazo** y analiza
 - Crear informes automáticos de diagnóstico  
 - Comparar rendimiento antes/después de cambios en el sistema
 
-![](images\perform.png)
+![](images/perform.png)
 
 #### Componentes principales
 
@@ -663,7 +659,7 @@ Muy útil para diagnósticos post-mortem.
 - Network Interface → Bytes Total/sec  
 - TCPv4 → Segments Retransmitted/sec  
 
-::: .nota-importante
+:::{.nota-importante}
 **Ejemplos de uso real**
 
 - Detectar si un servidor tiene **cuello de botella de disco**  
@@ -673,7 +669,7 @@ Muy útil para diagnósticos post-mortem.
 - Crear informes automáticos de rendimiento
 :::
 
-::: .practica
+:::{.practica}
 Pruebas de stress
 Podemos usar unos script in Power Shell para sobrecargar los recursos del sistema y de esa forma ver cómo los distintos monitores del sistema reflejan esos cambios.
 
