@@ -112,9 +112,16 @@ Windows:
 ### Método general de diagnóstico
 
 Para resolver problemas de rendimiento conviene seguir un método.
-
-\[ OBSERVAR \] → \[ IDENTIFICAR \] → \[ LOCALIZAR \] → \[ DIFERENCIAR \] → \[ APLICAR \]
-
+```{mermaid}
+flowchart LR
+    A([ 1.<br>OBSERVAR]) --> B([🔭 2.<br>IDENTIFICAR])
+    B --> C([ 3.<br>LOCALIZAR])
+    C --> D([ 4.<br>DIFERENCIAR])
+    D --> E([ 5.<br>APLICAR])    
+    %% Estilos para mantener los tonos de tu web
+    style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px
+    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px
+```
 Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.
 
 ### Métricas a observar
@@ -148,11 +155,8 @@ Un entorno de preproducción intenta parecerse lo máximo posible a producción,
 Ejemplos de cambios que deben probarse en preproducción:
 
 -   SO: Instalación, actualización del kernel, parches de seguridad.
-
 -   Bases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.
-
 -   Red y almacenamiento: Cambio de configuración de red, migración de almacenamiento.
-
 -   Aplicaciones: cambio de versión, modificación de políticas de seguridad.
 
 Estructura del plan de pruebas:
@@ -439,7 +443,7 @@ services.msc permite:
 
 ### tasklist
 En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar los procesos que se están ejecutando en el equipo local o remoto. La opción `tasklist /svc` nos muestra los procesos con servicios asociados.
-[imagen takslistsvc]
+![](images\tasklistsvc.png)
 
 
 ### PowerShell para procesos y servicios
@@ -450,7 +454,8 @@ En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar l
 -   `Get-Service | Where-Object {$_.Status -eq "Running"}`: Ver servicios en ejecución
 -   `Get-Service | Where-Object {$_.Status -eq "Stopped"}`: Ver servicios detenidos
 
-imagen getprocess]
+![](images\getprocess.png)
+
 
 
 ##### Exportar datos del Administrador de Tareas con PowerShell
@@ -561,30 +566,14 @@ Resmon desglosa cada recurso con métricas profundas, como:
 -   Actividad de red por proceso
 
 ![](images/resmon.png)
+
 | Sección | Qué muestra / métricas | Para qué sirve |
 |--------|--------------------------|----------------|
-| **CPU** | • Procesos activos  
-• Servicios asociados  
-• Hilos por proceso  
-• Tiempo de CPU  
-• Gráficos en tiempo real | Permite ver si un proceso está saturando el procesador y analizar carga de trabajo. |
-| **Memoria** | • Memoria en uso  
-• Memoria reservada  
-• Memoria compartida  
-• Hard faults (fallos de página)  
-• Uso por proceso | Ofrece un análisis más detallado que el Administrador de tareas para detectar problemas de consumo de RAM. |
-| **Disco** | • Lectura/escritura por proceso  
-• Archivos abiertos por cada proceso  
-• Latencia del disco  
-• Cuellos de botella de almacenamiento | Útil para identificar procesos que bloquean el sistema por I/O o archivos en uso. |
-| **Red** | • Conexiones TCP activas  
-• Puertos usados  
-• Procesos que generan tráfico  
-• Latencia y uso de ancho de banda | Ideal para detectar procesos sospechosos, tráfico anómalo o problemas de red. |
-| **Seguridad y diagnóstico** | • Ver si un proceso es legítimo  
-• Detectar malware que consume CPU o red  
-• Identificar servicios que bloquean archivos  
-• Analizar por qué un programa se cuelga | Herramienta clave para diagnóstico avanzado y resolución de problemas. |
+| **CPU** | Procesos activos, servicios asociados, hilos por proceso, tiempo de CPU, gráficos en tiempo real | Detectar procesos que saturan el procesador y analizar carga de trabajo. |
+| **Memoria** | Memoria en uso, memoria reservada, memoria compartida, hard faults, uso por proceso | Analizar consumo de RAM con más detalle que el Administrador de tareas. |
+| **Disco** | Lectura/escritura por proceso, archivos abiertos, latencia, cuellos de botella | Identificar procesos que bloquean el sistema por I/O. |
+| **Red** | Conexiones TCP activas, puertos usados, procesos con tráfico, latencia y ancho de banda | Detectar procesos sospechosos o problemas de red. |
+| **Seguridad y diagnóstico** | Validar procesos legítimos, detectar malware, identificar bloqueos de archivos, analizar cuelgues | Diagnóstico avanzado y resolución de problemas. |
 
 
 | Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo mental |
@@ -606,6 +595,7 @@ Puedes ejecutarlo desde la consola de comandos `perform` o desde:
 **perfmon.exe** es una herramienta avanzada de Windows que permite **monitorizar el rendimiento del sistema en tiempo real** y **registrar métricas históricas** mediante contadores.  
 Es mucho más potente y configurable que el Administrador de tareas o el Monitor de recursos.
 Perfmon es la **única** que permite **registrar datos a largo plazo** y analizar tendencias.
+
 #### ¿Para qué sirve Perfmon?
 
 - Analizar rendimiento del sistema a nivel profundo  
@@ -616,6 +606,7 @@ Perfmon es la **única** que permite **registrar datos a largo plazo** y analiza
 - Comparar rendimiento antes/después de cambios en el sistema
 
 ![](images\perform.png)
+
 #### Componentes principales
 
 ##### Vista general (Performance Monitor)
