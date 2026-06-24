@@ -642,7 +642,7 @@ Permite:
 Tipos:
 
 - **Sistema** (ya preconfigurados por Windows)  
-- **Usuario** (creados por ti)  
+- **Usuario** (creados por ti): En perfmon, ir a: Conjuntos de recopiladores de datos → Definido por el usuario
 - **Plantillas** (importadas/exportadas)
 
 ##### Informes
@@ -686,4 +686,74 @@ Muy útil para diagnósticos post-mortem.
 - Crear informes automáticos de rendimiento
 :::
 
+::: .practica
+Pruebas de stress
+Podemos usar unos script in Power Shell para sobrecargar los recursos del sistema y de esa forma ver cómo los distintos monitores del sistema reflejan esos cambios.
 
+**Stress test de CPU (30 segundos **
+-   Usa varios hilos que hacen cálculos intensivos. 
+-   Usa 4 hilos (puedes subirlo a 8, 16, etc.). 
+-   Mantiene la CPU ocupada durante 30 segundos.
+``` bash
+$fin = (Get-Date).AddSeconds(30)
+while ((Get-Date) -lt $fin) {
+    1..4 | ForEach-Object {
+        Start-Job -ScriptBlock {
+            $end = (Get-Date).AddSeconds(30)
+            while ((Get-Date) -lt $end) {
+                [Math]::Sqrt(12345) > $null
+            }
+        }
+    }
+    Start-Sleep -Seconds 30
+    Get-Job | Remove-Job -Force
+}
+
+```
+**Stress test de RAM (30 segundos) **
+-   Reserva bloques de 100 MB cada medio segundo.
+-   Puedes ajustar el tamaño.
+
+``` bash
+$fin = (Get-Date).AddSeconds(30)
+$bloques = @()
+
+while ((Get-Date) -lt $fin) {
+    $bloques += ,(New-Object byte[] (100MB))
+    Start-Sleep -Milliseconds 500
+}
+
+"Memoria reservada: $([math]::Round(($bloques.Count * 100),2)) MB"
+
+```
+
+**Stress test de disco (30 segundos) **
+-   Escribe y lee repetidamente un archivo de 10 MB.
+-   Genera carga de I/O real.
+
+``` bash
+$archivo = "$env:TEMP\stress_disk.tmp"
+$datos = New-Object byte[] (10MB)
+
+$fin = (Get-Date).AddSeconds(30)
+while ((Get-Date) -lt $fin) {
+    [System.IO.File]::WriteAllBytes($archivo, $datos)
+    $null = [System.IO.File]::ReadAllBytes($archivo)
+}
+Remove-Item $archivo -Force
+
+```
+
+**Stress test de red (30 segundos) **
+-   Usa un archivo de prueba público.
+-   Genera tráfico de red sostenido.
+
+``` bash
+$fin = (Get-Date).AddSeconds(30)
+$url = "http://speedtest.tele2.net/10MB.zip"
+
+while ((Get-Date) -lt $fin) {
+    Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\net_test.tmp" -UseBasicParsing
+}
+Remove-Item "$env:TEMP\net_test.tmp" -Force
+```
