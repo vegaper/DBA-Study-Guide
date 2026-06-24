@@ -105,7 +105,7 @@ Son los pilares invisibles del SO. Los servicios son procesos especiales que: - 
 ## Herramientas de Monitorización del Sistema
 
 Windows:
-
+-   Información del sistema.
 -   Administrador de tareas
 -   Monitor de recursos (resmon ***resource monitor***)
 -   Monitor de rendimiento (perfmo ***performance monitor***) contadores en tiempo real y datos históricos.
@@ -252,6 +252,58 @@ flowchart LR
 
 ### Herramientas en Windows
 
+#### msinfo32 (Información del sistema)
+
+**msinfo32.exe** es una herramienta de Windows que muestra un informe completo del **hardware**, **componentes** y **configuración del sistema operativo**.  
+Es muy útil para diagnóstico, soporte técnico y análisis del estado del equipo.
+
+##### Qué ofrece
+
+- **Resumen del sistema**  
+  - Versión de Windows  
+  - Fabricante del equipo  
+  - Modelo  
+  - BIOS  
+  - Procesador  
+  - RAM instalada  
+
+- **Recursos de hardware**  
+  - IRQ  
+  - DMA  
+  - Conflictos y recursos compartidos  
+  - Memoria asignada  
+  - Controladores cargados  
+
+- **Componentes**  
+  - Almacenamiento  
+  - Red  
+  - Pantalla  
+  - Sonido  
+  - Dispositivos USB  
+  - Periféricos  
+
+- **Entorno de software**  
+  - Programas instalados  
+  - Servicios  
+  - Controladores  
+  - Tareas programadas  
+  - Variables de entorno  
+
+##### Para qué sirve
+
+- Diagnosticar problemas de hardware o drivers  
+- Ver especificaciones completas del equipo  
+- Exportar informes para soporte técnico  
+- Detectar conflictos de recursos  
+- Revisar configuraciones del sistema sin herramientas externas  
+
+#####  Cómo abrirlo
+
+Puedes ejecutarlo escribiendo en la consola de comandos `msinfo32` 
+
+![](images/msinfo.png)
+
+
 #### Administrador de tareas. (Task Manager)
 
 El Administrador de tareas de Windows es una herramienta integrada que permite supervisar y gestionar procesos, rendimiento, usuarios y servicios del sistema. Ofrece vistas simplificadas y técnicas, gráficos en tiempo real y opciones de control como finalizar procesos, ajustar prioridades o gestionar el inicio del sistema. Es esencial para diagnóstico rápido y resolución de problemas en entornos de administración de sistemas y bases de datos.
@@ -357,7 +409,7 @@ En el Administrador de tareas: Clic derecho en una instancia de svchost.exe. “
 
 `services.msc` es la consola gráfica de Windows para administrar los servicios del sistema. Permite ver, iniciar, detener, configurar y diagnosticar servicios que se ejecutan en segundo plano. Es una herramienta esencial para administradores de sistemas, DBA y técnicos de soporte.
 
-![](/images/services.png)
+![](images/services.png)
 
 ##### Ver el estado de los servicios
 
@@ -550,7 +602,7 @@ El Monitor de recursos permite:
 -   Detectar cuellos de botella en tiempo real.
 -   Es una herramienta clave para diagnóstico, resolución de problemas y administración avanzada.
 
-![](/images/resmon.png)
+![](images/resmon.png)
 | Sección | Qué muestra / métricas | Para qué sirve |
 |--------|--------------------------|----------------|
 | **CPU** | - Procesos activos<br>- Servicios asociados<br>- Hilos por proceso<br>- Tiempo de CPU<br>- Gráficos en tiempo real | Permite ver si un proceso está saturando el procesador y analizar carga de trabajo. |
@@ -558,3 +610,12 @@ El Monitor de recursos permite:
 | **Disco** | - Lectura/escritura por proceso<br>- Archivos abiertos por cada proceso<br>- Latencia del disco<br>- Cuellos de botella de almacenamiento | Útil para identificar procesos que bloquean el sistema por I/O o archivos en uso. |
 | **Red** | - Conexiones TCP activas<br>- Puertos usados<br>- Procesos que generan tráfico<br>- Latencia y uso de ancho de banda | Ideal para detectar procesos sospechosos, tráfico anómalo o problemas de red. |
 | **Seguridad y diagnóstico** | - Ver si un proceso es legítimo<br>- Detectar malware que consume CPU o red<br>- Identificar servicios que bloquean archivos<br>- Analizar por qué un programa se cuelga | Herramienta clave para diagnóstico avanzado y resolución de problemas. |
+
+
+| Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo mental |
+|-----------------|---------------|-------------------------------|----------------|
+| **En uso** | Memoria que están usando activamente procesos, servicios y el sistema. | ❌ No | Programas abiertos ocupando RAM. |
+| **Modificada** | Datos cambiados que aún no se han guardado en disco; deben escribirse antes de liberarse. | ⚠️ No, hasta que se escriba en disco | Datos pendientes de guardar. |
+| **En espera** | Caché de datos usados recientemente; puede liberarse al instante si otro proceso necesita RAM. | ✔️ Sí | Memoria “reciclable” que acelera el sistema. |
+| **Libre** | RAM completamente vacía, sin datos útiles. | ✔️ Sí | Memoria sin usar. |
+
