@@ -436,12 +436,12 @@ Por qué es importante para un DBA o SysAdmin
 -   Es clave para entornos con múltiples servicios: IIS, colas MSMQ, agentes de backup, antivirus, etc.
 :::
 
-### tasklist
+#### tasklist
 En la consola de comandos podemos ejecutar `tasklist` (Windows 11)para mostrar los procesos que se están ejecutando en el equipo local o remoto. La opción `tasklist /svc` nos muestra los procesos con servicios asociados.
 
 ![](images/tasklistsvc.png)
 
-### PowerShell para procesos y servicios
+#### PowerShell para procesos y servicios
 **PowerShell** permite consultar procesos y servicios desde consola. `Get-Process` obtiene los procesos del equipo local, y `Get-Service` obtiene los servicios del equipo.
 ```
 Get-process # Ver procesos
@@ -504,7 +504,9 @@ Administrador de tareas muestra información visual, resumida y orientada al usu
 **Administrador de tareas**: Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.→ Por eso muestra más métricas y más precisas.
 
 **Get-Process**: Usa la clase .NET System.Diagnostics.Process.→ Es más limitado, pero muy útil para automatizar.
+
 ----------------
+
 Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
 
 El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
@@ -534,7 +536,7 @@ Get-WmiObject Win32_Process | ForEach-Object {
     }
 } | Export-Csv "d:\procesos_detallados.csv" -NoTypeInformation -Encoding UTF8
 ```
-### Monitor de Recursos (Resmon)
+#### Monitor de Recursos (Resmon)
 El monitor de recursos se abre desde la consola de comandos usando `resmon`
 resmon.exe, o Monitor de recursos, es una herramienta avanzada de Windows que permite ver en detalle cómo el sistema utiliza CPU, memoria, disco y red.
 Es más completo que el Administrador de tareas y más visual que usar comandos o PowerShell.
@@ -575,7 +577,7 @@ Resmon desglosa cada recurso con métricas profundas, como:
 | **En espera** | Caché de datos usados recientemente; puede liberarse al instante si otro proceso necesita RAM. | ✔️ Sí | Memoria “reciclable” que acelera el sistema. |
 | **Libre** | RAM completamente vacía, sin datos útiles. | ✔️ Sí | Memoria sin usar. |
 
-### Monitor de rendimiento (perfmon, Performance Monitor)
+#### Monitor de rendimiento (perfmon, Performance Monitor)
 
 **perfmon.exe** es una herramienta avanzada de Windows que permite **monitorizar el rendimiento del sistema en tiempo real** y **registrar métricas históricas** mediante contadores.  
 Es mucho más potente y configurable que el Administrador de tareas o el Monitor de recursos.
@@ -588,7 +590,7 @@ Puedes ejecutarlo desde la consola de comandos `perform` o desde:
 Es mucho más potente y configurable que el Administrador de tareas o el Monitor de recursos.
 Perfmon es la **única** que permite **registrar datos a largo plazo** y analizar tendencias.
 
-#### ¿Para qué sirve Perfmon?
+**¿Para qué sirve Perfmon?**
 
 - Analizar rendimiento del sistema a nivel profundo  
 - Registrar métricas durante horas o días  
@@ -599,9 +601,9 @@ Perfmon es la **única** que permite **registrar datos a largo plazo** y analiza
 
 ![](images/perform.png)
 
-#### Componentes principales
+##### Componentes principales
 
-##### Vista general (Performance Monitor)
+**Vista general (Performance Monitor)**
 Muestra gráficos en tiempo real de contadores como:
 
 - % de uso de CPU  
@@ -612,7 +614,7 @@ Muestra gráficos en tiempo real de contadores como:
 
 Puedes añadir o quitar contadores según lo que quieras analizar.
 
-##### Conjuntos de recopiladores de datos (Data Collector Sets)
+**Conjuntos de recopiladores de datos (Data Collector Sets)**
 La función más potente de Perfmon.
 
 Permite:
@@ -628,7 +630,7 @@ Tipos:
 - **Usuario** (creados por ti): En perfmon, ir a: Conjuntos de recopiladores de datos → Definido por el usuario
 - **Plantillas** (importadas/exportadas)
 
-##### Informes
+** Informes**
 Perfmon genera informes automáticos con:
 
 - Cuellos de botella detectados  
@@ -638,24 +640,24 @@ Perfmon genera informes automáticos con:
 
 Muy útil para diagnósticos post-mortem.
 
-#### Contadores más usados
+##### Contadores más usados
 
-##### **CPU**
+**CPU**
 - Processor → % Processor Time  
 - System → Processor Queue Length  
 - Process → % Processor Time  
 
-##### **Memoria**
+**Memoria**
 - Memory → Available MBytes  
 - Memory → Pages/sec  
 - Memory → Cache Faults/sec  
 
-##### **Disco**
+**Disco**
 - PhysicalDisk → Avg. Disk sec/Read  
 - PhysicalDisk → Avg. Disk sec/Write  
 - PhysicalDisk → Disk Queue Length  
 
-##### **Red**
+**Red**
 - Network Interface → Bytes Total/sec  
 - TCPv4 → Segments Retransmitted/sec  
 
