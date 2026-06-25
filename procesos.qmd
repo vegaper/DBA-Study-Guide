@@ -207,6 +207,39 @@ flowchart LR
 ```
 
 Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.
+**Observar**: No asumir nada. No buscar culpables. Solo observar y recopilar datos.
+-   Detectar y describir el síntoma sin interpretar todavía la causa. 
+-   Determinar cuándo ocurre: continuamente, en picos, en horarios concretos, tras un despliegue, tras un cambio de carga.
+-   Identificar quién lo experimenta: un usuario, un grupo, toda la aplicación, un proceso concreto.
+-   Medir el impacto: ¿afecta a la disponibilidad?, ¿a la experiencia del usuario?, ¿a los SLA?
+**Identificar**: onvertir una queja genérica en un problema técnico verificable. 
+Acciones típicas:
+-   Revisar métricas del sistema (CPU, RAM, I/O, red).
+-   Revisar métricas del motor de base de datos (waits, locks, deadlocks, buffer cache, plan cache).
+-   Consultar logs, alertas y eventos recientes.
+Aquí se pasa de “va lento” a algo más preciso, por ejemplo: “la CPU está al 95%”
+**Localizar**: Determinar el origen exacto del problema dentro del sistema.¿El problema está en un proceso, una consulta, un índice, un plan de ejecución, un servicio del SO?
+Acciones típicas:
+-   Aislar componentes.
+-   Revisar planes de ejecución.
+-   Analizar waits (esperas) para saber dónde se detiene el tiempo.
+-   Correlacionar eventos: “cuando sube el I/O, baja el throughput de consultas”.
+**Diferenciar**: Comparar el comportamiento actual con el esperado para encontrar la causa raíz. Separar síntomas de causas. 
+Acciones típicas:
+-   Comparar métricas históricas vs actuales.
+-   Revisar cambios recientes (deploys, parches, configuraciones).
+-   Probar hipótesis controladas (ejecutar la consulta con hints, forzar un plan, deshabilitar un índice, etc.).
+Aquí se responde a preguntas como:
+¿Esto funcionaba antes?, ¿Qué ha cambiado?, ¿El problema es constante o intermitente?, ¿Afecta solo a un tipo de carga o a todas?, ¿El plan de ejecución ha cambiado?, ¿El volumen de datos ha crecido?, ¿Se ha modificado la configuración?
+**Aplicar**: Implementar la solución adecuada y documentar el proceso.
+-   Aplicar la corrección: optimizar una consulta, crear o ajustar un índice, modificar configuración, escalar recursos, corregir un bug, etc.
+-   Validar que la solución funciona: repetir pruebas, medir impacto, verificar estabilidad.
+-   Documentar:
+  -   Causa raíz.
+  -   Acción tomada.
+  -   Fecha y responsables.
+  -   Impacto en el sistema.
+  -   Medidas preventivas para evitar recurrencias.
 
 ## Métricas a observar
 
