@@ -207,39 +207,6 @@ flowchart LR
 ```
 
 Cada paso es esencial: desde observar la lentitud o el bloqueo inicial, hasta documentar la causa, la acción tomada, la fecha, el impacto y las medidas preventivas para evitar recurrencias.
-**Observar**: No asumir nada. No buscar culpables. Solo observar y recopilar datos.
--   Detectar y describir el síntoma sin interpretar todavía la causa. 
--   Determinar cuándo ocurre: continuamente, en picos, en horarios concretos, tras un despliegue, tras un cambio de carga.
--   Identificar quién lo experimenta: un usuario, un grupo, toda la aplicación, un proceso concreto.
--   Medir el impacto: ¿afecta a la disponibilidad?, ¿a la experiencia del usuario?, ¿a los SLA?
-**Identificar**: onvertir una queja genérica en un problema técnico verificable. 
-Acciones típicas:
--   Revisar métricas del sistema (CPU, RAM, I/O, red).
--   Revisar métricas del motor de base de datos (waits, locks, deadlocks, buffer cache, plan cache).
--   Consultar logs, alertas y eventos recientes.
-Aquí se pasa de “va lento” a algo más preciso, por ejemplo: “la CPU está al 95%”
-**Localizar**: Determinar el origen exacto del problema dentro del sistema.¿El problema está en un proceso, una consulta, un índice, un plan de ejecución, un servicio del SO?
-Acciones típicas:
--   Aislar componentes.
--   Revisar planes de ejecución.
--   Analizar waits (esperas) para saber dónde se detiene el tiempo.
--   Correlacionar eventos: “cuando sube el I/O, baja el throughput de consultas”.
-**Diferenciar**: Comparar el comportamiento actual con el esperado para encontrar la causa raíz. Separar síntomas de causas. 
-Acciones típicas:
--   Comparar métricas históricas vs actuales.
--   Revisar cambios recientes (deploys, parches, configuraciones).
--   Probar hipótesis controladas (ejecutar la consulta con hints, forzar un plan, deshabilitar un índice, etc.).
-Aquí se responde a preguntas como:
-¿Esto funcionaba antes?, ¿Qué ha cambiado?, ¿El problema es constante o intermitente?, ¿Afecta solo a un tipo de carga o a todas?, ¿El plan de ejecución ha cambiado?, ¿El volumen de datos ha crecido?, ¿Se ha modificado la configuración?
-**Aplicar**: Implementar la solución adecuada y documentar el proceso.
--   Aplicar la corrección: optimizar una consulta, crear o ajustar un índice, modificar configuración, escalar recursos, corregir un bug, etc.
--   Validar que la solución funciona: repetir pruebas, medir impacto, verificar estabilidad.
--   Documentar:
-  -   Causa raíz.
-  -   Acción tomada.
-  -   Fecha y responsables.
-  -   Impacto en el sistema.
-  -   Medidas preventivas para evitar recurrencias.
 
 ## Métricas a observar
 
@@ -264,7 +231,7 @@ Es muy útil para diagnóstico, soporte técnico y análisis del estado del equi
 #### Qué ofrece
 
 | Categoría                | Elementos que incluye                                                                     |
-|:------------------|:----------------------------------------------------|
+|:-------------------|:---------------------------------------------------|
 | **Resumen del sistema**  | Versión de Windows, Fabricante del equipo, Modelo, BIOS, Procesador, RAM instalada.       |
 | **Recursos de hardware** | IRQ, DMA, Conflictos y recursos compartidos, Memoria asignada, Controladores cargados.    |
 | **Componentes**          | Almacenamiento, Red, Pantalla, Sonido, Dispositivos USB, Periféricos.                     |
@@ -359,9 +326,7 @@ Windows agrupa servicios por función o nivel de criticidad. Ejemplos:
 
 Esto permite que si un servicio falla, no se caiga todo el sistema, solo la instancia afectada.
 
-Normalmente svchost.exe es legítimo, pero si aparece fuera de estas rutas, puede ser sospechoso: 
--   C:\\Windows\\System32\\svchost.exe ← ruta correcta 
--   C:\\Windows\\SysWOW64\\svchost.exe ← también válida Si aparece en otra carpeta, podría ser malware disfrazado.
+Normalmente svchost.exe es legítimo, pero si aparece fuera de estas rutas, puede ser sospechoso: - C:\Windows\System32\\svchost.exe ← ruta correcta - C:\Windows\SysWOW64\\svchost.exe ← también válida Si aparece en otra carpeta, podría ser malware disfrazado.
 
 Cómo ver qué servicios ejecuta cada svchost.exe En el Administrador de tareas: Clic derecho en una instancia de svchost.exe. "Ir a servicios", ahí verás qué servicios están asociados.
 :::
@@ -482,15 +447,18 @@ Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Admi
 **Equivalencia de Columnas: Task Manager vs PowerShell**
 
 Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica: 
+
 :::{.tabla-pequena} 
+
 | Columna en Task Manager | Propiedad PowerShell equivalente | Fuente (WMI / Get-Process / cálculo) | Notas importantes | |-----------------|-----------------|-----------------|---------------------| | Name | Name | Win32_Process | Coincide 1:1 | | PID | ProcessId | Win32_Process | Coincide 1:1 | | Estado | ExecutionState | Win32_Process | Suele venir vacío en Windows modernos | | Nombre de usuario | GetOwner().User + Domain | Win32_Process (método GetOwner) | Solo disponible en WMI clásico | | CPU (tiempo acumulado) | CPU | Get-Process | No es %CPU, es tiempo total de CPU | | CPU (%) | Calculado con Get-Counter | Cálculo manual | Task Manager usa muestreo interno | | Memoria (espacio de trabajo privado) | PrivateMemorySize64 | Get-Process | **Esta es la que coincide con Task Manager** | | Working Set (Memoria física total) | WorkingSet / WorkingSet64 | Get-Process | No es "privada", incluye memoria compartida | | WorkingSetSize (WMI) | WorkingSetSize | Win32_Process | **NO coincide con Task Manager** | | Descripción | Description | Win32_Process | Depende del ejecutable | | Línea de comandos | CommandLine | Win32_Process | Puede requerir permisos elevados | | Ruta de acceso de imagen | ExecutablePath | Win32_Process | Puede venir vacío en procesos del sistema | | Número de hilos | ThreadCount | Win32_Process | Coincide | | Uso de archivo de paginación | PageFileUsage | Win32_Process | No coincide con "Commit size" del Task Manager | | Memoria virtual | VirtualSize | Win32_Process | No coincide con "Memoria reservada" | 
+
 :::
 
 **Administrador de tareas** muestra información visual, resumida y orientada al usuario, incluyendo uso de GPU, impacto de inicio, servicios asociados, historial, etc. Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.→ Por eso muestra más métricas y más precisas.
 
 **Get-Process** muestra información técnica y detallada a nivel de proceso, ideal para automatización, scripting y administración avanzada, pero no incluye todo lo que muestra el Administrador de tareas. Usa la clase .NET System.Diagnostics.Process.→ Es más limitado, pero muy útil para automatizar.
 
-::: ejemplo-practico
+::: .ejemplo-practico
 Para conseguir un informe (CSV) similar al que verías en el Administrador de Tareas, usamos un script que combina ambas fuentes. El flujo es simple: interrogamos a WMI para obtener la lista de procesos profunda, y por cada uno de ellos, interrogamos a Get-Process para sacarle el consumo de memoria y CPU.
 
 El siguiente script es un ejemplo de cómo conseguirlo, tan solo tienes que elegir cambiar la información que necesites en cada caso y dónde quieres guardar la información.
@@ -546,7 +514,7 @@ Resmon desglosa cada recurso con métricas profundas, como:
 
 ![](images/resmon.png)
 
-::: tabla-pequena
+::: .tabla-pequena
 | Sección                     | Qué muestra / métricas                                                                            | Para qué sirve                                                           |
 |------------------|-------------------------------|-----------------------|
 | **CPU**                     | Procesos activos, servicios asociados, hilos por proceso, tiempo de CPU, gráficos en tiempo real  | Detectar procesos que saturan el procesador y analizar carga de trabajo. |
@@ -560,9 +528,9 @@ Resmon desglosa cada recurso con métricas profundas, como:
 
 **Explicación de los Tipos de Memoria**
 
-::: tabla-pequena
+::: .tabla-pequena
 | Tipo de memoria | Qué significa                                                                                  | ¿Se puede usar inmediatamente?       | Ejemplo                                      |
-|---------------|---------------------------|---------------|---------------|
+|----------------|------------------------|----------------|----------------|
 | **En uso**      | Memoria que están usando activamente procesos, servicios y el sistema.                         | ❌ No                                | Programas abiertos ocupando RAM.             |
 | **Modificada**  | Datos cambiados que aún no se han guardado en disco; deben escribirse antes de liberarse.      | ⚠️ No, hasta que se escriba en disco | Datos pendientes de guardar.                 |
 | **En espera**   | Caché de datos usados recientemente; puede liberarse al instante si otro proceso necesita RAM. | ✔️ Sí                                | Memoria "reciclable" que acelera el sistema. |
@@ -649,7 +617,7 @@ Muy útil para diagnósticos post-mortem.
 **Red** - Network Interface → Bytes Total/sec\
 - TCPv4 → Segments Retransmitted/sec
 
-::: nota-importante
+::: .nota-importante
 **Ejemplos de uso real**
 
 -   Detectar si un servidor tiene **cuello de botella de disco**
@@ -709,7 +677,7 @@ Localizar fallos en servicios es tan sencillo como filtrar la sección *Sistema*
 
 En un servidor, esta información es vital para diagnósticos *post-mortem* (saber qué pasó de madrugada cuando nadie estaba mirando).
 
-::: practica
+::: .practica
 **Pruebas de stress**
 
 Podemos usar unos script in Power Shell para sobrecargar los recursos del sistema y de esa forma ver cómo los distintos monitores del sistema reflejan esos cambios.
@@ -787,7 +755,7 @@ Como DBA, tu objetivo principal es garantizar que el motor de la base de datos t
 
 ::: .tabla-pequena
 | Síntoma del Servidor BD                                                       | Recurso Sospechoso             | ¿Qué herramienta utilizo?                        | ¿Qué busco exactamente?                                                                                                                                                                               |
-|:--------------|:--------------|:--------------|:----------------------------|
+|:---------------|:---------------|:---------------|:------------------------|
 | **Consultas muy lentas de repente, pero la BD responde.**                     | **Disco (I/O)**                | Monitor de Recursos (Resmon) / Perfmon           | En *Resmon*, reviso la pestaña Disco para ver la latencia (ms) y la "Cola de disco". Si la latencia es alta, el disco no da abasto para leer las tablas.                                              |
 | **El servidor web dice "Timeout" al conectar a la BD.**                       | **Red** / **Servicio**         | Administrador de Tareas / Visor de Eventos       | En *Task Manager*, reviso si el servicio del SGBD está "Detenido". En el *Visor de Eventos (Aplicación)*, busco si la BD registró un "Error" al agotar el pool de conexiones o un bloqueo de puertos. |
 | **El servidor está "congelado" o va a tirones.**                              | **CPU**                        | Administrador de Tareas (Detalles) / Get-Process | Busco procesos que consuman cerca del 100% de CPU. Si es el SGBD, suele indicar una consulta mal optimizada (sin índices). Si es otro proceso (ej. un antivirus), está robando ciclos a la BD.        |
