@@ -359,7 +359,9 @@ Windows agrupa servicios por función o nivel de criticidad. Ejemplos:
 
 Esto permite que si un servicio falla, no se caiga todo el sistema, solo la instancia afectada.
 
-Normalmente svchost.exe es legítimo, pero si aparece fuera de estas rutas, puede ser sospechoso: - C:\Windows\System32\\svchost.exe ← ruta correcta - C:\Windows\SysWOW64\\svchost.exe ← también válida Si aparece en otra carpeta, podría ser malware disfrazado.
+Normalmente svchost.exe es legítimo, pero si aparece fuera de estas rutas, puede ser sospechoso: 
+-   C:\\Windows\\System32\\svchost.exe ← ruta correcta 
+-   C:\\Windows\\SysWOW64\\svchost.exe ← también válida Si aparece en otra carpeta, podría ser malware disfrazado.
 
 Cómo ver qué servicios ejecuta cada svchost.exe En el Administrador de tareas: Clic derecho en una instancia de svchost.exe. "Ir a servicios", ahí verás qué servicios están asociados.
 :::
@@ -479,7 +481,10 @@ Para solucionar esto, podemos usar PowerShell, pero hay que entender que el Admi
 
 **Equivalencia de Columnas: Task Manager vs PowerShell**
 
-Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica: :::{.tabla-pequena} \| Columna en Task Manager \| Propiedad PowerShell equivalente \| Fuente (WMI / Get-Process / cálculo) \| Notas importantes \| \|-----------------\|-----------------\|-----------------\|---------------------\| \| Name \| Name \| Win32_Process \| Coincide 1:1 \| \| PID \| ProcessId \| Win32_Process \| Coincide 1:1 \| \| Estado \| ExecutionState \| Win32_Process \| Suele venir vacío en Windows modernos \| \| Nombre de usuario \| GetOwner().User + Domain \| Win32_Process (método GetOwner) \| Solo disponible en WMI clásico \| \| CPU (tiempo acumulado) \| CPU \| Get-Process \| No es %CPU, es tiempo total de CPU \| \| CPU (%) \| Calculado con Get-Counter \| Cálculo manual \| Task Manager usa muestreo interno \| \| Memoria (espacio de trabajo privado) \| PrivateMemorySize64 \| Get-Process \| **Esta es la que coincide con Task Manager** \| \| Working Set (Memoria física total) \| WorkingSet / WorkingSet64 \| Get-Process \| No es "privada", incluye memoria compartida \| \| WorkingSetSize (WMI) \| WorkingSetSize \| Win32_Process \| **NO coincide con Task Manager** \| \| Descripción \| Description \| Win32_Process \| Depende del ejecutable \| \| Línea de comandos \| CommandLine \| Win32_Process \| Puede requerir permisos elevados \| \| Ruta de acceso de imagen \| ExecutablePath \| Win32_Process \| Puede venir vacío en procesos del sistema \| \| Número de hilos \| ThreadCount \| Win32_Process \| Coincide \| \| Uso de archivo de paginación \| PageFileUsage \| Win32_Process \| No coincide con "Commit size" del Task Manager \| \| Memoria virtual \| VirtualSize \| Win32_Process \| No coincide con "Memoria reservada" \| :::
+Al cruzar estas dos herramientas, así es como conseguimos mapear la información que vemos en la interfaz gráfica: 
+:::{.tabla-pequena} 
+| Columna en Task Manager | Propiedad PowerShell equivalente | Fuente (WMI / Get-Process / cálculo) | Notas importantes | |-----------------|-----------------|-----------------|---------------------| | Name | Name | Win32_Process | Coincide 1:1 | | PID | ProcessId | Win32_Process | Coincide 1:1 | | Estado | ExecutionState | Win32_Process | Suele venir vacío en Windows modernos | | Nombre de usuario | GetOwner().User + Domain | Win32_Process (método GetOwner) | Solo disponible en WMI clásico | | CPU (tiempo acumulado) | CPU | Get-Process | No es %CPU, es tiempo total de CPU | | CPU (%) | Calculado con Get-Counter | Cálculo manual | Task Manager usa muestreo interno | | Memoria (espacio de trabajo privado) | PrivateMemorySize64 | Get-Process | **Esta es la que coincide con Task Manager** | | Working Set (Memoria física total) | WorkingSet / WorkingSet64 | Get-Process | No es "privada", incluye memoria compartida | | WorkingSetSize (WMI) | WorkingSetSize | Win32_Process | **NO coincide con Task Manager** | | Descripción | Description | Win32_Process | Depende del ejecutable | | Línea de comandos | CommandLine | Win32_Process | Puede requerir permisos elevados | | Ruta de acceso de imagen | ExecutablePath | Win32_Process | Puede venir vacío en procesos del sistema | | Número de hilos | ThreadCount | Win32_Process | Coincide | | Uso de archivo de paginación | PageFileUsage | Win32_Process | No coincide con "Commit size" del Task Manager | | Memoria virtual | VirtualSize | Win32_Process | No coincide con "Memoria reservada" | 
+:::
 
 **Administrador de tareas** muestra información visual, resumida y orientada al usuario, incluyendo uso de GPU, impacto de inicio, servicios asociados, historial, etc. Usa APIs internas de Windows, incluyendo ETW (Event Tracing for Windows), contadores de rendimiento y datos del kernel.→ Por eso muestra más métricas y más precisas.
 
@@ -780,7 +785,7 @@ Remove-Item "$env:TEMP\net_test.tmp" -Force
 
 Como DBA, tu objetivo principal es garantizar que el motor de la base de datos tenga los recursos necesarios para servir datos rápido y de forma segura. Aquí tienes el mapa mental de "Qué herramienta usar y qué mirar" ante los problemas más comunes.
 
-::: tabla-pequena
+::: .tabla-pequena
 | Síntoma del Servidor BD                                                       | Recurso Sospechoso             | ¿Qué herramienta utilizo?                        | ¿Qué busco exactamente?                                                                                                                                                                               |
 |:--------------|:--------------|:--------------|:----------------------------|
 | **Consultas muy lentas de repente, pero la BD responde.**                     | **Disco (I/O)**                | Monitor de Recursos (Resmon) / Perfmon           | En *Resmon*, reviso la pestaña Disco para ver la latencia (ms) y la "Cola de disco". Si la latencia es alta, el disco no da abasto para leer las tablas.                                              |
