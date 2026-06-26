@@ -207,6 +207,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Servidor Linux Intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
@@ -278,9 +290,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#redes-en-la-máquina-virtual" id="toc-redes-en-la-máquina-virtual" class="nav-link" data-scroll-target="#redes-en-la-máquina-virtual"><span class="header-section-number">2.3</span> Redes en la máquina virtual</a>
   <ul class="collapse">
   <li><a href="#nat" id="toc-nat" class="nav-link" data-scroll-target="#nat"><span class="header-section-number">2.3.1</span> NAT</a></li>
-  <li><a href="#adaptador-puente-bridged" id="toc-adaptador-puente-bridged" class="nav-link" data-scroll-target="#adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged )</a></li>
-  <li><a href="#red-nat-nat-network" id="toc-red-nat-nat-network" class="nav-link" data-scroll-target="#red-nat-nat-network"><span class="header-section-number">2.3.3</span> Red NAT (NAT Network)</a></li>
-  <li><a href="#red-interna-internal-network" id="toc-red-interna-internal-network" class="nav-link" data-scroll-target="#red-interna-internal-network"><span class="header-section-number">2.3.4</span> Red Interna (Internal Network)</a></li>
+  <li><a href="#adaptador-puente-bridged" id="toc-adaptador-puente-bridged" class="nav-link" data-scroll-target="#adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged)</a></li>
+  <li><a href="#modo-sólo-anfitrión-host-only" id="toc-modo-sólo-anfitrión-host-only" class="nav-link" data-scroll-target="#modo-sólo-anfitrión-host-only"><span class="header-section-number">2.3.3</span> Modo Sólo anfitrión (Host-Only)</a></li>
+  <li><a href="#red-nat-nat-network" id="toc-red-nat-nat-network" class="nav-link" data-scroll-target="#red-nat-nat-network"><span class="header-section-number">2.3.4</span> Red NAT (NAT Network)</a></li>
+  <li><a href="#red-interna-internal-network" id="toc-red-interna-internal-network" class="nav-link" data-scroll-target="#red-interna-internal-network"><span class="header-section-number">2.3.5</span> Red Interna (Internal Network)</a></li>
   </ul></li>
   <li><a href="#tabla-comparativa-de-modos-de-red-en-virtualbox" id="toc-tabla-comparativa-de-modos-de-red-en-virtualbox" class="nav-link" data-scroll-target="#tabla-comparativa-de-modos-de-red-en-virtualbox"><span class="header-section-number">2.4</span> Tabla comparativa de modos de red en VirtualBox</a></li>
   </ul></li>
@@ -320,9 +333,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h1 data-number="1"><span class="header-section-number">1</span> Modelos de servicio en la nube: IaaS, PaaS y SaaS</h1>
 <p>Los servicios en la nube se organizan en tres grandes modelos según el nivel de control que tiene el usuario y el nivel de gestión que ofrece el proveedor. De menor a mayor abstracción:</p>
 <ul>
-<li>IaaS – Infraestructura como servicio.</li>
-<li>PaaS – Plataforma como servicio.</li>
-<li>SaaS – Software como servicio.</li>
+<li><p>IaaS – Infraestructura como servicio.</p></li>
+<li><p>PaaS – Plataforma como servicio.</p></li>
+<li><p>SaaS – Software como servicio.</p></li>
 </ul>
 <p>A medida que avanzamos hacia SaaS, el proveedor gestiona más cosas y el usuario se preocupa de menos.</p>
 <section id="iaas-infrastructure-as-a-service" class="level2" data-number="1.1">
@@ -351,59 +364,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </colgroup>
 <thead>
 <tr class="header">
-<th>Modelo</th>
-<th>Significa</th>
-<th>Qué gestiona el proveedor</th>
-<th>Qué gestiona el usuario</th>
-<th>Ejemplos</th>
+<th style="text-align: left;">Modelo</th>
+<th style="text-align: left;">Significa</th>
+<th style="text-align: left;">Qué gestiona el proveedor</th>
+<th style="text-align: left;">Qué gestiona el usuario</th>
+<th style="text-align: left;">Ejemplos</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>IaaS</strong></td>
-<td>Infrastructure as a Service</td>
-<td>Hardware, red, almacenamiento, virtualización</td>
-<td>SO, aplicaciones, configuración, seguridad interna</td>
-<td>AWS EC2, Azure VM, Google Compute Engine</td>
+<td style="text-align: left;"><strong>IaaS</strong></td>
+<td style="text-align: left;">Infrastructure as a Service</td>
+<td style="text-align: left;">Hardware, red, almacenamiento, virtualización</td>
+<td style="text-align: left;">SO, aplicaciones, configuración, seguridad interna</td>
+<td style="text-align: left;">AWS EC2, Azure VM, Google Compute Engine</td>
 </tr>
 <tr class="even">
-<td><strong>PaaS</strong></td>
-<td>Platform as a Service</td>
-<td>Infraestructura + SO + runtime + base de datos</td>
-<td>Solo el código y la lógica de la app</td>
-<td>Heroku, Azure App Service, Google App Engine</td>
+<td style="text-align: left;"><strong>PaaS</strong></td>
+<td style="text-align: left;">Platform as a Service</td>
+<td style="text-align: left;">Infraestructura + SO + runtime + base de datos</td>
+<td style="text-align: left;">Solo el código y la lógica de la app</td>
+<td style="text-align: left;">Heroku, Azure App Service, Google App Engine</td>
 </tr>
 <tr class="odd">
-<td><strong>SaaS</strong></td>
-<td>Software as a Service</td>
-<td>Todo: infraestructura, plataforma y aplicación</td>
-<td>Solo usar la aplicación</td>
-<td>Gmail, Office 365, Dropbox</td>
+<td style="text-align: left;"><strong>SaaS</strong></td>
+<td style="text-align: left;">Software as a Service</td>
+<td style="text-align: left;">Todo: infraestructura, plataforma y aplicación</td>
+<td style="text-align: left;">Solo usar la aplicación</td>
+<td style="text-align: left;">Gmail, Office 365, Dropbox</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<pre><code>            Nivel de control del usuario
+<pre class="text"><code>            Nivel de control del usuario
             ↑
             │   Más control
             │
             │   ┌───────────────────────────────┐
-            │   │            IaaS                │
-            │   │ Infraestructura como servicio  │
-            │   │ Tú gestionas: SO y apps        │
+            │   │            IaaS               │
+            │   │ Infraestructura como servicio │
+            │   │ Tú gestionas: SO y apps       │
             │   └───────────────────────────────┘
             │
             │   ┌───────────────────────────────┐
-            │   │            PaaS                │
-            │   │ Plataforma como servicio       │
-            │   │ Tú gestionas: solo el código   │
+            │   │            PaaS               │
+            │   │ Plataforma como servicio      │
+            │   │ Tú gestionas: solo el código  │
             │   └───────────────────────────────┘
             │
             │   ┌───────────────────────────────┐
-            │   │            SaaS                │
-            │   │ Software como servicio         │
-            │   │ Tú solo usas la aplicación     │
+            │   │            SaaS               │
+            │   │ Software como servicio        │
+            │   │ Tú solo usas la aplicación    │
             │   └───────────────────────────────┘
             │
             └────────────────────────────────────────→
@@ -415,54 +428,41 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>La virtualización surgió para <strong>aprovechar mejor los recursos</strong> de los servidores.</p>
 <section id="antes" class="level3" data-number="2.0.1">
 <h3 data-number="2.0.1" class="anchored" data-anchor-id="antes"><span class="header-section-number">2.0.1</span> Antes</h3>
-<p>Un servidor físico → 1 SO → 1 aplicación<br>
-Resultado: recursos infrautilizados.</p>
+<p>Un servidor físico → 1 SO → 1 aplicación Resultado: recursos infrautilizados.</p>
 </section>
 <section id="ahora" class="level3" data-number="2.0.2">
 <h3 data-number="2.0.2" class="anchored" data-anchor-id="ahora"><span class="header-section-number">2.0.2</span> Ahora</h3>
-<p>Un servidor físico → varias máquinas virtuales → múltiples servicios<br>
-Resultado: mejor aprovechamiento y menor coste.</p>
-<p><em>Ejemplo:</em><br>
-En un solo servidor físico podemos tenerr, por ejemplo: un servidor de bases de datos ,un servidor web y un servidor de correo.</p>
+<p>Un servidor físico → varias máquinas virtuales → múltiples servicios Resultado: mejor aprovechamiento y menor coste.</p>
+<p><em>Ejemplo:</em> En un solo servidor físico podemos tener, por ejemplo: un servidor de bases de datos, un servidor web y un servidor de correo.</p>
 </section>
 <section id="tipos-de-hipervisores" class="level3" data-number="2.0.3">
 <h3 data-number="2.0.3" class="anchored" data-anchor-id="tipos-de-hipervisores"><span class="header-section-number">2.0.3</span> Tipos de hipervisores</h3>
 <ul>
-<li><strong>Tipo 1 (bare metal)</strong><br>
-Se instalan directamente sobre el hardware.<br>
-Ej.: VMware ESXi, Hyper-V Server, Proxmox.<br>
-<em>Más eficientes.</em></li>
-<li><strong>Tipo 2 (sobre SO)</strong><br>
-Se instalan como una aplicación dentro del SO.<br>
-Ejemplos:
+<li><p><strong>Tipo 1 (bare metal)</strong> Se instalan directamente sobre el hardware. Ej.: VMware ESXi, Hyper-V Server, Proxmox. <em>Más eficientes.</em></p></li>
+<li><p><strong>Tipo 2 (sobre SO)</strong> Se instalan como una aplicación dentro del SO. Ejemplos:</p>
 <ul>
-<li><strong>VirtualBox</strong> → El más usado en general. Gratuito, fácil, multiplataforma.</li>
-<li><strong>VMware Workstation</strong> → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.</li>
-<li><strong>Hyper‑V</strong> → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.</li>
-<li><strong>Parallels</strong> → Muy usado en Mac, especialmente con Apple Silicon.</li>
-<li><strong>QEMU/KVM</strong> → Popular en Linux y servidores, más técnico. <em>Menos eficientes.</em></li>
+<li><p><strong>VirtualBox</strong> → El más usado en general. Gratuito, fácil, multiplataforma.</p></li>
+<li><p><strong>VMware Workstation</strong> → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.</p></li>
+<li><p><strong>Hyper‑V</strong> → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.</p></li>
+<li><p><strong>Parallels</strong> → Muy usado en Mac, especialmente con Apple Silicon.</p></li>
+<li><p><strong>QEMU/KVM</strong> → Popular en Linux y servidores, más técnico. <em>Menos eficientes.</em></p></li>
 </ul></li>
 </ul>
 </section>
 <section id="contenedores" class="level3" data-number="2.0.4">
 <h3 data-number="2.0.4" class="anchored" data-anchor-id="contenedores"><span class="header-section-number">2.0.4</span> Contenedores</h3>
-<p>Más ligeros que las VM.<br>
-Comparten el kernel del SO anfitrión.<br>
-Ejemplos: Docker, Podman.</p>
-<hr>
+<p>Más ligeros que las VM. Comparten el kernel del SO anfitrión. Ejemplos: Docker, Podman.</p>
 </section>
 <section id="núcleos-virtuales-vcpu" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="núcleos-virtuales-vcpu"><span class="header-section-number">2.1</span> Núcleos Virtuales (vCPU)</h2>
 <p>Una máquina virtual recibe recursos del servidor físico:</p>
 <ul>
-<li>RAM</li>
-<li>Almacenamiento</li>
-<li>CPU (vCPU)</li>
+<li><p>RAM</p></li>
+<li><p>Almacenamiento</p></li>
+<li><p>CPU (vCPU)</p></li>
 </ul>
 <p>Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta directamente al rendimiento del motor de base de datos.</p>
-<p><em>Ejemplo:</em><br>
-Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.</p>
-<hr>
+<p><em>Ejemplo:</em> Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.</p>
 </section>
 <section id="vlan-virtual-lan-redes-virtuales." class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="vlan-virtual-lan-redes-virtuales."><span class="header-section-number">2.2</span> VLAN (virtual LAN, redes virtuales).</h2>
@@ -470,25 +470,35 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
 <p>Una VLAN permite que un grupo de dispositivos se comuniquen como si estuvieran en su propia red privada, aunque físicamente compartan el mismo cableado y los mismos switches.</p>
 <p>¿Por qué existen las VLAN? Porque en redes medianas o grandes necesitas orden, seguridad y eficiencia. Sin VLAN, todo estaría mezclado en un único dominio de broadcast, lo que genera ruido, riesgos y mala organización.</p>
 <p>Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN. Para comunicar VLAN entre sí, necesitas un router o un switch capa 3 (inter‑VLAN routing).</p>
-<p>Beneficios principales - Seguridad: Aísla grupos de dispositivos. Ejemplo: - VLAN 10: Administración - VLAN 20: Invitados - VLAN 30: Cámaras IP Los invitados no pueden ver los equipos de administración.</p>
+<p><strong>Beneficios principales:</strong></p>
 <ul>
-<li>Rendimiento
+<li><p><strong>Seguridad:</strong> Aísla grupos de dispositivos. Ejemplo:</p>
 <ul>
-<li>Reduce el tráfico innecesario (broadcast).</li>
-<li>Cada VLAN tiene su propio dominio de broadcast.</li>
+<li><p>VLAN 10: Administración</p></li>
+<li><p>VLAN 20: Invitados</p></li>
+<li><p>VLAN 30: Cámaras IP</p></li>
+<li><p><em>(Los invitados no pueden ver los equipos de administración).</em></p></li>
 </ul></li>
-<li>Organización
+<li><p><strong>Rendimiento:</strong></p>
 <ul>
-<li>Agrupa dispositivos por función, no por ubicación física.</li>
-<li>Puedes tener PCs en diferentes plantas pero en la misma VLAN.</li>
+<li><p>Reduce el tráfico innecesario (broadcast).</p></li>
+<li><p>Cada VLAN tiene su propio dominio de broadcast.</p></li>
 </ul></li>
-<li>Ahorro - No necesitas más switches físicos para separar redes.</li>
+<li><p><strong>Organización:</strong></p>
+<ul>
+<li><p>Agrupa dispositivos por función, no por ubicación física.</p></li>
+<li><p>Puedes tener PCs en diferentes plantas pero en la misma VLAN.</p></li>
+</ul></li>
+<li><p><strong>Ahorro:</strong></p>
+<ul>
+<li>No necesitas más switches físicos para separar redes.</li>
+</ul></li>
 </ul>
 <p>Ejemplo: Imagina un switch con 8 puertos:</p>
 <ul>
-<li>Puertos 1–4 → VLAN 10 (Oficina)</li>
-<li>Puertos 5–6 → VLAN 20 (Invitados)</li>
-<li>Puertos 7–8 → VLAN 30 (Cámaras)</li>
+<li><p>Puertos 1–4 → VLAN 10 (Oficina)</p></li>
+<li><p>Puertos 5–6 → VLAN 20 (Invitados)</p></li>
+<li><p>Puertos 7–8 → VLAN 30 (Cámaras)</p></li>
 </ul>
 <p>Aunque todos estén en el mismo switch, cada grupo está aislado.</p>
 </section>
@@ -498,24 +508,22 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
 <h3 data-number="2.3.1" class="anchored" data-anchor-id="nat"><span class="header-section-number">2.3.1</span> NAT</h3>
 <p>Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisores), el programa genera por defecto una red virtual privada llamada <strong>NAT (Network Address Translation)</strong>. Esta red funciona de manera aislada del resto del sistema.</p>
 <p>¿Qué significa esto? VirtualBox crea un router virtual interno. Ese router asigna automáticamente direcciones IP privadas a las máquinas virtuales. Normalmente asigna direcciones del tipo: 10.0.2.15 (el “.15” suele ser la primera IP que entrega el DHCP interno).</p>
-<p>Esta red no es la misma que la red del ordenador anfitrión.</p>
-<p>La máquina virtual no puede comunicarse directamente con:</p>
+<p>Esta red no es la misma que la red del ordenador anfitrión. La máquina virtual no puede comunicarse directamente con:</p>
 <ul>
-<li>otras máquinas virtuales,</li>
-<li>otros equipos de la red física,</li>
-<li>ni siquiera con el propio host.</li>
+<li><p>otras máquinas virtuales,</p></li>
+<li><p>otros equipos de la red física,</p></li>
+<li><p>ni siquiera con el propio host.</p></li>
 </ul>
 <p>¿Por qué se hace así? Porque el modo NAT está pensado para:</p>
 <ul>
-<li>garantizar aislamiento,</li>
-<li>permitir que la VM tenga acceso a Internet sin exponerla a la red real,</li>
-<li>evitar conflictos de direcciones IP,</li>
-<li>simplificar la configuración para usuarios principiantes.</li>
+<li><p>garantizar aislamiento,</p></li>
+<li><p>permitir que la VM tenga acceso a Internet sin exponerla a la red real,</p></li>
+<li><p>evitar conflictos de direcciones IP,</p></li>
+<li><p>simplificar la configuración para usuarios principiantes.</p></li>
 </ul>
 <p>En este modo, la VM “sale a Internet” como si fuera el propio host, pero no es accesible desde fuera.</p>
-<p>Resumen La VM recibe una IP privada automática (ej. 10.0.2.15)</p>
-<p>Esa IP pertenece a una red virtual interna creada por VirtualBox</p>
-<pre><code>            ┌──────────────────────────────┐
+<p><strong>Resumen:</strong> La VM recibe una IP privada automática (ej. 10.0.2.15). Esa IP pertenece a una red virtual interna creada por VirtualBox.</p>
+<pre class="text"><code>            ┌──────────────────────────────┐
             │      Ordenador anfitrión     │
             │      (tu PC real)            │
             │  IP real: 192.168.1.x        │
@@ -537,24 +545,23 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
             │     No accesible desde fuera │
             └──────────────────────────────┘</code></pre>
 <ul>
-<li>Esa red no se comunica con la red del host</li>
-<li>Solo permite que la VM acceda a Internet a través del host</li>
-<li>No permite conexiones entrantes hacia la VM</li>
+<li><p>Esa red no se comunica con la red del host.</p></li>
+<li><p>Solo permite que la VM acceda a Internet a través del host.</p></li>
+<li><p>No permite conexiones entrantes hacia la VM.</p></li>
 </ul>
-<p><img src="images/NAT.png" class="img-fluid"></p>
 </section>
 <section id="adaptador-puente-bridged" class="level3" data-number="2.3.2">
-<h3 data-number="2.3.2" class="anchored" data-anchor-id="adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged )</h3>
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="adaptador-puente-bridged"><span class="header-section-number">2.3.2</span> Adaptador Puente (Bridged)</h3>
 <p>Este modo conecta la máquina virtual directamente a la red física, como si fuera otro ordenador más conectado al router.</p>
 <p>La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).</p>
 <p>Puede comunicarse con:</p>
 <ul>
-<li>el host,</li>
-<li>otros equipos de la red,</li>
-<li>otras VMs en modo puente.</li>
+<li><p>el host,</p></li>
+<li><p>otros equipos de la red,</p></li>
+<li><p>otras VMs en modo puente.</p></li>
 </ul>
 <p>Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).</p>
-<pre><code>            ┌──────────────────────────────┐
+<pre class="text"><code>            ┌──────────────────────────────┐
             │      Ordenador anfitrión     │
             │   IP: 192.168.1.20           │
             └──────────────┬───────────────┘
@@ -566,9 +573,18 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
             │   IP: 192.168.1.34           │
             │  (como otro equipo más)      │
             └──────────────────────────────┘</code></pre>
-<p><img src="images/Adaptador Puente.png" class="img-fluid"> ### Modo Sólo anfitrión (Host‑Only)</p>
-<p>Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos. - La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x). - El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red. - Puede comunicarse solo con el host y con otras VM en su misma red. - No tiene acceso a la red física ni a Internet (a menos que se combine con NAT). - Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.</p>
-<pre><code>                         ┌──────────────────────────────────────┐
+</section>
+<section id="modo-sólo-anfitrión-host-only" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="modo-sólo-anfitrión-host-only"><span class="header-section-number">2.3.3</span> Modo Sólo anfitrión (Host-Only)</h3>
+<p>Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.</p>
+<ul>
+<li><p>La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).</p></li>
+<li><p>El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red.</p></li>
+<li><p>Puede comunicarse solo con el host y con otras VM en su misma red.</p></li>
+<li><p>No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).</p></li>
+<li><p>Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.</p></li>
+</ul>
+<pre class="text"><code>                         ┌──────────────────────────────────────┐
                          │          Ordenador anfitrión         │
                          │                                      │
                          │  Host‑Only Red A: 192.168.56.1       │
@@ -594,22 +610,20 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
             │  Se comunica con VM1 │
             │  No ve a VM3         │
             └──────────────────────┘</code></pre>
-<p><img src="images/Host Only.png" class="img-fluid"></p>
 </section>
-<section id="red-nat-nat-network" class="level3" data-number="2.3.3">
-<h3 data-number="2.3.3" class="anchored" data-anchor-id="red-nat-nat-network"><span class="header-section-number">2.3.3</span> Red NAT (NAT Network)</h3>
+<section id="red-nat-nat-network" class="level3" data-number="2.3.4">
+<h3 data-number="2.3.4" class="anchored" data-anchor-id="red-nat-nat-network"><span class="header-section-number">2.3.4</span> Red NAT (NAT Network)</h3>
 <p>La Red NAT es un modo de red diferente al NAT normal. En lugar de crear una red privada aislada para cada máquina virtual, VirtualBox crea una red virtual compartida, donde varias VMs pueden comunicarse entre sí como si estuvieran en una misma LAN virtual, pero sin comunicarse con el host ni con la red física.</p>
 <p>En este modo, VirtualBox genera una red interna (por ejemplo, 10.0.2.0/24 o 10.0.3.0/24) y un router virtual que actúa como puerta de enlace para todas las máquinas conectadas a esa Red NAT. Todas las VMs reciben una IP del mismo rango mediante un servidor DHCP interno.</p>
 <p>A diferencia del NAT normal:</p>
 <ul>
-<li>Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).</li>
-<li>Las VMs no pueden comunicarse con el host.</li>
-<li>Las VMs no son accesibles desde la red física.</li>
-<li>Todas comparten la misma salida a Internet a través del router virtual.</li>
+<li><p>Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).</p></li>
+<li><p>Las VMs no pueden comunicarse con el host.</p></li>
+<li><p>Las VMs no son accesibles desde la red física.</p></li>
+<li><p>Todas comparten la misma salida a Internet a través del router virtual.</p></li>
 </ul>
 <p>Este modo es útil cuando necesitas que varias máquinas virtuales trabajen juntas (por ejemplo, un servidor y un cliente) sin exponerlas a la red real.</p>
-<pre><code>
-                     ┌──────────────────────────────┐
+<pre class="text"><code>                     ┌──────────────────────────────┐
                      │     Ordenador anfitrión      │
                      │     (tu PC real)             │
                      │  Red física: 192.168.1.x     │
@@ -632,15 +646,34 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
        │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
        │ No ven al host │  │ No ven al host │  │ No ven al host │
        └────────────────┘  └────────────────┘  └────────────────┘</code></pre>
-<p><img src="images/Red NAT.png" class="img-fluid"></p>
 </section>
-<section id="red-interna-internal-network" class="level3" data-number="2.3.4">
-<h3 data-number="2.3.4" class="anchored" data-anchor-id="red-interna-internal-network"><span class="header-section-number">2.3.4</span> Red Interna (Internal Network)</h3>
+<section id="red-interna-internal-network" class="level3" data-number="2.3.5">
+<h3 data-number="2.3.5" class="anchored" data-anchor-id="red-interna-internal-network"><span class="header-section-number">2.3.5</span> Red Interna (Internal Network)</h3>
 <p>El modo Red Interna crea una red completamente aislada dentro de VirtualBox, donde solo las máquinas virtuales conectadas a esa misma red interna pueden comunicarse entre sí. No hay acceso al host, ni a la red física, ni a Internet.</p>
-<p>A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas. Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente: - Envía una petición DHCP para pedir una dirección IP. - Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida. - Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango:169.254.0.0 – 169.254.255.255. Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: 169.254.5.246 Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque: - no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA), - no permiten comunicación con el host, - no permiten salir a Internet. Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.</p>
+<p>A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas.</p>
+<p>Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente:</p>
+<ul>
+<li><p>Envía una petición DHCP para pedir una dirección IP.</p></li>
+<li><p>Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida.</p></li>
+<li><p>Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango: 169.254.0.0 – 169.254.255.255.</p></li>
+</ul>
+<p>Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: <code>169.254.5.246</code>. Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque:</p>
+<ul>
+<li><p>no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA).</p></li>
+<li><p>no permiten comunicación con el host.</p></li>
+<li><p>no permiten salir a Internet.</p></li>
+</ul>
+<p>Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.</p>
 <p>Este modo es ideal para laboratorios cerrados, entornos de pruebas, simulaciones de redes o prácticas donde necesitas varias máquinas comunicándose entre sí sin ningún tipo de exposición externa.</p>
-<p>Resumen: - Las VMs se ven entre ellas si están en la misma red interna. - No pueden comunicarse con el host. - No tienen acceso a Internet. - No hay DHCP salvo que lo configures tú. - Es la red más aislada de todas.</p>
-<pre><code>                     ┌───────────────────────────────┐
+<p><strong>Resumen:</strong></p>
+<ul>
+<li><p>Las VMs se ven entre ellas si están en la misma red interna.</p></li>
+<li><p>No pueden comunicarse con el host.</p></li>
+<li><p>No tienen acceso a Internet.</p></li>
+<li><p>No hay DHCP salvo que lo configures tú.</p></li>
+<li><p>Es la red más aislada de todas.</p></li>
+</ul>
+<pre class="text"><code>                     ┌───────────────────────────────┐
                      │     Ordenador anfitrión       │
                      │  (sin acceso a la red interna)│
                      └───────────────────────────────┘
@@ -661,146 +694,62 @@ Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas con
          │ Se ven entre sí│  │ Se ven entre sí│  │ Se ven entre sí│
          │ No ven al host │  │ No ven al host │  │ No ven al host │
          └────────────────┘  └────────────────┘  └────────────────┘</code></pre>
-<p><img src="images/Red Interna.png" class="img-fluid"></p>
 </section>
 </section>
 <section id="tabla-comparativa-de-modos-de-red-en-virtualbox" class="level2 page-columns page-full" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="tabla-comparativa-de-modos-de-red-en-virtualbox"><span class="header-section-number">2.4</span> Tabla comparativa de modos de red en VirtualBox</h2>
 <div class="column-page">
-<table class="table table-striped table-hover">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
 <thead>
-<tr>
-<th rowspan="2" style="vertical-align: middle;">
-Modo de red
-</th>
-<th colspan="4" style="text-align: center; border: 2px solid #ced4da; border-bottom: none; background-color: #f8f9fa;">
-Comunicación con…
-</th>
-<th rowspan="2" style="vertical-align: middle; padding-left: 20px;">
-Características principales
-</th>
-</tr>
-<tr>
-<th style="text-align: center; border-left: 2px solid #ced4da; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">
-El Host
-</th>
-<th style="text-align: center; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">
-Otras VMs
-</th>
-<th style="text-align: center; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">
-Red Física
-</th>
-<th style="text-align: center; border-right: 2px solid #ced4da; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">
-Internet
-</th>
+<tr class="header">
+<th style="text-align: left;">Modo de red</th>
+<th style="text-align: center;">Comunicación con el Host</th>
+<th style="text-align: center;">Comunicación con otras VMs</th>
+<th style="text-align: center;">Salida a la Red Física y a Internet</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<strong>NAT</strong>
-</td>
-<td style="border-left: 2px solid #ced4da;">
-❌ No
-</td>
-<td>
-❌ No
-</td>
-<td>
-❌ No
-</td>
-<td style="border-right: 2px solid #ced4da;">
-✔️ Sí
-</td>
-<td style="padding-left: 20px;">
-Aislamiento total. La VM sale a Internet a través del host, pero no es accesible desde fuera.
-</td>
+<tr class="odd">
+<td style="text-align: left;"><strong>NAT</strong></td>
+<td style="text-align: center;">❌ No</td>
+<td style="text-align: center;">❌ No</td>
+<td style="text-align: center;">✔️ Sí (Solo Internet, no Red Local)</td>
 </tr>
-<tr>
-<td>
-<strong>Red NAT</strong>
-</td>
-<td style="border-left: 2px solid #ced4da;">
-❌ No
-</td>
-<td>
-✔️ Sí
-</td>
-<td>
-❌ No
-</td>
-<td style="border-right: 2px solid #ced4da;">
-✔️ Sí
-</td>
-<td style="padding-left: 20px;">
-Red virtual compartida entre varias VMs. Se ven entre ellas, pero no ven al host ni a la red física.
-</td>
+<tr class="even">
+<td style="text-align: left;"><strong>Red NAT</strong></td>
+<td style="text-align: center;">❌ No</td>
+<td style="text-align: center;">✔️ Sí</td>
+<td style="text-align: center;">✔️ Sí (Solo Internet, no Red Local)</td>
 </tr>
-<tr>
-<td>
-<strong>Adaptador Puente</strong>
-</td>
-<td style="border-left: 2px solid #ced4da;">
-✔️ Sí
-</td>
-<td>
-✔️ Sí
-</td>
-<td>
-✔️ Sí
-</td>
-<td style="border-right: 2px solid #ced4da;">
-✔️ Sí
-</td>
-<td style="padding-left: 20px;">
-La VM actúa como un equipo más de la red física. Recibe una IP del router real. Es accesible desde fuera.
-</td>
+<tr class="odd">
+<td style="text-align: left;"><strong>Adaptador Puente</strong></td>
+<td style="text-align: center;">✔️ Sí</td>
+<td style="text-align: center;">✔️ Sí</td>
+<td style="text-align: center;">✔️ Sí (Ambas)</td>
 </tr>
-<tr>
-<td>
-<strong>Host‑Only</strong>
-</td>
-<td style="border-left: 2px solid #ced4da;">
-✔️ Sí
-</td>
-<td>
-✔️ Sí (misma red Host-Only)
-</td>
-<td>
-❌ No
-</td>
-<td style="border-right: 2px solid #ced4da;">
-❌ No
-</td>
-<td style="padding-left: 20px;">
-Red privada entre host y VM. No tiene Internet. Útil para laboratorios locales.
-</td>
+<tr class="even">
+<td style="text-align: left;"><strong>Host-Only</strong></td>
+<td style="text-align: center;">✔️ Sí</td>
+<td style="text-align: center;">✔️ Sí (En la misma red)</td>
+<td style="text-align: center;">❌ No</td>
 </tr>
-<tr>
-<td>
-<strong>Red Interna</strong>
-</td>
-<td style="border-left: 2px solid #ced4da;">
-❌ No
-</td>
-<td>
-✔️ Sí (misma red interna)
-</td>
-<td>
-❌ No
-</td>
-<td style="border-right: 2px solid #ced4da;">
-❌ No
-</td>
-<td style="padding-left: 20px;">
-Red completamente aislada. Solo VMs entre sí. Sin host, sin Internet, sin DHCP salvo que lo configures.
-</td>
+<tr class="odd">
+<td style="text-align: left;"><strong>Red Interna</strong></td>
+<td style="text-align: center;">❌ No</td>
+<td style="text-align: center;">✔️ Sí (En la misma red)</td>
+<td style="text-align: center;">❌ No</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="column-page">
-<pre><code>                                 ┌───────────────────────────────┐
+<pre class="text"><code>                                 ┌───────────────────────────────┐
                                  │        Red física real        │
                                  │       (router 192.168.1.x)    │
                                  └───────────────┬───────────────┘
@@ -822,74 +771,77 @@ Física❌  ┘         Física❌────┘         Física✔️───
 Internet✔️┘         Internet✔️──┘         Internet✔️──┘         Internet❌──┘         Internet❌──┘</code></pre>
 <p>HOST: comunicación entre la VM y el ordenador anfitrión (tu PC). VMS: comunicación entre máquinas virtuales dentro del mismo modo de red. FÍSICA: acceso a la red física real (router, otros PCs, impresoras). INTERNET: posibilidad de salir a Internet desde la VM.</p>
 </div>
-<hr>
 </section>
 </section>
 <section id="práctica-instalar-un-hypervisor-crear-una-máquina-virtual-e-instalar-windows-10" class="level1 practica" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Práctica: Instalar un hypervisor, crear una máquina virtual e instalar Windows 10</h1>
 <section id="cambiar-privilegios-de-usuario-si-es-necesario" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="cambiar-privilegios-de-usuario-si-es-necesario"><span class="header-section-number">3.1</span> Cambiar privilegios de usuario (si es necesario)</h2>
-<p>Antes de instalar software de virtualización, asegúrate de que tu cuenta tiene permisos suficientes.<br>
-Si tu usuario no es administrador, puedes cambiar el tipo de cuenta desde una sesión con privilegios elevados.</p>
+<p>Antes de instalar software de virtualización, asegúrate de que tu cuenta tiene permisos suficientes. Si tu usuario no es administrador, puedes cambiar el tipo de cuenta desde una sesión con privilegios elevados.</p>
 <section id="cambiar-permisos-de-cuentas-de-usuario-administrador-estándar" class="level3" data-number="3.1.1">
 <h3 data-number="3.1.1" class="anchored" data-anchor-id="cambiar-permisos-de-cuentas-de-usuario-administrador-estándar"><span class="header-section-number">3.1.1</span> Cambiar permisos de cuentas de usuario (Administrador / Estándar)</h3>
-<p>Desde una cuenta con derechos de administrador: 1. Abre <strong>Configuración</strong>. 2. Ve a <strong>Cuentas</strong>. 3. Entra en <strong>Otros usuarios</strong>. 4. Selecciona el usuario que quieres modificar. 5. Haz clic en <strong>Cambiar tipo de cuenta</strong>. 6. Selecciona <strong>Administrador</strong>. 7. Acepta los cambios. 8. Reinincia el ordenador</p>
+<p>Desde una cuenta con derechos de administrador:</p>
+<ol type="1">
+<li><p>Abre <strong>Configuración</strong>.</p></li>
+<li><p>Ve a <strong>Cuentas</strong>.</p></li>
+<li><p>Entra en <strong>Otros usuarios</strong>.</p></li>
+<li><p>Selecciona el usuario que quieres modificar.</p></li>
+<li><p>Haz clic en <strong>Cambiar tipo de cuenta</strong>.</p></li>
+<li><p>Selecciona <strong>Administrador</strong>.</p></li>
+<li><p>Acepta los cambios.</p></li>
+<li><p>Reinicia el ordenador.</p></li>
+</ol>
 </section>
 </section>
 <section id="habilitar-la-virtualización-si-es-necesario" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="habilitar-la-virtualización-si-es-necesario"><span class="header-section-number">3.2</span> Habilitar la virtualización (si es necesario)</h2>
-<p>La virtualización suele venir activada por defecto, pero si no es así, debes habilitarla desde la BIOS/UEFI.<br>
-Estas instrucciones son para equipos con procesadores <strong>Intel</strong>; en AMD la opción puede tener otro nombre.</p>
+<p>La virtualización suele venir activada por defecto, pero si no es así, debes habilitarla desde la BIOS/UEFI. Estas instrucciones son para equipos con procesadores <strong>Intel</strong>; en AMD la opción puede tener otro nombre.</p>
 <section id="comprobar-si-la-virtualización-ya-está-activada" class="level3" data-number="3.2.1">
 <h3 data-number="3.2.1" class="anchored" data-anchor-id="comprobar-si-la-virtualización-ya-está-activada"><span class="header-section-number">3.2.1</span> Comprobar si la virtualización ya está activada</h3>
 <p>Puedes verificarlo desde Windows:</p>
 <ul>
-<li>Pulsa <strong>Ctrl + Shift + Esc</strong> → pestaña <strong>Rendimiento</strong> → <strong>CPU</strong><br>
-Busca el campo <strong>Virtualización</strong>.<br>
-Si aparece <em>Habilitada</em>, no necesitas hacer nada.</li>
+<li>Pulsa <strong>Ctrl + Shift + Esc</strong> → pestaña <strong>Rendimiento</strong> → <strong>CPU</strong> Busca el campo <strong>Virtualización</strong>. Si aparece <em>Habilitada</em>, no necesitas hacer nada.</li>
 </ul>
 <p>O bien:</p>
 <ul>
-<li>Ejecuta <code>msinfo32</code><br>
-Revisa el campo <strong>Virtualización habilitada en firmware</strong>.</li>
+<li>Ejecuta <code>msinfo32</code> Revisa el campo <strong>Virtualización habilitada en firmware</strong>.</li>
 </ul>
 </section>
 <section id="entrar-en-la-biosuefi" class="level3" data-number="3.2.2">
 <h3 data-number="3.2.2" class="anchored" data-anchor-id="entrar-en-la-biosuefi"><span class="header-section-number">3.2.2</span> Entrar en la BIOS/UEFI</h3>
 <ol type="1">
-<li>Reinicia el equipo.</li>
-<li>Durante el arranque, pulsa repetidamente una de estas teclas (según fabricante):<br>
-<strong>F2</strong>, <strong>Supr</strong>, <strong>Esc</strong>, <strong>F10</strong>, <strong>F12</strong>.</li>
+<li><p>Reinicia el equipo.</p></li>
+<li><p>Durante el arranque, pulsa repetidamente una de estas teclas (según fabricante): <strong>F2</strong>, <strong>Supr</strong>, <strong>Esc</strong>, <strong>F10</strong>, <strong>F12</strong>.</p></li>
 </ol>
 </section>
 <section id="activar-la-opción-de-virtualización" class="level3" data-number="3.2.3">
 <h3 data-number="3.2.3" class="anchored" data-anchor-id="activar-la-opción-de-virtualización"><span class="header-section-number">3.2.3</span> Activar la opción de virtualización</h3>
 <p>Una vez dentro de la BIOS/UEFI:</p>
 <ul>
-<li>Entra en menús como <strong>Advanced</strong>, <strong>Advanced BIOS Features</strong>, <strong>Security</strong>, <strong>CPU Configuration</strong> o <strong>System Configuration</strong>.</li>
-<li>Busca opciones como:
+<li><p>Entra en menús como <strong>Advanced</strong>, <strong>Advanced BIOS Features</strong>, <strong>Security</strong>, <strong>CPU Configuration</strong> o <strong>System Configuration</strong>.</p></li>
+<li><p>Busca opciones como:</p>
 <ul>
-<li><em>Intel Virtualization Technology</em></li>
-<li><em>Intel VT‑x</em></li>
-<li><em>Intel VT‑d</em></li>
-<li><em>Virtualization Support</em></li>
+<li><p><em>Intel Virtualization Technology</em></p></li>
+<li><p><em>Intel VT‑x</em></p></li>
+<li><p><em>Intel VT‑d</em></p></li>
+<li><p><em>Virtualization Support</em></p></li>
 </ul></li>
-<li>Cambia el valor a <strong>Enabled</strong>.</li>
+<li><p>Cambia el valor a <strong>Enabled</strong>.</p></li>
 </ul>
 </section>
 <section id="guardar-cambios-y-reiniciar" class="level3" data-number="3.2.4">
 <h3 data-number="3.2.4" class="anchored" data-anchor-id="guardar-cambios-y-reiniciar"><span class="header-section-number">3.2.4</span> Guardar cambios y reiniciar</h3>
 <ul>
-<li>Selecciona <strong>Save &amp; Exit</strong> o pulsa <strong>F10</strong>.</li>
-<li>Confirma los cambios.</li>
+<li><p>Selecciona <strong>Save &amp; Exit</strong> o pulsa <strong>F10</strong>.</p></li>
+<li><p>Confirma los cambios.</p></li>
 </ul>
 </section>
 <section id="activar-funciones-opcionales-de-windows-si-las-necesitas" class="level3" data-number="3.2.5">
 <h3 data-number="3.2.5" class="anchored" data-anchor-id="activar-funciones-opcionales-de-windows-si-las-necesitas"><span class="header-section-number">3.2.5</span> Activar funciones opcionales de Windows (si las necesitas)</h3>
 <p>Algunos programas requieren componentes adicionales:</p>
 <ol type="1">
-<li>Busca en Windows: <strong>Activar o desactivar las características de Windows</strong>.</li>
-<li>Marca según necesidad:
+<li><p>Busca en Windows: <strong>Activar o desactivar las características de Windows</strong>.</p></li>
+<li><p>Marca según necesidad:</p>
 <ul>
 <li><p><strong>Hyper‑V</strong> (solo Windows Pro/Enterprise)</p></li>
 <li><p><strong>Plataforma de máquina virtual</strong> (para WSL2)</p></li>
@@ -903,89 +855,79 @@ Revisa el campo <strong>Virtualización habilitada en firmware</strong>.</li>
 <p>Usaremos <strong>Oracle VirtualBox</strong>, disponible en: <a href="https://www.virtualbox.org/wiki/Downloads" class="uri">https://www.virtualbox.org/wiki/Downloads</a></p>
 <p>Descarga el paquete correspondiente a tu sistema operativo:</p>
 <ul>
-<li>Windows hosts</li>
-<li>macOS (Intel o Apple Silicon)</li>
-<li>Linux distributions</li>
-<li>Solaris hosts</li>
-<li>También descarga el <strong>VirtualBox Extension Pack</strong>, que añade funciones adicionales.</li>
-<li>Instala primero <strong>VirtualBox</strong>.</li>
-<li>Después instala el <strong>Extension Pack</strong>.</li>
+<li><p>Windows hosts</p></li>
+<li><p>macOS (Intel o Apple Silicon)</p></li>
+<li><p>Linux distributions</p></li>
+<li><p>Solaris hosts</p></li>
+<li><p>También descarga el <strong>VirtualBox Extension Pack</strong>, que añade funciones adicionales.</p></li>
+<li><p>Instala primero <strong>VirtualBox</strong>.</p></li>
+<li><p>Después instala el <strong>Extension Pack</strong>.</p></li>
 </ul>
-<hr>
 </section>
 <section id="descargar-la-iso-de-windows-10" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="descargar-la-iso-de-windows-10"><span class="header-section-number">3.4</span> Descargar la ISO de Windows 10</h2>
 <p>Para obtener la imagen ISO oficial:</p>
 <ol type="1">
-<li>Ve a la página de creación de medios:<br>
-https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-windows-99a58364-8c02-206f-aa6f-40c3b507420d</li>
-<li>Descarga la herramienta <strong>MediaCreationTool.exe</strong>.</li>
-<li>Ejecútala y acepta los términos.</li>
-<li>Selecciona <strong>Crear medios de instalación</strong>.</li>
-<li>Elige idioma, edición y arquitectura (normalmente <strong>x64</strong>).</li>
-<li>En el último paso, selecciona <strong>Archivo ISO</strong>.</li>
-<li>Guarda el archivo, que tendrá un nombre similar a:<br>
-<code>Win10_22H2_Spanish_x64.iso</code></li>
+<li><p>Ve a la página de creación de medios: https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-windows-99a58364-8c02-206f-aa6f-40c3b507420d</p></li>
+<li><p>Descarga la herramienta <strong>MediaCreationTool.exe</strong>.</p></li>
+<li><p>Ejecútala y acepta los términos.</p></li>
+<li><p>Selecciona <strong>Crear medios de instalación</strong>.</p></li>
+<li><p>Elige idioma, edición y arquitectura (normalmente <strong>x64</strong>).</p></li>
+<li><p>En el último paso, selecciona <strong>Archivo ISO</strong>.</p></li>
+<li><p>Guarda el archivo, que tendrá un nombre similar a: <code>Win10_22H2_Spanish_x64.iso</code></p></li>
 </ol>
-<hr>
 </section>
 <section id="crear-una-máquina-virtual-para-windows-10-en-oracle-virtualbox" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="crear-una-máquina-virtual-para-windows-10-en-oracle-virtualbox"><span class="header-section-number">3.5</span> Crear una máquina virtual para Windows 10 en Oracle VirtualBox</h2>
 <ol type="1">
-<li>Abre <strong>Oracle VirtualBox</strong>.</li>
-<li>Haz clic en <strong>Nueva</strong>.</li>
-<li>Configura la máquina virtual:
+<li><p>Abre <strong>Oracle VirtualBox</strong>.</p></li>
+<li><p>Haz clic en <strong>Nueva</strong>.</p></li>
+<li><p>Configura la máquina virtual:</p>
 <ul>
-<li><strong>Nombre:</strong> Windows 10</li>
-<li><strong>RAM:</strong> 4 GB</li>
-<li><strong>CPU:</strong> 2 núcleos</li>
-<li><strong>Almacenamiento:</strong> 50 GB</li>
+<li><p><strong>Nombre:</strong> Windows 10</p></li>
+<li><p><strong>RAM:</strong> 4 GB</p></li>
+<li><p><strong>CPU:</strong> 2 núcleos</p></li>
+<li><p><strong>Almacenamiento:</strong> 50 GB</p></li>
 </ul></li>
-<li>Cambia el <strong>orden de arranque</strong> a:
+<li><p>Cambia el <strong>orden de arranque</strong> a:</p>
 <ol type="1">
-<li>Disco duro</li>
-<li>Óptica</li>
+<li><p>Disco duro</p></li>
+<li><p>Óptica</p></li>
 </ol></li>
-<li>En <strong>Configuración → Almacenamiento</strong>, selecciona el <strong>Puerto SATA1 (unidad óptica)</strong>.</li>
-<li>Carga la <strong>ISO de Windows 10</strong> descargada anteriormente.</li>
-<li>Inicia la máquina virtual.</li>
-<li>Durante la instalación, selecciona la edición <strong>Windows 10 Pro</strong>.</li>
+<li><p>En <strong>Configuración → Almacenamiento</strong>, selecciona el <strong>Puerto SATA1 (unidad óptica)</strong>.</p></li>
+<li><p>Carga la <strong>ISO de Windows 10</strong> descargada anteriormente.</p></li>
+<li><p>Inicia la máquina virtual.</p></li>
+<li><p>Durante la instalación, selecciona la edición <strong>Windows 10 Pro</strong>.</p></li>
 </ol>
-<p>Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows. :::</p>
+<p>Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows.</p>
 </section>
 <section id="instalación-de-guest-additions-complementos-del-invitado-en-virtualbox" class="level2" data-number="3.6">
 <h2 data-number="3.6" class="anchored" data-anchor-id="instalación-de-guest-additions-complementos-del-invitado-en-virtualbox"><span class="header-section-number">3.6</span> Instalación de Guest Additions (Complementos del Invitado) en VirtualBox</h2>
 <p>Instalar <strong>Guest Additions</strong> en una máquina virtual dentro de VirtualBox es un paso casi obligatorio si se desea:</p>
 <ul>
-<li>Carpetas compartidas</li>
-<li>Copiar y pegar entre host y VM</li>
-<li>Pantalla completa</li>
-<li>Mejor rendimiento gráfico</li>
-<li>Drag &amp; drop</li>
+<li><p>Carpetas compartidas</p></li>
+<li><p>Copiar y pegar entre host y VM</p></li>
+<li><p>Pantalla completa</p></li>
+<li><p>Mejor rendimiento gráfico</p></li>
+<li><p>Drag &amp; drop</p></li>
 </ul>
-<hr>
 <section id="instalación-en-una-máquina-virtual-con-windows" class="level3" data-number="3.6.1">
 <h3 data-number="3.6.1" class="anchored" data-anchor-id="instalación-en-una-máquina-virtual-con-windows"><span class="header-section-number">3.6.1</span> Instalación en una máquina virtual con Windows</h3>
 <ol type="1">
-<li>En la VM, abrir el menú <strong>Dispositivos</strong>.<br>
-</li>
-<li>Seleccionar <strong>Insertar imagen de CD de los complementos de invitado</strong>.<br>
-</li>
-<li>Abrir el explorador de archivos.<br>
-</li>
-<li>En <strong>Este equipo</strong>, aparecerá un CD virtual.<br>
-</li>
-<li>Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.</li>
+<li><p>En la VM, abrir el menú <strong>Dispositivos</strong>.</p></li>
+<li><p>Seleccionar <strong>Insertar imagen de CD de los complementos de invitado</strong>.</p></li>
+<li><p>Abrir el explorador de archivos.</p></li>
+<li><p>En <strong>Este equipo</strong>, aparecerá un CD virtual.</p></li>
+<li><p>Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.</p></li>
 </ol>
-<hr>
 </section>
 <section id="instalación-de-guest-additions-en-linux-ubuntu" class="level3" data-number="3.6.2">
 <h3 data-number="3.6.2" class="anchored" data-anchor-id="instalación-de-guest-additions-en-linux-ubuntu"><span class="header-section-number">3.6.2</span> Instalación de Guest Additions en Linux Ubuntu</h3>
 <ol type="1">
 <li><p>Insertar la imagen de Guest Additions desde VirtualBox:</p>
 <ul>
-<li>Menú <strong>Dispositivos</strong></li>
-<li><strong>Insertar imagen de CD de los complementos de invitado</strong></li>
+<li><p>Menú <strong>Dispositivos</strong></p></li>
+<li><p><strong>Insertar imagen de CD de los complementos de invitado</strong></p></li>
 </ul></li>
 <li><p>Abrir el explorador de archivos.</p>
 <ul>
@@ -1005,10 +947,10 @@ https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-wi
 <p>4.1. Abrir la terminal y actualizar el repositorio para evitar errores de compilación:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>4.2. Instalar bzip2</p>
+<p>4.2. Instalar bzip2:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install bzip2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>4.3. Volver al explorador y ejecutar nuevamente <code>autorun.sh.</code></p>
-<p>En linux, en distros basadas en devian, para ver nuestra ip escribimos <code>ip ad</code></p>
+<p>4.3. Volver al explorador y ejecutar nuevamente <code>autorun.sh</code>.</p>
+<p>En linux, en distros basadas en Debian, para ver nuestra ip escribimos <code>ip ad</code>.</p>
 </section>
 </section>
 </section>

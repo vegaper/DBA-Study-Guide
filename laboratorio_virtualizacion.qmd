@@ -29,7 +29,8 @@ El objetivo de este laboratorio es que puedas comprobar, de forma sistemática, 
 -   LAN real ↔ VM
 
 ------------------------------------------------------------------------
-::: .practicas
+
+::: practicas
 # Pruebas básicas de conectividad
 
 ## Pre-configuración
@@ -61,17 +62,11 @@ ipconfig
 
 la ip será lo que aparezca como Dirección IPv4 en el adapatador que estemos usuando (Ethernet, wifi...)
 
-### Desbloquear ping a máquinas Windows. 
-Por defecto los ping a SO Windows fallarán, están bloqueados por el firewall por defecto. Ping no usa puertos,simplemente usa el protocolo icmp, para bloquear o desbloquear los pings en Windows lo que tenemos que hacer cambiar el bloqueo del protocolo ICMP en el firewall. 
+### Desbloquear ping a máquinas Windows.
 
-Para permitir los pings a máquinas windows que lo traen cerrado por defecto haz:
-Firewall de Windows Defender > Configuración Avanzada > Reglas de entrada > Nueva Regla
-    Tipo: Personalizada
-    Protocolo y Puertos: Tipo de Protocolo ICMPv4 >Siguiente
-    Cualquier dirección IP > Siguiente
-    Permitir la conexión > Siguiente
-    Dejar activado todo: Dominio, privado y público. > Siguiente
-Ponerle un nombre descriptivo como permitir ping y finalizar
+Por defecto los ping a SO Windows fallarán, están bloqueados por el firewall por defecto. Ping no usa puertos,simplemente usa el protocolo icmp, para bloquear o desbloquear los pings en Windows lo que tenemos que hacer cambiar el bloqueo del protocolo ICMP en el firewall.
+
+Para permitir los pings a máquinas windows que lo traen cerrado por defecto haz: Firewall de Windows Defender \> Configuración Avanzada \> Reglas de entrada \> Nueva Regla Tipo: Personalizada Protocolo y Puertos: Tipo de Protocolo ICMPv4 \>Siguiente Cualquier dirección IP \> Siguiente Permitir la conexión \> Siguiente Dejar activado todo: Dominio, privado y público. \> Siguiente Ponerle un nombre descriptivo como permitir ping y finalizar
 
 ### Actualizar e instalar complementos
 
@@ -116,6 +111,8 @@ En Ubuntu, en otra terminal: `ss -lntp | grep 8000`
 ``` bash
 systemctl status ssh
 ```
+
+Si SSHno está instalado o abierto mira la [Guia de configuración SSH en Ubuntu](ubuntu_ssh.html)
 
 ## Métodos de comprobación de comunicación
 
@@ -175,7 +172,7 @@ Estadísticas de ping para 1.1.1.1:
     (100% perdidos),
 ```
 
-Nota: Tanto en NAT como en Red NAT la VM puede hacer ping a su host, pero el host no puede hacer ping a la VM, por lo tanto no hay comunicación. La VM puede hacer ping al host simplemente porque usa la red del host para poder salir a internet, así que tiene acceso de salida hacia esa red. 
+Nota: Tanto en NAT como en Red NAT la VM puede hacer ping a su host, pero el host no puede hacer ping a la VM, por lo tanto no hay comunicación. La VM puede hacer ping al host simplemente porque usa la red del host para poder salir a internet, así que tiene acceso de salida hacia esa red.
 
 #### Comprobación del DNS
 
@@ -203,10 +200,7 @@ Tiempos aproximados de ida y vuelta en milisegundos:
 
 y si falla será algo como
 
-``` {.bash | code-overflow="wrap"}
-La solicitud de ping no pudo encontrar el host google.com. Compruebe el nombre y
-vuelva a intentarlo.
-```
+`{.bash | code-overflow="wrap"} La solicitud de ping no pudo encontrar el host google.com. Compruebe el nombre y vuelva a intentarlo.`
 
 #### Conectividad con otra máquina en la misma red
 
@@ -234,15 +228,11 @@ curl -I http://{IP_UBUNTU}:8000
 
 y la respuesta si hay conexión será similar a:
 
-``` {.bash | code-overflow="wrap"}
-HTTP/1.0 200 OK Server: SimpleHTTP/0.6 Python/3.14.4 Date: Thu, 18 Jun 2026 10:30:44 GMT Content-type: text/html; charset=utf-8 Content-Length: 1730 
-```
+`{.bash | code-overflow="wrap"} HTTP/1.0 200 OK Server: SimpleHTTP/0.6 Python/3.14.4 Date: Thu, 18 Jun 2026 10:30:44 GMT Content-type: text/html; charset=utf-8 Content-Length: 1730`
 
 o si falla, será algo como
 
-```{.bash | code-overflow="wrap"}         
-curl: (28) Failed to connect to 192.168.56.1 port 8000 after 21077 ms: Could not connect to server 
-```
+`{.bash | code-overflow="wrap"}          curl: (28) Failed to connect to 192.168.56.1 port 8000 after 21077 ms: Could not connect to server`
 
 También puedes hacer la misma comprobación simplemente poniendo la dirección en un navegador. `http://{IP_UBUNTU}:8000`
 
@@ -260,14 +250,11 @@ Es una prueba más completa que ping, porque ya implica una aplicación (HTTP) y
 
 ### SSH como prueba de conectividad
 
-SSH (Secure Shell) es un protocolo que permite conectarte a otra máquina de forma segura.
-En ubuntu puedes comprobar el estado de ssh mediante `sudo systemctl status ssh`
+SSH (Secure Shell) es un protocolo que permite conectarte a otra máquina de forma segura. En ubuntu puedes comprobar el estado de ssh mediante `sudo systemctl status ssh`
 
 Cuando ejecutas:
 
-```{.bash | code-overflow="wrap"}
-ssh usuario@{IP_destino} # usuario debe ser un usuario registrado en la máquina a la que te quieres conectar.
-```
+`{.bash | code-overflow="wrap"} ssh usuario@{IP_destino} # usuario debe ser un usuario registrado en la máquina a la que te quieres conectar.`
 
 pasan varias cosas:
 
@@ -478,8 +465,10 @@ Si la VM llega a la LAN pero la LAN no llega a la VM:
 ``` bash
 ping 1.1.1.1
 ```
+
 ### Comprobar salida a Internet con DNS
-```bash
+
+``` bash
 ping google.com
 ```
 

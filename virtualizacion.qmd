@@ -3,7 +3,9 @@
 Los servicios en la nube se organizan en tres grandes modelos según el nivel de control que tiene el usuario y el nivel de gestión que ofrece el proveedor. De menor a mayor abstracción:
 
 -   IaaS -- Infraestructura como servicio.
+
 -   PaaS -- Plataforma como servicio.
+
 -   SaaS -- Software como servicio.
 
 A medida que avanzamos hacia SaaS, el proveedor gestiona más cosas y el usuario se preocupa de menos.
@@ -26,37 +28,37 @@ El proveedor ofrece una aplicación completa lista para usar. Tú solo la utiliz
 
 Ejemplo cotidiano: Es como alojarte en un hotel: todo está listo, tú solo usas el servicio.
 
-::: column-page
+:::: column-page
 ::: summary
-| Modelo   | Significa                   | Qué gestiona el proveedor                      | Qué gestiona el usuario                            | Ejemplos                                     |
-|---------------|---------------|---------------|---------------|---------------|
-| **IaaS** | Infrastructure as a Service | Hardware, red, almacenamiento, virtualización  | SO, aplicaciones, configuración, seguridad interna | AWS EC2, Azure VM, Google Compute Engine     |
-| **PaaS** | Platform as a Service       | Infraestructura + SO + runtime + base de datos | Solo el código y la lógica de la app               | Heroku, Azure App Service, Google App Engine |
-| **SaaS** | Software as a Service       | Todo: infraestructura, plataforma y aplicación | Solo usar la aplicación                            | Gmail, Office 365, Dropbox                   |
+| Modelo | Significa | Qué gestiona el proveedor | Qué gestiona el usuario | Ejemplos |
+|:--------------|:--------------|:--------------|:--------------|:--------------|
+| **IaaS** | Infrastructure as a Service | Hardware, red, almacenamiento, virtualización | SO, aplicaciones, configuración, seguridad interna | AWS EC2, Azure VM, Google Compute Engine |
+| **PaaS** | Platform as a Service | Infraestructura + SO + runtime + base de datos | Solo el código y la lógica de la app | Heroku, Azure App Service, Google App Engine |
+| **SaaS** | Software as a Service | Todo: infraestructura, plataforma y aplicación | Solo usar la aplicación | Gmail, Office 365, Dropbox |
 :::
-:::
+::::
 
-```         
+``` text
             Nivel de control del usuario
             ↑
             │   Más control
             │
             │   ┌───────────────────────────────┐
-            │   │            IaaS                │
-            │   │ Infraestructura como servicio  │
-            │   │ Tú gestionas: SO y apps        │
+            │   │            IaaS               │
+            │   │ Infraestructura como servicio │
+            │   │ Tú gestionas: SO y apps       │
             │   └───────────────────────────────┘
             │
             │   ┌───────────────────────────────┐
-            │   │            PaaS                │
-            │   │ Plataforma como servicio       │
-            │   │ Tú gestionas: solo el código   │
+            │   │            PaaS               │
+            │   │ Plataforma como servicio      │
+            │   │ Tú gestionas: solo el código  │
             │   └───────────────────────────────┘
             │
             │   ┌───────────────────────────────┐
-            │   │            SaaS                │
-            │   │ Software como servicio         │
-            │   │ Tú solo usas la aplicación     │
+            │   │            SaaS               │
+            │   │ Software como servicio        │
+            │   │ Tú solo usas la aplicación    │
             │   └───────────────────────────────┘
             │
             └────────────────────────────────────────→
@@ -69,54 +71,47 @@ La virtualización surgió para **aprovechar mejor los recursos** de los servido
 
 ### Antes
 
-Un servidor físico → 1 SO → 1 aplicación\
-Resultado: recursos infrautilizados.
+Un servidor físico → 1 SO → 1 aplicación Resultado: recursos infrautilizados.
 
 ### Ahora
 
-Un servidor físico → varias máquinas virtuales → múltiples servicios\
-Resultado: mejor aprovechamiento y menor coste.
+Un servidor físico → varias máquinas virtuales → múltiples servicios Resultado: mejor aprovechamiento y menor coste.
 
-*Ejemplo:*\
-En un solo servidor físico podemos tenerr, por ejemplo: un servidor de bases de datos ,un servidor web y un servidor de correo.
+*Ejemplo:* En un solo servidor físico podemos tener, por ejemplo: un servidor de bases de datos, un servidor web y un servidor de correo.
 
 ### Tipos de hipervisores
 
--   **Tipo 1 (bare metal)**\
-    Se instalan directamente sobre el hardware.\
-    Ej.: VMware ESXi, Hyper-V Server, Proxmox.\
-    *Más eficientes.*
--   **Tipo 2 (sobre SO)**\
-    Se instalan como una aplicación dentro del SO.\
-    Ejemplos:
+-   **Tipo 1 (bare metal)** Se instalan directamente sobre el hardware. Ej.: VMware ESXi, Hyper-V Server, Proxmox. *Más eficientes.*
+
+-   **Tipo 2 (sobre SO)** Se instalan como una aplicación dentro del SO. Ejemplos:
+
     -   **VirtualBox** → El más usado en general. Gratuito, fácil, multiplataforma.
+
     -   **VMware Workstation** → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.
+
     -   **Hyper‑V** → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.
+
     -   **Parallels** → Muy usado en Mac, especialmente con Apple Silicon.
+
     -   **QEMU/KVM** → Popular en Linux y servidores, más técnico. *Menos eficientes.*
 
 ### Contenedores
 
-Más ligeros que las VM.\
-Comparten el kernel del SO anfitrión.\
-Ejemplos: Docker, Podman.
-
-------------------------------------------------------------------------
+Más ligeros que las VM. Comparten el kernel del SO anfitrión. Ejemplos: Docker, Podman.
 
 ## Núcleos Virtuales (vCPU)
 
 Una máquina virtual recibe recursos del servidor físico:
 
 -   RAM
+
 -   Almacenamiento
+
 -   CPU (vCPU)
 
 Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta directamente al rendimiento del motor de base de datos.
 
-*Ejemplo:*\
-Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.
-
-------------------------------------------------------------------------
+*Ejemplo:* Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.
 
 ## VLAN (virtual LAN, redes virtuales).
 
@@ -128,20 +123,40 @@ Una VLAN permite que un grupo de dispositivos se comuniquen como si estuvieran e
 
 Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN. Para comunicar VLAN entre sí, necesitas un router o un switch capa 3 (inter‑VLAN routing).
 
-Beneficios principales - Seguridad: Aísla grupos de dispositivos. Ejemplo: - VLAN 10: Administración - VLAN 20: Invitados - VLAN 30: Cámaras IP Los invitados no pueden ver los equipos de administración.
+**Beneficios principales:**
 
--   Rendimiento
+-   **Seguridad:** Aísla grupos de dispositivos. Ejemplo:
+
+    -   VLAN 10: Administración
+
+    -   VLAN 20: Invitados
+
+    -   VLAN 30: Cámaras IP
+
+    -   *(Los invitados no pueden ver los equipos de administración).*
+
+-   **Rendimiento:**
+
     -   Reduce el tráfico innecesario (broadcast).
+
     -   Cada VLAN tiene su propio dominio de broadcast.
--   Organización
+
+-   **Organización:**
+
     -   Agrupa dispositivos por función, no por ubicación física.
+
     -   Puedes tener PCs en diferentes plantas pero en la misma VLAN.
--   Ahorro - No necesitas más switches físicos para separar redes.
+
+-   **Ahorro:**
+
+    -   No necesitas más switches físicos para separar redes.
 
 Ejemplo: Imagina un switch con 8 puertos:
 
 -   Puertos 1--4 → VLAN 10 (Oficina)
+
 -   Puertos 5--6 → VLAN 20 (Invitados)
+
 -   Puertos 7--8 → VLAN 30 (Cámaras)
 
 Aunque todos estén en el mismo switch, cada grupo está aislado.
@@ -154,28 +169,29 @@ Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisore
 
 ¿Qué significa esto? VirtualBox crea un router virtual interno. Ese router asigna automáticamente direcciones IP privadas a las máquinas virtuales. Normalmente asigna direcciones del tipo: 10.0.2.15 (el ".15" suele ser la primera IP que entrega el DHCP interno).
 
-Esta red no es la misma que la red del ordenador anfitrión.
-
-La máquina virtual no puede comunicarse directamente con:
+Esta red no es la misma que la red del ordenador anfitrión. La máquina virtual no puede comunicarse directamente con:
 
 -   otras máquinas virtuales,
+
 -   otros equipos de la red física,
+
 -   ni siquiera con el propio host.
 
 ¿Por qué se hace así? Porque el modo NAT está pensado para:
 
 -   garantizar aislamiento,
+
 -   permitir que la VM tenga acceso a Internet sin exponerla a la red real,
+
 -   evitar conflictos de direcciones IP,
+
 -   simplificar la configuración para usuarios principiantes.
 
 En este modo, la VM "sale a Internet" como si fuera el propio host, pero no es accesible desde fuera.
 
-Resumen La VM recibe una IP privada automática (ej. 10.0.2.15)
+**Resumen:** La VM recibe una IP privada automática (ej. 10.0.2.15). Esa IP pertenece a una red virtual interna creada por VirtualBox.
 
-Esa IP pertenece a una red virtual interna creada por VirtualBox
-
-```         
+``` text
             ┌──────────────────────────────┐
             │      Ordenador anfitrión     │
             │      (tu PC real)            │
@@ -199,13 +215,13 @@ Esa IP pertenece a una red virtual interna creada por VirtualBox
             └──────────────────────────────┘
 ```
 
--   Esa red no se comunica con la red del host
--   Solo permite que la VM acceda a Internet a través del host
--   No permite conexiones entrantes hacia la VM
+-   Esa red no se comunica con la red del host.
 
-![](images/NAT.png)
+-   Solo permite que la VM acceda a Internet a través del host.
 
-### Adaptador Puente  (Bridged )
+-   No permite conexiones entrantes hacia la VM.
+
+### Adaptador Puente (Bridged)
 
 Este modo conecta la máquina virtual directamente a la red física, como si fuera otro ordenador más conectado al router.
 
@@ -214,12 +230,14 @@ La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).
 Puede comunicarse con:
 
 -   el host,
+
 -   otros equipos de la red,
+
 -   otras VMs en modo puente.
 
 Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
-```         
+``` text
             ┌──────────────────────────────┐
             │      Ordenador anfitrión     │
             │   IP: 192.168.1.20           │
@@ -233,12 +251,22 @@ Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
             │  (como otro equipo más)      │
             └──────────────────────────────┘
 ```
-![](images/Adaptador Puente.png)
-### Modo Sólo anfitrión (Host‑Only)
 
-Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos. - La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x). - El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red. - Puede comunicarse solo con el host y con otras VM en su misma red. - No tiene acceso a la red física ni a Internet (a menos que se combine con NAT). - Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.
+### Modo Sólo anfitrión (Host-Only)
 
-```         
+Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.
+
+-   La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
+
+-   El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red.
+
+-   Puede comunicarse solo con el host y con otras VM en su misma red.
+
+-   No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
+
+-   Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.
+
+``` text
                          ┌──────────────────────────────────────┐
                          │          Ordenador anfitrión         │
                          │                                      │
@@ -266,7 +294,6 @@ Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Int
             │  No ve a VM3         │
             └──────────────────────┘
 ```
-![](images/Host Only.png)
 
 ### Red NAT (NAT Network)
 
@@ -277,14 +304,16 @@ En este modo, VirtualBox genera una red interna (por ejemplo, 10.0.2.0/24 o 10.0
 A diferencia del NAT normal:
 
 -   Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).
+
 -   Las VMs no pueden comunicarse con el host.
+
 -   Las VMs no son accesibles desde la red física.
+
 -   Todas comparten la misma salida a Internet a través del router virtual.
 
 Este modo es útil cuando necesitas que varias máquinas virtuales trabajen juntas (por ejemplo, un servidor y un cliente) sin exponerlas a la red real.
 
-```         
-
+``` text
                      ┌──────────────────────────────┐
                      │     Ordenador anfitrión      │
                      │     (tu PC real)             │
@@ -309,19 +338,46 @@ Este modo es útil cuando necesitas que varias máquinas virtuales trabajen junt
        │ No ven al host │  │ No ven al host │  │ No ven al host │
        └────────────────┘  └────────────────┘  └────────────────┘
 ```
-![](images/Red NAT.png)
 
 ### Red Interna (Internal Network)
 
 El modo Red Interna crea una red completamente aislada dentro de VirtualBox, donde solo las máquinas virtuales conectadas a esa misma red interna pueden comunicarse entre sí. No hay acceso al host, ni a la red física, ni a Internet.
 
-A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas. Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente: - Envía una petición DHCP para pedir una dirección IP. - Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida. - Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango:169.254.0.0 -- 169.254.255.255. Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: 169.254.5.246 Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque: - no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA), - no permiten comunicación con el host, - no permiten salir a Internet. Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.
+A diferencia de Red NAT, en la Red Interna no existe un router virtual que proporcione salida a Internet ni un servidor DHCP que asigne direcciones automáticamente. Por eso, si queremos que las máquinas virtuales se comuniquen entre sí, debemos configurar manualmente la dirección IP y la máscara de red en cada una de ellas.
+
+Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente:
+
+-   Envía una petición DHCP para pedir una dirección IP.
+
+-   Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida.
+
+-   Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango: 169.254.0.0 -- 169.254.255.255.
+
+Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: `169.254.5.246`. Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque:
+
+-   no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA).
+
+-   no permiten comunicación con el host.
+
+-   no permiten salir a Internet.
+
+Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.
 
 Este modo es ideal para laboratorios cerrados, entornos de pruebas, simulaciones de redes o prácticas donde necesitas varias máquinas comunicándose entre sí sin ningún tipo de exposición externa.
 
-Resumen: - Las VMs se ven entre ellas si están en la misma red interna. - No pueden comunicarse con el host. - No tienen acceso a Internet. - No hay DHCP salvo que lo configures tú. - Es la red más aislada de todas.
+**Resumen:**
 
-```         
+-   Las VMs se ven entre ellas si están en la misma red interna.
+
+-   No pueden comunicarse con el host.
+
+-   No tienen acceso a Internet.
+
+-   No hay DHCP salvo que lo configures tú.
+
+-   Es la red más aislada de todas.
+
+``` text
                      ┌───────────────────────────────┐
                      │     Ordenador anfitrión       │
                      │  (sin acceso a la red interna)│
@@ -344,73 +400,21 @@ Resumen: - Las VMs se ven entre ellas si están en la misma red interna. - No pu
          │ No ven al host │  │ No ven al host │  │ No ven al host │
          └────────────────┘  └────────────────┘  └────────────────┘
 ```
-![](images/Red Interna.png)
 
 ## Tabla comparativa de modos de red en VirtualBox
 
-::: {.column-page}
-<table class="table table-striped table-hover">
-  <thead>
-    <tr>
-      <th rowspan="2" style="vertical-align: middle;">Modo de red</th>
-      <th colspan="4" style="text-align: center; border: 2px solid #ced4da; border-bottom: none; background-color: #f8f9fa;">Comunicación con...</th>
-      <th rowspan="2" style="vertical-align: middle; padding-left: 20px;">Características principales</th>
-    </tr>
-    <tr>
-      <th style="text-align: center; border-left: 2px solid #ced4da; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">El Host</th>
-      <th style="text-align: center; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">Otras VMs</th>
-      <th style="text-align: center; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">Red Física</th>
-      <th style="text-align: center; border-right: 2px solid #ced4da; border-bottom: 2px solid #ced4da; background-color: #f8f9fa;">Internet</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>NAT</strong></td>
-      <td style="border-left: 2px solid #ced4da;">❌ No</td>
-      <td>❌ No</td>
-      <td>❌ No</td>
-      <td style="border-right: 2px solid #ced4da;">✔️ Sí</td>
-      <td style="padding-left: 20px;">Aislamiento total. La VM sale a Internet a través del host, pero no es accesible desde fuera.</td>
-    </tr>
-    <tr>
-      <td><strong>Red NAT</strong></td>
-      <td style="border-left: 2px solid #ced4da;">❌ No</td>
-      <td>✔️ Sí</td>
-      <td>❌ No</td>
-      <td style="border-right: 2px solid #ced4da;">✔️ Sí</td>
-      <td style="padding-left: 20px;">Red virtual compartida entre varias VMs. Se ven entre ellas, pero no ven al host ni a la red física.</td>
-    </tr>
-    <tr>
-      <td><strong>Adaptador Puente</strong></td>
-      <td style="border-left: 2px solid #ced4da;">✔️ Sí</td>
-      <td>✔️ Sí</td>
-      <td>✔️ Sí</td>
-      <td style="border-right: 2px solid #ced4da;">✔️ Sí</td>
-      <td style="padding-left: 20px;">La VM actúa como un equipo más de la red física. Recibe una IP del router real. Es accesible desde fuera.</td>
-    </tr>
-    <tr>
-      <td><strong>Host‑Only</strong></td>
-      <td style="border-left: 2px solid #ced4da;">✔️ Sí</td>
-      <td>✔️ Sí (misma red Host-Only)</td>
-      <td>❌ No</td>
-      <td style="border-right: 2px solid #ced4da;">❌ No</td>
-      <td style="padding-left: 20px;">Red privada entre host y VM. No tiene Internet. Útil para laboratorios locales.</td>
-    </tr>
-    <tr>
-      <td><strong>Red Interna</strong></td>
-      <td style="border-left: 2px solid #ced4da;">❌ No</td>
-      <td>✔️ Sí (misma red interna)</td>
-      <td>❌ No</td>
-      <td style="border-right: 2px solid #ced4da;">❌ No</td>
-      <td style="padding-left: 20px;">Red completamente aislada. Solo VMs entre sí. Sin host, sin Internet, sin DHCP salvo que lo configures.</td>
-    </tr>
-  </tbody>
-</table>
-
+::: column-page
+| Modo de red | Comunicación con el Host | Comunicación con otras VMs | Salida a la Red Física y a Internet |
+|:-----------------|:----------------:|:----------------:|:----------------:|
+| **NAT** | ❌ No | ❌ No | ✔️ Sí (Solo Internet, no Red Local) |
+| **Red NAT** | ❌ No | ✔️ Sí | ✔️ Sí (Solo Internet, no Red Local) |
+| **Adaptador Puente** | ✔️ Sí | ✔️ Sí | ✔️ Sí (Ambas) |
+| **Host-Only** | ✔️ Sí | ✔️ Sí (En la misma red) | ❌ No |
+| **Red Interna** | ❌ No | ✔️ Sí (En la misma red) | ❌ No |
 :::
 
 ::: column-page
-```         
+``` text
                                  ┌───────────────────────────────┐
                                  │        Red física real        │
                                  │       (router 192.168.1.x)    │
@@ -436,60 +440,75 @@ Internet✔️┘         Internet✔️──┘         Internet✔️──�
 HOST: comunicación entre la VM y el ordenador anfitrión (tu PC). VMS: comunicación entre máquinas virtuales dentro del mismo modo de red. FÍSICA: acceso a la red física real (router, otros PCs, impresoras). INTERNET: posibilidad de salir a Internet desde la VM.
 :::
 
-------------------------------------------------------------------------
-
 ::: practica
-
 # Práctica: Instalar un hypervisor, crear una máquina virtual e instalar Windows 10
 
 ## Cambiar privilegios de usuario (si es necesario)
 
-Antes de instalar software de virtualización, asegúrate de que tu cuenta tiene permisos suficientes.\
-Si tu usuario no es administrador, puedes cambiar el tipo de cuenta desde una sesión con privilegios elevados.
+Antes de instalar software de virtualización, asegúrate de que tu cuenta tiene permisos suficientes. Si tu usuario no es administrador, puedes cambiar el tipo de cuenta desde una sesión con privilegios elevados.
 
 ### Cambiar permisos de cuentas de usuario (Administrador / Estándar)
 
-Desde una cuenta con derechos de administrador: 1. Abre **Configuración**. 2. Ve a **Cuentas**. 3. Entra en **Otros usuarios**. 4. Selecciona el usuario que quieres modificar. 5. Haz clic en **Cambiar tipo de cuenta**. 6. Selecciona **Administrador**. 7. Acepta los cambios. 8. Reinincia el ordenador
+Desde una cuenta con derechos de administrador:
+
+1.  Abre **Configuración**.
+
+2.  Ve a **Cuentas**.
+
+3.  Entra en **Otros usuarios**.
+
+4.  Selecciona el usuario que quieres modificar.
+
+5.  Haz clic en **Cambiar tipo de cuenta**.
+
+6.  Selecciona **Administrador**.
+
+7.  Acepta los cambios.
+
+8.  Reinicia el ordenador.
 
 ## Habilitar la virtualización (si es necesario)
 
-La virtualización suele venir activada por defecto, pero si no es así, debes habilitarla desde la BIOS/UEFI.\
-Estas instrucciones son para equipos con procesadores **Intel**; en AMD la opción puede tener otro nombre.
+La virtualización suele venir activada por defecto, pero si no es así, debes habilitarla desde la BIOS/UEFI. Estas instrucciones son para equipos con procesadores **Intel**; en AMD la opción puede tener otro nombre.
 
 ### Comprobar si la virtualización ya está activada
 
 Puedes verificarlo desde Windows:
 
--   Pulsa **Ctrl + Shift + Esc** → pestaña **Rendimiento** → **CPU**\
-    Busca el campo **Virtualización**.\
-    Si aparece *Habilitada*, no necesitas hacer nada.
+-   Pulsa **Ctrl + Shift + Esc** → pestaña **Rendimiento** → **CPU** Busca el campo **Virtualización**. Si aparece *Habilitada*, no necesitas hacer nada.
 
 O bien:
 
--   Ejecuta `msinfo32`\
-    Revisa el campo **Virtualización habilitada en firmware**.
+-   Ejecuta `msinfo32` Revisa el campo **Virtualización habilitada en firmware**.
 
 ### Entrar en la BIOS/UEFI
 
 1.  Reinicia el equipo.
-2.  Durante el arranque, pulsa repetidamente una de estas teclas (según fabricante):\
-    **F2**, **Supr**, **Esc**, **F10**, **F12**.
+
+2.  Durante el arranque, pulsa repetidamente una de estas teclas (según fabricante): **F2**, **Supr**, **Esc**, **F10**, **F12**.
 
 ### Activar la opción de virtualización
 
 Una vez dentro de la BIOS/UEFI:
 
 -   Entra en menús como **Advanced**, **Advanced BIOS Features**, **Security**, **CPU Configuration** o **System Configuration**.
+
 -   Busca opciones como:
+
     -   *Intel Virtualization Technology*
+
     -   *Intel VT‑x*
+
     -   *Intel VT‑d*
+
     -   *Virtualization Support*
+
 -   Cambia el valor a **Enabled**.
 
 ### Guardar cambios y reiniciar
 
 -   Selecciona **Save & Exit** o pulsa **F10**.
+
 -   Confirma los cambios.
 
 ### Activar funciones opcionales de Windows (si las necesitas)
@@ -497,7 +516,9 @@ Una vez dentro de la BIOS/UEFI:
 Algunos programas requieren componentes adicionales:
 
 1.  Busca en Windows: **Activar o desactivar las características de Windows**.
+
 2.  Marca según necesidad:
+
     -   **Hyper‑V** (solo Windows Pro/Enterprise)
 
     -   **Plataforma de máquina virtual** (para WSL2)
@@ -511,77 +532,101 @@ Usaremos **Oracle VirtualBox**, disponible en: <https://www.virtualbox.org/wiki/
 Descarga el paquete correspondiente a tu sistema operativo:
 
 -   Windows hosts
--   macOS (Intel o Apple Silicon)
--   Linux distributions
--   Solaris hosts
--   También descarga el **VirtualBox Extension Pack**, que añade funciones adicionales.
--   Instala primero **VirtualBox**.
--   Después instala el **Extension Pack**.
 
-------------------------------------------------------------------------
+-   macOS (Intel o Apple Silicon)
+
+-   Linux distributions
+
+-   Solaris hosts
+
+-   También descarga el **VirtualBox Extension Pack**, que añade funciones adicionales.
+
+-   Instala primero **VirtualBox**.
+
+-   Después instala el **Extension Pack**.
 
 ## Descargar la ISO de Windows 10
 
 Para obtener la imagen ISO oficial:
 
-1.  Ve a la página de creación de medios:\
-    https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-windows-99a58364-8c02-206f-aa6f-40c3b507420d
-2.  Descarga la herramienta **MediaCreationTool.exe**.
-3.  Ejecútala y acepta los términos.
-4.  Selecciona **Crear medios de instalación**.
-5.  Elige idioma, edición y arquitectura (normalmente **x64**).
-6.  En el último paso, selecciona **Archivo ISO**.
-7.  Guarda el archivo, que tendrá un nombre similar a:\
-    `Win10_22H2_Spanish_x64.iso`
+1.  Ve a la página de creación de medios: https://support.microsoft.com/es-es/windows/crear-medios-de-instalación-para-windows-99a58364-8c02-206f-aa6f-40c3b507420d
 
-------------------------------------------------------------------------
+2.  Descarga la herramienta **MediaCreationTool.exe**.
+
+3.  Ejecútala y acepta los términos.
+
+4.  Selecciona **Crear medios de instalación**.
+
+5.  Elige idioma, edición y arquitectura (normalmente **x64**).
+
+6.  En el último paso, selecciona **Archivo ISO**.
+
+7.  Guarda el archivo, que tendrá un nombre similar a: `Win10_22H2_Spanish_x64.iso`
 
 ## Crear una máquina virtual para Windows 10 en Oracle VirtualBox
 
 1.  Abre **Oracle VirtualBox**.
+
 2.  Haz clic en **Nueva**.
+
 3.  Configura la máquina virtual:
+
     -   **Nombre:** Windows 10
+
     -   **RAM:** 4 GB
+
     -   **CPU:** 2 núcleos
+
     -   **Almacenamiento:** 50 GB
+
 4.  Cambia el **orden de arranque** a:
+
     1.  Disco duro
+
     2.  Óptica
+
 5.  En **Configuración → Almacenamiento**, selecciona el **Puerto SATA1 (unidad óptica)**.
+
 6.  Carga la **ISO de Windows 10** descargada anteriormente.
+
 7.  Inicia la máquina virtual.
+
 8.  Durante la instalación, selecciona la edición **Windows 10 Pro**.
 
-Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows. :::
+Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos el script correspondiente y seguimos las instrucciones para activar Windows.
 
 ## Instalación de Guest Additions (Complementos del Invitado) en VirtualBox
 
 Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un paso casi obligatorio si se desea:
 
 -   Carpetas compartidas
--   Copiar y pegar entre host y VM
--   Pantalla completa
--   Mejor rendimiento gráfico
--   Drag & drop
 
-------------------------------------------------------------------------
+-   Copiar y pegar entre host y VM
+
+-   Pantalla completa
+
+-   Mejor rendimiento gráfico
+
+-   Drag & drop
 
 ### Instalación en una máquina virtual con Windows
 
-1.  En la VM, abrir el menú **Dispositivos**.\
-2.  Seleccionar **Insertar imagen de CD de los complementos de invitado**.\
-3.  Abrir el explorador de archivos.\
-4.  En **Este equipo**, aparecerá un CD virtual.\
-5.  Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.
+1.  En la VM, abrir el menú **Dispositivos**.
 
-------------------------------------------------------------------------
+2.  Seleccionar **Insertar imagen de CD de los complementos de invitado**.
+
+3.  Abrir el explorador de archivos.
+
+4.  En **Este equipo**, aparecerá un CD virtual.
+
+5.  Dentro del CD, seleccionar el instalador correspondiente al sistema operativo y arquitectura.
 
 ### Instalación de Guest Additions en Linux Ubuntu
 
 1.  Insertar la imagen de Guest Additions desde VirtualBox:
 
     -   Menú **Dispositivos**
+
     -   **Insertar imagen de CD de los complementos de invitado**
 
 2.  Abrir el explorador de archivos.
@@ -604,20 +649,18 @@ Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un 
 
 4.1. Abrir la terminal y actualizar el repositorio para evitar errores de compilación:
 
-       
 ``` bash
 sudo apt update
 sudo apt upgrade
 ```
 
-
-4.2. Instalar bzip2
+4.2. Instalar bzip2:
 
 ``` bash
 sudo apt install bzip2
 ```
 
-4.3. Volver al explorador y ejecutar nuevamente `autorun.sh.`
+4.3. Volver al explorador y ejecutar nuevamente `autorun.sh`.
 
-En linux, en distros basadas en devian, para ver nuestra ip escribimos `ip ad`
+En linux, en distros basadas en Debian, para ver nuestra ip escribimos `ip ad`.
 :::
