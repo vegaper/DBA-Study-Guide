@@ -20,41 +20,6 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
@@ -139,7 +104,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./Servidor Linux Intro.html">Manejando un servidor Linux</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./servidor_linux_intro.html">Manejando un servidor Linux</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -209,8 +174,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./Servidor Linux Intro.html" class="sidebar-item-text sidebar-link active">
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -273,30 +244,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">En este tema</h2>
    
   <ul>
-  <li><a href="#comandos-básicos-de-linux" id="toc-comandos-básicos-de-linux" class="nav-link active" data-scroll-target="#comandos-básicos-de-linux"><span class="header-section-number">1</span> Comandos básicos de Linux</a>
+  <li><a href="#gestión-de-usuarios" id="toc-gestión-de-usuarios" class="nav-link active" data-scroll-target="#gestión-de-usuarios"><span class="header-section-number">1</span> Gestión de Usuarios:</a>
   <ul>
-  <li><a href="#navegación-y-administración-de-archivos" id="toc-navegación-y-administración-de-archivos" class="nav-link" data-scroll-target="#navegación-y-administración-de-archivos"><span class="header-section-number">1.1</span> Navegación y administración de archivos</a>
-  <ul class="collapse">
-  <li><a href="#guía-interpretación-de-ls--l-y-permisos-en-linux" id="toc-guía-interpretación-de-ls--l-y-permisos-en-linux" class="nav-link" data-scroll-target="#guía-interpretación-de-ls--l-y-permisos-en-linux"><span class="header-section-number">1.1.1</span> Guía: Interpretación de <code>ls -l</code> y Permisos en Linux</a>
-  <ul class="collapse">
-  <li><a href="#el-bloque-de-permisos-el-primer-campo" id="toc-el-bloque-de-permisos-el-primer-campo" class="nav-link" data-scroll-target="#el-bloque-de-permisos-el-primer-campo"><span class="header-section-number">1.1.1.1</span> El bloque de permisos (El primer campo)</a></li>
-  <li><a href="#significado-de-los-caracteres-r-w-x" id="toc-significado-de-los-caracteres-r-w-x" class="nav-link" data-scroll-target="#significado-de-los-caracteres-r-w-x"><span class="header-section-number">1.1.1.2</span> Significado de los caracteres (r, w, x)</a></li>
+  <li><a href="#las-tres-clases-de-ciudadanos-en-linux" id="toc-las-tres-clases-de-ciudadanos-en-linux" class="nav-link" data-scroll-target="#las-tres-clases-de-ciudadanos-en-linux"><span class="header-section-number">1.1</span> Las tres clases de ciudadanos en Linux</a></li>
+  <li><a href="#configuración-por-defecto-la-regla-del-grupo-privado" id="toc-configuración-por-defecto-la-regla-del-grupo-privado" class="nav-link" data-scroll-target="#configuración-por-defecto-la-regla-del-grupo-privado"><span class="header-section-number">1.2</span> Configuración por defecto: La regla del “Grupo Privado”</a></li>
+  <li><a href="#el-usuario-inicial-tu-administrador-humano" id="toc-el-usuario-inicial-tu-administrador-humano" class="nav-link" data-scroll-target="#el-usuario-inicial-tu-administrador-humano"><span class="header-section-number">1.3</span> El Usuario Inicial (Tu “Administrador Humano”)</a></li>
+  <li><a href="#comparativa-root-vs.-usuario-inicial" id="toc-comparativa-root-vs.-usuario-inicial" class="nav-link" data-scroll-target="#comparativa-root-vs.-usuario-inicial"><span class="header-section-number">1.4</span> 4. Comparativa: root vs.&nbsp;Usuario Inicial</a></li>
+  <li><a href="#cómo-se-relacionan" id="toc-cómo-se-relacionan" class="nav-link" data-scroll-target="#cómo-se-relacionan"><span class="header-section-number">1.5</span> 5. ¿Cómo se relacionan?</a></li>
   </ul></li>
-  </ul></li>
-  </ul></li>
-  <li><a href="#conexión-remota-a-un-servidor-linux" id="toc-conexión-remota-a-un-servidor-linux" class="nav-link" data-scroll-target="#conexión-remota-a-un-servidor-linux"><span class="header-section-number">2</span> Conexión remota a un servidor Linux</a>
+  <li><a href="#comandos-básicos-de-linux" id="toc-comandos-básicos-de-linux" class="nav-link" data-scroll-target="#comandos-básicos-de-linux"><span class="header-section-number">2</span> Comandos básicos de Linux</a>
   <ul>
-  <li><a href="#gestión-de-usuarios-y-grupos" id="toc-gestión-de-usuarios-y-grupos" class="nav-link" data-scroll-target="#gestión-de-usuarios-y-grupos"><span class="header-section-number">2.1</span> Gestión de Usuarios y Grupos</a>
+  <li><a href="#terminología-de-terminal" id="toc-terminología-de-terminal" class="nav-link" data-scroll-target="#terminología-de-terminal"><span class="header-section-number">2.1</span> Terminología de Terminal</a></li>
+  <li><a href="#navegación-y-administración-de-archivos" id="toc-navegación-y-administración-de-archivos" class="nav-link" data-scroll-target="#navegación-y-administración-de-archivos"><span class="header-section-number">2.2</span> Navegación y administración de archivos</a></li>
+  <li><a href="#gestión-de-usuarios-y-grupos" id="toc-gestión-de-usuarios-y-grupos" class="nav-link" data-scroll-target="#gestión-de-usuarios-y-grupos"><span class="header-section-number">2.3</span> Gestión de Usuarios y Grupos</a>
   <ul class="collapse">
-  <li><a href="#usuarios" id="toc-usuarios" class="nav-link" data-scroll-target="#usuarios"><span class="header-section-number">2.1.1</span> Usuarios</a></li>
-  <li><a href="#grupos" id="toc-grupos" class="nav-link" data-scroll-target="#grupos"><span class="header-section-number">2.1.2</span> Grupos</a></li>
+  <li><a href="#usuarios" id="toc-usuarios" class="nav-link" data-scroll-target="#usuarios"><span class="header-section-number">2.3.1</span> Usuarios</a></li>
+  <li><a href="#grupos" id="toc-grupos" class="nav-link" data-scroll-target="#grupos"><span class="header-section-number">2.3.2</span> Grupos</a></li>
   </ul></li>
-  <li><a href="#permisos-y-propietarios" id="toc-permisos-y-propietarios" class="nav-link" data-scroll-target="#permisos-y-propietarios"><span class="header-section-number">2.2</span> Permisos y Propietarios</a>
+  <li><a href="#permisos-y-propietarios" id="toc-permisos-y-propietarios" class="nav-link" data-scroll-target="#permisos-y-propietarios"><span class="header-section-number">2.4</span> Permisos y Propietarios</a>
   <ul class="collapse">
-  <li><a href="#cambiar-propietario" id="toc-cambiar-propietario" class="nav-link" data-scroll-target="#cambiar-propietario"><span class="header-section-number">2.2.1</span> Cambiar Propietario</a></li>
-  <li><a href="#permisos-chmod" id="toc-permisos-chmod" class="nav-link" data-scroll-target="#permisos-chmod"><span class="header-section-number">2.2.2</span> Permisos (chmod)</a></li>
+  <li><a href="#cambiar-propietario" id="toc-cambiar-propietario" class="nav-link" data-scroll-target="#cambiar-propietario"><span class="header-section-number">2.4.1</span> Cambiar Propietario</a></li>
+  <li><a href="#permisos-chmod---guía-profunda" id="toc-permisos-chmod---guía-profunda" class="nav-link" data-scroll-target="#permisos-chmod---guía-profunda"><span class="header-section-number">2.4.2</span> Permisos (<code>chmod</code>) - Guía Profunda</a>
+  <ul class="collapse">
+  <li><a href="#modo-numérico-octal" id="toc-modo-numérico-octal" class="nav-link" data-scroll-target="#modo-numérico-octal"><span class="header-section-number">2.4.2.1</span> Modo Numérico (Octal)</a></li>
+  <li><a href="#modo-texto-simbólico" id="toc-modo-texto-simbólico" class="nav-link" data-scroll-target="#modo-texto-simbólico"><span class="header-section-number">2.4.2.2</span> Modo Texto (Simbólico)</a></li>
   </ul></li>
-  <li><a href="#fecha-y-hora-timedatectl" id="toc-fecha-y-hora-timedatectl" class="nav-link" data-scroll-target="#fecha-y-hora-timedatectl"><span class="header-section-number">2.3</span> 4. Fecha y Hora (Timedatectl)</a></li>
+  </ul></li>
+  <li><a href="#fecha-y-hora-timedatectl" id="toc-fecha-y-hora-timedatectl" class="nav-link" data-scroll-target="#fecha-y-hora-timedatectl"><span class="header-section-number">2.5</span> Fecha y Hora (Timedatectl)</a></li>
+  </ul></li>
+  <li><a href="#guía-interpretación-de-ls--l-y-permisos-en-linux" id="toc-guía-interpretación-de-ls--l-y-permisos-en-linux" class="nav-link" data-scroll-target="#guía-interpretación-de-ls--l-y-permisos-en-linux"><span class="header-section-number">3</span> Guía: Interpretación de <code>ls -l</code> y Permisos en Linux</a>
+  <ul>
+  <li><a href="#el-bloque-de-permisos-el-primer-campo" id="toc-el-bloque-de-permisos-el-primer-campo" class="nav-link" data-scroll-target="#el-bloque-de-permisos-el-primer-campo"><span class="header-section-number">3.0.0.1</span> El bloque de permisos (El primer campo)</a></li>
+  <li><a href="#significado-de-los-caracteres-r-w-x" id="toc-significado-de-los-caracteres-r-w-x" class="nav-link" data-scroll-target="#significado-de-los-caracteres-r-w-x"><span class="header-section-number">3.0.0.2</span> Significado de los caracteres (r, w, x)</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -304,7 +283,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./Servidor Linux Intro.html">Manejando un servidor Linux</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./servidor_linux_intro.html">Manejando un servidor Linux</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Manejando un servidor Linux</h1>
 </div>
@@ -323,34 +302,292 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="comandos-básicos-de-linux" class="level1" data-number="1">
-<h1 data-number="1"><span class="header-section-number">1</span> Comandos básicos de Linux</h1>
-<p>La virguriña ~ significa que estamos en el directorio home del usuario actual. Por ejemplo, si tu nombre de usuario es “juan”, entonces “~” se refiere a “/home/juan”. El simbolo $ significa que el usuario actual es un usuario normal, mientras que el simbolo # indica que el usuario actual es el superusuario o root. Por ejemplo, si vemos un prompt como “juan@servidor:~$” significa que estamos en el directorio home del usuario “juan” y somos un usuario normal. Si vemos “root@servidor:/#” significa que estamos en el directorio raíz y somos el superusuario.</p>
-<p>Usando la palabra clave “sudo” (<em>superuser do</em>) podemos ejecutar comandos con privilegios de superusuario. Por ejemplo, si queremos instalar un paquete, podemos usar <code>sudo apt install nombre_del_paquete</code>. Se nos pedirá la contraseña del usuario actual para confirmar la acción.</p>
+<section id="gestión-de-usuarios" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Gestión de Usuarios:</h1>
+<p>En Linux, la seguridad se basa en la <strong>separación de privilegios</strong>. No todos los usuarios son iguales, y esto es lo que evita que un error humano o un programa malintencionado destruya el sistema operativo.</p>
+<section id="las-tres-clases-de-ciudadanos-en-linux" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="las-tres-clases-de-ciudadanos-en-linux"><span class="header-section-number">1.1</span> Las tres clases de ciudadanos en Linux</h2>
+<p>Para entender el sistema, clasifiquemos a los “habitantes” del castillo:</p>
+<ol type="1">
+<li><p><strong>root (El Rey):</strong> UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.</p></li>
+<li><p><strong>Usuarios Humanos:</strong> Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un <code>home</code> asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc.</p></li>
+<li><p><strong>Usuarios de Sistema o Servicio:</strong> Son los “fantasmas” del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.</p>
 <ul>
-<li>Para limpiar la pantalla de la terminal, podemos usar el comando <code>clear</code>. Esto eliminará todo el contenido visible en la terminal y nos dejará con un prompt limpio.</li>
-</ul>
-<section id="navegación-y-administración-de-archivos" class="level2" data-number="1.1">
-<h2 data-number="1.1" class="anchored" data-anchor-id="navegación-y-administración-de-archivos"><span class="header-section-number">1.1</span> Navegación y administración de archivos</h2>
-<ul>
-<li><p>Usando el comando <code>pwd</code> (<strong><em>print working directory</em></strong>) podemos ver en qué directorio nos encontramos actualmente. Por ejemplo, si ejecutamos <code>pwd</code> en la terminal, obtendremos la ruta completa del directorio actual.</p></li>
-<li><p>Para <strong>navegar entre directorios</strong>, podemos usar el comando <code>cd</code> (change directory). Por ejemplo, <code>cd /var/log</code> nos llevará al directorio “/var/log”. Si queremos regresar al directorio home, podemos usar <code>cd ~</code> o simplemente <code>cd</code>.</p></li>
-<li><p>Para <strong>ir al directorio padre</strong>, podemos usar <code>cd ..</code>, o <code>cd /</code> .</p></li>
-<li><p><strong>Crear directorio:</strong> <code>mkdir nombre_carpeta</code></p></li>
-<li><p><strong>Borrar directorio (vacío):</strong> <code>rmdir nombre_carpeta</code></p></li>
-<li><p><strong>Borrar archivo/directorio:</strong> <code>rm nombre</code> (<code>-r</code> para recursivo, <code>-f</code> para forzar)</p></li>
-<li><p><strong>Copiar:</strong> <code>cp origen destino</code></p></li>
-<li><p><strong>Mover/Renombrar:</strong> <code>mv origen destino</code></p></li>
-<li><p>Búsqueda</p>
-<ul>
-<li><p><strong>Buscar archivos (rápido):</strong> <code>locate nombre</code></p></li>
-<li><p><strong>Buscar archivos (detallado):</strong> <code>find /ruta -name "nombre"</code></p></li>
+<li><strong>Características:</strong> No tienen contraseña de login, no tienen un <code>home</code> real (o es limitado) y, lo más importante, su <em>shell</em> (intérprete de comandos) está bloqueado (<code>/usr/sbin/nologin</code>). Esto evita que un hacker pueda “entrar” usando la cuenta de una base de datos para tomar el control.</li>
 </ul></li>
-<li><p>Para listar los archivos y directorios dentro del directorio actual, podemos usar el comando <code>ls</code>. Por ejemplo, <code>ls</code> mostrará los archivos y carpetas en el directorio actual, mientras que <code>ls -l</code> proporcionará una lista detallada con permisos, propietario, tamaño y fecha de modificación.</p>
-<p><img src="images/paste-2.png" class="img-fluid"></p></li>
+</ol>
+</section>
+<section id="configuración-por-defecto-la-regla-del-grupo-privado" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="configuración-por-defecto-la-regla-del-grupo-privado"><span class="header-section-number">1.2</span> Configuración por defecto: La regla del “Grupo Privado”</h2>
+<p>Cuando creas un usuario nuevo (<code>adduser</code>), Linux aplica una filosofía llamada <strong>UPG (User Private Group)</strong>:</p>
+<ul>
+<li><p><strong>¿Qué hace?</strong>: Crea automáticamente un grupo con el mismo nombre que el usuario y añade a ese usuario como único miembro de ese grupo.</p></li>
+<li><p><strong>¿Por qué?</strong>: Esto permite que cada usuario tenga una carpeta privada donde, por defecto, solo él puede leer y escribir. Si quieres compartir archivos, entonces creas grupos comunes y añades a varios usuarios a ese grupo compartido.</p></li>
 </ul>
-<section id="guía-interpretación-de-ls--l-y-permisos-en-linux" class="level3" data-number="1.1.1">
-<h3 data-number="1.1.1" class="anchored" data-anchor-id="guía-interpretación-de-ls--l-y-permisos-en-linux"><span class="header-section-number">1.1.1</span> Guía: Interpretación de <code>ls -l</code> y Permisos en Linux</h3>
+</section>
+<section id="el-usuario-inicial-tu-administrador-humano" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="el-usuario-inicial-tu-administrador-humano"><span class="header-section-number">1.3</span> El Usuario Inicial (Tu “Administrador Humano”)</h2>
+<p>Cuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es especial:</p>
+<ul>
+<li><p><strong>Es un usuario estándar:</strong> Tiene su propio directorio <code>/home/usuario</code>.</p></li>
+<li><p><strong>Es un “sudoer”:</strong> El instalador lo añade al grupo <code>sudo</code> (o <code>wheel</code>). Esto le otorga la capacidad de “tomar prestado” el poder de <code>root</code> mediante el comando <code>sudo</code>.</p></li>
+<li><p><strong>Uso diario:</strong> Úsalo siempre para trabajar.</p></li>
+</ul>
+</section>
+<section id="comparativa-root-vs.-usuario-inicial" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="comparativa-root-vs.-usuario-inicial"><span class="header-section-number">1.4</span> 4. Comparativa: root vs.&nbsp;Usuario Inicial</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Característica</th>
+<th>Usuario Inicial (Tú)</th>
+<th>Usuario <code>root</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Identificador (UID)</strong></td>
+<td>&gt; 0 (normalmente 1000)</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><strong>Privilegios</strong></td>
+<td>Limitados a su home</td>
+<td>Totales y absolutos</td>
+</tr>
+<tr class="odd">
+<td><strong>Uso recomendado</strong></td>
+<td>Diario (programación, admin)</td>
+<td>Solo tareas de mantenimiento</td>
+</tr>
+<tr class="even">
+<td><strong>Seguridad</strong></td>
+<td>Alta (protege de errores)</td>
+<td>Baja (riesgo de rotura total)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cómo-se-relacionan" class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="cómo-se-relacionan"><span class="header-section-number">1.5</span> 5. ¿Cómo se relacionan?</h2>
+<p>Tu usuario no “es” <code>root</code>, pero tiene <strong>permiso</strong> para ejecutar cosas como <code>root</code>.</p>
+<ul>
+<li><p><strong>La magia de <code>sudo</code></strong>: El sistema comprueba en <code>/etc/sudoers</code> si estás en el grupo <code>sudo</code>. Si es así, te presta el poder de <code>root</code> solo durante el tiempo que dura ese comando.</p></li>
+<li><p><strong>Privilegios temporales</strong>: En cuanto el comando termina, vuelves a ser un usuario normal.</p></li>
+</ul>
+<p><strong>Regla de oro:</strong> Si puedes hacer algo con tu usuario normal, hazlo. Si necesitas hacer una tarea de sistema (instalar software, editar configuraciones de red), usa <code>sudo</code>. <strong>Nunca</strong> te loguees directamente como <code>root</code> para trabajar.</p>
+<p><img src="images/paste-3.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="comandos-básicos-de-linux" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Comandos básicos de Linux</h1>
+<section id="terminología-de-terminal" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="terminología-de-terminal"><span class="header-section-number">2.1</span> Terminología de Terminal</h2>
+<ul>
+<li><p><strong>Prompt</strong>: La virguriña <code>~</code> indica que estamos en el directorio <code>home</code>.</p>
+<ul>
+<li><p>El símbolo <code>$</code> indica usuario normal,</p></li>
+<li><p>mientras que <code>#</code> indica usuario <code>root</code>.</p></li>
+</ul></li>
+<li><p><strong>sudo (<em>superuser do</em>)</strong>: Ejecuta comandos con privilegios elevados. Se requiere pertenecer al grupo <code>sudo</code>.</p>
+<ul>
+<li><em>Ejemplo</em>: <code>sudo apt install nombre_paquete</code></li>
+</ul></li>
+<li><p><strong>su (<em>switch user</em>)</strong>: Permite cambiar de usuario (hacer un “salto”) para trabajar con sus privilegios.</p></li>
+<li><p><strong>clear</strong>: Limpia la pantalla de la terminal para tener un prompt limpio.</p></li>
+</ul>
+</section>
+<section id="navegación-y-administración-de-archivos" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="navegación-y-administración-de-archivos"><span class="header-section-number">2.2</span> Navegación y administración de archivos</h2>
+<ul>
+<li><p><strong>pwd (<em>print working directory</em>)</strong>: Muestra la ruta completa del directorio donde estás.</p>
+<ul>
+<li><em>Uso</em>: <code>pwd</code></li>
+</ul></li>
+<li><p><strong>cd (<em>change directory</em>)</strong>: Navega entre directorios.</p>
+<ul>
+<li><p><code>cd ~</code> o <code>cd</code>: Regresa al directorio <code>home</code>.</p></li>
+<li><p><code>cd ..</code>: Sube un nivel al directorio padre.</p></li>
+<li><p><code>cd /</code>: Va al directorio raíz.</p></li>
+</ul></li>
+<li><p><strong>mkdir (<em>make directory</em>)</strong>: Crea un nuevo directorio.</p>
+<ul>
+<li><em>Uso</em>: <code>mkdir nombre_carpeta</code></li>
+</ul></li>
+<li><p><strong>rmdir (<em>remove directory</em>)</strong>: Elimina directorios (deben estar vacíos).</p></li>
+<li><p><strong>rm (<em>remove</em>)</strong>: Borra archivos o directorios.</p>
+<ul>
+<li><p><code>rm nombre_archivo</code>: Borra un archivo.</p></li>
+<li><p><code>rm -r nombre_carpeta</code>: Borra directorio y contenido (recursivo).</p></li>
+<li><p><code>rm -rf nombre</code>: Fuerza el borrado sin preguntar.</p></li>
+</ul></li>
+<li><p><strong>cp (<em>copy</em>)</strong>: Copia archivos o directorios.</p>
+<ul>
+<li><em>Uso</em>: <code>cp origen destino</code></li>
+</ul></li>
+<li><p><strong>mv (<em>move</em>)</strong>: Mueve o renombra archivos/directorios.</p>
+<ul>
+<li><em>Uso</em>: <code>mv origen destino</code></li>
+</ul></li>
+<li><p><strong>Búsqueda</strong>:</p>
+<ul>
+<li><p><code>locate nombre</code>: Búsqueda rápida (índice).</p></li>
+<li><p><code>find /ruta -name "nombre"</code>: Búsqueda exhaustiva.</p></li>
+</ul></li>
+<li><p><strong>ls (<em>list</em>)</strong>: Lista el contenido de un directorio.</p>
+<ul>
+<li><code>ls -l</code>: Lista detallada (permisos, dueño, tamaño). <a href="#guía-interpretación-de-ls--l-y-permisos-en-linux" title="null">Consulta el desglose aquí</a>.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/paste-2.png" class="img-fluid figure-img"></p>
+<figcaption>Terminal output showing ls -l command results with file listings displaying permissions, owner, group, size, date, and filename columns. Each line shows detailed file information including executable flags for binaries like usr/bin and usr/sbin, with dates in April, June, and other months.</figcaption>
+</figure>
+</div></li>
+</ul>
+</section>
+<section id="gestión-de-usuarios-y-grupos" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="gestión-de-usuarios-y-grupos"><span class="header-section-number">2.3</span> Gestión de Usuarios y Grupos</h2>
+<section id="usuarios" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="usuarios"><span class="header-section-number">2.3.1</span> Usuarios</h3>
+<ul>
+<li><p><strong>Añadir:</strong> <code>sudo adduser nombre_usuario</code></p></li>
+<li><p><strong>Eliminar:</strong> <code>sudo deluser nombre_usuario</code></p></li>
+<li><p><strong>Cambiar contraseña:</strong> <code>passwd nombre_usuario</code></p></li>
+<li><p><strong>Ver todos:</strong> <code>cat /etc/passwd</code></p></li>
+</ul>
+</section>
+<section id="grupos" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="grupos"><span class="header-section-number">2.3.2</span> Grupos</h3>
+<ul>
+<li><p><strong>Añadir:</strong> <code>sudo addgroup nombre_grupo</code></p></li>
+<li><p><strong>Eliminar:</strong> <code>sudo delgroup nombre_grupo</code></p></li>
+<li><p><strong>Añadir usuario a grupo:</strong></p>
+<ul>
+<li><p><strong>usermod</strong> <strong>(<em>modify user</em>)</strong>: <code>sudo usermod -aG nombre_grupo nombre_usuario</code>. <code>-aG</code> significa <em>Append</em> (añadir) a un grupo.<br>
+La opción <code>-a</code> (append) es <strong>crítica</strong>. Si olvidas ponerla y solo escribes <code>usermod -G nombre_grupo nombre_usuario</code>, Linux <strong>borrará al usuario de todos sus grupos anteriores</strong> y solo lo dejará en el nuevo grupo. ¡Podrías dejar al usuario sin acceso a sus archivos personales o dispositivos</p></li>
+<li><p><strong>adduser (<em>add user</em>):</strong> <code>sudo adduser nombre_usuario nombre_grupo</code> Es una forma amigable de usar el comando usermod con menos riesgos ya que por defecto sólo añade el usuario a un nuevo grupo sin borrarlo del resto, pero no esta disponible en todas las distribuciones linux. Está diseñado para ser más seguro y fácil de recordar.</p></li>
+</ul></li>
+<li><p><strong>Eliminar usuario de grupo:</strong> <code>sudo deluser nombre_usuario nombre_grupo</code></p></li>
+<li><p><strong>Ver todos:</strong> <code>cat /etc/group</code></p></li>
+<li><p><strong>Ver grupos de un usuario:</strong> <code>groups nombre_usuario</code></p></li>
+</ul>
+</section>
+</section>
+<section id="permisos-y-propietarios" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="permisos-y-propietarios"><span class="header-section-number">2.4</span> Permisos y Propietarios</h2>
+<section id="cambiar-propietario" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="cambiar-propietario"><span class="header-section-number">2.4.1</span> Cambiar Propietario</h3>
+<ul>
+<li><p><strong>Usuario:</strong> <code>sudo chown nuevo_usuario archivo</code></p></li>
+<li><p><strong>Grupo:</strong> <code>sudo chgrp nuevo_grupo archivo</code></p></li>
+</ul>
+</section>
+<section id="permisos-chmod---guía-profunda" class="level3" data-number="2.4.2">
+<h3 data-number="2.4.2" class="anchored" data-anchor-id="permisos-chmod---guía-profunda"><span class="header-section-number">2.4.2</span> Permisos (<code>chmod</code>) - Guía Profunda</h3>
+<p>El comando <code>chmod</code> cambia los privilegios. Puedes usarlo de dos formas:</p>
+<section id="modo-numérico-octal" class="level4" data-number="2.4.2.1">
+<h4 data-number="2.4.2.1" class="anchored" data-anchor-id="modo-numérico-octal"><span class="header-section-number">2.4.2.1</span> Modo Numérico (Octal)</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Valor (Octal)</th>
+<th style="text-align: center;">Permisos</th>
+<th style="text-align: left;">Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><code>---</code></td>
+<td style="text-align: left;">Ningún permiso</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"><code>--x</code></td>
+<td style="text-align: left;">Ejecución</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"><code>-w-</code></td>
+<td style="text-align: left;">Escritura</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;"><code>-wx</code></td>
+<td style="text-align: left;">Escritura + Ejecución</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"><code>r--</code></td>
+<td style="text-align: left;">Lectura</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"><code>r-x</code></td>
+<td style="text-align: left;">Lectura + Ejecución</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;"><code>rw-</code></td>
+<td style="text-align: left;">Lectura + Escritura</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"><code>rwx</code></td>
+<td style="text-align: left;">Lectura + Escritura + Ejecución</td>
+</tr>
+</tbody>
+</table>
+<p>Es la forma más rápida. Se basa en sumar valores: <strong>Lectura (r)=4, Escritura (w)=2, Ejecución (x)=1</strong>. El comando recibe 3 dígitos (Usuario, Grupo, Otros).</p>
+<ul>
+<li><p><strong>Ejemplo <code>764</code></strong>:</p>
+<ul>
+<li><p><strong>Usuario (7)</strong>: 4+2+1 = Lectura, Escritura y Ejecución.</p></li>
+<li><p><strong>Grupo (6)</strong>: 4+2+0 = Lectura y Escritura.</p></li>
+<li><p><strong>Otros (4)</strong>: 4+0+0 = Solo Lectura.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="modo-texto-simbólico" class="level4" data-number="2.4.2.2">
+<h4 data-number="2.4.2.2" class="anchored" data-anchor-id="modo-texto-simbólico"><span class="header-section-number">2.4.2.2</span> Modo Texto (Simbólico)</h4>
+<p>Es más intuitivo para añadir/quitar permisos específicos.</p>
+<ul>
+<li><p><strong>Sintaxis</strong>: <code>sudo chmod [quién][operador][qué] archivo</code></p>
+<ul>
+<li><p><strong>Quién</strong>: <code>u</code> (usuario), <code>g</code> (grupo), <code>o</code> (otros), <code>a</code> (todos).</p></li>
+<li><p><strong>Operador</strong>: <code>=</code> (asignar), <code>+</code> (añadir), <code>-</code> (quitar).</p></li>
+<li><p><strong>Qué</strong>: <code>r</code> (lectura), <code>w</code> (escritura), <code>x</code> (ejecución).</p></li>
+</ul></li>
+<li><p><em>Ejemplo</em>: <code>sudo chmod u+x archivo</code> (Añade ejecución al usuario).</p></li>
+</ul>
+<div class="nota">
+<p><strong>Nota sobre múltiples grupos y ACLs:</strong> Linux no permite asignar múltiples grupos primarios a un archivo, pero puedes usar <strong>ACLs</strong> para mayor flexibilidad.</p>
+<ul>
+<li><p><strong>Ejemplo</strong>: <code>setfacl -m g:grupo_extra:r archivo.txt</code> (da permiso de lectura a un grupo extra).</p></li>
+<li><p><strong>Ver permisos ACL</strong>: <code>getfacl archivo.txt</code>.</p></li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+<section id="fecha-y-hora-timedatectl" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="fecha-y-hora-timedatectl"><span class="header-section-number">2.5</span> Fecha y Hora (Timedatectl)</h2>
+<ul>
+<li><p><strong>Ver estado:</strong> <code>timedatectl</code></p></li>
+<li><p><strong>Desactivar sincronización NTP:</strong> <code>sudo timedatectl set-ntp false</code></p></li>
+<li><p><strong>Cambiar hora manualmente:</strong> <code>sudo timedatectl set-time "AAAA-MM-DD HH:MM:SS"</code></p></li>
+<li><p><strong>Activar sincronización NTP:</strong> <code>sudo timedatectl set-ntp true</code></p></li>
+</ul>
+</section>
+</section>
+<section id="guía-interpretación-de-ls--l-y-permisos-en-linux" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Guía: Interpretación de <code>ls -l</code> y Permisos en Linux</h1>
 <p>Cuando ejecutas el comando <code>ls -l</code>, el sistema te devuelve una lista detallada. La primera parte de esa línea es fundamental para entender qué es el archivo y quién puede hacer qué con él.</p>
 <p>Una línea típica se ve así: <code>-rwxr-xr-- 1 root root 4096 Jun 26 19:50 archivo.txt</code></p>
 <p>Desglose campo a campo:</p>
@@ -363,8 +600,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><strong>Fecha de modificación:</strong> <code>Jun 26 19:50</code> (Última vez que se modificó).</p></li>
 <li><p><strong>Nombre:</strong> <code>archivo.txt</code> (Nombre del archivo).</p></li>
 </ol>
-<section id="el-bloque-de-permisos-el-primer-campo" class="level4" data-number="1.1.1.1">
-<h4 data-number="1.1.1.1" class="anchored" data-anchor-id="el-bloque-de-permisos-el-primer-campo"><span class="header-section-number">1.1.1.1</span> El bloque de permisos (El primer campo)</h4>
+<section id="el-bloque-de-permisos-el-primer-campo" class="level4" data-number="3.0.0.1">
+<h4 data-number="3.0.0.1" class="anchored" data-anchor-id="el-bloque-de-permisos-el-primer-campo"><span class="header-section-number">3.0.0.1</span> El bloque de permisos (El primer campo)</h4>
 <p>El primer carácter indica el <strong>tipo de archivo</strong>:</p>
 <ul>
 <li><p><code>-</code>: Archivo estándar (documentos, imágenes, scripts).</p></li>
@@ -376,8 +613,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>Bloque 2: Grupo Propietario (<code>g</code>):</strong> Define qué pueden hacer los usuarios que pertenecen al grupo asignado al archivo.</p>
 <p><strong>Bloque 3: Otros Usuarios (<code>o</code>):</strong> Define qué puede hacer cualquier otro usuario del sistema (el “resto del mundo”).</p>
 </section>
-<section id="significado-de-los-caracteres-r-w-x" class="level4" data-number="1.1.1.2">
-<h4 data-number="1.1.1.2" class="anchored" data-anchor-id="significado-de-los-caracteres-r-w-x"><span class="header-section-number">1.1.1.2</span> Significado de los caracteres (r, w, x)</h4>
+<section id="significado-de-los-caracteres-r-w-x" class="level4" data-number="3.0.0.2">
+<h4 data-number="3.0.0.2" class="anchored" data-anchor-id="significado-de-los-caracteres-r-w-x"><span class="header-section-number">3.0.0.2</span> Significado de los caracteres (r, w, x)</h4>
 <p>En Archivos normales (<code>-</code>):</p>
 <ul>
 <li><p><code>r</code> (Read): Permite <strong>leer</strong> el contenido del archivo (ej. <code>cat</code>, <code>less</code>).</p></li>
@@ -429,79 +666,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><strong>Grupo:</strong> Puede leer y ejecutar, pero no modificar (<code>r-x</code>).</p></li>
 <li><p><strong>Otros:</strong> Solo pueden leer el archivo (<code>r--</code>).</p></li>
 </ul>
+<div class="nota">
 <p>Linux no permite asignar múltiples grupos directamente a un archivo. Pero sí puedes lograrlo de varias formas:</p>
 <p><strong>Opción 1</strong>: Cambiar el grupo del archivo <code>chgrp desarrolladores archivo.txt</code> para asignar el grupo “desarrolladores” al archivo “archivo.txt”. Luego, puedes agregar usuarios al grupo “desarrolladores” usando <code>sudo usermod -aG desarrolladores usuario</code>.</p>
 <p><strong>Opción 2</strong>: Usar ACLs (Access Control Lists) Esto es lo moderno y flexible: puedes dar permisos a varios grupos o usuarios adicionales. Ejemplo: dar permisos de lectura a un grupo extra: <code>setfacl -m g:grupo_extra:r archivo.txt</code>. Para ver los permisos ACL de un archivo, puedes usar <code>getfacl archivo.txt</code>.</p>
 <p>Los permisos se pueden cambiar usando el comando <code>chmod</code>. Por ejemplo, <code>chmod 755 archivo</code> otorgará permisos de lectura, escritura y ejecución al propietario, y permisos de lectura y ejecución a los demás usuarios.</p>
-</section>
-</section>
-</section>
-</section>
-<section id="conexión-remota-a-un-servidor-linux" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Conexión remota a un servidor Linux</h1>
-<p><a href="ubuntu_ssh.html">Ver guía de configuración de SSH en Ubuntu</a></p>
-<p>El comando básico para conectarse a un servidor remoto es:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> usuario@direccion_ip_del_servidor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Por ejemplo, si nuestro nombre de usuario es “juan” y la dirección IP del servidor es “12.34.56.78”, el comando sería:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> juan@12.34.56.78</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Si es la primera vez que nos conectamos a ese servidor, se nos pedirá que confirmemos la autenticidad del host y que aceptemos su clave pública. Una vez aceptada, se nos pedirá la contraseña del usuario para iniciar sesión. Si la autenticidad del host ya ha sido confirmada previamente, se nos pedirá directamente la contraseña del usuario.</p>
-<hr>
-<section id="gestión-de-usuarios-y-grupos" class="level2" data-number="2.1">
-<h2 data-number="2.1" class="anchored" data-anchor-id="gestión-de-usuarios-y-grupos"><span class="header-section-number">2.1</span> Gestión de Usuarios y Grupos</h2>
-<section id="usuarios" class="level3" data-number="2.1.1">
-<h3 data-number="2.1.1" class="anchored" data-anchor-id="usuarios"><span class="header-section-number">2.1.1</span> Usuarios</h3>
-<ul>
-<li><p><strong>Añadir usuario:</strong> <code>sudo adduser nombre_usuario</code></p></li>
-<li><p><strong>Eliminar usuario:</strong> <code>sudo deluser nombre_usuario</code></p></li>
-<li><p><strong>Cambiar contraseña:</strong> <code>passwd nombre_usuario</code></p></li>
-<li><p><strong>Ver usuarios:</strong> <code>cat /etc/passwd</code></p></li>
-</ul>
-</section>
-<section id="grupos" class="level3" data-number="2.1.2">
-<h3 data-number="2.1.2" class="anchored" data-anchor-id="grupos"><span class="header-section-number">2.1.2</span> Grupos</h3>
-<ul>
-<li><p><strong>Añadir grupo:</strong> <code>sudo addgroup nombre_grupo</code></p></li>
-<li><p><strong>Eliminar grupo:</strong> <code>sudo delgroup nombre_grupo</code></p></li>
-<li><p><strong>Añadir usuario a grupo:</strong> <code>sudo usermod -aG nombre_grupo nombre_usuario</code></p></li>
-<li><p><strong>Eliminar usuario de grupo:</strong> <code>sudo deluser nombre_usuario nombre_grupo</code></p></li>
-<li><p><strong>Ver grupos:</strong> <code>cat /etc/group</code></p></li>
-</ul>
-</section>
-</section>
-<section id="permisos-y-propietarios" class="level2" data-number="2.2">
-<h2 data-number="2.2" class="anchored" data-anchor-id="permisos-y-propietarios"><span class="header-section-number">2.2</span> Permisos y Propietarios</h2>
-<section id="cambiar-propietario" class="level3" data-number="2.2.1">
-<h3 data-number="2.2.1" class="anchored" data-anchor-id="cambiar-propietario"><span class="header-section-number">2.2.1</span> Cambiar Propietario</h3>
-<ul>
-<li><p><strong>Usuario propietario:</strong> <code>sudo chown nuevo_usuario archivo</code></p></li>
-<li><p><strong>Grupo propietario:</strong> <code>sudo chgrp nuevo_grupo archivo</code></p></li>
-</ul>
-</section>
-<section id="permisos-chmod" class="level3" data-number="2.2.2">
-<h3 data-number="2.2.2" class="anchored" data-anchor-id="permisos-chmod"><span class="header-section-number">2.2.2</span> Permisos (chmod)</h3>
-<ul>
-<li><p><strong>Modo Numérico (Octal):</strong></p>
-<ul>
-<li><p><code>r=4, w=2, x=1</code></p></li>
-<li><p>Ejemplo: <code>sudo chmod 764 archivo</code> (7: Usuario, 6: Grupo, 4: Otros)</p></li>
-</ul></li>
-<li><p><strong>Modo Texto:</strong></p>
-<ul>
-<li><p><strong>Asignación:</strong> <code>sudo chmod u=rw,g=rw,o=r archivo</code></p></li>
-<li><p><strong>Añadir permisos:</strong> <code>sudo chmod u+x archivo</code></p></li>
-<li><p><strong>Quitar permisos:</strong> <code>sudo chmod u-x archivo</code></p></li>
-</ul></li>
-</ul>
-</section>
-</section>
-<section id="fecha-y-hora-timedatectl" class="level2" data-number="2.3">
-<h2 data-number="2.3" class="anchored" data-anchor-id="fecha-y-hora-timedatectl"><span class="header-section-number">2.3</span> 4. Fecha y Hora (Timedatectl)</h2>
-<ul>
-<li><p><strong>Ver estado:</strong> <code>timedatectl</code></p></li>
-<li><p><strong>Desactivar sincronización NTP:</strong> <code>sudo timedatectl set-ntp false</code></p></li>
-<li><p><strong>Cambiar hora manualmente:</strong> <code>sudo timedatectl set-time "AAAA-MM-DD HH:MM:SS"</code></p></li>
-<li><p><strong>Activar sincronización NTP:</strong> <code>sudo timedatectl set-ntp true</code></p></li>
-</ul>
+</div>
 
 
 </section>

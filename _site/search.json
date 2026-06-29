@@ -577,14 +577,14 @@
     "href": "index.html",
     "title": "Índice de Contenidos",
     "section": "",
-    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\n\n\n\n\n\n\nUbuntu Cheat Sheet"
+    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\n\n\n\n\n\n\nUbuntu Cheat Sheet"
   },
   {
     "objectID": "index.html#bloque-1-redes-e-infraestructura",
     "href": "index.html#bloque-1-redes-e-infraestructura",
     "title": "Índice de Contenidos",
     "section": "",
-    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana"
+    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana"
   },
   {
     "objectID": "index.html#anexos",
@@ -592,6 +592,19 @@
     "title": "Índice de Contenidos",
     "section": "",
     "text": "Ubuntu Cheat Sheet"
+  },
+  {
+    "objectID": "ejercicio_linux.html",
+    "href": "ejercicio_linux.html",
+    "title": "Ejercicio: Moverse por Linux (Ubuntu Server)",
+    "section": "",
+    "text": "🐧 Crea un servidor ubuntu virtual en conexion puente y conéctate a él a través de tu windows shell en tu host.\n\nDurante la instalación usa estos datos\n\nUsuario inicial: sysadmin password 1234\ninstala ssh.\n\n\n1 Conexión remota a un servidor Linux\nVer guía de configuración de SSH en Ubuntu\nEl comando básico para conectarse a un servidor remoto es:\nssh usuario@direccion_ip_del_servidor\nPor ejemplo, si nuestro nombre de usuario es “juan” y la dirección IP del servidor es “12.34.56.78”, el comando sería:\nssh juan@12.34.56.78\nSi es la primera vez que nos conectamos a ese servidor, se nos pedirá que confirmemos la autenticidad del host y que aceptemos su clave pública. Una vez aceptada, se nos pedirá la contraseña del usuario para iniciar sesión. Si la autenticidad del host ya ha sido confirmada previamente, se nos pedirá directamente la contraseña del usuario.\n\n\n\n¿Cuál es la IP de tu Ubuntu Server?\nRespuesta: 10.0.20.33 usando el comando ip a (muestra las interfaces de red).\nCrear un nuevo usuario “pacof” (password 1234)\nComando correcto: sudo adduser pacof. Nota: Sin sudo da error porque solo root puede gestionar usuarios.\nCrear un nuevo usuario “mariap” (password 5678)\nComando correcto: sudo adduser mariap.\n¿En qué directorio se han creado los nuevos usuarios?\nEn /home/pacof y /home/mariap.\nCrear el grupo “runners”\nComando: sudo groupadd runners.\n¿Dónde se almacenan los grupos creados?\nEn el archivo /etc/group.\nAñadir a “pacof” y “mariap” al grupo “runners”\nComando: sudo usermod -aG runners pacof y sudo usermod -aG runners mariap. Tip: La -aG (append) es vital para añadir el grupo sin borrar los que ya tiene el usuario.\nEntrar como usuario “mariap”\nComando: su mariap.\nCrear con “mariap” un usuario “prueba” con password 1010\nRespuesta: No, da error Permission denied porque no tiene privilegios de superusuario.\nCon “mariap”, crear un documento “perfil” dentro de /home/pacof\nNo, no tiene permisos de escritura en el directorio de otro usuario.\nCon “mariap”, crear un documento “perfil” en su propio directorio\nComandos: cd /home/mariap\nnano perfil.\nHacer a “mariap” superusuario (sudo)\nComando: sudo adduser mariap sudo o sudo usermod -aG sudo mariap.\nCon “mariap”, crear documento “perfil” en /home/pacof\nComando: sudo nano /home/pacof/perfil. Nota: Ahora funciona al usar sudo.\n¿Quién es el dueño de cada documento “perfil”?\nEl creado con sudo (el de pacof) pertenece a root:root.\nEl creado por mariap en su home pertenece a mariap:mariap.\nCambiar a usuario “pacof”\nComando: su pacof.\nEditar el documento “perfil” en /home/pacof\nError Permission denied porque el archivo pertenece a root.\nEliminar el documento “perfil” de /home/pacof.\nEsto sí nos deja hacerlo porque pacof incluso si no tiene permisos de escritura sobre documentos que no ha creado él en su propio directorio, tiene permisos sobre su propio directorio que le permiten eliminar dichos archivos.\nCon “pacof”, crear documento “maraton” en /media\nError Permission denied porque /media pertenece a root.\n¿Quién es el dueño y grupo del directorio /media?\nComando: ls -ld /media. Dueño: root, Grupo: root.\nCambiar a sysadmin\nComando: su sysadmin o exit\nCambiar grupo propietario de /media a runners\nComando: sudo chgrp runners /media.\nVolver a entrar como pacof\nComando: su pacof.\nVer los permisos del directorio usando list -l\nCrear documento “maraton” en /media\nError Permission denied. Ser del grupo no basta si no tienes permisos de escritura (w) en el directorio.\nCambiar permisos de /media para que solo runners pueda escribir\nComando: sudo chmod 575 /media. (5=r-x para dueño, 7=rwx para grupo, 5=r-x para otros).\nCon “pacof”, crear documento “maraton” en /media\nAhora funciona porque el grupo runners tiene permiso de escritura.\nCambiar a sysadmin\nComando: su sysadmin o exit\nCambiar contraseña de “pacof” a 1603\nComando: sudo passwd pacof.\nEntrar con “pacof” y nueva contraseña\nComando: su pacof (pass 1603).\nEntrar con “mariap”\nComando: su mariap.\nCrear documento “10k” en /media con “mariap”\nFunciona porque mariap pertenece al grupo runners.\nVer de nuevo los permisos de los archivos en -media usando list -l\nCon “pacof”, eliminar todos los documentos de /media\nHay dos archivos, uno pertenece a pacof y otro a mariap\nComando: rm /media/*.\nNota: Funciona porque al tener permiso de escritura en la carpeta padre, puedes borrar archivos aunque no seas el dueño de dicho archivo.\nCon “sysadmin”, eliminar a “mariap” del grupo runners\nComando: su sysadmin\nsudo gpasswd -d mariap runners.\n¿Puede “mariap” crear “prueba” en /media?\nComo usuario normal, Permission denied.\nSi usa sudo nano /media/prueba, sí puede.\nComprobar zona horaria\nComando: timedatectl.\nCambiar zona horaria a Europa/Madrid\nComando: sudo timedatectl set-timezone Europe/Madrid.\nEliminar usuarios “pacof” y “mariap” y sus directorios\nComando: sudo deluser --remove-home pacof y sudo deluser --remove-home mariap.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Práctica: manejando un servidor Linux"
+    ]
   },
   {
     "objectID": "intro.html",
@@ -870,11 +883,11 @@
     ]
   },
   {
-    "objectID": "Servidor Linux Intro.html",
-    "href": "Servidor Linux Intro.html",
+    "objectID": "servidor_linux_intro.html",
+    "href": "servidor_linux_intro.html",
     "title": "Manejando un servidor Linux",
     "section": "",
-    "text": "La virguriña ~ significa que estamos en el directorio home del usuario actual. Por ejemplo, si tu nombre de usuario es “juan”, entonces “~” se refiere a “/home/juan”. El simbolo $ significa que el usuario actual es un usuario normal, mientras que el simbolo # indica que el usuario actual es el superusuario o root. Por ejemplo, si vemos un prompt como “juan@servidor:~$” significa que estamos en el directorio home del usuario “juan” y somos un usuario normal. Si vemos “root@servidor:/#” significa que estamos en el directorio raíz y somos el superusuario.\nUsando la palabra clave “sudo” (superuser do) podemos ejecutar comandos con privilegios de superusuario. Por ejemplo, si queremos instalar un paquete, podemos usar sudo apt install nombre_del_paquete. Se nos pedirá la contraseña del usuario actual para confirmar la acción.\n\nPara limpiar la pantalla de la terminal, podemos usar el comando clear. Esto eliminará todo el contenido visible en la terminal y nos dejará con un prompt limpio.\n\n\n\n\nUsando el comando pwd (print working directory) podemos ver en qué directorio nos encontramos actualmente. Por ejemplo, si ejecutamos pwd en la terminal, obtendremos la ruta completa del directorio actual.\nPara navegar entre directorios, podemos usar el comando cd (change directory). Por ejemplo, cd /var/log nos llevará al directorio “/var/log”. Si queremos regresar al directorio home, podemos usar cd ~ o simplemente cd.\nPara ir al directorio padre, podemos usar cd .., o cd / .\nCrear directorio: mkdir nombre_carpeta\nBorrar directorio (vacío): rmdir nombre_carpeta\nBorrar archivo/directorio: rm nombre (-r para recursivo, -f para forzar)\nCopiar: cp origen destino\nMover/Renombrar: mv origen destino\nBúsqueda\n\nBuscar archivos (rápido): locate nombre\nBuscar archivos (detallado): find /ruta -name \"nombre\"\n\nPara listar los archivos y directorios dentro del directorio actual, podemos usar el comando ls. Por ejemplo, ls mostrará los archivos y carpetas en el directorio actual, mientras que ls -l proporcionará una lista detallada con permisos, propietario, tamaño y fecha de modificación.\n\n\n\n\nCuando ejecutas el comando ls -l, el sistema te devuelve una lista detallada. La primera parte de esa línea es fundamental para entender qué es el archivo y quién puede hacer qué con él.\nUna línea típica se ve así: -rwxr-xr-- 1 root root 4096 Jun 26 19:50 archivo.txt\nDesglose campo a campo:\n\nTipo de archivo y Permisos: -rwxr-xr-- (Explicado en detalle abajo).\nEnlaces: 1 (Número de enlaces físicos al archivo/directorio).\nPropietario: root (Usuario que posee el archivo).\nGrupo: root (Grupo que tiene permisos sobre el archivo).\nTamaño: 4096 (Tamaño en bytes).\nFecha de modificación: Jun 26 19:50 (Última vez que se modificó).\nNombre: archivo.txt (Nombre del archivo).\n\n\n\nEl primer carácter indica el tipo de archivo:\n\n-: Archivo estándar (documentos, imágenes, scripts).\nd: Directorio (carpeta).\nl: Enlace simbólico (un acceso directo).\n\nLos siguientes 9 caracteres se dividen en 3 bloques de 3 bits cada uno:\nBloque 1: Usuario Propietario (u): Define qué puede hacer el creador o dueño del archivo.\nBloque 2: Grupo Propietario (g): Define qué pueden hacer los usuarios que pertenecen al grupo asignado al archivo.\nBloque 3: Otros Usuarios (o): Define qué puede hacer cualquier otro usuario del sistema (el “resto del mundo”).\n\n\n\nEn Archivos normales (-):\n\nr (Read): Permite leer el contenido del archivo (ej. cat, less).\nw (Write): Permite modificar, renombrar o borrar el contenido del archivo.\nx (Execute): Permite ejecutarlo si es un programa o script (ej. ./script.sh).\n-: Permiso revocado/inexistente.\n\nEn Directorios (d):\n\nr (Read): Permite listar el contenido del directorio (ver los nombres de los archivos dentro con ls).\nw (Write): Permite crear, borrar o mover archivos dentro del directorio.\nx (Execute): Permite entrar en el directorio (usar cd para navegar dentro).\n\nResumen de interpretación rápida\n\n\n\n\n\n\n\n\nCarácter\nFunción en Archivo\nFunción en Directorio\n\n\n\n\nr\nVer el contenido (lectura)\nListar archivos (ls)\n\n\nw\nModificar/borrar contenido\nCrear/borrar archivos internos\n\n\nx\nEjecutar como programa\nEntrar en la carpeta (cd)\n\n\n\nEjemplo práctico: -rwxr-xr--\n\nPropietario: Tiene todos los permisos (rwx).\nGrupo: Puede leer y ejecutar, pero no modificar (r-x).\nOtros: Solo pueden leer el archivo (r--).\n\nLinux no permite asignar múltiples grupos directamente a un archivo. Pero sí puedes lograrlo de varias formas:\nOpción 1: Cambiar el grupo del archivo chgrp desarrolladores archivo.txt para asignar el grupo “desarrolladores” al archivo “archivo.txt”. Luego, puedes agregar usuarios al grupo “desarrolladores” usando sudo usermod -aG desarrolladores usuario.\nOpción 2: Usar ACLs (Access Control Lists) Esto es lo moderno y flexible: puedes dar permisos a varios grupos o usuarios adicionales. Ejemplo: dar permisos de lectura a un grupo extra: setfacl -m g:grupo_extra:r archivo.txt. Para ver los permisos ACL de un archivo, puedes usar getfacl archivo.txt.\nLos permisos se pueden cambiar usando el comando chmod. Por ejemplo, chmod 755 archivo otorgará permisos de lectura, escritura y ejecución al propietario, y permisos de lectura y ejecución a los demás usuarios.",
+    "text": "En Linux, la seguridad se basa en la separación de privilegios. No todos los usuarios son iguales, y esto es lo que evita que un error humano o un programa malintencionado destruya el sistema operativo.\n\n\nPara entender el sistema, clasifiquemos a los “habitantes” del castillo:\n\nroot (El Rey): UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.\nUsuarios Humanos: Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un home asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc.\nUsuarios de Sistema o Servicio: Son los “fantasmas” del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.\n\nCaracterísticas: No tienen contraseña de login, no tienen un home real (o es limitado) y, lo más importante, su shell (intérprete de comandos) está bloqueado (/usr/sbin/nologin). Esto evita que un hacker pueda “entrar” usando la cuenta de una base de datos para tomar el control.\n\n\n\n\n\nCuando creas un usuario nuevo (adduser), Linux aplica una filosofía llamada UPG (User Private Group):\n\n¿Qué hace?: Crea automáticamente un grupo con el mismo nombre que el usuario y añade a ese usuario como único miembro de ese grupo.\n¿Por qué?: Esto permite que cada usuario tenga una carpeta privada donde, por defecto, solo él puede leer y escribir. Si quieres compartir archivos, entonces creas grupos comunes y añades a varios usuarios a ese grupo compartido.\n\n\n\n\nCuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es especial:\n\nEs un usuario estándar: Tiene su propio directorio /home/usuario.\nEs un “sudoer”: El instalador lo añade al grupo sudo (o wheel). Esto le otorga la capacidad de “tomar prestado” el poder de root mediante el comando sudo.\nUso diario: Úsalo siempre para trabajar.\n\n\n\n\n\n\n\n\n\n\n\n\nCaracterística\nUsuario Inicial (Tú)\nUsuario root\n\n\n\n\nIdentificador (UID)\n&gt; 0 (normalmente 1000)\n0\n\n\nPrivilegios\nLimitados a su home\nTotales y absolutos\n\n\nUso recomendado\nDiario (programación, admin)\nSolo tareas de mantenimiento\n\n\nSeguridad\nAlta (protege de errores)\nBaja (riesgo de rotura total)\n\n\n\n\n\n\nTu usuario no “es” root, pero tiene permiso para ejecutar cosas como root.\n\nLa magia de sudo: El sistema comprueba en /etc/sudoers si estás en el grupo sudo. Si es así, te presta el poder de root solo durante el tiempo que dura ese comando.\nPrivilegios temporales: En cuanto el comando termina, vuelves a ser un usuario normal.\n\nRegla de oro: Si puedes hacer algo con tu usuario normal, hazlo. Si necesitas hacer una tarea de sistema (instalar software, editar configuraciones de red), usa sudo. Nunca te loguees directamente como root para trabajar.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -883,11 +896,11 @@
     ]
   },
   {
-    "objectID": "Servidor Linux Intro.html#navegación-y-administración-de-archivos",
-    "href": "Servidor Linux Intro.html#navegación-y-administración-de-archivos",
+    "objectID": "servidor_linux_intro.html#las-tres-clases-de-ciudadanos-en-linux",
+    "href": "servidor_linux_intro.html#las-tres-clases-de-ciudadanos-en-linux",
     "title": "Manejando un servidor Linux",
     "section": "",
-    "text": "Usando el comando pwd (print working directory) podemos ver en qué directorio nos encontramos actualmente. Por ejemplo, si ejecutamos pwd en la terminal, obtendremos la ruta completa del directorio actual.\nPara navegar entre directorios, podemos usar el comando cd (change directory). Por ejemplo, cd /var/log nos llevará al directorio “/var/log”. Si queremos regresar al directorio home, podemos usar cd ~ o simplemente cd.\nPara ir al directorio padre, podemos usar cd .., o cd / .\nCrear directorio: mkdir nombre_carpeta\nBorrar directorio (vacío): rmdir nombre_carpeta\nBorrar archivo/directorio: rm nombre (-r para recursivo, -f para forzar)\nCopiar: cp origen destino\nMover/Renombrar: mv origen destino\nBúsqueda\n\nBuscar archivos (rápido): locate nombre\nBuscar archivos (detallado): find /ruta -name \"nombre\"\n\nPara listar los archivos y directorios dentro del directorio actual, podemos usar el comando ls. Por ejemplo, ls mostrará los archivos y carpetas en el directorio actual, mientras que ls -l proporcionará una lista detallada con permisos, propietario, tamaño y fecha de modificación.\n\n\n\n\nCuando ejecutas el comando ls -l, el sistema te devuelve una lista detallada. La primera parte de esa línea es fundamental para entender qué es el archivo y quién puede hacer qué con él.\nUna línea típica se ve así: -rwxr-xr-- 1 root root 4096 Jun 26 19:50 archivo.txt\nDesglose campo a campo:\n\nTipo de archivo y Permisos: -rwxr-xr-- (Explicado en detalle abajo).\nEnlaces: 1 (Número de enlaces físicos al archivo/directorio).\nPropietario: root (Usuario que posee el archivo).\nGrupo: root (Grupo que tiene permisos sobre el archivo).\nTamaño: 4096 (Tamaño en bytes).\nFecha de modificación: Jun 26 19:50 (Última vez que se modificó).\nNombre: archivo.txt (Nombre del archivo).\n\n\n\nEl primer carácter indica el tipo de archivo:\n\n-: Archivo estándar (documentos, imágenes, scripts).\nd: Directorio (carpeta).\nl: Enlace simbólico (un acceso directo).\n\nLos siguientes 9 caracteres se dividen en 3 bloques de 3 bits cada uno:\nBloque 1: Usuario Propietario (u): Define qué puede hacer el creador o dueño del archivo.\nBloque 2: Grupo Propietario (g): Define qué pueden hacer los usuarios que pertenecen al grupo asignado al archivo.\nBloque 3: Otros Usuarios (o): Define qué puede hacer cualquier otro usuario del sistema (el “resto del mundo”).\n\n\n\nEn Archivos normales (-):\n\nr (Read): Permite leer el contenido del archivo (ej. cat, less).\nw (Write): Permite modificar, renombrar o borrar el contenido del archivo.\nx (Execute): Permite ejecutarlo si es un programa o script (ej. ./script.sh).\n-: Permiso revocado/inexistente.\n\nEn Directorios (d):\n\nr (Read): Permite listar el contenido del directorio (ver los nombres de los archivos dentro con ls).\nw (Write): Permite crear, borrar o mover archivos dentro del directorio.\nx (Execute): Permite entrar en el directorio (usar cd para navegar dentro).\n\nResumen de interpretación rápida\n\n\n\n\n\n\n\n\nCarácter\nFunción en Archivo\nFunción en Directorio\n\n\n\n\nr\nVer el contenido (lectura)\nListar archivos (ls)\n\n\nw\nModificar/borrar contenido\nCrear/borrar archivos internos\n\n\nx\nEjecutar como programa\nEntrar en la carpeta (cd)\n\n\n\nEjemplo práctico: -rwxr-xr--\n\nPropietario: Tiene todos los permisos (rwx).\nGrupo: Puede leer y ejecutar, pero no modificar (r-x).\nOtros: Solo pueden leer el archivo (r--).\n\nLinux no permite asignar múltiples grupos directamente a un archivo. Pero sí puedes lograrlo de varias formas:\nOpción 1: Cambiar el grupo del archivo chgrp desarrolladores archivo.txt para asignar el grupo “desarrolladores” al archivo “archivo.txt”. Luego, puedes agregar usuarios al grupo “desarrolladores” usando sudo usermod -aG desarrolladores usuario.\nOpción 2: Usar ACLs (Access Control Lists) Esto es lo moderno y flexible: puedes dar permisos a varios grupos o usuarios adicionales. Ejemplo: dar permisos de lectura a un grupo extra: setfacl -m g:grupo_extra:r archivo.txt. Para ver los permisos ACL de un archivo, puedes usar getfacl archivo.txt.\nLos permisos se pueden cambiar usando el comando chmod. Por ejemplo, chmod 755 archivo otorgará permisos de lectura, escritura y ejecución al propietario, y permisos de lectura y ejecución a los demás usuarios.",
+    "text": "Para entender el sistema, clasifiquemos a los “habitantes” del castillo:\n\nroot (El Rey): UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.\nUsuarios Humanos: Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un home asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc.\nUsuarios de Sistema o Servicio: Son los “fantasmas” del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.\n\nCaracterísticas: No tienen contraseña de login, no tienen un home real (o es limitado) y, lo más importante, su shell (intérprete de comandos) está bloqueado (/usr/sbin/nologin). Esto evita que un hacker pueda “entrar” usando la cuenta de una base de datos para tomar el control.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -896,11 +909,11 @@
     ]
   },
   {
-    "objectID": "Servidor Linux Intro.html#gestión-de-usuarios-y-grupos",
-    "href": "Servidor Linux Intro.html#gestión-de-usuarios-y-grupos",
+    "objectID": "servidor_linux_intro.html#configuración-por-defecto-la-regla-del-grupo-privado",
+    "href": "servidor_linux_intro.html#configuración-por-defecto-la-regla-del-grupo-privado",
     "title": "Manejando un servidor Linux",
-    "section": "2.1 Gestión de Usuarios y Grupos",
-    "text": "2.1 Gestión de Usuarios y Grupos\n\n2.1.1 Usuarios\n\nAñadir usuario: sudo adduser nombre_usuario\nEliminar usuario: sudo deluser nombre_usuario\nCambiar contraseña: passwd nombre_usuario\nVer usuarios: cat /etc/passwd\n\n\n\n2.1.2 Grupos\n\nAñadir grupo: sudo addgroup nombre_grupo\nEliminar grupo: sudo delgroup nombre_grupo\nAñadir usuario a grupo: sudo usermod -aG nombre_grupo nombre_usuario\nEliminar usuario de grupo: sudo deluser nombre_usuario nombre_grupo\nVer grupos: cat /etc/group",
+    "section": "",
+    "text": "Cuando creas un usuario nuevo (adduser), Linux aplica una filosofía llamada UPG (User Private Group):\n\n¿Qué hace?: Crea automáticamente un grupo con el mismo nombre que el usuario y añade a ese usuario como único miembro de ese grupo.\n¿Por qué?: Esto permite que cada usuario tenga una carpeta privada donde, por defecto, solo él puede leer y escribir. Si quieres compartir archivos, entonces creas grupos comunes y añades a varios usuarios a ese grupo compartido.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -909,11 +922,11 @@
     ]
   },
   {
-    "objectID": "Servidor Linux Intro.html#permisos-y-propietarios",
-    "href": "Servidor Linux Intro.html#permisos-y-propietarios",
+    "objectID": "servidor_linux_intro.html#el-usuario-inicial-tu-administrador-humano",
+    "href": "servidor_linux_intro.html#el-usuario-inicial-tu-administrador-humano",
     "title": "Manejando un servidor Linux",
-    "section": "2.2 Permisos y Propietarios",
-    "text": "2.2 Permisos y Propietarios\n\n2.2.1 Cambiar Propietario\n\nUsuario propietario: sudo chown nuevo_usuario archivo\nGrupo propietario: sudo chgrp nuevo_grupo archivo\n\n\n\n2.2.2 Permisos (chmod)\n\nModo Numérico (Octal):\n\nr=4, w=2, x=1\nEjemplo: sudo chmod 764 archivo (7: Usuario, 6: Grupo, 4: Otros)\n\nModo Texto:\n\nAsignación: sudo chmod u=rw,g=rw,o=r archivo\nAñadir permisos: sudo chmod u+x archivo\nQuitar permisos: sudo chmod u-x archivo",
+    "section": "",
+    "text": "Cuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es especial:\n\nEs un usuario estándar: Tiene su propio directorio /home/usuario.\nEs un “sudoer”: El instalador lo añade al grupo sudo (o wheel). Esto le otorga la capacidad de “tomar prestado” el poder de root mediante el comando sudo.\nUso diario: Úsalo siempre para trabajar.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -922,11 +935,89 @@
     ]
   },
   {
-    "objectID": "Servidor Linux Intro.html#fecha-y-hora-timedatectl",
-    "href": "Servidor Linux Intro.html#fecha-y-hora-timedatectl",
+    "objectID": "servidor_linux_intro.html#comparativa-root-vs.-usuario-inicial",
+    "href": "servidor_linux_intro.html#comparativa-root-vs.-usuario-inicial",
     "title": "Manejando un servidor Linux",
-    "section": "2.3 4. Fecha y Hora (Timedatectl)",
-    "text": "2.3 4. Fecha y Hora (Timedatectl)\n\nVer estado: timedatectl\nDesactivar sincronización NTP: sudo timedatectl set-ntp false\nCambiar hora manualmente: sudo timedatectl set-time \"AAAA-MM-DD HH:MM:SS\"\nActivar sincronización NTP: sudo timedatectl set-ntp true",
+    "section": "",
+    "text": "Característica\nUsuario Inicial (Tú)\nUsuario root\n\n\n\n\nIdentificador (UID)\n&gt; 0 (normalmente 1000)\n0\n\n\nPrivilegios\nLimitados a su home\nTotales y absolutos\n\n\nUso recomendado\nDiario (programación, admin)\nSolo tareas de mantenimiento\n\n\nSeguridad\nAlta (protege de errores)\nBaja (riesgo de rotura total)",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#cómo-se-relacionan",
+    "href": "servidor_linux_intro.html#cómo-se-relacionan",
+    "title": "Manejando un servidor Linux",
+    "section": "",
+    "text": "Tu usuario no “es” root, pero tiene permiso para ejecutar cosas como root.\n\nLa magia de sudo: El sistema comprueba en /etc/sudoers si estás en el grupo sudo. Si es así, te presta el poder de root solo durante el tiempo que dura ese comando.\nPrivilegios temporales: En cuanto el comando termina, vuelves a ser un usuario normal.\n\nRegla de oro: Si puedes hacer algo con tu usuario normal, hazlo. Si necesitas hacer una tarea de sistema (instalar software, editar configuraciones de red), usa sudo. Nunca te loguees directamente como root para trabajar.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#terminología-de-terminal",
+    "href": "servidor_linux_intro.html#terminología-de-terminal",
+    "title": "Manejando un servidor Linux",
+    "section": "2.1 Terminología de Terminal",
+    "text": "2.1 Terminología de Terminal\n\nPrompt: La virguriña ~ indica que estamos en el directorio home.\n\nEl símbolo $ indica usuario normal,\nmientras que # indica usuario root.\n\nsudo (superuser do): Ejecuta comandos con privilegios elevados. Se requiere pertenecer al grupo sudo.\n\nEjemplo: sudo apt install nombre_paquete\n\nsu (switch user): Permite cambiar de usuario (hacer un “salto”) para trabajar con sus privilegios.\nclear: Limpia la pantalla de la terminal para tener un prompt limpio.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#navegación-y-administración-de-archivos",
+    "href": "servidor_linux_intro.html#navegación-y-administración-de-archivos",
+    "title": "Manejando un servidor Linux",
+    "section": "2.2 Navegación y administración de archivos",
+    "text": "2.2 Navegación y administración de archivos\n\npwd (print working directory): Muestra la ruta completa del directorio donde estás.\n\nUso: pwd\n\ncd (change directory): Navega entre directorios.\n\ncd ~ o cd: Regresa al directorio home.\ncd ..: Sube un nivel al directorio padre.\ncd /: Va al directorio raíz.\n\nmkdir (make directory): Crea un nuevo directorio.\n\nUso: mkdir nombre_carpeta\n\nrmdir (remove directory): Elimina directorios (deben estar vacíos).\nrm (remove): Borra archivos o directorios.\n\nrm nombre_archivo: Borra un archivo.\nrm -r nombre_carpeta: Borra directorio y contenido (recursivo).\nrm -rf nombre: Fuerza el borrado sin preguntar.\n\ncp (copy): Copia archivos o directorios.\n\nUso: cp origen destino\n\nmv (move): Mueve o renombra archivos/directorios.\n\nUso: mv origen destino\n\nBúsqueda:\n\nlocate nombre: Búsqueda rápida (índice).\nfind /ruta -name \"nombre\": Búsqueda exhaustiva.\n\nls (list): Lista el contenido de un directorio.\n\nls -l: Lista detallada (permisos, dueño, tamaño). Consulta el desglose aquí.\n\n\n\n\nTerminal output showing ls -l command results with file listings displaying permissions, owner, group, size, date, and filename columns. Each line shows detailed file information including executable flags for binaries like usr/bin and usr/sbin, with dates in April, June, and other months.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#gestión-de-usuarios-y-grupos",
+    "href": "servidor_linux_intro.html#gestión-de-usuarios-y-grupos",
+    "title": "Manejando un servidor Linux",
+    "section": "2.3 Gestión de Usuarios y Grupos",
+    "text": "2.3 Gestión de Usuarios y Grupos\n\n2.3.1 Usuarios\n\nAñadir: sudo adduser nombre_usuario\nEliminar: sudo deluser nombre_usuario\nCambiar contraseña: passwd nombre_usuario\nVer todos: cat /etc/passwd\n\n\n\n2.3.2 Grupos\n\nAñadir: sudo addgroup nombre_grupo\nEliminar: sudo delgroup nombre_grupo\nAñadir usuario a grupo:\n\nusermod (modify user): sudo usermod -aG nombre_grupo nombre_usuario. -aG significa Append (añadir) a un grupo.\nLa opción -a (append) es crítica. Si olvidas ponerla y solo escribes usermod -G nombre_grupo nombre_usuario, Linux borrará al usuario de todos sus grupos anteriores y solo lo dejará en el nuevo grupo. ¡Podrías dejar al usuario sin acceso a sus archivos personales o dispositivos\nadduser (add user): sudo adduser nombre_usuario nombre_grupo Es una forma amigable de usar el comando usermod con menos riesgos ya que por defecto sólo añade el usuario a un nuevo grupo sin borrarlo del resto, pero no esta disponible en todas las distribuciones linux. Está diseñado para ser más seguro y fácil de recordar.\n\nEliminar usuario de grupo: sudo deluser nombre_usuario nombre_grupo\nVer todos: cat /etc/group\nVer grupos de un usuario: groups nombre_usuario",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#permisos-y-propietarios",
+    "href": "servidor_linux_intro.html#permisos-y-propietarios",
+    "title": "Manejando un servidor Linux",
+    "section": "2.4 Permisos y Propietarios",
+    "text": "2.4 Permisos y Propietarios\n\n2.4.1 Cambiar Propietario\n\nUsuario: sudo chown nuevo_usuario archivo\nGrupo: sudo chgrp nuevo_grupo archivo\n\n\n\n2.4.2 Permisos (chmod) - Guía Profunda\nEl comando chmod cambia los privilegios. Puedes usarlo de dos formas:\n\n2.4.2.1 Modo Numérico (Octal)\n\n\n\nValor (Octal)\nPermisos\nDescripción\n\n\n\n\n0\n---\nNingún permiso\n\n\n1\n--x\nEjecución\n\n\n2\n-w-\nEscritura\n\n\n3\n-wx\nEscritura + Ejecución\n\n\n4\nr--\nLectura\n\n\n5\nr-x\nLectura + Ejecución\n\n\n6\nrw-\nLectura + Escritura\n\n\n7\nrwx\nLectura + Escritura + Ejecución\n\n\n\nEs la forma más rápida. Se basa en sumar valores: Lectura (r)=4, Escritura (w)=2, Ejecución (x)=1. El comando recibe 3 dígitos (Usuario, Grupo, Otros).\n\nEjemplo 764:\n\nUsuario (7): 4+2+1 = Lectura, Escritura y Ejecución.\nGrupo (6): 4+2+0 = Lectura y Escritura.\nOtros (4): 4+0+0 = Solo Lectura.\n\n\n\n\n2.4.2.2 Modo Texto (Simbólico)\nEs más intuitivo para añadir/quitar permisos específicos.\n\nSintaxis: sudo chmod [quién][operador][qué] archivo\n\nQuién: u (usuario), g (grupo), o (otros), a (todos).\nOperador: = (asignar), + (añadir), - (quitar).\nQué: r (lectura), w (escritura), x (ejecución).\n\nEjemplo: sudo chmod u+x archivo (Añade ejecución al usuario).\n\n\nNota sobre múltiples grupos y ACLs: Linux no permite asignar múltiples grupos primarios a un archivo, pero puedes usar ACLs para mayor flexibilidad.\n\nEjemplo: setfacl -m g:grupo_extra:r archivo.txt (da permiso de lectura a un grupo extra).\nVer permisos ACL: getfacl archivo.txt.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "servidor_linux_intro.html#fecha-y-hora-timedatectl",
+    "href": "servidor_linux_intro.html#fecha-y-hora-timedatectl",
+    "title": "Manejando un servidor Linux",
+    "section": "2.5 Fecha y Hora (Timedatectl)",
+    "text": "2.5 Fecha y Hora (Timedatectl)\n\nVer estado: timedatectl\nDesactivar sincronización NTP: sudo timedatectl set-ntp false\nCambiar hora manualmente: sudo timedatectl set-time \"AAAA-MM-DD HH:MM:SS\"\nActivar sincronización NTP: sudo timedatectl set-ntp true",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",

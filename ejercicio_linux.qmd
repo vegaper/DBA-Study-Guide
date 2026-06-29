@@ -1,0 +1,150 @@
+---
+title: "Ejercicio: Moverse por Linux (Ubuntu Server)"
+format: html
+---
+
+🐧 Crea un servidor ubuntu virtual en conexion puente y conéctate a él a través de tu windows shell en tu host.\
+
+Durante la instalación usa estos datos
+
+-   Usuario inicial: sysadmin password 1234
+
+-   instala ssh.
+
+# Conexión remota a un servidor Linux
+
+[Ver guía de configuración de SSH en Ubuntu](ubuntu_ssh.html)
+
+El comando básico para conectarse a un servidor remoto es:
+
+``` bash
+ssh usuario@direccion_ip_del_servidor
+```
+
+Por ejemplo, si nuestro nombre de usuario es "juan" y la dirección IP del servidor es "12.34.56.78", el comando sería:
+
+``` bash
+ssh juan@12.34.56.78
+```
+
+Si es la primera vez que nos conectamos a ese servidor, se nos pedirá que confirmemos la autenticidad del host y que aceptemos su clave pública. Una vez aceptada, se nos pedirá la contraseña del usuario para iniciar sesión. Si la autenticidad del host ya ha sido confirmada previamente, se nos pedirá directamente la contraseña del usuario.
+
+------------------------------------------------------------------------
+
+::: {#.practice}
+1.  **¿Cuál es la IP de tu Ubuntu Server?**\
+    Respuesta: `10.0.20.33` usando el comando `ip a` (muestra las interfaces de red).
+
+2.  **Crear un nuevo usuario "pacof" (password 1234)**\
+    Comando correcto: `sudo adduser pacof`. *Nota: Sin `sudo` da error porque solo `root` puede gestionar usuarios.*
+
+3.  **Crear un nuevo usuario "mariap" (password 5678)**\
+    Comando correcto: `sudo adduser mariap`.
+
+4.  **¿En qué directorio se han creado los nuevos usuarios?**\
+    En `/home/pacof` y `/home/mariap`.
+
+5.  **Crear el grupo "runners"**\
+    Comando: `sudo groupadd runners`.
+
+6.  **¿Dónde se almacenan los grupos creados?**\
+    En el archivo `/etc/group`.
+
+7.  **Añadir a "pacof" y "mariap" al grupo "runners"**\
+    Comando: `sudo usermod -aG runners pacof` y `sudo usermod -aG runners mariap`. *Tip:* La `-aG` (append) es vital para añadir el grupo sin borrar los que ya tiene el usuario.
+
+8.  **Entrar como usuario "mariap"**\
+    Comando: `su mariap`.
+
+9.  **Crear con "mariap" un usuario "prueba" con password 1010**\
+    Respuesta: No, da error `Permission denied` porque no tiene privilegios de superusuario.
+
+10. **Con "mariap", crear un documento "perfil" dentro de /home/pacof**\
+    No, no tiene permisos de escritura en el directorio de otro usuario.
+
+11. **Con "mariap", crear un documento "perfil" en su propio directorio**\
+    Comandos: `cd /home/mariap`\
+    `nano perfil`.
+
+12. **Hacer a "mariap" superusuario (sudo)**\
+    Comando: `sudo adduser mariap sudo` o `sudo usermod -aG sudo mariap`.
+
+13. **Con "mariap", crear documento "perfil" en /home/pacof**\
+    Comando: `sudo nano /home/pacof/perfil`. *Nota: Ahora funciona al usar `sudo`.*
+
+14. **¿Quién es el dueño de cada documento "perfil"?**\
+    El creado con `sudo` (el de `pacof`) pertenece a `root:root`.\
+    El creado por `mariap` en su home pertenece a `mariap:mariap`.
+
+15. **Cambiar a usuario "pacof"**\
+    Comando: `su pacof`.
+
+16. **Editar el documento "perfil" en /home/pacof**\
+    Error `Permission denied` porque el archivo pertenece a `root`.
+
+17. **Eliminar el documento "perfil" de /home/pacof**.\
+    Esto sí nos deja hacerlo porque pacof incluso si no tiene permisos de escritura sobre documentos que no ha creado él en su propio directorio, tiene permisos sobre su propio directorio que le permiten eliminar dichos archivos.
+
+18. **Con "pacof", crear documento "maraton" en /media**\
+    Error `Permission denied` porque `/media` pertenece a `root`.
+
+19. **¿Quién es el dueño y grupo del directorio /media?**\
+    Comando: `ls -ld /media`. Dueño: `root`, Grupo: `root`.
+
+20. **Cambiar a sysadmin**\
+    Comando: `su sysadmin` o `exit`
+
+21. **Cambiar grupo propietario de /media a runners**\
+    Comando: `sudo chgrp runners /media`.
+
+22. **Volver a entrar como pacof**\
+    Comando: `su pacof`.\
+    Ver los permisos del directorio usando *list -l*
+
+23. **Crear documento "maraton" en /media**\
+    Error `Permission denied`. Ser del grupo no basta si no tienes permisos de escritura (`w`) en el directorio.
+
+24. **Cambiar permisos de /media para que solo runners pueda escribir**\
+    Comando: `sudo chmod 575 /media`. (5=r-x para dueño, 7=rwx para grupo, 5=r-x para otros).
+
+25. **Con "pacof", crear documento "maraton" en /media**\
+    Ahora funciona porque el grupo `runners` tiene permiso de escritura.
+
+26. **Cambiar a sysadmin**\
+    Comando: `su sysadmin` o `exit`
+
+27. **Cambiar contraseña de "pacof" a 1603**\
+    Comando: `sudo passwd pacof`.
+
+28. **Entrar con "pacof" y nueva contraseña**\
+    Comando: `su pacof` (pass 1603).
+
+29. **Entrar con "mariap"**\
+    Comando: `su mariap`.
+
+30. **Crear documento "10k" en /media con "mariap"**\
+    Funciona porque `mariap` pertenece al grupo `runners`.\
+    Ver de nuevo los permisos de los archivos en -media usando `list -l`
+
+31. **Con "pacof", eliminar todos los documentos de /media**\
+    Hay dos archivos, uno pertenece a pacof y otro a mariap\
+    Comando: `rm /media/*`.\
+    *Nota: Funciona porque al tener permiso de escritura en la carpeta padre, puedes borrar archivos aunque no seas el dueño de dicho archivo.*
+
+32. **Con "sysadmin", eliminar a "mariap" del grupo runners**\
+    Comando: `su sysadmin`\
+    `sudo gpasswd -d mariap runners`.
+
+33. **¿Puede "mariap" crear "prueba" en /media?**\
+    Como usuario normal, `Permission denied`.\
+    Si usa `sudo nano /media/prueba`, sí puede.
+
+34. **Comprobar zona horaria**\
+    Comando: `timedatectl`.
+
+35. **Cambiar zona horaria a Europa/Madrid**\
+    Comando: `sudo timedatectl set-timezone Europe/Madrid`.
+
+36. **Eliminar usuarios "pacof" y "mariap" y sus directorios**\
+    Comando: `sudo deluser --remove-home pacof` y `sudo deluser --remove-home mariap`.
+:::
