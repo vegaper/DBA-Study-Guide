@@ -9,35 +9,29 @@ En Linux, la seguridad se basa en la **separación de privilegios**. No todos lo
 
 ## Las tres clases de ciudadanos en Linux
 
-Para entender el sistema, clasifiquemos a los "habitantes" del castillo:
+### **root (El Rey):** 
 
-1.  **root (El Rey):** UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.
+UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.
 
-2.  **Usuarios Humanos:** Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un `home` asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc.
+### **Usuarios Humanos:** 
 
-3.  **Usuarios de Sistema o Servicio:** Son los "fantasmas" del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.
+Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un `home` asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc. Tendrán permisos sobre su carpeta */home/nombre_usuario* y también tendrán permisos basados en los grupos a los que pertenezcan.
 
-    -   **Características:** No tienen contraseña de login, no tienen un `home` real (o es limitado) y, lo más importante, su *shell* (intérprete de comandos) está bloqueado (`/usr/sbin/nologin`). Esto evita que un hacker pueda "entrar" usando la cuenta de una base de datos para tomar el control.
-
-## Configuración por defecto: La regla del "Grupo Privado"
+#### Configuración por defecto: La regla del "Grupo Privado"
 
 Cuando creas un usuario nuevo (`adduser`), Linux aplica una filosofía llamada **UPG (User Private Group)**:
 
--   **¿Qué hace?**: Crea automáticamente un grupo con el mismo nombre que el usuario y añade a ese usuario como único miembro de ese grupo.
+- **¿Qué hace?**: Crea automáticamente un grupo con el mismo nombre que el usuario y añade a ese usuario como único miembro de ese grupo.
 
--   **¿Por qué?**: Esto permite que cada usuario tenga una carpeta privada donde, por defecto, solo él puede leer y escribir. Si quieres compartir archivos, entonces creas grupos comunes y añades a varios usuarios a ese grupo compartido.
+- **¿Por qué?**: Esto permite que cada usuario tenga una carpeta privada donde, por defecto, solo él puede leer y escribir. Si quieres compartir archivos, entonces creas grupos comunes y añades a varios usuarios a ese grupo compartido.
 
-## El Usuario Inicial (Tu "Administrador Humano")
+**El Usuario Inicial** (Tu "Administrador Humano"): Cuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es especial:
 
-Cuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es especial:
+- **Es un usuario estándar:** Tiene su propio directorio `/home/usuario`.
 
--   **Es un usuario estándar:** Tiene su propio directorio `/home/usuario`.
+- **Es un "sudoer":** El instalador lo añade al grupo `sudo` (o `wheel`). Esto le otorga la capacidad de "tomar prestado" el poder de `root` mediante el comando `sudo`.
 
--   **Es un "sudoer":** El instalador lo añade al grupo `sudo` (o `wheel`). Esto le otorga la capacidad de "tomar prestado" el poder de `root` mediante el comando `sudo`.
-
--   **Uso diario:** Úsalo siempre para trabajar.
-
-## 4. Comparativa: root vs. Usuario Inicial
+Comparativa: root vs. Usuario Inicial
 
 | Característica | Usuario Inicial (Tú) | Usuario `root` |
 |------------------------|------------------------|------------------------|
@@ -46,124 +40,132 @@ Cuando instalas Linux, el sistema te obliga a crear un usuario. Este usuario es 
 | **Uso recomendado** | Diario (programación, admin) | Solo tareas de mantenimiento |
 | **Seguridad** | Alta (protege de errores) | Baja (riesgo de rotura total) |
 
-## 5. ¿Cómo se relacionan?
+: ¿Cómo se relacionan?
 
 Tu usuario no "es" `root`, pero tiene **permiso** para ejecutar cosas como `root`.
 
--   **La magia de `sudo`**: El sistema comprueba en `/etc/sudoers` si estás en el grupo `sudo`. Si es así, te presta el poder de `root` solo durante el tiempo que dura ese comando.
+- **La magia de `sudo`**: El sistema comprueba en `/etc/sudoers` si estás en el grupo `sudo`. Si es así, te presta el poder de `root` solo durante el tiempo que dura ese comando.
 
--   **Privilegios temporales**: En cuanto el comando termina, vuelves a ser un usuario normal.
+- **Privilegios temporales**: En cuanto el comando termina, vuelves a ser un usuario normal.
 
 **Regla de oro:** Si puedes hacer algo con tu usuario normal, hazlo. Si necesitas hacer una tarea de sistema (instalar software, editar configuraciones de red), usa `sudo`. **Nunca** te loguees directamente como `root` para trabajar.
 
 ![](images/paste-3.png)
 
+### **Usuarios de Sistema o Servicio:** 
+
+Son los "fantasmas" del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.
+
+- **Características:** No tienen contraseña de login, no tienen un `home` real (o es limitado) y, lo más importante, su *shell* (intérprete de comandos) está bloqueado (`/usr/sbin/nologin`). Esto evita que un hacker pueda "entrar" usando la cuenta de una base de datos para tomar el control.
+
 # Comandos básicos de Linux
 
 ## Terminología de Terminal
 
--   **Prompt**: La virguriña `~` indica que estamos en el directorio `home`.
+- **Prompt**: La virguriña `~` indica que estamos en el directorio `home`.
 
-    -   El símbolo `$` indica usuario normal,
+  - El símbolo `$` indica usuario normal,
 
-    -   mientras que `#` indica usuario `root`.
+  - mientras que `#` indica usuario `root`.
 
--   **sudo (*superuser do*)**: Ejecuta comandos con privilegios elevados. Se requiere pertenecer al grupo `sudo`.
+- **sudo (*superuser do*)**: Ejecuta comandos con privilegios elevados. Se requiere pertenecer al grupo `sudo`.
 
-    -   *Ejemplo*: `sudo apt install nombre_paquete`
+  - *Ejemplo*: `sudo apt install nombre_paquete`
 
--   **su (*switch user*)**: Permite cambiar de usuario (hacer un "salto") para trabajar con sus privilegios.
+- **su (*switch user*)**: Permite cambiar de usuario (hacer un "salto") para trabajar con sus privilegios.
 
--   **clear**: Limpia la pantalla de la terminal para tener un prompt limpio.
+- **clear**: Limpia la pantalla de la terminal para tener un prompt limpio.
+
+- **man (*manual*)**: Sirve para conseguir información sobre un comando linux, sus parámetros y opciones. Ejemplo `man useradd` pulsa `q` para salir
 
 ## Navegación y administración de archivos
 
--   **pwd (*print working directory*)**: Muestra la ruta completa del directorio donde estás.
+- **pwd (*print working directory*)**: Muestra la ruta completa del directorio donde estás.
 
-    -   *Uso*: `pwd`
+  - *Uso*: `pwd`
 
--   **cd (*change directory*)**: Navega entre directorios.
+- **cd (*change directory*)**: Navega entre directorios.
 
-    -   `cd ~` o `cd`: Regresa al directorio `home`.
+  - `cd ~` o `cd`: Regresa al directorio `home`.
 
-    -   `cd ..`: Sube un nivel al directorio padre.
+  - `cd ..`: Sube un nivel al directorio padre.
 
-    -   `cd /`: Va al directorio raíz.
+  - `cd /`: Va al directorio raíz.
 
--   **mkdir (*make directory*)**: Crea un nuevo directorio.
+- **mkdir (*make directory*)**: Crea un nuevo directorio.
 
-    -   *Uso*: `mkdir nombre_carpeta`
+  - *Uso*: `mkdir nombre_carpeta`
 
--   **rmdir (*remove directory*)**: Elimina directorios (deben estar vacíos).
+- **rmdir (*remove directory*)**: Elimina directorios (deben estar vacíos).
 
--   **rm (*remove*)**: Borra archivos o directorios.
+- **rm (*remove*)**: Borra archivos o directorios.
 
-    -   `rm nombre_archivo`: Borra un archivo.
+  - `rm nombre_archivo`: Borra un archivo.
 
-    -   `rm -r nombre_carpeta`: Borra directorio y contenido (recursivo).
+  - `rm -r nombre_carpeta`: Borra directorio y contenido (recursivo).
 
-    -   `rm -rf nombre`: Fuerza el borrado sin preguntar.
+  - `rm -rf nombre`: Fuerza el borrado sin preguntar.
 
--   **cp (*copy*)**: Copia archivos o directorios.
+- **cp (*copy*)**: Copia archivos o directorios.
 
-    -   *Uso*: `cp origen destino`
+  - *Uso*: `cp origen destino`
 
--   **mv (*move*)**: Mueve o renombra archivos/directorios.
+- **mv (*move*)**: Mueve o renombra archivos/directorios.
 
-    -   *Uso*: `mv origen destino`
+  - *Uso*: `mv origen destino`
 
--   **Búsqueda**:
+- **Búsqueda**:
 
-    -   `locate nombre`: Búsqueda rápida (índice).
+  - `locate nombre`: Búsqueda rápida (índice).
 
-    -   `find /ruta -name "nombre"`: Búsqueda exhaustiva.
+  - `find /ruta -name "nombre"`: Búsqueda exhaustiva.
 
--   **ls (*list*)**: Lista el contenido de un directorio.
+- **ls (*list*)**: Lista el contenido de un directorio.
 
-    -   `ls -l`: Lista detallada (permisos, dueño, tamaño). [Consulta el desglose aquí](#guía-interpretación-de-ls--l-y-permisos-en-linux "null").
+  - `ls -l`: Lista detallada (permisos, dueño, tamaño). [Consulta el desglose aquí](#guía-interpretación-de-ls--l-y-permisos-en-linux "null").
 
-    ![Terminal output showing ls -l command results with file listings displaying permissions, owner, group, size, date, and filename columns. Each line shows detailed file information including executable flags for binaries like usr/bin and usr/sbin, with dates in April, June, and other months.](images/paste-2.png)
+  ![Terminal output showing ls -l command results with file listings displaying permissions, owner, group, size, date, and filename columns. Each line shows detailed file information including executable flags for binaries like usr/bin and usr/sbin, with dates in April, June, and other months.](images/paste-2.png)
 
 ## Gestión de Usuarios y Grupos
 
 ### Usuarios
 
--   **Añadir:** `sudo adduser nombre_usuario`
+- **Añadir:** `sudo adduser nombre_usuario`
 
--   **Eliminar:** `sudo deluser nombre_usuario`
+- **Eliminar:** `sudo deluser nombre_usuario`
 
--   **Cambiar contraseña:** `passwd nombre_usuario`
+- **Cambiar contraseña:** `passwd nombre_usuario`
 
--   **Ver todos:** `cat /etc/passwd`
+- **Ver todos:** `cat /etc/passwd`
 
 ### Grupos
 
--   **Añadir:** `sudo addgroup nombre_grupo`
+- **Añadir:** `sudo addgroup nombre_grupo`
 
--   **Eliminar:** `sudo delgroup nombre_grupo`
+- **Eliminar:** `sudo delgroup nombre_grupo`
 
--   **Añadir usuario a grupo:**
+- **Añadir usuario a grupo:**
 
-    -   **usermod** **(*modify user*)**: `sudo usermod -aG nombre_grupo nombre_usuario`. `-aG` significa *Append* (añadir) a un grupo.\
-        La opción `-a` (append) es **crítica**. Si olvidas ponerla y solo escribes `usermod -G nombre_grupo nombre_usuario`, Linux **borrará al usuario de todos sus grupos anteriores** y solo lo dejará en el nuevo grupo. ¡Podrías dejar al usuario sin acceso a sus archivos personales o dispositivos
+  - **usermod** **(*modify user*)**: `sudo usermod -aG nombre_grupo nombre_usuario`. `-aG` significa *Append* (añadir) a un grupo.\
+    La opción `-a` (append) es **crítica**. Si olvidas ponerla y solo escribes `usermod -G nombre_grupo nombre_usuario`, Linux **borrará al usuario de todos sus grupos anteriores** y solo lo dejará en el nuevo grupo. ¡Podrías dejar al usuario sin acceso a sus archivos personales o dispositivos
 
-    -   **adduser (*add user*):** `sudo adduser nombre_usuario nombre_grupo` Es una forma amigable de usar el comando usermod con menos riesgos ya que por defecto sólo añade el usuario a un nuevo grupo sin borrarlo del resto, pero no esta disponible en todas las distribuciones linux. Está diseñado para ser más seguro y fácil de recordar.
+  - **adduser (*add user*):** `sudo adduser nombre_usuario nombre_grupo` Es una forma amigable de usar el comando usermod con menos riesgos ya que por defecto sólo añade el usuario a un nuevo grupo sin borrarlo del resto, pero no esta disponible en todas las distribuciones linux. Está diseñado para ser más seguro y fácil de recordar.
 
--   **Eliminar usuario de grupo:** `sudo deluser nombre_usuario nombre_grupo`
+- **Eliminar usuario de grupo:** `sudo deluser nombre_usuario nombre_grupo`
 
--   **Ver todos:** `cat /etc/group`
+- **Ver todos:** `cat /etc/group`
 
--   **Ver grupos de un usuario:** `groups nombre_usuario`
+- **Ver grupos de un usuario:** `groups nombre_usuario`
 
 ## Permisos y Propietarios
 
 ### Cambiar Propietario
 
--   **Usuario:** `sudo chown nuevo_usuario archivo`
+- **Usuario:** `sudo chown nuevo_usuario archivo`
 
--   **Grupo:** `sudo chgrp nuevo_grupo archivo`
+- **Grupo:** `sudo chgrp nuevo_grupo archivo`
 
-### Permisos (`chmod`) - Guía Profunda
+### Permisos (`chmod`) 
 
 El comando `chmod` cambia los privilegios. Puedes usarlo de dos formas:
 
@@ -182,45 +184,45 @@ El comando `chmod` cambia los privilegios. Puedes usarlo de dos formas:
 
 Es la forma más rápida. Se basa en sumar valores: **Lectura (r)=4, Escritura (w)=2, Ejecución (x)=1**. El comando recibe 3 dígitos (Usuario, Grupo, Otros).
 
--   **Ejemplo `764`**:
+- **Ejemplo `764`**:
 
-    -   **Usuario (7)**: 4+2+1 = Lectura, Escritura y Ejecución.
+  - **Usuario (7)**: 4+2+1 = Lectura, Escritura y Ejecución.
 
-    -   **Grupo (6)**: 4+2+0 = Lectura y Escritura.
+  - **Grupo (6)**: 4+2+0 = Lectura y Escritura.
 
-    -   **Otros (4)**: 4+0+0 = Solo Lectura.
+  - **Otros (4)**: 4+0+0 = Solo Lectura.
 
 #### Modo Texto (Simbólico)
 
 Es más intuitivo para añadir/quitar permisos específicos.
 
--   **Sintaxis**: `sudo chmod [quién][operador][qué] archivo`
+- **Sintaxis**: `sudo chmod [quién][operador][qué] archivo`
 
-    -   **Quién**: `u` (usuario), `g` (grupo), `o` (otros), `a` (todos).
+  - **Quién**: `u` (usuario), `g` (grupo), `o` (otros), `a` (todos).
 
-    -   **Operador**: `=` (asignar), `+` (añadir), `-` (quitar).
+  - **Operador**: `=` (asignar), `+` (añadir), `-` (quitar).
 
-    -   **Qué**: `r` (lectura), `w` (escritura), `x` (ejecución).
+  - **Qué**: `r` (lectura), `w` (escritura), `x` (ejecución).
 
--   *Ejemplo*: `sudo chmod u+x archivo` (Añade ejecución al usuario).
+- *Ejemplo*: `sudo chmod u+x archivo` (Añade ejecución al usuario).
 
 ::: nota
 **Nota sobre múltiples grupos y ACLs:** Linux no permite asignar múltiples grupos primarios a un archivo, pero puedes usar **ACLs** para mayor flexibilidad.
 
--   **Ejemplo**: `setfacl -m g:grupo_extra:r archivo.txt` (da permiso de lectura a un grupo extra).
+- **Ejemplo**: `setfacl -m g:grupo_extra:r archivo.txt` (da permiso de lectura a un grupo extra).
 
--   **Ver permisos ACL**: `getfacl archivo.txt`.
+- **Ver permisos ACL**: `getfacl archivo.txt`.
 :::
 
 ## Fecha y Hora (Timedatectl)
 
--   **Ver estado:** `timedatectl`
+- **Ver estado:** `timedatectl`
 
--   **Desactivar sincronización NTP:** `sudo timedatectl set-ntp false`
+- **Desactivar sincronización NTP:** `sudo timedatectl set-ntp false`
 
--   **Cambiar hora manualmente:** `sudo timedatectl set-time "AAAA-MM-DD HH:MM:SS"`
+- **Cambiar hora manualmente:** `sudo timedatectl set-time "AAAA-MM-DD HH:MM:SS"`
 
--   **Activar sincronización NTP:** `sudo timedatectl set-ntp true`
+- **Activar sincronización NTP:** `sudo timedatectl set-ntp true`
 
 # Guía: Interpretación de `ls -l` y Permisos en Linux {#guía-interpretación-de-ls--l-y-permisos-en-linux}
 
@@ -248,11 +250,11 @@ Desglose campo a campo:
 
 El primer carácter indica el **tipo de archivo**:
 
--   `-`: Archivo estándar (documentos, imágenes, scripts).
+- `-`: Archivo estándar (documentos, imágenes, scripts).
 
--   `d`: Directorio (carpeta).
+- `d`: Directorio (carpeta).
 
--   `l`: Enlace simbólico (un acceso directo).
+- `l`: Enlace simbólico (un acceso directo).
 
 Los siguientes **9 caracteres** se dividen en 3 bloques de 3 bits cada uno:
 
@@ -266,21 +268,21 @@ Los siguientes **9 caracteres** se dividen en 3 bloques de 3 bits cada uno:
 
 En Archivos normales (`-`):
 
--   `r` (Read): Permite **leer** el contenido del archivo (ej. `cat`, `less`).
+- `r` (Read): Permite **leer** el contenido del archivo (ej. `cat`, `less`).
 
--   `w` (Write): Permite **modificar, renombrar o borrar** el contenido del archivo.
+- `w` (Write): Permite **modificar, renombrar o borrar** el contenido del archivo.
 
--   `x` (Execute): Permite **ejecutarlo** si es un programa o script (ej. `./script.sh`).
+- `x` (Execute): Permite **ejecutarlo** si es un programa o script (ej. `./script.sh`).
 
--   `-`: Permiso revocado/inexistente.
+- `-`: Permiso revocado/inexistente.
 
 En Directorios (`d`):
 
--   `r` (Read): Permite **listar** el contenido del directorio (ver los nombres de los archivos dentro con `ls`).
+- `r` (Read): Permite **listar** el contenido del directorio (ver los nombres de los archivos dentro con `ls`).
 
--   `w` (Write): Permite **crear, borrar o mover** archivos dentro del directorio.
+- `w` (Write): Permite **crear, borrar o mover** archivos dentro del directorio.
 
--   `x` (Execute): Permite **entrar** en el directorio (usar `cd` para navegar dentro).
+- `x` (Execute): Permite **entrar** en el directorio (usar `cd` para navegar dentro).
 
 Resumen de interpretación rápida
 
@@ -292,11 +294,11 @@ Resumen de interpretación rápida
 
 **Ejemplo práctico:** `-rwxr-xr--`
 
--   **Propietario:** Tiene todos los permisos (`rwx`).
+- **Propietario:** Tiene todos los permisos (`rwx`).
 
--   **Grupo:** Puede leer y ejecutar, pero no modificar (`r-x`).
+- **Grupo:** Puede leer y ejecutar, pero no modificar (`r-x`).
 
--   **Otros:** Solo pueden leer el archivo (`r--`).
+- **Otros:** Solo pueden leer el archivo (`r--`).
 
 ::: nota
 Linux no permite asignar múltiples grupos directamente a un archivo. Pero sí puedes lograrlo de varias formas:
