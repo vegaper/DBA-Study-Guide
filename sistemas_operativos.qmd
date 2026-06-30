@@ -1,37 +1,35 @@
-# Capítulo 2: Sistemas Operativos  
+# Capítulo 2: Sistemas Operativos
+
 **Apuntes ampliados y explicados**
 
-El **sistema operativo (SO)** es el software fundamental que permite utilizar los recursos de un ordenador o servidor. Sin él, el hardware no podría ser usado por aplicaciones ni usuarios.  
+El **sistema operativo (SO)** es el software fundamental que permite utilizar los recursos de un ordenador o servidor. Sin él, el hardware no podría ser usado por aplicaciones ni usuarios.\
 Para un **administrador de bases de datos (DBA)**, comprender el SO es esencial, ya que el rendimiento de la base de datos depende directamente de los recursos que este gestiona.
 
----
+------------------------------------------------------------------------
 
 ## ¿Qué es un Sistema Operativo?
 
-El SO actúa como **intermediario** entre:
-- El **usuario**
-- Las **aplicaciones**
-- El **hardware**
+El SO actúa como **intermediario** entre: - El **usuario** - Las **aplicaciones** - El **hardware**
 
 Su función es coordinar y administrar los recursos del sistema para que todo funcione de forma estable y eficiente.
 
 ### Funciones principales del SO
 
-- **Gestión de memoria y CPU**  
-  Controla cuánta RAM y tiempo de procesador recibe cada proceso.  
+- **Gestión de memoria y CPU**\
+  Controla cuánta RAM y tiempo de procesador recibe cada proceso.\
   *Ejemplo:* si varias aplicaciones requieren CPU al mismo tiempo, el SO decide cuánto tiempo asigna a cada una.
 
-- **Gestión de archivos y almacenamiento**  
+- **Gestión de archivos y almacenamiento**\
   Organiza carpetas, archivos y controla los dispositivos de almacenamiento (HDD, SSD, USB…).
 
-- **Gestión de red y usuarios**  
+- **Gestión de red y usuarios**\
   Administra conexiones, permisos, servicios y cuentas de usuario.
 
----
+------------------------------------------------------------------------
 
-##  El Sistema Operativo y las Bases de Datos
+## El Sistema Operativo y las Bases de Datos
 
-Una base de datos **no accede directamente al hardware**: siempre lo hace a través del SO.  
+Una base de datos **no accede directamente al hardware**: siempre lo hace a través del SO.\
 Por tanto:
 
 - Si el SO tiene problemas de **CPU**, la base de datos tardará más en procesar consultas.
@@ -40,63 +38,65 @@ Por tanto:
 
 **Cualquier cuello de botella en el SO impacta directamente en el rendimiento de la base de datos.**
 
-*Ejemplo:*  
+*Ejemplo:*\
 Si un servidor tiene solo 8 GB de RAM y la base de datos necesita 10 GB, el sistema empezará a usar memoria virtual, provocando lentitud generalizada.
 
----
+------------------------------------------------------------------------
 
 ## Tipos y Clasificación de Sistemas Operativos
 
 ### Según número de usuarios
-- **Monousuario**: un solo usuario a la vez.  
+
+- **Monousuario**: un solo usuario a la vez.\
 - **Multiusuario**: varios usuarios simultáneos.
 
 ### Según número de tareas
-- **Monotarea**: solo ejecuta un proceso a la vez.  
+
+- **Monotarea**: solo ejecuta un proceso a la vez.\
 - **Multitarea**: ejecuta múltiples procesos simultáneamente.
 
 ### Según finalidad
-- **Escritorio**: orientados a uso personal (Windows, macOS).  
+
+- **Escritorio**: orientados a uso personal (Windows, macOS).\
 - **Servidor**: optimizados para servicios, estabilidad y rendimiento (Windows Server, Linux Server).
 
 ### Diferencias clave
-- **Multiproceso**: varias CPUs físicas.  
-- **Multitarea**: varios procesos a la vez.  
+
+- **Multiproceso**: varias CPUs físicas.\
+- **Multitarea**: varios procesos a la vez.\
 - **Multiusuario**: varios usuarios simultáneos.
 
----
+------------------------------------------------------------------------
 
-##  Memoria Virtual y Paginación
+## Memoria Virtual y Paginación
 
 Cuando la **RAM se llena**, el SO mueve parte de la información al disco duro. A esto se le llama **memoria virtual**.
 
 ### Paginación
+
 El proceso de mover pequeños bloques de memoria entre RAM y disco.
 
 - Cuanta más paginación, **peor rendimiento**.
 - El disco es miles de veces más lento que la RAM.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Una consulta que normalmente tarda 0.5 segundos puede tardar 5 segundos si el sistema está paginando intensivamente.
 
 ### Impacto en el DBA
+
 Si la base de datos usa memoria virtual:
 
 - Las consultas se vuelven lentas.
 - El disco trabaja más de lo normal.
 - Puede haber bloqueos o tiempos de espera.
 
-**Soluciones posibles:**
-- Ajustar parámetros de memoria del motor de BD.
-- Optimizar consultas.
-- Añadir más RAM.
-- Mover servicios a otros servidores.
+**Soluciones posibles:** - Ajustar parámetros de memoria del motor de BD. - Optimizar consultas. - Añadir más RAM. - Mover servicios a otros servidores.
 
----
+------------------------------------------------------------------------
 
-##  Reparto del Tiempo de CPU
+## Reparto del Tiempo de CPU
 
-La CPU es un recurso compartido.  
+La CPU es un recurso compartido.\
 Si la carga es muy alta:
 
 - Las consultas tardan más.
@@ -104,20 +104,22 @@ Si la carga es muy alta:
 - A partir del **95% de uso**, suele haber un cuello de botella.
 
 ### Causas típicas
+
 - Consultas mal optimizadas.
 - Falta de índices.
 - Exceso de usuarios concurrentes.
 - Procesos del SO consumiendo recursos.
 
 ### Monitorización de CPU
-- **Windows**: Administrador de tareas, Monitor de recursos, Monitor de rendimiento.  
+
+- **Windows**: Administrador de tareas, Monitor de recursos, Monitor de rendimiento.\
 - **Linux**: `top`, `htop`, `vmstat`.
 
 El objetivo no es cambiar cómo el SO reparte la CPU, sino **detectar anomalías**.
 
----
+------------------------------------------------------------------------
 
-##  Entrada/Salida y Dispositivos
+## Entrada/Salida y Dispositivos
 
 Las bases de datos dependen mucho de los dispositivos de E/S:
 
@@ -128,16 +130,17 @@ Las bases de datos dependen mucho de los dispositivos de E/S:
 El SO actúa como intermediario mediante **drivers**.
 
 ### Problemas típicos
+
 - Disco lento o defectuoso.
 - Red saturada.
 - Controladora de almacenamiento fallando.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Una base de datos en un NAS con mala conexión de red tendrá consultas lentas aunque el servidor tenga buena CPU y RAM.
 
----
+------------------------------------------------------------------------
 
-##  Bloqueo de Recursos
+## Bloqueo de Recursos
 
 Cuando varios procesos intentan usar el mismo recurso, el SO aplica **bloqueos**.
 
@@ -146,96 +149,100 @@ En bases de datos esto es crítico:
 - Algunos bloqueos son normales (evitan inconsistencias).
 - El problema surge cuando duran demasiado o son causados por consultas mal diseñadas.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Una transacción que mantiene un bloqueo durante 10 minutos puede bloquear a decenas de usuarios.
 
----
+------------------------------------------------------------------------
 
-##  Sistemas de Archivos
+## Sistemas de Archivos
 
-El sistema de archivos organiza la información en los discos.  
+El sistema de archivos organiza la información en los discos.\
 Los ficheros de la base de datos dependen de él.
 
 ### Tipos comunes
-- **NTFS** (Windows): seguro y moderno.  
-- **FAT32**: muy compatible, pero limitado (máx. archivo 4 GB).  
-- **ext4** (Linux): robusto y eficiente.  
+
+- **NTFS** (Windows): seguro y moderno.\
+- **FAT32**: muy compatible, pero limitado (máx. archivo 4 GB).\
+- **ext4** (Linux): robusto y eficiente.\
 - **APFS** (Apple): optimizado para SSD.
 
-El sistema de archivos afecta a:
-- Rendimiento  
-- Seguridad  
-- Recuperación ante fallos  
+El sistema de archivos afecta a: - Rendimiento\
+- Seguridad\
+- Recuperación ante fallos
 
----
+------------------------------------------------------------------------
 
 ## 👥 Organización de Usuarios y Principio de Mínimo Privilegio
 
 Los SO gestionan usuarios y permisos:
 
-- Administradores  
-- Usuarios estándar  
-- Cuentas de servicio  
+- Administradores\
+- Usuarios estándar\
+- Cuentas de servicio
 
 ### Principio de mínimo privilegio
+
 Cada usuario debe tener **solo los permisos necesarios** para su trabajo.
 
 Es fundamental para la seguridad tanto en SO como en bases de datos.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Un usuario que solo consulta datos no debería poder borrar tablas.
 
----
+------------------------------------------------------------------------
 
 ## 🧱 Virtualización: Historia y Concepto
 
 La virtualización surgió para **aprovechar mejor los recursos** de los servidores.
 
 ### Antes
-Un servidor físico → 1 SO → 1 aplicación  
+
+Un servidor físico → 1 SO → 1 aplicación\
 Resultado: recursos infrautilizados.
 
 ### Ahora
-Un servidor físico → varias máquinas virtuales → múltiples servicios  
+
+Un servidor físico → varias máquinas virtuales → múltiples servicios\
 Resultado: mejor aprovechamiento y menor coste.
 
-*Ejemplo:*  
-En un solo servidor físico podemos tener:
-- Un servidor de bases de datos  
-- Un servidor web  
-- Un servidor de correo  
+*Ejemplo:*\
+En un solo servidor físico podemos tener: - Un servidor de bases de datos\
+- Un servidor web\
+- Un servidor de correo
 
 ### Tipos de hipervisores
-- **Tipo 1 (bare metal)**  
-  Se instalan directamente sobre el hardware.  
-  Ej.: VMware ESXi, Hyper-V Server, Proxmox.  
+
+- **Tipo 1 (bare metal)**\
+  Se instalan directamente sobre el hardware.\
+  Ej.: VMware ESXi, Hyper-V Server, Proxmox.\
   *Más eficientes.*
 
-- **Tipo 2 (sobre SO)**  
-  Se instalan como una aplicación dentro del SO.  
-  Ej.: VirtualBox, VMware Workstation.  
+- **Tipo 2 (sobre SO)**\
+  Se instalan como una aplicación dentro del SO.\
+  Ej.: VirtualBox, VMware Workstation.\
   *Menos eficientes.*
 
 ### Máquinas virtuales
+
 Ejemplos: VMware, Hyper-V, VirtualBox, Proxmox.
 
 ### Contenedores
-Más ligeros que las VM.  
-Comparten el kernel del SO anfitrión.  
+
+Más ligeros que las VM.\
+Comparten el kernel del SO anfitrión.\
 Ejemplos: Docker, Podman.
 
----
+------------------------------------------------------------------------
 
 ## 🧮 Núcleos Virtuales (vCPU)
 
 Una máquina virtual recibe recursos del servidor físico:
 
-- RAM  
-- Almacenamiento  
-- CPU (vCPU)  
+- RAM\
+- Almacenamiento\
+- CPU (vCPU)
 
 Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta directamente al rendimiento del motor de base de datos.
 
-*Ejemplo:*  
+*Ejemplo:*\
 Una base de datos con solo 2 vCPU puede saturarse rápidamente si hay muchas consultas concurrentes.
-
