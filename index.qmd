@@ -4,15 +4,13 @@ title: "Índice de Contenidos"
 
 # Índice del sitio
 
-
-
 ```{r}
 #| echo: false
 #| results: asis
 #| warning: false
 #| message: false
 
-# Cargamos la librería (Asegúrate de haber ejecutado install.packages("yaml") en tu consola de RStudio)
+# Cargamos la librería (Asegúrate de haber ejecutado install.packages("yaml"))
 library(yaml)
 
 # Leemos el archivo de configuración YAML de Quarto
@@ -21,35 +19,41 @@ config <- read_yaml("_quarto.yml")
 # Extraemos directamente los contenidos de la barra lateral
 sidebar <- config$website$sidebar$contents
 
-# Recorremos cada bloque principal y generamos el formato dinámicamente
+# Creamos una función RECURSIVA. Esto permite que el script lea 
+# subsecciones dentro de subsecciones "infinitamente" sin romperse.
+procesar_menu <- function(elementos, nivel_sangria = 0) {
+  # Creamos los espacios correspondientes al nivel (4 espacios por nivel)
+  espacios <- paste(rep("    ", nivel_sangria), collapse = "")
+  
+  for (item in elementos) {
+    # Caso A: Es un tema normal con su enlace
+    if (!is.null(item$text) && !is.null(item$href)) {
+      cat(espacios, "* [", item$text, "](", item$href, ")\n", sep="")
+    } 
+    # Caso B: Es una subsección desplegable
+    else if (!is.null(item$section)) {
+      # Imprimimos el título de la subsección en negrita
+      cat(espacios, "* **", item$section, "**\n", sep="")
+      
+      # Si esta subsección tiene más contenidos dentro, la función 
+      # se llama a sí misma, pero aumentando la sangría +1
+      if (!is.null(item$contents)) {
+        procesar_menu(item$contents, nivel_sangria + 1)
+      }
+    }
+  }
+}
+
+# Bucle principal que recorre los bloques de la barra lateral
 for (bloque in sidebar) {
-  # Comprobamos que el elemento principal es una sección válida
   if (!is.null(bloque$section)) {
     
-    # Imprimimos el título de la sección principal (Nivel 2)
+    # Imprimimos el título de la sección principal (Nivel H2)
     cat("##", bloque$section, "\n\n")
     
-    # Recorremos los elementos dentro de esa sección principal
-    for (item in bloque$contents) {
-      
-      # Caso A: Es un tema normal con su enlace (Tema 1, Tema 2...)
-      if (!is.null(item$text) && !is.null(item$href)) {
-        cat("* [", item$text, "](", item$href, ")\n", sep="")
-      } 
-      
-      # Caso B: Es una subsección desplegable (como el nuevo Tema 4)
-      else if (!is.null(item$section)) {
-        
-        # Imprimimos el título de la subsección en negrita
-        cat("* **", item$section, "**\n", sep="")
-        
-        # Recorremos los subtemas y les añadimos 4 espacios de sangría
-        if (!is.null(item$contents)) {
-          for (subitem in item$contents) {
-            cat("    * [", subitem$text, "](", subitem$href, ")\n", sep="")
-          }
-        }
-      }
+    # Llamamos a nuestra función recursiva empezando con nivel de sangría 0
+    if (!is.null(bloque$contents)) {
+      procesar_menu(bloque$contents, 0)
     }
     
     # Añadimos un salto de línea extra por limpieza visual
