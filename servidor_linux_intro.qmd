@@ -7,13 +7,13 @@ format: html
 
 En Linux, la seguridad se basa en la **separación de privilegios**. No todos los usuarios son iguales, y esto es lo que evita que un error humano o un programa malintencionado destruya el sistema operativo.
 
-## Las tres clases de ciudadanos en Linux
+## Las tres clases de usuarios en Linux
 
-### **root (El Rey):** 
+### **root (El Rey):**
 
 UID 0. Poder total. Es el único que puede hacer cambios estructurales en el sistema.
 
-### **Usuarios Humanos:** 
+### **Usuarios Humanos:**
 
 Creados para que tú (o tus compañeros) interactúen con el sistema. Tienen un `home` asignado y permisos para ejecutar aplicaciones de escritorio, programar, etc. Tendrán permisos sobre su carpeta */home/nombre_usuario* y también tendrán permisos basados en los grupos a los que pertenezcan.
 
@@ -52,11 +52,35 @@ Tu usuario no "es" `root`, pero tiene **permiso** para ejecutar cosas como `root
 
 ![](images/paste-3.png)
 
-### **Usuarios de Sistema o Servicio:** 
+::: extra
+### **Usuarios de Sistema o Servicio:**
 
 Son los "fantasmas" del sistema. No son humanos. Corren procesos como servidores web (Apache/Nginx), bases de datos (MySQL/PostgreSQL) o tareas de red.
 
 - **Características:** No tienen contraseña de login, no tienen un `home` real (o es limitado) y, lo más importante, su *shell* (intérprete de comandos) está bloqueado (`/usr/sbin/nologin`). Esto evita que un hacker pueda "entrar" usando la cuenta de una base de datos para tomar el control.
+:::
+
+::: extra
+# Estructura básica del sistema de archivos en Linux
+
+## Directorios principales y su propósito
+
+- **/** Raíz del sistema de archivos. Desde aquí cuelga todo: es el “punto de partida”.
+
+- **/home** Directorios personales de los usuarios humanos. Cada usuario tiene su carpeta: `/home/pepita`, `/home/juan`, etc. **Aquí sí puedes trabajar y guardar tus cosas.**
+
+- **/root** Directorio personal del usuario `root` (administrador). No es lo mismo que `/`. **No deberías usarlo salvo que sepas muy bien lo que haces.**
+
+- **/etc** Configuración del sistema y de servicios. Aquí viven archivos como `sshd_config`, `fstab`, `sudoers`, etc. **Crítico para el sistema**: tocar con cuidado, siempre con copia de seguridad.
+
+- **/var** Datos “variables”: logs, colas, cachés, archivos temporales de servicios. Ejemplos: `/var/log`, `/var/spool`, `/var/lib`. **Importante para servicios y diagnósticos** (logs).
+
+- **/usr** Programas y librerías instalados en el sistema. Subdirectorios típicos: `/usr/bin`, `/usr/sbin`, `/usr/lib`. **No es para tus archivos personales.**
+
+- **/opt** Software adicional, normalmente aplicaciones de terceros. Muchas herramientas se instalan aquí fuera del sistema base. Útil para saber dónde está instalado cierto software.
+
+- **/tmp** Archivos temporales. Se pueden borrar y a veces se vacía al reiniciar. **Nunca guardes aquí nada importante.**
+:::
 
 # Comandos básicos de Linux
 
@@ -165,7 +189,7 @@ Son los "fantasmas" del sistema. No son humanos. Corren procesos como servidores
 
 - **Grupo:** `sudo chgrp nuevo_grupo archivo`
 
-### Permisos (`chmod`) 
+### Permisos (`chmod`)
 
 El comando `chmod` cambia los privilegios. Puedes usarlo de dos formas:
 
@@ -300,12 +324,10 @@ Resumen de interpretación rápida
 
 - **Otros:** Solo pueden leer el archivo (`r--`).
 
-::: nota
+::: extra
 Linux no permite asignar múltiples grupos directamente a un archivo. Pero sí puedes lograrlo de varias formas:
 
 **Opción 1**: Cambiar el grupo del archivo `chgrp desarrolladores archivo.txt` para asignar el grupo "desarrolladores" al archivo "archivo.txt". Luego, puedes agregar usuarios al grupo "desarrolladores" usando `sudo usermod -aG desarrolladores usuario`.
 
 **Opción 2**: Usar ACLs (Access Control Lists) Esto es lo moderno y flexible: puedes dar permisos a varios grupos o usuarios adicionales. Ejemplo: dar permisos de lectura a un grupo extra: `setfacl -m g:grupo_extra:r archivo.txt`. Para ver los permisos ACL de un archivo, puedes usar `getfacl archivo.txt`.
-
-Los permisos se pueden cambiar usando el comando `chmod`. Por ejemplo, `chmod 755 archivo` otorgará permisos de lectura, escritura y ejecución al propietario, y permisos de lectura y ejecución a los demás usuarios.
 :::
