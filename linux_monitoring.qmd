@@ -37,7 +37,7 @@ format: html
 
 - Ver la **versión del sistema operativo** `cat /etc/os-release`![](images/paste-4.png)
 
-- Ver información general del equipo: `hostnamectl` Muestra información del equipo, como nombre del host, sistema operativo, kernel, arquitectura y tipo de máquina.
+- Ver **información general del equipo**: `hostnamectl` Muestra información del equipo, como nombre del host, sistema operativo, kernel, arquitectura y tipo de máquina.
 
   ![](images/paste-5.png)
 
@@ -47,43 +47,31 @@ format: html
 
   7.0.0
 
-- Ver CPU y número de procesadores lógicos:
-
-  `lscpu` muestra información de la cpu
+- **Ver CPU y número de procesadores lógicos**: `lscpu` muestra información de la cpu
 
 ![](images/paste-7.png)
 
 `nproc` devuelve el numero de procesadores lógicos: 4
 
-## Ver tiempo encendido y carga media
-
-Comando: `uptime` Muestra la hora actual, el tiempo que lleva encendido el sistema y los usuarios conectados. Los tres valores finales son la carga media del sistema en 1, 5 y 15 minutos.
+- Ver **tiempo encendido y carga media:** Comando: `uptime` Muestra la hora actual, el tiempo que lleva encendido el sistema y los usuarios conectados. Los tres valores finales son la carga media del sistema en 1, 5 y 15 minutos.
 
 ``` bash
 12:17:07 up 2:48, 2 users, load average: 0,00, 0,02, 0,00
 ```
 
-## Ver uso de memoria
+- Ver **uso de memoria:** Comando: `free -h` Muestra la memoria RAM y swap en formato legible.\
+  El dato más útil suele ser available, porque indica una estimación de la memoria disponible para nuevas aplicaciones sin recurrir a swap.\
+  ![](images/paste-8.png)
 
-Comando: `free -h` Muestra la memoria RAM y swap en formato legible.\
-El dato más útil suele ser available, porque indica una estimación de la memoria disponible para nuevas aplicaciones sin recurrir a swap.\
-![](images/paste-8.png)
+- Ver **espacio en disco:** Comando: `df -hT` Muestra el espacio usado y libre de los sistemas de archivos montados. `-h`: muestra tamaños en formato legible. `-T`: muestra el tipo de sistema de archivos.\
+  ![](images/paste-9.png)
 
-## Ver espacio en disco
+- Ver discos y particiones: Comando: `lsblk -o [nombres de columnas a mostrar]`. Ejemplo `lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL`
 
-Comando: `df -hT` Muestra el espacio usado y libre de los sistemas de archivos montados. `-h`: muestra tamaños en formato legible. `-T`: muestra el tipo de sistema de archivos.\
-![](images/paste-9.png)
+Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares![](images/paste-38.png)
 
-## Ver discos y particiones
-
-Comando: `lsblk -o [nombres de columnas a mostrar]` ejemplo `lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL`
-
-Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares![](images/paste-10.png)
-
-## Ver direcciones de red
-
-Comando: `ip -br a` Muestra las interfaces de red y sus direcciones IP de forma resumida.\
-![](images/paste-11.png)
+- Ver **direcciones de red:** `ip -br a` Muestra las interfaces de red y sus direcciones IP de forma resumida.\
+  ![](images/paste-11.png)
 
 Qué significa `enp0s3 :`El nombre se divide en partes:
 
@@ -113,7 +101,9 @@ Comando: `top` Muestra una vista **dinámica** del sistema:
 
 - Procesos que más recursos consumen.
 
-![](images/paste-12.png) Dentro de top:\
+![](images/paste-12.png)
+
+Dentro de top:\
 `p` Ordena por uso de CPU.\
 `m` Ordena por uso de memoria.\
 `q` Sale de top.
@@ -226,6 +216,8 @@ MiB Swap: 2079,0 total, 2079,0 free, 0,0 used. 2886,6 avail Mem
 
 - `q` → salir
 :::
+
+La versión moderna de top es `htop`. Pruébalo!
 
 ::: nota
 # **Memoria libre vs memoria disponible**
@@ -357,7 +349,7 @@ free: Muestra memoria total, usada, libre, compartida, caché y disponible. `fre
 ![vmstat: muestra mediciones o snapshots de acuerdo con los parámetros que le pasemos, por ejemplo `vmstat  1 5` nos muestra 5 mediciones separadas por 1 segundo.](images/paste-24.png)
 
 | **Columna** | **Significado** | **Cómo interpretarlo** |
-|-------------------|-------------------|----------------------------------|
+|--------------------|--------------------|---------------------------------|
 | **r** | Procesos esperando CPU | Si es mayor que el número de CPUs, hay **cola de ejecución** y posible saturación. |
 | **b** | Procesos bloqueados | Valores altos indican **esperas de E/S** o procesos atascados. |
 | **swpd** | Swap usada | Si crece, el sistema está **swapeando**; puede causar lentitud. |
@@ -786,7 +778,7 @@ Con columnas:
 ### Load
 
 | **Valor** | **Significado** |
-|-------------------|-----------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | **loaded** | El archivo `.service` existe y systemd lo ha leído correctamente. |
 | **not-found** | El archivo del servicio no existe, está corrupto o no se pudo cargar. |
 | **masked** | El servicio está deshabilitado a propósito; no puede iniciarse. |
@@ -804,7 +796,7 @@ Con columnas:
 ### Sub
 
 | **Valor** | **Significado** |
-|-------------------|-----------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | **running** | El proceso del servicio está en ejecución. |
 | **exited** | El servicio terminó correctamente (normal en servicios tipo “oneshot”). |
 | **dead** | El servicio no está ejecutándose. |

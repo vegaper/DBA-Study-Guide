@@ -1,0 +1,159 @@
+---
+title: "Introducción a las Bases de Datos Relacionales"
+format: html
+---
+
+## Datos y tipos de datos
+
+Un **dato** es una representación simbólica de un atributo o variable cuantitativa o cualitativa que puede tomar diferentes valores.\
+Los datos pueden ser recolectados mediante observaciones, encuestas, experimentos u otras fuentes, y son fundamentales para el análisis y la toma de decisiones en múltiples disciplinas.
+
+### Tipos de datos básicos
+
+- **Texto o string** — cadenas de caracteres.
+- **Número** — valores enteros o decimales.
+- **Fecha y/u hora** — valores temporales.
+- **Booleano** — valores lógicos (verdadero/falso).
+
+------------------------------------------------------------------------
+
+## Qué es una base de datos
+
+Una **base de datos** es un conjunto de datos almacenado y organizado con el fin de facilitar su acceso, gestión y recuperación mediante un sistema informático.
+
+### Ventajas de las bases de datos
+
+- Están diseñadas para actualizar y consultar datos de forma **rápida y eficiente**.
+- Permiten almacenar y acceder a **grandes volúmenes de información**.
+- El acceso está **estandarizado**, facilitando su uso desde páginas web, aplicaciones de escritorio, apps móviles, etc.
+- Tienen **control de concurrencia**, permitiendo que varios usuarios consulten o modifiquen datos simultáneamente.
+- Proporcionan **mecanismos de seguridad** para proteger la información.
+- Cuentan con **control de redundancia**, evitando duplicaciones innecesarias.
+
+------------------------------------------------------------------------
+
+## Bases de datos relacionales
+
+Una **base de datos relacional (BDR)** organiza la información en **tablas** formadas por **filas** y **columnas**, y establece **relaciones** entre ellas.
+
+### Estructura básica
+
+- **Columnas**: representan los **campos** o **atributos** (las variables).
+- **Filas**: representan los **registros** u **observaciones**.
+- **Celdas**: intersección entre fila y columna; contienen los **valores**.
+
+------------------------------------------------------------------------
+
+## Por qué dividir la información en varias tablas
+
+En una base de datos relacional no se almacena toda la información en una única tabla.\
+Se divide en varias tablas para:
+
+- **Evitar redundancia** (no repetir datos innecesariamente).
+- **Mejorar la consistencia** (si un dato cambia, se actualiza en un solo lugar).
+- **Facilitar el mantenimiento**.
+- **Representar mejor las relaciones reales entre entidades**.
+
+Este proceso se conoce como **normalización**.
+
+### Normalización (concepto básico)
+
+La normalización es un conjunto de reglas que ayudan a estructurar las tablas correctamente.\
+Sus objetivos principales son:
+
+- Reducir la duplicación de datos.
+- Asegurar que cada tabla represente una sola entidad o concepto.
+- Garantizar que cada columna dependa de la clave principal de la tabla.
+
+Las formas normales más básicas que se suelen enseñar al inicio son:
+
+1.  **Primera Forma Normal (1FN)**:
+    - No hay grupos repetidos.
+    - Cada celda contiene un valor único y atómico.
+2.  **Segunda Forma Normal (2FN)**:
+    - Cada atributo depende completamente de la clave primaria.
+3.  **Tercera Forma Normal (3FN)**:
+    - No existen dependencias transitivas (atributos que dependen de otros atributos no clave).
+
+------------------------------------------------------------------------
+
+## Claves en bases de datos
+
+Para relacionar tablas y garantizar la integridad de los datos se utilizan **claves**.
+
+### Clave primaria (Primary Key, PK)
+
+- Identifica de forma **única** cada registro de una tabla.
+- No puede repetirse.
+- No puede ser nula.
+- Ejemplos: DNI, ID de usuario, código de producto.
+
+### Clave externa (Foreign Key, FK)
+
+- Es un campo que **apunta** a la clave primaria de otra tabla.
+- Permite **relacionar** tablas entre sí.
+- Garantiza la **integridad referencial**: no se pueden crear relaciones con registros inexistentes.
+
+------------------------------------------------------------------------
+
+## Relaciones entre tablas
+
+Las bases de datos relacionales se llaman así porque las tablas se conectan mediante **relaciones**.
+
+### Tipos de relaciones
+
+- **Uno a uno (1:1)**\
+  Un registro de una tabla se relaciona con un único registro de otra tabla.\
+  Ejemplo: persona ↔ pasaporte.
+
+- **Uno a muchos (1:N)**\
+  Un registro de una tabla puede estar relacionado con muchos registros de otra.\
+  Ejemplo: cliente → pedidos.
+
+- **Muchos a muchos (N:M)**\
+  Muchos registros de una tabla se relacionan con muchos registros de otra.\
+  Se implementa mediante una **tabla intermedia**.\
+  Ejemplo: estudiantes ↔ asignaturas.
+
+------------------------------------------------------------------------
+
+## Integridad referencial
+
+La integridad referencial asegura que las relaciones entre tablas sean válidas.\
+El sistema evita:
+
+- Eliminar un registro que está siendo referenciado por otro.
+- Insertar claves externas que no existan en la tabla principal.
+
+Esto mantiene la base de datos **coherente** y **sin errores lógicos**.
+
+------------------------------------------------------------------------
+
+## Ejemplo sencillo de diseño
+
+Supongamos una base de datos para una tienda:
+
+### Tabla `Clientes`
+
+- id_cliente (PK)
+- nombre
+- email
+
+### Tabla `Pedidos`
+
+- id_pedido (PK)
+- fecha
+- id_cliente (FK → Clientes.id_cliente)
+
+Aquí vemos:
+
+- La tabla `Clientes` almacena información única de cada cliente.
+- La tabla `Pedidos` almacena los pedidos.
+- La relación es **1:N**: un cliente puede tener muchos pedidos.
+
+------------------------------------------------------------------------
+
+## Conclusión
+
+Las bases de datos relacionales permiten organizar información de forma estructurada, evitando redundancias y garantizando la integridad de los datos.\
+El uso de tablas, claves y relaciones facilita el manejo de grandes volúmenes de información y permite que múltiples aplicaciones accedan a los datos de manera segura y eficiente.
