@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Monitorización de Sistemas Linux – Apuntes: Administración de Bases de Datos</title>
+<title>Práctica: Monitorización de Sistemas Linux – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -278,12 +278,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
- <span class="menu-text">Anexos</span></a>
+ <span class="menu-text">Bloque 2: Bases de Datos</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
@@ -302,18 +325,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">En este tema</h2>
    
   <ul>
-  <li><a href="#practica" id="toc-practica" class="nav-link active" data-scroll-target="#practica"><span class="header-section-number">1</span> PRACTICA</a>
+  <li><a href="#requisitos-previos" id="toc-requisitos-previos" class="nav-link active" data-scroll-target="#requisitos-previos"><span class="header-section-number">1</span> Requisitos previos</a></li>
+  <li><a href="#normas-de-seguridad" id="toc-normas-de-seguridad" class="nav-link" data-scroll-target="#normas-de-seguridad"><span class="header-section-number">2</span> Normas de seguridad</a></li>
+  <li><a href="#estado-general-del-sistema" id="toc-estado-general-del-sistema" class="nav-link" data-scroll-target="#estado-general-del-sistema"><span class="header-section-number">3</span> Estado general del sistema</a></li>
+  <li><a href="#monitorización-en-tiempo-real-con-top" id="toc-monitorización-en-tiempo-real-con-top" class="nav-link" data-scroll-target="#monitorización-en-tiempo-real-con-top"><span class="header-section-number">4</span> Monitorización en tiempo real con top</a></li>
+  <li><a href="#memoria-libre-vs-memoria-disponible" id="toc-memoria-libre-vs-memoria-disponible" class="nav-link" data-scroll-target="#memoria-libre-vs-memoria-disponible"><span class="header-section-number">5</span> <strong>Memoria libre vs memoria disponible</strong></a>
   <ul>
-  <li><a href="#requisitos-previos" id="toc-requisitos-previos" class="nav-link" data-scroll-target="#requisitos-previos"><span class="header-section-number">1.1</span> Requisitos previos</a></li>
-  <li><a href="#normas-de-seguridad" id="toc-normas-de-seguridad" class="nav-link" data-scroll-target="#normas-de-seguridad"><span class="header-section-number">1.2</span> Normas de seguridad</a></li>
-  <li><a href="#estado-general-del-sistema" id="toc-estado-general-del-sistema" class="nav-link" data-scroll-target="#estado-general-del-sistema"><span class="header-section-number">1.3</span> Estado general del sistema</a>
-  <ul class="collapse">
-  <li><a href="#ver-tiempo-encendido-y-carga-media" id="toc-ver-tiempo-encendido-y-carga-media" class="nav-link" data-scroll-target="#ver-tiempo-encendido-y-carga-media"><span class="header-section-number">1.3.1</span> Ver tiempo encendido y carga media</a></li>
-  <li><a href="#ver-uso-de-memoria" id="toc-ver-uso-de-memoria" class="nav-link" data-scroll-target="#ver-uso-de-memoria"><span class="header-section-number">1.3.2</span> Ver uso de memoria</a></li>
-  <li><a href="#ver-espacio-en-disco" id="toc-ver-espacio-en-disco" class="nav-link" data-scroll-target="#ver-espacio-en-disco"><span class="header-section-number">1.3.3</span> Ver espacio en disco</a></li>
-  <li><a href="#ver-discos-y-particiones" id="toc-ver-discos-y-particiones" class="nav-link" data-scroll-target="#ver-discos-y-particiones"><span class="header-section-number">1.3.4</span> Ver discos y particiones</a></li>
+  <li><a href="#memoria-libre-free" id="toc-memoria-libre-free" class="nav-link" data-scroll-target="#memoria-libre-free"><span class="header-section-number">5.1</span> <strong>Memoria libre (</strong><code>free</code><strong>)</strong></a></li>
+  <li><a href="#memoria-disponible-available" id="toc-memoria-disponible-available" class="nav-link" data-scroll-target="#memoria-disponible-available"><span class="header-section-number">5.2</span> <strong>Memoria disponible (</strong><code>available</code><strong>)</strong></a></li>
+  <li><a href="#ejemplo" id="toc-ejemplo" class="nav-link" data-scroll-target="#ejemplo"><span class="header-section-number">5.3</span> Ejemplo:</a></li>
   </ul></li>
-  <li><a href="#monitorización-en-tiempo-real-con-top" id="toc-monitorización-en-tiempo-real-con-top" class="nav-link" data-scroll-target="#monitorización-en-tiempo-real-con-top"><span class="header-section-number">1.4</span> Monitorización en tiempo real con top</a></li>
+  <li><a href="#análisis-estático-de-procesos-con-ps" id="toc-análisis-estático-de-procesos-con-ps" class="nav-link" data-scroll-target="#análisis-estático-de-procesos-con-ps"><span class="header-section-number">6</span> Análisis estático de procesos con ps</a></li>
+  <li><a href="#árbol-de-procesos" id="toc-árbol-de-procesos" class="nav-link" data-scroll-target="#árbol-de-procesos"><span class="header-section-number">7</span> Árbol de procesos</a></li>
+  <li><a href="#memoria-y-swap-con-free-y-vmstat" id="toc-memoria-y-swap-con-free-y-vmstat" class="nav-link" data-scroll-target="#memoria-y-swap-con-free-y-vmstat"><span class="header-section-number">8</span> Memoria y swap con free y vmstat</a>
+  <ul>
+  <li><a href="#disco-y-entradasalida" id="toc-disco-y-entradasalida" class="nav-link" data-scroll-target="#disco-y-entradasalida"><span class="header-section-number">8.1</span> Disco y entrada/salida</a></li>
+  </ul></li>
+  <li><a href="#red-y-conexiones" id="toc-red-y-conexiones" class="nav-link" data-scroll-target="#red-y-conexiones"><span class="header-section-number">9</span> Red y conexiones</a>
+  <ul>
+  <li><a href="#mostrar-la-tabla-de-enrutamiento-del-sistema" id="toc-mostrar-la-tabla-de-enrutamiento-del-sistema" class="nav-link" data-scroll-target="#mostrar-la-tabla-de-enrutamiento-del-sistema"><span class="header-section-number">9.1</span> Mostrar la tabla de enrutamiento del sistema:</a></li>
+  <li><a href="#ver-estadísticas-de-interfaces" id="toc-ver-estadísticas-de-interfaces" class="nav-link" data-scroll-target="#ver-estadísticas-de-interfaces"><span class="header-section-number">9.2</span> Ver estadísticas de interfaces</a>
+  <ul class="collapse">
+  <li><a href="#loopback" id="toc-loopback" class="nav-link" data-scroll-target="#loopback"><span class="header-section-number">9.2.1</span> loopback</a>
+  <ul class="collapse">
+  <li><a href="#rx-recepción" id="toc-rx-recepción" class="nav-link" data-scroll-target="#rx-recepción"><span class="header-section-number">9.2.1.1</span> RX (recepción)</a></li>
+  <li><a href="#tx-envío" id="toc-tx-envío" class="nav-link" data-scroll-target="#tx-envío"><span class="header-section-number">9.2.1.2</span> TX (envío)</a></li>
+  </ul></li>
+  <li><a href="#interfaz-2-enp0s3-tu-interfaz-de-red-real" id="toc-interfaz-2-enp0s3-tu-interfaz-de-red-real" class="nav-link" data-scroll-target="#interfaz-2-enp0s3-tu-interfaz-de-red-real"><span class="header-section-number">9.2.2</span> <strong>Interfaz 2:</strong> <code>enp0s3</code> <strong>(tu interfaz de red real)</strong></a>
+  <ul class="collapse">
+  <li><a href="#rx-recepción-1" id="toc-rx-recepción-1" class="nav-link" data-scroll-target="#rx-recepción-1"><span class="header-section-number">9.2.2.1</span> RX (recepción)</a></li>
+  <li><a href="#tx-envío-1" id="toc-tx-envío-1" class="nav-link" data-scroll-target="#tx-envío-1"><span class="header-section-number">9.2.2.2</span> TX (envío)</a></li>
+  </ul></li>
+  <li><a href="#línea-final-altname" id="toc-línea-final-altname" class="nav-link" data-scroll-target="#línea-final-altname"><span class="header-section-number">9.2.3</span> <strong>Línea final: altname</strong></a></li>
+  </ul></li>
+  <li><a href="#ver-conexiones-activas" id="toc-ver-conexiones-activas" class="nav-link" data-scroll-target="#ver-conexiones-activas"><span class="header-section-number">9.3</span> Ver conexiones activas</a></li>
+  </ul></li>
+  <li><a href="#servicios-con-systemctl" id="toc-servicios-con-systemctl" class="nav-link" data-scroll-target="#servicios-con-systemctl"><span class="header-section-number">10</span> Servicios con systemctl</a>
+  <ul>
+  <li><a href="#listar-servicios-en-ejecución" id="toc-listar-servicios-en-ejecución" class="nav-link" data-scroll-target="#listar-servicios-en-ejecución"><span class="header-section-number">10.1</span> Listar servicios en ejecución</a>
+  <ul class="collapse">
+  <li><a href="#load" id="toc-load" class="nav-link" data-scroll-target="#load"><span class="header-section-number">10.1.1</span> Load</a></li>
+  <li><a href="#active" id="toc-active" class="nav-link" data-scroll-target="#active"><span class="header-section-number">10.1.2</span> Active</a></li>
+  <li><a href="#sub" id="toc-sub" class="nav-link" data-scroll-target="#sub"><span class="header-section-number">10.1.3</span> Sub</a></li>
+  </ul></li>
+  <li><a href="#ver-servicios-fallidos" id="toc-ver-servicios-fallidos" class="nav-link" data-scroll-target="#ver-servicios-fallidos"><span class="header-section-number">10.2</span> Ver servicios fallidos</a></li>
+  <li><a href="#ver-el-archivo-de-unidad-del-servicio" id="toc-ver-el-archivo-de-unidad-del-servicio" class="nav-link" data-scroll-target="#ver-el-archivo-de-unidad-del-servicio"><span class="header-section-number">10.3</span> Ver el archivo de unidad del servicio</a></li>
+  <li><a href="#ver-dependencias-del-servicio" id="toc-ver-dependencias-del-servicio" class="nav-link" data-scroll-target="#ver-dependencias-del-servicio"><span class="header-section-number">10.4</span> Ver dependencias del servicio</a></li>
+  </ul></li>
+  <li><a href="#logs-y-eventos-con-journalctl" id="toc-logs-y-eventos-con-journalctl" class="nav-link" data-scroll-target="#logs-y-eventos-con-journalctl"><span class="header-section-number">11</span> Logs y eventos con journalctl</a>
+  <ul>
+  <li><a href="#ver-logs-de-un-servicio-concreto" id="toc-ver-logs-de-un-servicio-concreto" class="nav-link" data-scroll-target="#ver-logs-de-un-servicio-concreto"><span class="header-section-number">11.1</span> Ver logs de un servicio concreto</a></li>
+  <li><a href="#ver-mensajes-del-kernel" id="toc-ver-mensajes-del-kernel" class="nav-link" data-scroll-target="#ver-mensajes-del-kernel"><span class="header-section-number">11.2</span> Ver mensajes del kernel</a>
+  <ul class="collapse">
+  <li><a href="#qué-se-espera-ver" id="toc-qué-se-espera-ver" class="nav-link" data-scroll-target="#qué-se-espera-ver"><span class="header-section-number">11.2.1</span> Qué se espera ver</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -323,7 +388,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./linux_monitoring.html">Monitorización de Sistemas Linux</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Monitorización de Sistemas Linux</h1>
+<h1 class="title">Práctica: Monitorización de Sistemas Linux</h1>
 </div>
 
 
@@ -340,10 +405,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="practica" class="level1" data-number="1">
-<h1 data-number="1"><span class="header-section-number">1</span> PRACTICA</h1>
-<section id="requisitos-previos" class="level2" data-number="1.1">
-<h2 data-number="1.1" class="anchored" data-anchor-id="requisitos-previos"><span class="header-section-number">1.1</span> Requisitos previos</h2>
+<section id="requisitos-previos" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Requisitos previos</h1>
 <ul>
 <li><p>Una máquina con Ubuntu Server 26.04.</p></li>
 <li><p>Acceso con un usuario con permisos sudo.</p></li>
@@ -352,8 +415,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>Al menos 2 GB de RAM recomendados para realizar las pruebas con comodidad.</p></li>
 </ul>
 </section>
-<section id="normas-de-seguridad" class="level2" data-number="1.2">
-<h2 data-number="1.2" class="anchored" data-anchor-id="normas-de-seguridad"><span class="header-section-number">1.2</span> Normas de seguridad</h2>
+<section id="normas-de-seguridad" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Normas de seguridad</h1>
 <ul>
 <li><p>No ejecutar esta práctica en un servidor de producción real.</p></li>
 <li><p>No detener servicios críticos.</p></li>
@@ -365,31 +428,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p>No ejecutar comandos destructivos como rm -rf /, mkfs, dd sobre discos reales o similares.</p></li>
 </ul>
 </section>
-<section id="estado-general-del-sistema" class="level2" data-number="1.3">
-<h2 data-number="1.3" class="anchored" data-anchor-id="estado-general-del-sistema"><span class="header-section-number">1.3</span> Estado general del sistema</h2>
-<section id="ver-tiempo-encendido-y-carga-media" class="level3" data-number="1.3.1">
-<h3 data-number="1.3.1" class="anchored" data-anchor-id="ver-tiempo-encendido-y-carga-media"><span class="header-section-number">1.3.1</span> Ver tiempo encendido y carga media</h3>
-<p>Comando: <code>uptime</code> Muestra la hora actual, el tiempo que lleva encendido el sistema y los usuarios conectados. Los tres valores finales son la carga media del sistema en 1, 5 y 15 minutos.</p>
+<section id="estado-general-del-sistema" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Estado general del sistema</h1>
+<ul>
+<li><p>Ver la <strong>versión del sistema operativo</strong> <code>cat /etc/os-release</code><img src="images/paste-4.png" class="img-fluid"></p></li>
+<li><p>Ver <strong>información general del equipo</strong>: <code>hostnamectl</code> Muestra información del equipo, como nombre del host, sistema operativo, kernel, arquitectura y tipo de máquina.</p>
+<p><img src="images/paste-5.png" class="img-fluid"></p></li>
+<li><p>Ver versión del kernel <code>uname -a</code> nombre del kernel, versión, arquitectura y fecha de compilación.</p>
+<p><img src="images/paste-6.png" class="img-fluid">l</p>
+<p>7.0.0</p></li>
+<li><p><strong>Ver CPU y número de procesadores lógicos</strong>: <code>lscpu</code> muestra información de la cpu</p></li>
+</ul>
+<p><img src="images/paste-7.png" class="img-fluid"></p>
+<p><code>nproc</code> devuelve el numero de procesadores lógicos: 4</p>
+<ul>
+<li>Ver <strong>tiempo encendido y carga media:</strong> Comando: <code>uptime</code> Muestra la hora actual, el tiempo que lleva encendido el sistema y los usuarios conectados. Los tres valores finales son la carga media del sistema en 1, 5 y 15 minutos.</li>
+</ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">12:17:07</span> up 2:48, 2 users, load average: 0,00, 0,02, 0,00</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-<section id="ver-uso-de-memoria" class="level3" data-number="1.3.2">
-<h3 data-number="1.3.2" class="anchored" data-anchor-id="ver-uso-de-memoria"><span class="header-section-number">1.3.2</span> Ver uso de memoria</h3>
-<p>Comando: <code>free -h</code> Muestra la memoria RAM y swap en formato legible.<br>
+<ul>
+<li><p>Ver <strong>uso de memoria:</strong> Comando: <code>free -h</code> Muestra la memoria RAM y swap en formato legible.<br>
 El dato más útil suele ser available, porque indica una estimación de la memoria disponible para nuevas aplicaciones sin recurrir a swap.<br>
-<img src="images/paste-8.png" class="img-fluid"></p>
-</section>
-<section id="ver-espacio-en-disco" class="level3" data-number="1.3.3">
-<h3 data-number="1.3.3" class="anchored" data-anchor-id="ver-espacio-en-disco"><span class="header-section-number">1.3.3</span> Ver espacio en disco</h3>
-<p>Comando: <code>df -hT</code> Muestra el espacio usado y libre de los sistemas de archivos montados. <code>-h</code>: muestra tamaños en formato legible. <code>-T</code>: muestra el tipo de sistema de archivos.<br>
-<img src="images/paste-9.png" class="img-fluid"></p>
-</section>
-<section id="ver-discos-y-particiones" class="level3" data-number="1.3.4">
-<h3 data-number="1.3.4" class="anchored" data-anchor-id="ver-discos-y-particiones"><span class="header-section-number">1.3.4</span> Ver discos y particiones</h3>
-<p>Comando: <code>lsblk -o [nombres de columnas a mostrar]</code> ejemplo <code>lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL</code></p>
-<p>Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares<img src="images/paste-10.png" class="img-fluid"></p>
-<p>Ver direcciones de red</p>
-<p>Comando: <code>ip -br a</code> Muestra las interfaces de red y sus direcciones IP de forma resumida.<br>
-<img src="images/paste-11.png" class="img-fluid"></p>
+<img src="images/paste-8.png" class="img-fluid"></p></li>
+<li><p>Ver <strong>espacio en disco:</strong> Comando: <code>df -hT</code> Muestra el espacio usado y libre de los sistemas de archivos montados. <code>-h</code>: muestra tamaños en formato legible. <code>-T</code>: muestra el tipo de sistema de archivos.<br>
+<img src="images/paste-9.png" class="img-fluid"></p></li>
+<li><p>Ver discos y particiones: Comando: <code>lsblk -o [nombres de columnas a mostrar]</code>. Ejemplo <code>lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL</code></p></li>
+</ul>
+<p>Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares<img src="images/paste-38.png" class="img-fluid"></p>
+<ul>
+<li>Ver <strong>direcciones de red:</strong> <code>ip -br a</code> Muestra las interfaces de red y sus direcciones IP de forma resumida.<br>
+<img src="images/paste-11.png" class="img-fluid"></li>
+</ul>
 <p>Qué significa <code>enp0s3 :</code>El nombre se divide en partes:</p>
 <ul>
 <li><p><strong>e</strong> → <em>Ethernet</em></p></li>
@@ -399,9 +467,8 @@ El dato más útil suele ser available, porque indica una estimación de la memo
 </ul>
 <p>En resumen: <code>enp0s3</code> <strong>= interfaz Ethernet en el bus PCI 0, slot 3</strong></p>
 </section>
-</section>
-<section id="monitorización-en-tiempo-real-con-top" class="level2" data-number="1.4">
-<h2 data-number="1.4" class="anchored" data-anchor-id="monitorización-en-tiempo-real-con-top"><span class="header-section-number">1.4</span> Monitorización en tiempo real con top</h2>
+<section id="monitorización-en-tiempo-real-con-top" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Monitorización en tiempo real con top</h1>
 <p>Comando: <code>top</code> Muestra una vista <strong>dinámica</strong> del sistema:</p>
 <ul>
 <li><p>Carga media.</p></li>
@@ -411,7 +478,8 @@ El dato más útil suele ser available, porque indica una estimación de la memo
 <li><p>Procesos en ejecución.</p></li>
 <li><p>Procesos que más recursos consumen.</p></li>
 </ul>
-<p><img src="images/paste-12.png" class="img-fluid"> Dentro de top:<br>
+<p><img src="images/paste-12.png" class="img-fluid"></p>
+<p>Dentro de top:<br>
 <code>p</code> Ordena por uso de CPU.<br>
 <code>m</code> Ordena por uso de memoria.<br>
 <code>q</code> Sale de top.</p>
@@ -475,8 +543,901 @@ Ordenar por:</p>
 <li><p><strong>used</strong> → swap usada (0,0 → no se está usando).</p></li>
 <li><p><strong>avail Mem</strong> → memoria disponible para nuevos procesos (RAM libre + caché reutilizable).</p></li>
 </ul>
+<div class="extra">
+<p><strong>top:</strong> Permite acciones mientras está corriendo:</p>
+<ul>
+<li><p><code>k</code> → matar procesos</p></li>
+<li><p><code>r</code> → cambiar prioridad (renice)</p></li>
+<li><p><code>M</code> → ordenar por memoria</p></li>
+<li><p><code>P</code> → ordenar por CPU</p></li>
+<li><p><code>q</code> → salir</p></li>
+</ul>
+</div>
+<p>La versión moderna de top es <code>htop</code>. Pruébalo!</p>
+</section>
+<section id="memoria-libre-vs-memoria-disponible" class="level1 nota" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> <strong>Memoria libre vs memoria disponible</strong></h1>
+<section id="memoria-libre-free" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="memoria-libre-free"><span class="header-section-number">5.1</span> <strong>Memoria libre (</strong><code>free</code><strong>)</strong></h2>
+<p>Es <strong>RAM sin usar en absoluto</strong>. Literalmente, páginas de memoria que no contienen nada útil.</p>
+<p>En Linux suele ser <strong>baja</strong>, porque el kernel intenta usar la RAM para acelerar el sistema (cachés, buffers, page cache…).</p>
+<p><strong>Interpretación:</strong></p>
+<ul>
+<li><p>Si es baja → <em>normal</em>.</p></li>
+<li><p>Si es alta → el sistema no está usando la RAM para cache (poco trabajo o recién arrancado).</p></li>
+</ul>
+</section>
+<section id="memoria-disponible-available" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="memoria-disponible-available"><span class="header-section-number">5.2</span> <strong>Memoria disponible (</strong><code>available</code><strong>)</strong></h2>
+<p>Es una estimación de <strong>cuánta RAM podría usarse para nuevas aplicaciones sin necesidad de empezar a usar swap</strong>.</p>
+<p>Incluye:</p>
+<ul>
+<li><p>Memoria libre real</p></li>
+<li><p>Memoria de caché que puede liberarse rápidamente</p></li>
+<li><p>Buffers reutilizables</p></li>
+<li><p>Otras páginas que el kernel puede descartar sin penalización</p></li>
+</ul>
+<p><strong>Interpretación:</strong></p>
+<ul>
+<li><p>Es la métrica <strong>realmente útil</strong> para saber si te estás quedando sin RAM.</p></li>
+<li><p>Si baja de ~10–15% → empieza la presión de memoria.</p></li>
+<li><p>Si baja de ~5% → pronto habrá swap.</p></li>
+</ul>
+</section>
+<section id="ejemplo" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="ejemplo"><span class="header-section-number">5.3</span> Ejemplo:</h2>
+<pre><code>free = 200 MB 
+available = 2500 MB</code></pre>
+<p>Aunque solo haya 200 MB “libres”, el sistema tiene <strong>2.5 GB disponibles</strong> para nuevas aplicaciones sin necesidad de swap, porque puede liberar caché y buffers.</p>
+</section>
+</section>
+<section id="análisis-estático-de-procesos-con-ps" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Análisis estático de procesos con ps</h1>
+<p>Usaremos el comando <code>ps aux</code></p>
+<p><code>ps</code> (Process Status) sirve para ver procesos que están ejecutándose en el sistema.</p>
+<p>aux:</p>
+<ul>
+<li><p><code>a</code> (all users): Muestra procesos de <strong>todos los usuarios</strong>, no solo los tuyos.</p></li>
+<li><p><code>u</code>(user oriented format): presenta la información en un formato más legible</p></li>
+<li><p><code>x</code> (processes without a controlling terminal): incluye procesos que no tienen terminal asociada, como servicios del sistema o demonios.</p></li>
+</ul>
+<p>muestra <strong>una lista completa de procesos activos</strong>, incluyendo usuario, consumo de CPU y memoria, estado del proceso y el comando que lo lanzó.</p>
+<p><img src="images/paste-20.png" class="img-fluid"></p>
+<p>Por defecto ordena los procesos por uso de CPU, de mayor a menor, podemos cambiar ese orden usando argumentos, por ejemplo para ver los que más memoria consumen <code>ps aux --sort=-%mem | head -n 10</code></p>
+<p>Los procesos entre PID 1 y ~100 suelen ser <strong>hilos internos del kernel</strong>, no programas de usuario.</p>
+<p>Se reconocen porque:</p>
+<ul>
+<li><p>El comando aparece entre <strong>corchetes</strong>: <code>[kworker/0:0H-kblockd]</code></p></li>
+<li><p>El <strong>PPID es 2</strong>, que es el proceso <code>kthreadd</code></p></li>
+<li><p>No tienen <strong>TTY</strong></p></li>
+<li><p>No tienen binario ejecutable en disco</p></li>
+</ul>
+<p>Podemos visualizar un proceso en concreto, por ejemplo usando su PID</p>
+<p><code>ps -fp {pid}</code></p>
+<p><img src="images/paste-15.png" class="img-fluid"></p>
+<p>o buscarlo por nombre usando <code>grep</code>: <code>ps aux | grep apache</code></p>
+<p>Ver la ruta real del ejecutable (no funcionará con los hilos internos de kernel):</p>
+<p><code>sudo ls -l /proc/{pid}/exe</code></p>
+<p><img src="images/paste-16.png" class="img-fluid"></p>
+<p><code>sudo readlink /proc/{pid}/exe</code></p>
+<p><img src="images/paste-17.png" class="img-fluid"></p>
+<p>Ver el nombre del proceso: <code>ps -p {PID} -o pid,user,comm,args</code></p>
+<p><img src="images/paste-18.png" class="img-fluid"></p>
+<p>Ver la línea de comandos completa: <code>tr '\0' ' ' &lt; /proc/{PID}/cmdline , echo</code> Muestra el comando completo con el que se inició el proceso con sus parámetros.</p>
+<p><img src="images/paste-19.png" class="img-fluid"></p>
+<div class="nota">
+<p>La diferencia esencial entre <code>ps aux</code> y <code>top</code> es que uno te da <strong>una foto fija</strong> de los procesos en ese instante (ps), mientras que el otro te ofrece <strong>una vista dinámica y en tiempo real</strong> del sistema.</p>
+<ul>
+<li><p><strong>ps aux:</strong> Da información detallada por proceso (PID, usuario, %CPU, %MEM, estado, comando completo). Ideal para búsquedas específicas, scripting y análisis puntual.</p></li>
+<li><p><strong>top:</strong> Muestra métricas agregadas del sistema (carga, memoria total, procesos activos) y luego los procesos ordenados por consumo. Ideal para ver qué está consumiendo recursos <em>en este momento</em>.</p></li>
+</ul>
+</div>
+</section>
+<section id="árbol-de-procesos" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Árbol de procesos</h1>
+<p>Nota: Instalar psmisc si es necesario. <code>sudo apt install -y psmisc</code></p>
+<p>pstree muestra los procesos en forma de árbol, indicando qué proceso ha lanzado a cuál.</p>
+<p><code>pstree -p</code></p>
+<p><img src="images/paste-23.png" class="img-fluid"></p>
+</section>
+<section id="memoria-y-swap-con-free-y-vmstat" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Memoria y swap con free y vmstat</h1>
+<p>free: Muestra memoria total, usada, libre, compartida, caché y disponible. <code>free -h</code></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/paste-24.png" class="img-fluid figure-img"></p>
+<figcaption>vmstat: muestra mediciones o snapshots de acuerdo con los parámetros que le pasemos, por ejemplo <code>vmstat  1 5</code> nos muestra 5 mediciones separadas por 1 segundo.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 27%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Columna</strong></th>
+<th><strong>Significado</strong></th>
+<th><strong>Cómo interpretarlo</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>r</strong></td>
+<td>Procesos esperando CPU</td>
+<td>Si es mayor que el número de CPUs, hay <strong>cola de ejecución</strong> y posible saturación.</td>
+</tr>
+<tr class="even">
+<td><strong>b</strong></td>
+<td>Procesos bloqueados</td>
+<td>Valores altos indican <strong>esperas de E/S</strong> o procesos atascados.</td>
+</tr>
+<tr class="odd">
+<td><strong>swpd</strong></td>
+<td>Swap usada</td>
+<td>Si crece, el sistema está <strong>swapeando</strong>; puede causar lentitud.</td>
+</tr>
+<tr class="even">
+<td><strong>free</strong></td>
+<td>Memoria libre</td>
+<td>No es crítico si es bajo: Linux usa RAM para cache.</td>
+</tr>
+<tr class="odd">
+<td><strong>buff</strong></td>
+<td>Memoria usada como buffers</td>
+<td>Normalmente estable; buffers ayudan a la E/S.</td>
+</tr>
+<tr class="even">
+<td><strong>cache</strong></td>
+<td>Memoria usada como caché</td>
+<td>Cuanto más alto, mejor rendimiento; se libera si hace falta.</td>
+</tr>
+<tr class="odd">
+<td><strong>si</strong></td>
+<td>Swap in (swap → RAM)</td>
+<td>Si es &gt;0 de forma continua, hay <strong>presión de memoria</strong>.</td>
+</tr>
+<tr class="even">
+<td><strong>so</strong></td>
+<td>Swap out (RAM → swap)</td>
+<td>Si aumenta, el sistema está expulsando páginas; puede ser grave.</td>
+</tr>
+<tr class="odd">
+<td><strong>bi</strong></td>
+<td>Bloques leídos desde disco</td>
+<td>Alto = mucha lectura; puede indicar procesos intensivos de E/S.</td>
+</tr>
+<tr class="even">
+<td><strong>bo</strong></td>
+<td>Bloques escritos a disco</td>
+<td>Alto = mucha escritura; puede ser por logs, BD, backups, etc.</td>
+</tr>
+<tr class="odd">
+<td><strong>us</strong></td>
+<td>CPU usada por usuario</td>
+<td>Alto = procesos de usuario consumiendo CPU (normal en cargas).</td>
+</tr>
+<tr class="even">
+<td><strong>sy</strong></td>
+<td>CPU usada por el sistema</td>
+<td>Alto = kernel ocupado; puede indicar E/S intensa o interrupciones.</td>
+</tr>
+<tr class="odd">
+<td><strong>id</strong></td>
+<td>CPU inactiva</td>
+<td>Alto = sistema relajado; bajo = CPU ocupada.</td>
+</tr>
+<tr class="even">
+<td><strong>wa</strong></td>
+<td>CPU esperando E/S</td>
+<td>Alto = <strong>cuello de botella en disco</strong> o almacenamiento lento.</td>
+</tr>
+</tbody>
+</table>
+<section id="disco-y-entradasalida" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="disco-y-entradasalida"><span class="header-section-number">8.1</span> Disco y entrada/salida</h2>
+<p>Pre requisitos: instalar sysstat si es necesario: <code>sudo apt install -y sysstat</code></p>
+<p>Ejecutar: <code>iostat -xz 1 5</code></p>
+<p>Muestra estadísticas de CPU y dispositivos de almacenamiento</p>
+<p>Opciones:</p>
+<ul>
+<li><p>-x: estadísticas extendidas del disco (await, util, r/s, w/s, etc.)</p></li>
+<li><p>-z: oculta dispositivos sin actividad.</p></li>
+<li><p>1: intervalo de 1 segundo.</p></li>
+<li><p>5: cinco mediciones.</p></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/paste-26.png" class="img-fluid figure-img"></p>
+<figcaption>Nota: el screenshot no muestra toda la información disponible.</figcaption>
+</figure>
+</div>
+<p>Dispositivos:</p>
+<p>La columna <strong>Device</strong> te dice <em>dónde mirar</em> cuando analizas rendimiento de disco:</p>
+<ul>
+<li><p>Si ves <code>sda</code> → estás viendo el disco físico entero.</p></li>
+<li><p>Si ves <code>sda1</code> → estás viendo la partición.</p></li>
+<li><p>Si ves <code>dm-0</code> → probablemente es tu volumen raíz (<code>/</code>), aunque físicamente esté en <code>sda</code>.</p></li>
+<li><p>Si ves <code>nvme0n1</code> → es un NVMe, así que esperas latencias más bajas.</p></li>
+<li><p>Si ves <code>loop0</code> → es un archivo montado como disco, normalmente usado por snaps o contenedores.</p></li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 29%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Columna</strong></th>
+<th><strong>Significado</strong></th>
+<th><strong>Cómo leerlo / Interpretación</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>r/s</strong></td>
+<td>Lecturas por segundo</td>
+<td>Alto = mucha carga de lectura; útil para ver si un proceso está leyendo intensivamente.</td>
+</tr>
+<tr class="even">
+<td><strong>w/s</strong></td>
+<td>Escrituras por segundo</td>
+<td>Alto = mucha carga de escritura; típico en BD, logs, backups.</td>
+</tr>
+<tr class="odd">
+<td><strong>rkB/s</strong></td>
+<td>KB leídos por segundo</td>
+<td>Mide el volumen real de lectura; alto = operaciones pesadas.</td>
+</tr>
+<tr class="even">
+<td><strong>wkB/s</strong></td>
+<td>KB escritos por segundo</td>
+<td>Mide el volumen real de escritura; alto = procesos que generan muchos datos.</td>
+</tr>
+<tr class="odd">
+<td><strong>rrqm/s</strong></td>
+<td>Lecturas fusionadas por el scheduler</td>
+<td>Alto = el kernel está agrupando lecturas, mejora rendimiento.</td>
+</tr>
+<tr class="even">
+<td><strong>wrqm/s</strong></td>
+<td>Escrituras fusionadas por el scheduler</td>
+<td>Alto = el kernel está agrupando escrituras, mejora rendimiento.</td>
+</tr>
+<tr class="odd">
+<td><strong>%rrqm</strong></td>
+<td>% de lecturas fusionadas</td>
+<td>&gt;20% suele indicar buena optimización del scheduler.</td>
+</tr>
+<tr class="even">
+<td><strong>%wrqm</strong></td>
+<td>% de escrituras fusionadas</td>
+<td>&gt;20% indica que el disco está recibiendo operaciones agrupadas.</td>
+</tr>
+<tr class="odd">
+<td><strong>r_await</strong></td>
+<td>Tiempo medio de espera de lecturas (ms)</td>
+<td>&lt;10 ms excelente; &gt;50 ms indica disco lento o saturado.</td>
+</tr>
+<tr class="even">
+<td><strong>w_await</strong></td>
+<td>Tiempo medio de espera de escrituras (ms)</td>
+<td>Igual que r_await: &gt;50 ms es señal de cuello de botella.</td>
+</tr>
+<tr class="odd">
+<td><strong>await</strong></td>
+<td>Tiempo medio total de espera (lectura+escritura)</td>
+<td>Métrica clave: &gt;100 ms = saturación clara del dispositivo.</td>
+</tr>
+<tr class="even">
+<td><strong>aqu-sz</strong></td>
+<td>Tamaño medio de la cola de I/O</td>
+<td>&gt;3–5 indica que el disco no da abasto.</td>
+</tr>
+<tr class="odd">
+<td><strong>svctm</strong></td>
+<td>Tiempo medio de servicio del disco (ms)</td>
+<td>Si await ≫ svctm, el problema es la cola (no el disco).</td>
+</tr>
+<tr class="even">
+<td><strong>%util</strong></td>
+<td>Porcentaje de uso del dispositivo</td>
+<td>&gt;90% = disco saturado; &lt;60% = saludable.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="red-y-conexiones" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Red y conexiones</h1>
+<section id="mostrar-la-tabla-de-enrutamiento-del-sistema" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="mostrar-la-tabla-de-enrutamiento-del-sistema"><span class="header-section-number">9.1</span> Mostrar la tabla de enrutamiento del sistema:</h2>
+<p><code>ip route</code></p>
+<p><img src="images/paste-29.png" class="img-fluid"></p>
+<p>Vamos a ver lo que significa línea por línea</p>
+<p><strong>Ruta por defecto (default)</strong></p>
+<pre><code>default via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<ul>
+<li><p><strong>default</strong> → todo tráfico que no tenga una ruta más específica</p></li>
+<li><p><strong>via 10.0.20.1</strong> → se envía al router/gateway (puerta de enlace)</p></li>
+<li><p><strong>dev enp0s3</strong> → por la interfaz de red enp0s3</p></li>
+<li><p><strong>src 10.0.20.27</strong> → tu IP local</p></li>
+<li><p><strong>proto dhcp</strong> → esta ruta la creó el DHCP</p></li>
+<li><p><strong>metric 100</strong> → prioridad (100 es normal)</p></li>
+</ul>
+<p><strong>Ruta específica</strong></p>
+<pre><code>8.8.8.8 via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<p>Algunos DHCP añaden rutas específicas hacia DNS externos. Tu router quiere asegurarse de que <strong>8.8.8.8 siempre se alcanza por la puerta de enlace</strong>, sin depender de la ruta por defecto.</p>
+<ul>
+<li><p><strong>8.8.8.8</strong> → Google DNS</p></li>
+<li><p><strong>via 10.0.20.1</strong> → se envía al mismo gateway</p></li>
+<li><p><strong>proto dhcp</strong> → la añadió el servidor DHCP</p></li>
+</ul>
+<p><strong>Ruta de tu red local</strong>: Tu servidor sabe que <strong>todo lo que sea 10.0.20.x está en la red local</strong>, así que lo envía directamente por enp0s3.</p>
+<pre><code>10.0.20.0/24 dev enp0s3 proto kernel scope link src 10.0.20.27 metric 100</code></pre>
+<ul>
+<li><p><strong>10.0.20.0/24</strong> → tu red local</p></li>
+<li><p><strong>dev enp0s3</strong> → está directamente conectada</p></li>
+<li><p><strong>scope link</strong> → no necesita gateway</p></li>
+<li><p><strong>proto kernel</strong> → la creó el kernel automáticamente</p></li>
+</ul>
+<p><strong>Ruta directa hacia el gateway</strong>: Ruta específica hacia el router.</p>
+<pre><code>10.0.20.1 dev enp0s3 proto dhcp scope link src 10.0.20.27 metric 100</code></pre>
+<p><strong>Ruta específica hacia 96.45.46.46:</strong> Tu router quiere que ese host concreto (96.45.46.46) vaya por la puerta de enlace. Puede ser un DNS, un servidor de la operadora, o un servicio de red.</p>
+<pre><code>96.45.46.46 via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<div class="summary">
+<p>Tu tabla de rutas dice:</p>
+<ul>
+<li><p>Tu servidor está en la red <strong>10.0.20.0/24</strong></p></li>
+<li><p>Tu IP es <strong>10.0.20.27</strong></p></li>
+<li><p>Tu puerta de enlace es <strong>10.0.20.1</strong></p></li>
+<li><p>El DHCP ha añadido rutas específicas hacia:</p>
+<ul>
+<li><p><strong>8.8.8.8</strong> (Google DNS)</p></li>
+<li><p><strong>96.45.46.46</strong> (probablemente otro DNS o servicio del ISP)</p></li>
+</ul></li>
+</ul>
+<p>Todo el tráfico que no sea de la red local va a <strong>10.0.20.1</strong>.</p>
+</div>
+<p>Mostrar la tabla de enrutamiento del sistema: <code>ip route</code></p>
+<p><img src="images/paste-29.png" class="img-fluid"></p>
+<p>Vamos a ver lo que significa línea por línea</p>
+<p><strong>Ruta por defecto (default)</strong></p>
+<pre><code>default via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<ul>
+<li><p><strong>default</strong> → todo tráfico que no tenga una ruta más específica</p></li>
+<li><p><strong>via 10.0.20.1</strong> → se envía al router/gateway (puerta de enlace)</p></li>
+<li><p><strong>dev enp0s3</strong> → por la interfaz de red enp0s3</p></li>
+<li><p><strong>src 10.0.20.27</strong> → tu IP local</p></li>
+<li><p><strong>proto dhcp</strong> → esta ruta la creó el DHCP</p></li>
+<li><p><strong>metric 100</strong> → prioridad (100 es normal)</p></li>
+</ul>
+<p><strong>Ruta específica</strong></p>
+<pre><code>8.8.8.8 via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<p>Algunos DHCP añaden rutas específicas hacia DNS externos. Tu router quiere asegurarse de que <strong>8.8.8.8 siempre se alcanza por la puerta de enlace</strong>, sin depender de la ruta por defecto.</p>
+<ul>
+<li><p><strong>8.8.8.8</strong> → Google DNS</p></li>
+<li><p><strong>via 10.0.20.1</strong> → se envía al mismo gateway</p></li>
+<li><p><strong>proto dhcp</strong> → la añadió el servidor DHCP</p></li>
+</ul>
+<p><strong>Ruta de tu red local</strong>: Tu servidor sabe que <strong>todo lo que sea 10.0.20.x está en la red local</strong>, así que lo envía directamente por enp0s3.</p>
+<pre><code>10.0.20.0/24 dev enp0s3 proto kernel scope link src 10.0.20.27 metric 100</code></pre>
+<ul>
+<li><p><strong>10.0.20.0/24</strong> → tu red local</p></li>
+<li><p><strong>dev enp0s3</strong> → está directamente conectada</p></li>
+<li><p><strong>scope link</strong> → no necesita gateway</p></li>
+<li><p><strong>proto kernel</strong> → la creó el kernel automáticamente</p></li>
+</ul>
+<p><strong>Ruta directa hacia el gateway</strong>: Ruta específica hacia el router.</p>
+<pre><code>10.0.20.1 dev enp0s3 proto dhcp scope link src 10.0.20.27 metric 100</code></pre>
+<p><strong>Ruta específica hacia 96.45.46.46:</strong> Tu router quiere que ese host concreto (96.45.46.46) vaya por la puerta de enlace. Puede ser un DNS, un servidor de la operadora, o un servicio de red.</p>
+<pre><code>96.45.46.46 via 10.0.20.1 dev enp0s3 proto dhcp src 10.0.20.27 metric 100</code></pre>
+<div class="summary">
+<p>Tu tabla de rutas dice:</p>
+<ul>
+<li><p>Tu servidor está en la red <strong>10.0.20.0/24</strong></p></li>
+<li><p>Tu IP es <strong>10.0.20.27</strong></p></li>
+<li><p>Tu puerta de enlace es <strong>10.0.20.1</strong></p></li>
+<li><p>El DHCP ha añadido rutas específicas hacia:</p>
+<ul>
+<li><p><strong>8.8.8.8</strong> (Google DNS)</p></li>
+<li><p><strong>96.45.46.46</strong> (probablemente otro DNS o servicio del ISP)</p></li>
+</ul></li>
+</ul>
+<p>Todo el tráfico que no sea de la red local va a <strong>10.0.20.1</strong>.</p>
+</div>
+</section>
+<section id="ver-estadísticas-de-interfaces" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="ver-estadísticas-de-interfaces"><span class="header-section-number">9.2</span> Ver estadísticas de interfaces</h2>
+<p>Ejecutar: <code>ip -s link</code>Este comando muestra <strong>todas las interfaces de red</strong> del sistema junto con <strong>estadísticas de tráfico</strong> (RX/TX), errores, paquetes descartados, etc. Es una herramienta muy útil para diagnosticar problemas de red.<br>
+<img src="images/paste-30.png" class="img-fluid"></p>
+<p>Voy a explicarlo <strong>por partes</strong>, <strong>interfaz por interfaz</strong>, y <strong>línea por línea</strong>.</p>
+<section id="loopback" class="level3" data-number="9.2.1">
+<h3 data-number="9.2.1" class="anchored" data-anchor-id="loopback"><span class="header-section-number">9.2.1</span> loopback</h3>
+<pre><code>lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000</code></pre>
+<ul>
+<li><p><strong>lo</strong> → interfaz de loopback (127.0.0.1)</p></li>
+<li><p><strong>UP, LOWER_UP</strong> → está activa y funcionando</p></li>
+<li><p><strong>mtu 65536</strong> → tamaño máximo de paquete (muy grande, típico del loopback)</p></li>
+<li><p><strong>qdisc noqueue</strong> → no usa cola de paquetes (no la necesita)</p></li>
+<li><p><strong>qlen 1000</strong> → tamaño de cola teórica</p></li>
+</ul>
+<section id="rx-recepción" class="level4" data-number="9.2.1.1">
+<h4 data-number="9.2.1.1" class="anchored" data-anchor-id="rx-recepción"><span class="header-section-number">9.2.1.1</span> RX (recepción)</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>bytes</strong></th>
+<th><strong>packets</strong></th>
+<th><strong>errors</strong></th>
+<th><strong>dropped</strong></th>
+<th><strong>missed</strong></th>
+<th><strong>mcast</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5164272</td>
+<td>3810</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p><strong>bytes</strong> → 5.1 MB recibidos</p></li>
+<li><p><strong>packets</strong> → 3810 paquetes recibidos</p></li>
+<li><p><strong>errors</strong> → 0 → perfecto</p></li>
+<li><p><strong>dropped</strong> → 0 → no se han descartado paquetes</p></li>
+<li><p><strong>missed</strong> → 0 → no se han perdido por falta de buffer</p></li>
+<li><p><strong>mcast</strong> → 0 → no recibe multicast (normal en loopback)</p></li>
+</ul>
+</section>
+<section id="tx-envío" class="level4" data-number="9.2.1.2">
+<h4 data-number="9.2.1.2" class="anchored" data-anchor-id="tx-envío"><span class="header-section-number">9.2.1.2</span> TX (envío)</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>bytes</strong></th>
+<th><strong>packets</strong></th>
+<th><strong>errors</strong></th>
+<th><strong>dropped</strong></th>
+<th><strong>carrier</strong></th>
+<th><strong>collsns</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>5164272</td>
+<td>3810</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<pre><code></code></pre>
+<ul>
+<li><p>Igual que RX → tráfico interno del sistema</p></li>
+<li><p><strong>carrier</strong> y <strong>collsns</strong> siempre 0 en loopback</p></li>
+</ul>
+</section>
+</section>
+<section id="interfaz-2-enp0s3-tu-interfaz-de-red-real" class="level3" data-number="9.2.2">
+<h3 data-number="9.2.2" class="anchored" data-anchor-id="interfaz-2-enp0s3-tu-interfaz-de-red-real"><span class="header-section-number">9.2.2</span> <strong>Interfaz 2:</strong> <code>enp0s3</code> <strong>(tu interfaz de red real)</strong></h3>
+<pre><code>enp0s3: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP mode DEFAULT group default qlen 1000 </code></pre>
+<ul>
+<li><p><strong>enp0s3</strong> → interfaz física (probablemente Ethernet virtual de VirtualBox)</p></li>
+<li><p><strong>BROADCAST, MULTICAST</strong> → soporta broadcast y multicast</p></li>
+<li><p><strong>UP, LOWER_UP</strong> → está activa y conectada</p></li>
+<li><p><strong>mtu 1500</strong> → tamaño estándar de paquete Ethernet</p></li>
+<li><p><strong>qdisc pfifo_fast</strong> → cola FIFO por defecto</p></li>
+<li><p><strong>qlen 1000</strong> → cola de 1000 paquetes</p></li>
+</ul>
+<section id="rx-recepción-1" class="level4" data-number="9.2.2.1">
+<h4 data-number="9.2.2.1" class="anchored" data-anchor-id="rx-recepción-1"><span class="header-section-number">9.2.2.1</span> RX (recepción)</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>bytes</strong></th>
+<th><strong>packets</strong></th>
+<th><strong>errors</strong></th>
+<th><strong>dropped</strong></th>
+<th><strong>missed</strong></th>
+<th><strong>mcast</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>23598622</td>
+<td>214767</td>
+<td>0</td>
+<td>14325</td>
+<td>0</td>
+<td>154878</td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Campo</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>bytes</strong></td>
+<td>tráfico recibido</td>
+</tr>
+<tr class="even">
+<td><strong>packets</strong></td>
+<td>paquetes recibidos</td>
+</tr>
+<tr class="odd">
+<td><strong>errors</strong></td>
+<td>perfecto</td>
+</tr>
+<tr class="even">
+<td><strong>dropped</strong></td>
+<td>⚠️ paquetes descartados</td>
+</tr>
+<tr class="odd">
+<td><strong>missed</strong></td>
+<td>no se han perdido por buffer</td>
+</tr>
+<tr class="even">
+<td><strong>mcast</strong></td>
+<td>paquetes multicast</td>
+</tr>
+</tbody>
+</table>
+<section id="interpretación-importante" class="level5" data-number="9.2.2.1.1">
+<h5 data-number="9.2.2.1.1" class="anchored" data-anchor-id="interpretación-importante"><span class="header-section-number">9.2.2.1.1</span> 🔥 Interpretación importante:</h5>
+<ul>
+<li><strong>dropped = 14,325</strong> → esto sí es relevante Significa que la interfaz <strong>ha descartado paquetes</strong> antes de entregarlos al kernel.</li>
+</ul>
+<p>Esto suele deberse a:</p>
+<ul>
+<li><p>Saturación de la cola de red</p></li>
+<li><p>Paquetes multicast/broadcast excesivos</p></li>
+<li><p>Problemas de rendimiento en la VM</p></li>
+<li><p>Tráfico de red muy alto en la LAN</p></li>
+</ul>
+</section>
+</section>
+<section id="tx-envío-1" class="level4" data-number="9.2.2.2">
+<h4 data-number="9.2.2.2" class="anchored" data-anchor-id="tx-envío-1"><span class="header-section-number">9.2.2.2</span> TX (envío)</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>bytes</strong></th>
+<th><strong>packets</strong></th>
+<th><strong>errors</strong></th>
+<th><strong>dropped</strong></th>
+<th><strong>carrier</strong></th>
+<th><strong>collsns</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1236540</td>
+<td>11196</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Campo</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>bytes</strong></td>
+<td>tráfico enviado</td>
+</tr>
+<tr class="even">
+<td><strong>packets</strong></td>
+<td>paquetes enviados</td>
+</tr>
+<tr class="odd">
+<td><strong>errors</strong></td>
+<td>perfecto</td>
+</tr>
+<tr class="even">
+<td><strong>dropped</strong></td>
+<td>no se han descartado</td>
+</tr>
+<tr class="odd">
+<td><strong>carrier</strong></td>
+<td>sin problemas físicos</td>
+</tr>
+<tr class="even">
+<td><strong>collsns</strong></td>
+<td>sin colisiones (normal en redes modernas)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusión:</strong> La interfaz <strong>envía sin problemas</strong>, pero <strong>recibe con descartes</strong>.</p>
+</section>
+</section>
+<section id="línea-final-altname" class="level3" data-number="9.2.3">
+<h3 data-number="9.2.3" class="anchored" data-anchor-id="línea-final-altname"><span class="header-section-number">9.2.3</span> <strong>Línea final: altname</strong></h3>
+<p>Código</p>
+<pre><code>altname enx08002769fa01 </code></pre>
+<p>Esto es simplemente un <strong>nombre alternativo</strong> que el kernel asigna automáticamente basado en la MAC:</p>
+<ul>
+<li><p>MAC: <code>08:00:27:69:fa:01</code></p></li>
+<li><p>Nombre alternativo: <code>enx08002769fa01</code></p></li>
+</ul>
+</section>
+</section>
+<section id="ver-conexiones-activas" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="ver-conexiones-activas"><span class="header-section-number">9.3</span> Ver conexiones activas</h2>
+<p><code>ss -tuna</code></p>
+<p>lista <strong>todas las conexiones TCP y UDP</strong>, tanto:</p>
+<ul>
+<li><p>abiertas</p></li>
+<li><p>escuchando</p></li>
+<li><p>establecidas</p></li>
+<li><p>sockets internos del sistema</p></li>
+</ul>
+<p>Con columnas:</p>
+<ul>
+<li><p><strong>Netid</strong> → tipo de socket (tcp/udp)</p></li>
+<li><p><strong>State</strong> → estado (LISTEN, ESTAB, UNCONN…)</p></li>
+<li><p><strong>Recv-Q</strong> → cola de recepción</p></li>
+<li><p><strong>Send-Q</strong> → cola de envío</p></li>
+<li><p><strong>Local Address:Port</strong> → IP y puerto local</p></li>
+<li><p><strong>Peer Address:Port</strong> → IP y puerto remoto</p></li>
+</ul>
+<p><img src="images/paste-31.png" class="img-fluid"></p>
+<p><strong>Servicios escuchando</strong></p>
+<ul>
+<li><p><strong>SSH</strong> → puertos 22 (IPv4 e IPv6)</p></li>
+<li><p><strong>DNS (systemd-resolved)</strong> → puertos 53 TCP/UDP en loopback</p></li>
+<li><p><strong>Servicio en puerto 9090</strong> → activo y con conexiones internas</p></li>
+</ul>
+<p><strong>Conexiones activas</strong></p>
+<ul>
+<li><p><strong>SSH</strong> desde 10.0.20.7 → tu sesión actual</p></li>
+<li><p><strong>Conexión interna</strong> al servicio en 9090</p></li>
+</ul>
+<p><strong>UDP sockets</strong></p>
+<ul>
+<li><p>DHCP cliente (puerto 68)</p></li>
+<li><p>NTP (puerto 323)</p></li>
+<li><p>DNS (puerto 53)</p></li>
+</ul>
+</section>
+</section>
+<section id="servicios-con-systemctl" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Servicios con systemctl</h1>
+<section id="listar-servicios-en-ejecución" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="listar-servicios-en-ejecución"><span class="header-section-number">10.1</span> Listar servicios en ejecución</h2>
+<p><code>systemctl list-units --type=service --state=running</code> te muestra <strong>todos los servicios que están cargados y ejecutándose ahora mismo</strong> en tu sistema. La tabla tiene tres columnas importantes: <strong>LOAD</strong>, <strong>ACTIVE</strong>, <strong>SUB</strong>. Si sabes leer esas tres, sabes interpretar cualquier servicio de systemd.<br>
+<img src="images/paste-32.png" class="img-fluid"></p>
+<section id="load" class="level3" data-number="10.1.1">
+<h3 data-number="10.1.1" class="anchored" data-anchor-id="load"><span class="header-section-number">10.1.1</span> Load</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Valor</strong></th>
+<th><strong>Significado</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>loaded</strong></td>
+<td>El archivo <code>.service</code> existe y systemd lo ha leído correctamente.</td>
+</tr>
+<tr class="even">
+<td><strong>not-found</strong></td>
+<td>El archivo del servicio no existe, está corrupto o no se pudo cargar.</td>
+</tr>
+<tr class="odd">
+<td><strong>masked</strong></td>
+<td>El servicio está deshabilitado a propósito; no puede iniciarse.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="active" class="level3" data-number="10.1.2">
+<h3 data-number="10.1.2" class="anchored" data-anchor-id="active"><span class="header-section-number">10.1.2</span> Active</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><strong>Valor</strong></th>
+<th><strong>Significado</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>active</strong></td>
+<td>El servicio está funcionando.</td>
+</tr>
+<tr class="even">
+<td><strong>inactive</strong></td>
+<td>El servicio está detenido.</td>
+</tr>
+<tr class="odd">
+<td><strong>failed</strong></td>
+<td>El servicio ha fallado.</td>
+</tr>
+<tr class="even">
+<td><strong>activating</strong></td>
+<td>El servicio está arrancando.</td>
+</tr>
+<tr class="odd">
+<td><strong>deactivating</strong></td>
+<td>El servicio está parando.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sub" class="level3" data-number="10.1.3">
+<h3 data-number="10.1.3" class="anchored" data-anchor-id="sub"><span class="header-section-number">10.1.3</span> Sub</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 70%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Valor</strong></th>
+<th><strong>Significado</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>running</strong></td>
+<td>El proceso del servicio está en ejecución.</td>
+</tr>
+<tr class="even">
+<td><strong>exited</strong></td>
+<td>El servicio terminó correctamente (normal en servicios tipo “oneshot”).</td>
+</tr>
+<tr class="odd">
+<td><strong>dead</strong></td>
+<td>El servicio no está ejecutándose.</td>
+</tr>
+<tr class="even">
+<td><strong>start-pre</strong></td>
+<td>Script previo al arranque del servicio.</td>
+</tr>
+<tr class="odd">
+<td><strong>start-post</strong></td>
+<td>Script posterior al arranque del servicio.</td>
+</tr>
+<tr class="even">
+<td><strong>reload</strong></td>
+<td>El servicio está recargando su configuración.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="ver-servicios-fallidos" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="ver-servicios-fallidos"><span class="header-section-number">10.2</span> Ver servicios fallidos</h2>
+<p><code>systemctl --failed --no-pager</code></p>
+<p><img src="images/paste-33.png" class="img-fluid"></p>
+<p>Consultar un servicio concreto<br>
+El comando <code>systemctl status</code> te da un <strong>informe completo</strong> del estado de un servicio gestionado por systemd. La salida siempre se divide en <strong>5 partes</strong>:</p>
+<ol type="1">
+<li><p><strong>Cabecera del servicio</strong></p></li>
+<li><p><strong>Estado (LOAD / ACTIVE / SUB)</strong></p></li>
+<li><p><strong>Información del proceso</strong></p></li>
+<li><p><strong>Dependencias</strong></p></li>
+<li><p><strong>Logs recientes del servicio</strong></p></li>
+</ol>
+<p><code>systemctl status {nombre_servicio} --no-pager</code>. Ejemplo <code>systemctl status systemd-journald.service --no-pager</code><img src="images/paste-34.png" class="img-fluid"></p>
+<ul>
+<li><p>Cabecera del servicio</p>
+<pre><code>systemd-journald.service - Journal Service</code></pre></li>
+<li><p>Estado (Loaded / Active / Sub)</p>
+<pre><code>Loaded: loaded (/usr/lib/systemd/system/systemd-journald.service; static)
+Active: active (running) since Wed 2026-07-01 09:09:16 CEST; 3h 20min ago</code></pre></li>
+<li><p>Drop-In (si existe): El servicio tiene configuración adicional en un directorio</p></li>
+<li><p>Invocation ID: sirve para correlacionar logs</p></li>
+<li><p>TriggeredBy (sockets asociados) : Esto te dice qué sockets activan este servicio. ● → activos ○ → inactivos</p></li>
+<li><p>Documentación: enlaces a documentación del servicio</p></li>
+<li><p>Información del proceso: PID, estado interno, número de tareas, memoria usada, cpu consumida, ruta del proceso en cgroups y el comando exacto que se está ejecutando.</p></li>
+<li><p>Logs recientes</p></li>
+</ul>
+</section>
+<section id="ver-el-archivo-de-unidad-del-servicio" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="ver-el-archivo-de-unidad-del-servicio"><span class="header-section-number">10.3</span> Ver el archivo de unidad del servicio</h2>
+<p><code>systemctl cat {nombre_servicio}</code> Ejemplo: <code>systemctl cat systemd-journald.service</code> muestra el archivo printipal del servicio</p>
+<p>sirve para <strong>ver el contenido completo del archivo de unidad</strong> de un servicio de systemd.</p>
+<p>Para:</p>
+<ul>
+<li><p>Ver <strong>cómo está configurado</strong> un servicio.</p></li>
+<li><p>Ver qué <strong>comando ejecuta</strong>.</p></li>
+<li><p>Ver si tiene <strong>parámetros especiales</strong>.</p></li>
+<li><p>Ver si tiene <strong>drop-ins</strong> (archivos adicionales que modifican la configuración).</p></li>
+<li><p>Ver si el servicio está <strong>modificado por el administrador</strong>.</p></li>
+</ul>
+<p>Es la forma más directa de inspeccionar la configuración real de un servicio.</p>
+</section>
+<section id="ver-dependencias-del-servicio" class="level2" data-number="10.4">
+<h2 data-number="10.4" class="anchored" data-anchor-id="ver-dependencias-del-servicio"><span class="header-section-number">10.4</span> Ver dependencias del servicio</h2>
+<p><code>systemctl list-dependencies {nombre_servicio} --no-pager</code> . Ejemplo: <code>systemctl list-dependencies systemd-journald.service --no-pager</code><img src="images/paste-35.png" class="img-fluid" alt="NOTA: el screenshot no muestra toda la salida del sistema"></p>
+</section>
+</section>
+<section id="logs-y-eventos-con-journalctl" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Logs y eventos con journalctl</h1>
+<p><br>
+Muestra eventos del arranque actual con prioridad desde advertencia hasta alerta.</p>
+<p><code>journalctl -b -p warning..alert --no-pager</code><br>
+</p>
+<p>Opciones:</p>
+<ul>
+<li><p><code>-b</code>: arranque actual.</p></li>
+<li><p><code>-p</code> warning..alert: filtra por prioridad.</p></li>
+<li><p><code>--no-pager</code>: muestra la salida directamente sin paginador.</p></li>
+</ul>
+<p><img src="images/paste-36.png" class="img-fluid"></p>
+<section id="ver-logs-de-un-servicio-concreto" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="ver-logs-de-un-servicio-concreto"><span class="header-section-number">11.1</span> Ver logs de un servicio concreto</h2>
+<p><code>journalctl -u {nombre_servicio} -n {numero_lineas} --no-pager</code> Ejemplo: <code>journalctl -u systemd-journald.service -n 5 --no-pager</code> Muestra los últimos 5 eventos del servicio indicado.<br>
+<img src="images/paste-37.png" class="img-fluid"></p>
+</section>
+<section id="ver-mensajes-del-kernel" class="level2" data-number="11.2">
+<h2 data-number="11.2" class="anchored" data-anchor-id="ver-mensajes-del-kernel"><span class="header-section-number">11.2</span> Ver mensajes del kernel</h2>
+<p><code>journalctl -k -n {numero_lineas} --no-pager</code>. Ejemplo <code>journalctl -k -n 30 --no-pager</code> Muestra los últimos n mensajes del kernel.</p>
+<section id="qué-se-espera-ver" class="level3" data-number="11.2.1">
+<h3 data-number="11.2.1" class="anchored" data-anchor-id="qué-se-espera-ver"><span class="header-section-number">11.2.1</span> Qué se espera ver</h3>
+<p>Mensajes relacionados con hardware, drivers, red, discos o arranque.</p>
 
 
+</section>
 </section>
 </section>
 
