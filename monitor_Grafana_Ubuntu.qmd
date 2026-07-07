@@ -676,7 +676,7 @@ http://{TU_IP}:3000 Usuario: **admin** Contraseña: **Admin123**\*\
 
 Grafana puede pedir cambiar la contraseña. Para la práctica podemos cambiarla por otra sencilla o saltar el cambio si nos lo permite.
 
-## **Añadir Prometheus como fuente de datos en Grafana**
+## Añadir Prometheus como fuente de datos en Grafana
 
 Dentro de Grafana: `Connections / Data sources -> Add data source -> Prometheus`![](images/paste-64.png)
 
@@ -689,7 +689,7 @@ Pulsamos: `Save & test`
 
 ![](images/paste-66.png)
 
-## **Crear nuestro primer dashboard manual**
+## Crear nuestro primer dashboard manual
 
 ### Añadir una visualización nueva
 
@@ -724,13 +724,13 @@ Vamos a imaginar una métrica de **CPU idle** (porcentaje de tiempo que la CPU e
 
 Supongamos estos valores de **idle%**:
 
-| **Instante** | **Idle (%)**                               |
-|--------------|--------------------------------------------|
-| t0           | 90                                         |
-| t15          | 90                                         |
-| t30          | 10 ← pico de actividad (CPU casi ocupada)  |
-| t45          | 90                                         |
-| t60          | 90                                         |
+| **Instante** | **Idle (%)**                              |
+|--------------|-------------------------------------------|
+| t0           | 90                                        |
+| t15          | 90                                        |
+| t30          | 10 ← pico de actividad (CPU casi ocupada) |
+| t45          | 90                                        |
+| t60          | 90                                        |
 
 ### 1. Media simple de los valores
 
@@ -789,7 +789,7 @@ Eso significa:
 ### 3. Comparación media vs `rate()` en tabla
 
 | **Método** | **Qué hace** | **Resultado idle** | **Resultado uso CPU** |
-|----|----|----|----|
+|------------------|------------------|------------------|------------------|
 | **Media simple** | Promedia los 5 valores de idle% | 74% | 26% |
 | `rate()` **+ 1m** | Calcula la pendiente del contador en 60 s | ≈68.33% | ≈31.67% |
 
@@ -959,7 +959,7 @@ Cuando terminemos, eliminamos el fichero de prueba:
 
 5\. ¿Qué problemas podríamos detectar antes de que el usuario final se queje? creando alertas podemos saber cuando un recurso esta bajo presión
 
-## **Importar un dashboard ya preparado**
+## Importar un dashboard ya preparado
 
 Además del dashboard manual, podemos importar un dashboard ya creado por la comunidad.
 
@@ -972,7 +972,7 @@ Ese dashboard corresponde a **Node Exporter Full**, preparado para mostrar mucha
 
 Es posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas no activadas. No pasa nada: para esta práctica lo importante es entender el flujo de monitorización.
 
-# **Comprobaciones finales**
+# Comprobaciones finales
 
 ## Estado de los contenedores
 
@@ -1043,7 +1043,7 @@ Lo que dará es **información detallada del estado de la memoria RAM** de tu m�
 
 ## Comprobamos Prometheus:
 
-## http://{IP_DEL_SERVIDOR}:9090/targets
+http://{IP_DEL_SERVIDOR}:9090/targets
 
 ![](images/paste-78.png)
 
@@ -1051,7 +1051,7 @@ Comprobamos Grafana:
 
 http://IP_DEL_SERVIDOR:3000
 
-# **Entregables de la práctica**
+# Entregables de la práctica
 
 **Preguntas de reflexión**
 
@@ -1109,9 +1109,9 @@ Monitorizar estos recursos permite:
 
 Es exactamente el tipo de servidor donde Prometheus + Grafana + Node Exporter es más útil.
 
-# **Problemas frecuentes**
+# Problemas frecuentes
 
-## **Grafana no abre**
+## Grafana no abre
 
 Comprobar que el contenedor está activo: `docker compose ps`
 
@@ -1119,7 +1119,7 @@ Comprobar logs: `docker compose logs grafana`
 
 Comprobar puerto: `ss -tulnp | grep 3000`
 
-## **Prometheus no muestra el target node en UP**
+## Prometheus no muestra el target node en UP
 
 Revisar el fichero: `cat prometheus/prometheus.yml`
 
@@ -1135,11 +1135,11 @@ Reiniciar:
 
 `docker compose restart prometheus`
 
-## **Grafana no conecta con Prometheus**
+## Grafana no conecta con Prometheus
 
 La URL correcta dentro de Grafana es: `http://prometheus:9090` No usar: `http://localhost:9090`
 
-## **En VirtualBox no puedo acceder desde el equipo anfitrión**
+## En VirtualBox no puedo acceder desde el equipo anfitrión
 
 Opciones:
 
@@ -1149,7 +1149,7 @@ Opciones:
 
 3\. Abrir Grafana desde el navegador dentro de la propia VM, si tiene entorno gráfico.
 
-# **Parar o eliminar la práctica**
+# Parar o eliminar la práctica
 
 Para parar los contenedores: `docker compose stop`
 
