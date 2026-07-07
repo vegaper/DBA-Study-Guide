@@ -1,0 +1,191 @@
+---
+title: "Contenedores"
+format: html
+---
+
+# 🧩 **Apuntes: Contenedores y Docker**
+
+## 1. **Qué es un contenedor**
+
+Un **contenedor** es una unidad ligera y aislada que empaqueta una aplicación junto con todo lo necesario para ejecutarla: dependencias, librerías, configuración y entorno. La clave es que **no incluye un sistema operativo completo**, sino solo lo imprescindible.
+
+### Características esenciales
+
+- **Independiente de la máquina donde se ejecuta** El contenedor funciona igual en cualquier sistema que tenga Docker instalado, sin importar el hardware o el sistema operativo del host.
+
+- **Portable** Puedes moverlo entre tu portátil, un servidor Linux, un clúster Kubernetes o Azure Container Instances sin modificar nada.
+
+- **Aislamiento** Cada contenedor tiene su propio entorno. Si una prueba falla o una app se rompe, no afecta al resto.
+
+- **Eficiente en recursos** Usa solo la infraestructura necesaria para la aplicación, sin cargar un sistema operativo completo como una máquina virtual.
+
+- **Despliegue ágil** Crear, iniciar o destruir contenedores es extremadamente rápido (segundos), lo que facilita pruebas, CI/CD y desarrollo.
+
+- **Multiplicidad** Un único host puede ejecutar **muchas aplicaciones en muchos contenedores** simultáneamente.
+
+## 2. **Qué es Docker**
+
+**Docker** es la plataforma más popular para crear, ejecutar y gestionar contenedores.
+
+Incluye:
+
+- **Docker Engine** → el motor que ejecuta contenedores.
+
+- **Docker CLI** → comandos para construir imágenes, correr contenedores, etc.
+
+- **Docker Hub** → repositorio de imágenes públicas y privadas.
+
+Docker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.
+
+## 3. **Qué es una imagen Docker**
+
+Una **imagen Docker** es una **plantilla inmutable** que contiene todo lo necesario para crear un contenedor.
+
+Piensa en ella como:
+
+- El *molde* del que se crean los contenedores.
+
+- Un archivo que describe el entorno: sistema base, dependencias, configuración, aplicación.
+
+Características:
+
+- **Inmutable**: no cambia una vez creada.
+
+- **Versionable**: puedes tener `app:v1`, `app:v2`, etc.
+
+- **Portable**: se puede subir a Docker Hub o Azure Container Registry.
+
+- **Reutilizable**: puedes crear miles de contenedores a partir de la misma imagen.
+
+## 4. **Diferencia entre una imagen Docker y un contenedor**
+
+| Concepto | Imagen Docker | Contenedor |
+|----|----|----|
+| Qué es | Plantilla, receta, blueprint | Instancia en ejecución |
+| Estado | Inmutable | Mutable (puede tener cambios mientras corre) |
+| Función | Define cómo debe ser el entorno | Ejecuta la aplicación |
+| Vida | Permanente (archivo) | Temporal (se crea, corre y se destruye) |
+
+## 5. **Diferencia entre contenedores y máquinas virtuales**
+
+| Característica | Contenedor | Máquina Virtual |
+|----|----|----|
+| Sistema operativo | No incluye SO completo; comparte kernel del host | Incluye un SO completo (Windows, Linux…) |
+| Peso | Muy ligero (MB) | Pesado (GB) |
+| Velocidad de inicio | Segundos | Minutos |
+| Aislamiento | A nivel de proceso | A nivel de hardware |
+| Recursos | Usa solo lo necesario para la app | Usa RAM, CPU y disco para el SO entero |
+| Portabilidad | Muy alta | Menor, depende del hipervisor |
+| Uso típico | Microservicios, CI/CD, despliegues rápidos | Sistemas completos, entornos legacy |
+
+### Idea clave para tus apuntes
+
+> **Los contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.**
+
+## 6. **Ventajas clave de los contenedores (resumen obligatorio)**
+
+- **Independencia del host** Se ejecutan igual en cualquier máquina con Docker.
+
+- **Portabilidad total** Puedes desplegarlos en Azure, Kubernetes, servidores locales, etc.
+
+- **Ahorro de recursos** No cargan un SO completo → consumen menos CPU, RAM y disco.
+
+- **Aislamiento** Cada contenedor es un entorno separado para pruebas y errores.
+
+- **Despliegue rápido** Crear o destruir contenedores es casi instantáneo.
+
+- **Escalabilidad** Puedes correr múltiples contenedores en un mismo host sin problemas.
+
+## 7. **Ejemplo mental para recordar**
+
+- **Imagen** → Receta de cocina.
+
+- **Contenedor** → Plato preparado siguiendo la receta.
+
+- **Máquina virtual** → Una cocina completa montada solo para preparar ese plato.
+
+# 🧩 **Añadido 1 — Dockerfile: qué es y cómo funciona**
+
+## 📌 Qué es un Dockerfile
+
+Un **Dockerfile** es un archivo de texto que contiene **instrucciones** para construir una **imagen Docker**. Es, literalmente, la *receta* que Docker sigue para generar la imagen.
+
+## 📦 Contenido típico de un Dockerfile
+
+Las instrucciones más comunes:
+
+- **FROM** → imagen base
+
+- **COPY** → copiar archivos al contenedor
+
+- **RUN** → ejecutar comandos durante la construcción
+
+- **WORKDIR** → definir directorio de trabajo
+
+- **EXPOSE** → declarar puertos
+
+- **CMD** → comando que se ejecuta cuando el contenedor arranca
+
+- **ENV** → variables de entorno
+
+## 🧠 Idea clave
+
+> El Dockerfile define *cómo se construye* la imagen. La imagen define *cómo se ejecuta* el contenedor.
+
+# 🧩 **Añadido 2 — docker-compose: qué es y para qué sirve**
+
+## 📌 Qué es docker-compose
+
+**docker-compose** es una herramienta que permite **definir y ejecutar múltiples contenedores** como un solo servicio. Usa un archivo llamado **docker-compose.yml**.
+
+## 🎯 Para qué sirve
+
+- Levantar varios contenedores con un solo comando.
+
+- Definir redes, volúmenes y dependencias.
+
+- Facilitar entornos de desarrollo y pruebas.
+
+- Orquestar microservicios simples sin necesidad de Kubernetes.
+
+## 🧩 Ejemplo mental
+
+Si Docker es “ejecutar un contenedor”, docker-compose es “ejecutar toda la aplicación completa con sus contenedores”.
+
+## 🧠 Idea clave
+
+> docker-compose permite levantar **bases de datos, APIs, frontends y servicios auxiliares** juntos, con un solo archivo y un solo comando.
+
+# 🧩 **Añadido 3 — Tabla de comandos esenciales de Docker**
+
+## 🗂️ Tabla: Comandos fundamentales de Docker
+
+| **Comando** | **Función** |
+|----|----|
+| `docker build -t nombre .` | Construir una imagen desde un Dockerfile |
+| `docker images` | Listar imágenes disponibles |
+| `docker run nombre` | Ejecutar un contenedor |
+| `docker run -d nombre` | Ejecutar en segundo plano |
+| `docker ps` | Ver contenedores en ejecución |
+| `docker ps -a` | Ver todos los contenedores (incluidos detenidos) |
+| `docker stop id` | Detener un contenedor |
+| `docker rm id` | Eliminar un contenedor |
+| `docker rmi imagen` | Eliminar una imagen |
+| `docker logs id` | Ver logs del contenedor |
+| `docker exec -it id bash` | Entrar dentro del contenedor |
+| `docker pull nombre` | Descargar una imagen desde Docker Hub |
+| `docker push nombre` | Subir una imagen a un registro |
+| `docker-compose up` | Levantar servicios definidos en docker-compose.yml |
+| `docker-compose down` | Detener y eliminar servicios |
+
+# 🎁 **Resumen final para tus apuntes**
+
+- **Dockerfile** → receta para construir imágenes.
+
+- **Imagen Docker** → plantilla inmutable.
+
+- **Contenedor** → instancia en ejecución, ligera y aislada.
+
+- **docker-compose** → orquestación simple de múltiples contenedores.
+
+- **Comandos esenciales** → construir, ejecutar, detener, inspeccionar y orquestar contenedores.

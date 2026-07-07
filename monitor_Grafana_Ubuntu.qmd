@@ -21,11 +21,9 @@ Vamos a simular una pequeña infraestructura empresarial. Tendremos un servidor 
 
 - ¿Podemos ver estos datos en un dashboard?\
 
-# Creamos un servidor ubuntu
+# Creamos un servidor ubuntu con ip fija
 
 La configuración de red será en adaptador puente
-
-## Usar una ip fija
 
 Para evitar que se nos rompa el monitor, necesitaremos tener la misma ip siempre, para eso vamos a cambiar la configuración ip de automática asignada por DHCP a manual
 
@@ -348,7 +346,9 @@ En nano:
 
 - **CTRL + X** → salir
 
-# Crear el fichero `docker-compose.yml`
+# Crear el fichero de configuración de docker compose
+
+`docker-compose.yml`
 
 Este fichero define **los tres servicios**:
 
@@ -534,7 +534,7 @@ Si queremos ver solo métricas relacionadas con el sistema: `curl http://localho
 
 ## Grafana:
 
-http://{TU_IP}:3000 Usuario: **admin** Contraseña: **Admin123\\**\*\
+http://{TU_IP}:3000 Usuario: **admin** Contraseña: **Admin123**\*\
 ![](images/paste-57.png)
 
 # Trabajar en Grafana
@@ -572,155 +572,123 @@ Prometheus
 
 ![](images/paste-70.png)
 
-**Panel 1: uso de CPU**
+Tipo de visualización recomendado para todos los graficos: Time series
 
-Consulta PromQL:
+#### **Panel 1:** Uso de CPU (%)
 
-100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}\[1m\])) \* 100)
+Consulta PromQL: `100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)`
 
-Título del panel:
+![](images/paste-71.png)
 
-Uso de CPU (%)
+Unidad: Percent (0-100)
 
-Tipo de visualización recomendado:
+![](images/paste-72.png)
 
-Time series
+##### Explicación de la métrica:
 
-Unidad:
+`node_cpu_seconds_total{mode="idle"}`
 
-Percent (0-100)
+Esta métrica mide **cuántos segundos de CPU** ha pasado el sistema **en estado idle** (sin hacer nada).
 
-Interpretación:
+`rate(...[1m])`
 
-Cuanto más alto sea el valor, más ocupada está la CPU.
+`rate()` calcula la **velocidad de cambio por segundo** en los últimos 1 minuto. En este caso: **Qué porcentaje del tiempo reciente la CPU ha estado idle.**
 
-**Panel 2: uso de memoria RAM**
+`avg by (instance)(...)`Prometheus tiene varios cores por instancia. Este `avg` calcula el **promedio de idle** entre todos los cores de la máquina.
 
-Creamos otro panel con esta consulta:
+Multiplicación por 100: Convierte el valor en porcentaje: `idle% = avg(rate(idle)) * 100`
 
-100 \* (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))
+`100 - idle%`Si restas el porcentaje de idle a 100 obtienes: **CPU usada (%)**
 
-Título:
+Ejemplo: Si la CPU está idle un 20% → 100 - 20 = **80% de uso**.
 
-Uso de memoria RAM (%)
+**Por qué se usa el modo** `idle` **en lugar de** `user`**,** `system`**, etc.**
 
-Unidad:
+Porque:
 
-Percent (0-100)
+- La suma de todos los modos (user, system, iowait, idle…) es 100%.
 
-Interpretación:
+- Idle es el más fácil de interpretar.
 
-Muestra qué porcentaje de RAM está en uso.
+- Si sabes cuánto está idle, sabes cuánto está ocupada.
 
-**Panel 3: uso de disco raíz**
+Es la forma más robusta de medir uso real de CPU.
 
-Consulta:
+**La fórmula calcula el porcentaje de CPU usada restando el porcentaje de tiempo idle al 100%. Usa** `rate()` **para medir actividad reciente y** `avg` **para promediar todos los cores de la instancia.**
 
-100 \* (1 - (
+#### **Panel 2:** Uso de memoria RAM (%)
 
-node_filesystem_avail_bytes{mountpoint="/",fstype!\~"tmpfs\|overlay\|squashfs"}
+Consulta: `100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))`
 
-/
+Unidad: Percent (0-100)
 
-node_filesystem_size_bytes{mountpoint="/",fstype!\~"tmpfs\|overlay\|squashfs"}
+Interpretación: Muestra qué porcentaje de RAM está en uso.
 
-))
+#### **Panel 3:** Uso de disco raíz (%)
 
-Título:
+Consulta: `100 * (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}/node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}))`
 
-Uso de disco raíz (%)
+Explicación: `node_filesystem_avail_bytes`Es el **espacio disponible** (libre) en bytes. `node_filesystem_size_bytes`Es el **tamaño total** del filesystem.`mountpoint="/"`esto especifica el disco raíz.
 
-Unidad:
+Esto excluye los ficheros temporales o virtuales porqeu no representan almacenamiento real en el disco:
 
-Percent (0-100)
+```         
+fstype!~"tmpfs|overlay|squashfs"
+```
 
-Interpretación:
+Unidad:Percent (0-100):
 
-Muestra cuánto espacio se está usando en la partición principal.
+Interpretación: Muestra cuánto espacio se está usando en la partición principal.
 
-**Panel 4: tráfico de red recibido**
+#### **Panel 4: tráfico de red recibido**
 
-Consulta:
+Consulta: `rate(node_network_receive_bytes_total{device!="lo"}[1m])`
 
-rate(node_network_receive_bytes_total{device!="lo"}\[1m\])
+Unidad: bytes/sec
 
-Título:
+#### **Panel 5:** Tráfico de red enviado
 
-Tráfico de red recibido
+Consulta: `rate(node_network_transmit_bytes_total{device!="lo"}[1m])`
 
-Unidad:
+Unidad: bytes/sec
 
-bytes/sec
+#### **Panel 6:** Escritura en disco (B/s)
 
-**Panel 5: tráfico de red enviado**
-
-Consulta:
-
-rate(node_network_transmit_bytes_total{device!="lo"}\[1m\])
-
-Título:
-
-Tráfico de red enviado
-
-Unidad:
-
-bytes/sec
-
-**Panel 6: Escritura en disco**
-
-Consulta:
-
-sum by (instance) ( rate(node_disk_written_bytes_total{device!\~"loop.\*\|ram.\*"}\[1m\]) )
-
-Título: Escritura en disco (B/s)
+Consulta: `sum by (instance) ( rate(node_disk_written_bytes_total{device!~"loop.*|ram.*"}[1m]) )`
 
 Tipo de visualización: Time series
 
 Unidad: bytes/sec
 
-**Resultado esperado**
+#### **Resultado esperado**
 
 Este panel debería mostrar picos cuando el sistema escriba datos en disco. Por ejemplo, al crear un fichero grande, instalar paquetes o realizar operaciones intensivas de escritura.
 
-**Panel 7: Lectura en disco**
+#### **Panel 7: Lectura en disco** (B/s)
 
-Consulta:
-
-sum by (instance) ( rate(node_disk_read_bytes_total{device!\~"loop.\*\|ram.\*"}\[1m\]) )
-
-Título: Escritura en disco (B/s)
+Consulta: `sum by (instance) ( rate(node_disk_read_bytes_total{device!~"loop.*|ram.*"}[1m]) )`
 
 Tipo de visualización: Time series
 
 Unidad: bytes/sec
 
-**Resultado esperado**
+#### **Resultado esperado**
 
 Este panel debería mostrar picos cuando el sistema lea datos del disco. Por ejemplo, al abrir ficheros grandes, cargar datos o leer información desde una base de datos.
 
-**15. Guardar el dashboard**
-
-Pulsamos:
-
-**Save dashboard**
-
-Nombre recomendado:
+#### **Guardar el dashboard**
 
 **Monitorización básica del servidor Ubuntu**
 
-Descripción:
+Descripción: Dashboard básico para visualizar CPU, memoria, disco y red mediante Grafana, Prometheus y Node Exporter.
 
-Dashboard básico para visualizar CPU, memoria, disco y red mediante Grafana, Prometheus y Node Exporter.
-
-**16. Generar carga para ver cambios en el dashboard**
+### **Generar carga para ver cambios en el dashboard**
 
 Ahora vamos a provocar algo de actividad para que el dashboard no parezca un electrocardiograma de un muñeco de cera.
 
 Generamos carga de CPU durante 60 segundos:
 
-timeout 60s bash -c 'while true; do true; done' &\
-timeout 60s bash -c 'while true; do true; done' &\
-wait
+`timeout 60s bash -c 'while true; do true; done' &timeout 60s bash -c 'while true; do true; done' &wait`
 
 Esto genera carga de CPU durante **60 segundos** usando **dos** procesos.
 
@@ -728,101 +696,136 @@ Volvemos a Grafana y observamos el panel de CPU.
 
 Ahora generamos algo de uso de disco:
 
-dd if=/dev/zero of=/tmp/prueba-grafana.dat bs=1M count=512 oflag=direct
+`dd if=/dev/zero of=/tmp/prueba-grafana.dat bs=1M count=512 oflag=direct`
 
 Eliminamos el fichero:
 
-rm /tmp/prueba-grafana.dat
+`rm /tmp/prueba-grafana.dat`
 
 Ahora vamos a provocar actividad de **escritura** para comprobar que el panel funciona.
 
 Ejecutamos:
 
-sudo dd if=/dev/zero of=/tmp/prueba-escritura.img bs=1M count=2048 status=progress conv=fsync
+`sudo dd if=/dev/zero of=/tmp/prueba-escritura.img bs=1M count=2048 status=progress conv=fsync`
 
 Una vez creado el fichero anterior, vamos a **leerlo** para comprobar el panel de lectura.
 
 Ejecutamos:
 
-sudo dd if=/tmp/prueba-escritura.img of=/dev/null bs=1M status=progress iflag=direct
+`sudo dd if=/tmp/prueba-escritura.img of=/dev/null bs=1M status=progress iflag=direct`
 
 **Limpiar la prueba**
 
 Cuando terminemos, eliminamos el fichero de prueba:
 
-sudo rm /tmp/prueba-escritura.img
+`sudo rm /tmp/prueba-escritura.img`
 
-Preguntas para responder:
+### Preguntas para responder:
 
-1\. ¿Qué panel ha cambiado al ejecutar stress-ng?
+1\. ¿Qué panel ha cambiado al ejecutar stress-ng?\
+![](images/paste-73.png)
 
-2\. ¿Qué métrica permite ver el uso de CPU?
+2\. ¿Qué métrica permite ver el uso de CPU? `node_cpu_seconds_total`
 
-3\. ¿Qué diferencia hay entre ver la información en Prometheus y verla en Grafana?
+3\. ¿Qué diferencia hay entre ver la información en Prometheus y verla en Grafana? grafana permite crear graficas
 
-4\. ¿Qué ventaja tiene guardar un dashboard?
+4\. ¿Qué ventaja tiene guardar un dashboard? poder agrupar metricas similares y monitorizar actividad relacionada
 
-5\. ¿Qué problemas podríamos detectar antes de que el usuario final se queje?
+5\. ¿Qué problemas podríamos detectar antes de que el usuario final se queje? creando alertas podemos saber cuando un recurso esta bajo presión
 
-**17. Importar un dashboard ya preparado**
+### **Importar un dashboard ya preparado**
 
 Además del dashboard manual, podemos importar un dashboard ya creado por la comunidad.
 
-En Grafana:
+En Grafana: Dashboards \>New\> Import\
+![](images/paste-74.png)
 
-Dashboards
-
-New
-
-Import
-
-En el campo de ID ponemos:
-
-**1860**
+En el campo de ID ponemos: **1860**
 
 Ese dashboard corresponde a **Node Exporter Full**, preparado para mostrar muchas métricas de Linux usando Prometheus Node Exporter. La propia página del dashboard indica que usa el job_name: node, por eso en esta práctica hemos llamado node al trabajo de Prometheus. ([[Grafana Labs]{.underline}](https://grafana.com/grafana/dashboards/1860-node-exporter-full/))
 
-Seleccionamos la fuente de datos:
-
-Prometheus
-
-Pulsamos:
-
-Import
-
 Es posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas no activadas. No pasa nada: para esta práctica lo importante es entender el flujo de monitorización.
 
-**18. Comprobaciones finales**
+#  **Comprobaciones finales**
 
-Ejecutamos:
+## Estado de los contenedores
 
-docker compose ps
+Ejecutamos: `docker compose ps`
 
-Comprobamos los puertos:
+![](images/paste-75.png)
 
-ss -tulnp \| grep -E "3000\|9090\|9100"
+## Puertos
+
+Comprobamos los puertos: `ss -tulnp | grep -E "3000|9090|9100"`![](images/paste-76.png)
 
 Deberíamos ver:
 
-3000 → Grafana
+- 3000 → Grafana
 
-9090 → Prometheus
+- 9090 → Prometheus
 
-9100 → Node Exporter
+- 9100 → Node Exporter
 
-Comprobamos métricas:
+## Métricas Node Exporter
 
-curl http://localhost:9100/metrics \| grep node_memory \| head
+Comprobamos métricas: `curl http://localhost:9100/metrics | grep node_memory | head`Este comando está consultando **las métricas de memoria** que expone **Node Exporter** en el endpoint `/metrics`, y luego filtrando solo las que empiezan por `node_memory_`.\
+`head` hará que sólo se muestren las 10 primeras filas de información.
 
-Comprobamos Prometheus:
+Lo que dará es **información detallada del estado de la memoria RAM** de tu máquina, desglosada en diferentes categorías internas del kernel de Linux.
 
-http://IP_DEL_SERVIDOR:9090/targets
+![](images/paste-77.png)
+
+**Explicación del output**
+
+1\. `# HELP node_memory_Active_anon_bytes`
+
+> **Descripción de la métrica** Prometheus siempre incluye una línea `HELP` explicando qué es la métrica.
+
+2\. `# TYPE node_memory_Active_anon_bytes gauge`
+
+> **Tipo de métrica** Es un **gauge**, es decir, un valor que sube y baja (no es un contador).
+
+3\. `node_memory_Active_anon_bytes 3.1092736e+08`
+
+> **Valor actual de la métrica** Aquí tienes el valor en bytes: `3.1092736e+08` ≈ **310 MB**
+
+¿Qué significa *Active_anon_bytes*?
+
+- **Active** = páginas de memoria que el kernel considera “activas”, es decir, que se han usado recientemente y no se pueden descartar.
+
+- **anon** = *anonymous memory*, memoria que no pertenece a ningún archivo (por ejemplo, variables de procesos, heap, stack).
+
+**En resumen:** **Memoria activa usada por procesos (no asociada a archivos).**
+
+4\. `node_memory_Active_bytes 7.97720576e+08`
+
+**Memoria activa total que el sistema está usando y no puede liberar.** Esto incluye **toda la memoria activa**, tanto:
+
+- anónima (`Active_anon`)
+
+- de archivos (`Active_file`)
+
+5\. `node_memory_Active_file_bytes 4.86793216e+08`Esto es la parte de la memoria activa que **sí está asociada a archivos**, por ejemplo:
+
+- binarios cargados
+
+- bibliotecas dinámicas
+
+- páginas de archivos que se han usado recientemente
+
+6\. `node_memory_AnonHugePages_bytes`Aquí empieza la siguiente métrica, pero tu `head` corta justo después.
+
+## Comprobamos Prometheus:
+
+## http://{IP_DEL_SERVIDOR}:9090/targets
+
+![](images/paste-78.png)
 
 Comprobamos Grafana:
 
 http://IP_DEL_SERVIDOR:3000
 
-**19. Entregables de la práctica**
+# **Entregables de la práctica**
 
 Cada estudiante debería entregar:
 
