@@ -746,7 +746,7 @@ Ese dashboard corresponde a **Node Exporter Full**, preparado para mostrar mucha
 
 Es posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas no activadas. No pasa nada: para esta práctica lo importante es entender el flujo de monitorización.
 
-#  **Comprobaciones finales**
+# **Comprobaciones finales**
 
 ## Estado de los contenedores
 
@@ -829,15 +829,15 @@ http://IP_DEL_SERVIDOR:3000
 
 Cada estudiante debería entregar:
 
-1\. Captura de docker compose ps con los tres contenedores en ejecución.
+1.  Captura de docker compose ps con los tres contenedores en ejecución.
 
-2\. Captura de Prometheus mostrando los targets en estado UP.
+2.  Captura de Prometheus mostrando los targets en estado UP.
 
-3\. Captura de Grafana con la fuente de datos Prometheus configurada correctamente.
+3.  Captura de Grafana con la fuente de datos Prometheus configurada correctamente.
 
-4\. Captura del dashboard creado manualmente.
+4.  Captura del dashboard creado manualmente.
 
-5\. Respuestas a las preguntas de reflexión.
+5.  Respuestas a las preguntas de reflexión.
 
 **20. Preguntas de reflexión**
 
@@ -859,27 +859,19 @@ Cada estudiante debería entregar:
 
 9\. ¿Por qué sería útil este sistema en un servidor de bases de datos?
 
-**21. Problemas frecuentes**
+# **Problemas frecuentes**
 
-**Grafana no abre**
+## **Grafana no abre**
 
-Comprobar que el contenedor está activo:
+Comprobar que el contenedor está activo: `docker compose ps`
 
-docker compose ps
+Comprobar logs: `docker compose logs grafana`
 
-Comprobar logs:
+Comprobar puerto: `ss -tulnp | grep 3000`
 
-docker compose logs grafana
+## **Prometheus no muestra el target node en UP**
 
-Comprobar puerto:
-
-ss -tulnp \| grep 3000
-
-**Prometheus no muestra el target node en UP**
-
-Revisar el fichero:
-
-cat prometheus/prometheus.yml
+Revisar el fichero: `cat prometheus/prometheus.yml`
 
 Debe aparecer:
 
@@ -891,21 +883,13 @@ static_configs:
 
 Reiniciar:
 
-docker compose restart prometheus
+`docker compose restart prometheus`
 
-**Grafana no conecta con Prometheus**
+## **Grafana no conecta con Prometheus**
 
-La URL correcta dentro de Grafana es:
+La URL correcta dentro de Grafana es: `http://prometheus:9090` No usar: `http://localhost:9090`
 
-http://prometheus:9090
-
-No usar:
-
-http://localhost:9090
-
-Dentro de contenedores, localhost suele ser la trampa clásica. Es como llamar a casa del vecino marcando tu propio timbre.
-
-**En VirtualBox no puedo acceder desde el equipo anfitrión**
+## **En VirtualBox no puedo acceder desde el equipo anfitrión**
 
 Opciones:
 
@@ -915,38 +899,12 @@ Opciones:
 
 3\. Abrir Grafana desde el navegador dentro de la propia VM, si tiene entorno gráfico.
 
-**22. Parar o eliminar la práctica**
+# **Parar o eliminar la práctica**
 
-Para parar los contenedores:
+Para parar los contenedores: `docker compose stop`
 
-docker compose stop
+Para volver a arrancarlos: `docker compose start`
 
-Para volver a arrancarlos:
+Para eliminarlos sin borrar los datos: `docker compose down`
 
-docker compose start
-
-Para eliminarlos sin borrar los datos:
-
-docker compose down
-
-Para eliminar contenedores y datos persistentes:
-
-docker compose down -v
-
-**23. Ampliación (para más adelante)**
-
-Una vez entendida esta práctica, podemos ampliarla añadiendo:
-
-PostgreSQL Exporter
-
-MySQL/MariaDB Exporter
-
-Alertas en Grafana
-
-Notificaciones por correo
-
-Monitorización de logs con Loki
-
-Monitorización de varios servidores Linux
-
-Monitorización de Windows con Windows Exporter
+Para eliminar contenedores y datos persistentes: `docker compose down -v`
