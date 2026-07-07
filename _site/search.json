@@ -73,7 +73,7 @@
     "href": "system_monitor_grafana.html",
     "title": "Monitor con Grafana",
     "section": "",
-    "text": "Esta guía te ayudará a desplegar tu primer entorno de monitorización profesional usando el stack de código abierto más popular: Grafana + Prometheus + Windows Exporter. En este laboratorio vamos a usar un tablero preconfigurado creado por la comunidad, así que no entraremos en detalles sobre cómo configurar los dashboad de grafana porque no es el objetivo del curso.\nHasta ahora hemos utilizado herramientas locales de Windows (como el Administrador de Tareas, Resmon o Perfmon) para diagnosticar problemas en tiempo real. Sin embargo, en un entorno empresarial real, los administradores no entran servidor por servidor para ver cómo están; utilizan sistemas centralizados.\nPara esta práctica, vamos a abandonar las herramientas locales y montaremos el estándar de la industria (el stack de código abierto más popular). Este entorno se compone de tres piezas fundamentales que trabajan en equipo:\n\nEl Recolector (Windows Exporter): Es el agente o “chivato” que instalamos en la máquina que queremos vigilar. Las bases de datos modernas no saben leer métricas nativas de Windows directamente. El Exporter actúa como un traductor: extrae la información del núcleo de Windows (CPU, RAM, Disco) y la expone en una página web local en formato de texto plano estructurado.\nEl Almacenamiento (Prometheus): Es el “cerebro” y la base de datos de series temporales (Time-Series Database). Su trabajo es conectarse cada pocos segundos a la página web que ha creado el Exporter, leer esos datos de texto plano y almacenarlos históricamente con su marca de tiempo exacta. A este modelo de ir a buscar los datos proactivamente se le llama Pull Model (modelo de extracción).\nEl Visualizador (Grafana): Es “la cara bonita” del sistema. Grafana no recolecta ni almacena datos por sí mismo. Se conecta a la base de datos de Prometheus, le lanza consultas matemáticas y transforma esos datos crudos en paneles visuales, gráficos interactivos y alertas.\n\n¿Cómo es el flujo de datos? El ciclo de vida de una métrica en nuestro sistema funciona así: Windows genera los datos ➡️ Windows Exporter los traduce ➡️ Prometheus los recolecta y guarda ➡️ Grafana los consulta y los dibuja.\nUna vez entendida la arquitectura de estas tres capas, vamos a montarlas paso a paso.\n\n\nEste será el “chivato” que leerá cómo está tu CPU, RAM, Disco y Red.\n\nVe a la página oficial de versiones de Windows Exporter en GitHub: https://github.com/prometheus-community/windows_exporter/releases\nDescarga el archivo que termina en .msi (por ejemplo, windows_exporter-x.xx.x-amd64.msi). \nHaz doble clic en el instalador y dale a Siguiente &gt; Instalar. (Se instala como un Servicio de Windows en segundo plano). Deja todo como está por defecto.\n\nVerificación: Abre tu navegador de internet y entra en http://localhost:9182/metrics.\n\nSi ves una pantalla blanca llena de texto incomprensible con números, ¡funciona perfectamente! Esos son los datos en bruto.\n\n\n\n\n\nAquí es donde guardaremos esos datos para poder ver el historial.\n\nVe a la web oficial de descargas de Prometheus: https://prometheus.io/download/\nBusca la sección “Prometheus” y descarga la versión para windows-amd64 (es un archivo .zip).\nExtrae la carpeta del .zip en tu disco duro (por ejemplo, en C:\\Prometheus\\).\nEntra en la carpeta y abre el archivo prometheus.yml con el Bloc de notas.\nVe al final del archivo. Verás una sección llamada scrape_configs:. Añade tu Windows Exporter para que quede exactamente así (respeta los espacios):\n\nscrape_configs:\n  - job_name: \"prometheus\"\n    static_configs:\n      - targets: [\"localhost:9090\"]\n\n  # AÑADE ESTO:\n  - job_name: \"mi_ordenador_windows\"\n    static_configs:\n      - targets: [\"localhost:9182\"]\n\nGuarda el archivo y haz doble clic en prometheus.exe para arrancarlo. Se quedará una ventana negra de consola abierta. Déjala ahí.\n\n\n\n\n\n¡Hora de ponerlo bonito!\n\nVe a la página de descarga de Grafana OSS: https://grafana.com/grafana/download?platform=windows\n\nDescarga el instalador de Windows (Windows Installer) y ejecútalo.\nUna vez instalado, abre tu navegador y ve a: http://localhost:3000\nTe pedirá usuario y contraseña. Pon admin en ambos. Luego te pedirá que cambies la contraseña (puedes saltarlo dándole a Skip).\n\n\n\n\nAhora tenemos que decirle a Grafana de dónde sacar los datos y qué plantilla usar.\nA. Conectar Prometheus:\n\nEn Grafana, ve al menú izquierdo, haz clic en Connections (Conexiones) y luego en Data Sources (Orígenes de datos).\nHaz clic en el botón azul Add data source.\nElige Prometheus.\nEn el campo “Prometheus server URL”, escribe: http://localhost:9090\nBaja hasta el final del todo y haz clic en Save & test. (Debería salir un tick verde que dice “Data source is working”).\n\nB. Importar el Panel (Dashboard): Grafana tiene paneles ya creados por la comunidad para que no tengas que empezar de cero.\n\nEn el menú izquierdo, ve a Dashboards (paneles) y haz clic en el botón New (Nuevo) en la esquina superior derecha, y elige Import.\n\nEn la casilla que dice “Import via grafana.com”, escribe el número 14694 y dale al botón “Load” a la derecha.\nEn la siguiente pantalla, abajo del todo donde dice “Prometheus”, despliega y selecciona la base de datos de Prometheus que creamos en el paso anterior.\nHaz clic en Import.\n\n\n\n\nImportar está genial, pero para dominar la herramienta hay que saber pescar los datos. Vamos a crear un panel muy sencillo que nos muestre una línea con la Memoria RAM libre de nuestro equipo.\n\nEn tu dashboard actual (o en uno nuevo), haz clic en el botón Edit para poner el tablero en modo de edición\nAdd new element en la barra lateral derecha y luego selecciona + en el panel y después Edit visualization\n\nTe aparecerá la pantalla de edición. En la mitad inferior, verás una pestaña llamada Query. Asegúrate de que el origen de datos (Data source) seleccionado sea Prometheus.\nEn la caja de texto que dice Metric , escribe exactamente esta métrica que genera el Exporter: windows_memory_physical_free_bites\nSelecciona el tipo de grafico que quieres: time series.\n¡A ponerlo bonito! En el menú de la derecha, busca la sección Panel options y en Title escribe “RAM Libre”.\nBaja un poco más en ese mismo menú derecho hasta la sección Standard options. En Unit (Unidad), haz clic en “Choose”, escribe “bytes” y selecciona Data &gt; bytes(IEC). Esto hará que Grafana traduzca automáticamente esos millones de bytes crudos a Gigabytes (GB) de forma legible.\nPara terminar, haz clic en el botón azul Save arriba a la derecha.\n\n\nComo hemos instalado Grafana y Windows Exporter usando instaladores oficiales, Windows ya los ha configurado automáticamente como Servicios (exactamente esos que estudiaste en tus apuntes). Es decir, arrancan solos de forma invisible cada vez que enciendes el PC.\nSin embargo, Prometheus lo descargamos en un .zip portátil. Ahora mismo está corriendo en esa ventana negra de consola. Si la cierras (o si reinicias el ordenador), Prometheus se apaga. Grafana seguirá funcionando y cargando la web, pero las gráficas se quedarán congeladas porque la base de datos no está recogiendo información nueva.\nPara que tu monitor sea 100% autónomo y no tengas que abrir Prometheus a mano cada día, vamos a ver un truco de Administrador de Sistemas usando una herramienta nativa de Windows: el Programador de tareas.\nAquí tienes cómo hacerlo en un par de clics para que arranque solo y de forma invisible:\n\nCierra la ventana negra de Prometheus (para apagarlo ahora mismo).\nAbre el menú de inicio de Windows, escribe Programador de tareas (o Task Scheduler si lo tienes en inglés) y ábrelo.\nEn el menú de la derecha, haz clic en “Crear tarea básica...”.\nNombre: Ponle algo como Iniciar Prometheus y dale a Siguiente.\nDesencadenador: Elige “Al iniciar el equipo” y dale a Siguiente.\nAcción: Elige “Iniciar un programa” y dale a Siguiente.\nPrograma/script: Dale a “Examinar” y busca tu archivo prometheus.exe.\nMUY IMPORTANTE - Iniciar en (opcional): Aquí tienes que escribir la ruta de la carpeta donde está Prometheus (por ejemplo: C:\\Prometheus\\). Si no pones esto, Prometheus no sabrá dónde encontrar su archivo de configuración .yml. Dale a Siguiente y luego a Finalizar.\n\nEl último toque maestro (para que sea invisible):\n\nEn la lista del Programador de tareas, busca la tarea que acabas de crear (“Iniciar Prometheus”), haz doble clic sobre ella para abrir sus Propiedades.\nEn la pestaña General, marca la casilla “Ejecutar tanto si el usuario inició sesión como si no” y también marca “Ejecutar con los privilegios más altos”. (Te pedirá la contraseña de tu usuario de Windows para confirmar).\n\n¡Y listo! Ya puedes reiniciar el ordenador tranquilamente. A partir de ahora, Grafana, Windows Exporter y Prometheus arrancarán solos en segundo plano sin que tú veas ninguna consola negra, y tendrás tu dashboard de métricas siempre disponible en localhost:3000.\n\nLos datos de Prometheus\n\n¿Dónde se guardan? Cuando arrancas Prometheus por primera vez, él crea automáticamente una carpeta llamada data justo al lado del archivo prometheus.exe. Ahí dentro es donde va escribiendo todo el historial en su propio formato. Aunque cierres la ventana negra y la vuelvas a abrir mañana, Prometheus leerá esa carpeta y el gráfico continuará donde lo dejaste.\nEl borrado automático (Retención): Por defecto, Prometheus está configurado para guardar los datos durante 15 días. Una vez que se alcanza el día 16, empieza a borrar automáticamente los datos más antiguos. Nunca va a crecer de forma descontrolada.\n¿Cómo borrarlo tú manualmente? Como esto es un laboratorio para hacer pruebas, si algún día quieres hacer “borrón y cuenta nueva”, es súper sencillo:\n\nCierra la ventana negra de Prometheus.\nVe a la carpeta donde lo tienes guardado.\nSelecciona la carpeta data y bórrala sin miedo.\nLa próxima vez que arranques Prometheus, creará una carpeta data nueva y empezará a grabar desde cero.",
+    "text": "Esta lección es extra y no se vio en clase, aunque está basada en todo lo visto en clase.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -85,8 +85,8 @@
     "objectID": "system_monitor_grafana.html#paso-1-instalar-el-recolector-windows-exporter",
     "href": "system_monitor_grafana.html#paso-1-instalar-el-recolector-windows-exporter",
     "title": "Monitor con Grafana",
-    "section": "",
-    "text": "Este será el “chivato” que leerá cómo está tu CPU, RAM, Disco y Red.\n\nVe a la página oficial de versiones de Windows Exporter en GitHub: https://github.com/prometheus-community/windows_exporter/releases\nDescarga el archivo que termina en .msi (por ejemplo, windows_exporter-x.xx.x-amd64.msi). \nHaz doble clic en el instalador y dale a Siguiente &gt; Instalar. (Se instala como un Servicio de Windows en segundo plano). Deja todo como está por defecto.\n\nVerificación: Abre tu navegador de internet y entra en http://localhost:9182/metrics.\n\nSi ves una pantalla blanca llena de texto incomprensible con números, ¡funciona perfectamente! Esos son los datos en bruto.",
+    "section": "1.1 Paso 1: Instalar el Recolector (Windows Exporter)",
+    "text": "1.1 Paso 1: Instalar el Recolector (Windows Exporter)\nEste será el “chivato” que leerá cómo está tu CPU, RAM, Disco y Red.\n\nVe a la página oficial de versiones de Windows Exporter en GitHub: https://github.com/prometheus-community/windows_exporter/releases\nDescarga el archivo que termina en .msi (por ejemplo, windows_exporter-x.xx.x-amd64.msi). \nHaz doble clic en el instalador y dale a Siguiente &gt; Instalar. (Se instala como un Servicio de Windows en segundo plano). Deja todo como está por defecto.\n\nVerificación: Abre tu navegador de internet y entra en http://localhost:9182/metrics.\n\nSi ves una pantalla blanca llena de texto incomprensible con números, ¡funciona perfectamente! Esos son los datos en bruto.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -98,8 +98,8 @@
     "objectID": "system_monitor_grafana.html#paso-2-instalar-la-base-de-datos-prometheus",
     "href": "system_monitor_grafana.html#paso-2-instalar-la-base-de-datos-prometheus",
     "title": "Monitor con Grafana",
-    "section": "",
-    "text": "Aquí es donde guardaremos esos datos para poder ver el historial.\n\nVe a la web oficial de descargas de Prometheus: https://prometheus.io/download/\nBusca la sección “Prometheus” y descarga la versión para windows-amd64 (es un archivo .zip).\nExtrae la carpeta del .zip en tu disco duro (por ejemplo, en C:\\Prometheus\\).\nEntra en la carpeta y abre el archivo prometheus.yml con el Bloc de notas.\nVe al final del archivo. Verás una sección llamada scrape_configs:. Añade tu Windows Exporter para que quede exactamente así (respeta los espacios):\n\nscrape_configs:\n  - job_name: \"prometheus\"\n    static_configs:\n      - targets: [\"localhost:9090\"]\n\n  # AÑADE ESTO:\n  - job_name: \"mi_ordenador_windows\"\n    static_configs:\n      - targets: [\"localhost:9182\"]\n\nGuarda el archivo y haz doble clic en prometheus.exe para arrancarlo. Se quedará una ventana negra de consola abierta. Déjala ahí.",
+    "section": "1.2 Paso 2: Instalar la Base de Datos (Prometheus)",
+    "text": "1.2 Paso 2: Instalar la Base de Datos (Prometheus)\nAquí es donde guardaremos esos datos para poder ver el historial.\n\nVe a la web oficial de descargas de Prometheus: https://prometheus.io/download/\nBusca la sección “Prometheus” y descarga la versión para windows-amd64 (es un archivo .zip).\nExtrae la carpeta del .zip en tu disco duro (por ejemplo, en C:\\Prometheus\\).\nEntra en la carpeta y abre el archivo prometheus.yml con el Bloc de notas.\nVe al final del archivo. Verás una sección llamada scrape_configs:. Añade tu Windows Exporter para que quede exactamente así (respeta los espacios):\n\nscrape_configs:\n  - job_name: \"prometheus\"\n    static_configs:\n      - targets: [\"localhost:9090\"]\n\n  # AÑADE ESTO:\n  - job_name: \"mi_ordenador_windows\"\n    static_configs:\n      - targets: [\"localhost:9182\"]\n\nGuarda el archivo y haz doble clic en prometheus.exe para arrancarlo. Se quedará una ventana negra de consola abierta. Déjala ahí.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -111,8 +111,8 @@
     "objectID": "system_monitor_grafana.html#paso-3-instalar-el-visualizador-grafana",
     "href": "system_monitor_grafana.html#paso-3-instalar-el-visualizador-grafana",
     "title": "Monitor con Grafana",
-    "section": "",
-    "text": "¡Hora de ponerlo bonito!\n\nVe a la página de descarga de Grafana OSS: https://grafana.com/grafana/download?platform=windows\n\nDescarga el instalador de Windows (Windows Installer) y ejecútalo.\nUna vez instalado, abre tu navegador y ve a: http://localhost:3000\nTe pedirá usuario y contraseña. Pon admin en ambos. Luego te pedirá que cambies la contraseña (puedes saltarlo dándole a Skip).",
+    "section": "1.3 Paso 3: Instalar el Visualizador (Grafana)",
+    "text": "1.3 Paso 3: Instalar el Visualizador (Grafana)\n¡Hora de ponerlo bonito!\n\nVe a la página de descarga de Grafana OSS: https://grafana.com/grafana/download?platform=windows\n\nDescarga el instalador de Windows (Windows Installer) y ejecútalo.\nUna vez instalado, abre tu navegador y ve a: http://localhost:3000\nTe pedirá usuario y contraseña. Pon admin en ambos. Luego te pedirá que cambies la contraseña (puedes saltarlo dándole a Skip).",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -124,8 +124,8 @@
     "objectID": "system_monitor_grafana.html#paso-4-conectar-y-crear-el-panel-mágico",
     "href": "system_monitor_grafana.html#paso-4-conectar-y-crear-el-panel-mágico",
     "title": "Monitor con Grafana",
-    "section": "",
-    "text": "Ahora tenemos que decirle a Grafana de dónde sacar los datos y qué plantilla usar.\nA. Conectar Prometheus:\n\nEn Grafana, ve al menú izquierdo, haz clic en Connections (Conexiones) y luego en Data Sources (Orígenes de datos).\nHaz clic en el botón azul Add data source.\nElige Prometheus.\nEn el campo “Prometheus server URL”, escribe: http://localhost:9090\nBaja hasta el final del todo y haz clic en Save & test. (Debería salir un tick verde que dice “Data source is working”).\n\nB. Importar el Panel (Dashboard): Grafana tiene paneles ya creados por la comunidad para que no tengas que empezar de cero.\n\nEn el menú izquierdo, ve a Dashboards (paneles) y haz clic en el botón New (Nuevo) en la esquina superior derecha, y elige Import.\n\nEn la casilla que dice “Import via grafana.com”, escribe el número 14694 y dale al botón “Load” a la derecha.\nEn la siguiente pantalla, abajo del todo donde dice “Prometheus”, despliega y selecciona la base de datos de Prometheus que creamos en el paso anterior.\nHaz clic en Import.",
+    "section": "1.4 Paso 4: Conectar y Crear el Panel Mágico",
+    "text": "1.4 Paso 4: Conectar y Crear el Panel Mágico\nAhora tenemos que decirle a Grafana de dónde sacar los datos y qué plantilla usar.\nA. Conectar Prometheus:\n\nEn Grafana, ve al menú izquierdo, haz clic en Connections (Conexiones) y luego en Data Sources (Orígenes de datos).\nHaz clic en el botón azul Add data source.\nElige Prometheus.\nEn el campo “Prometheus server URL”, escribe: http://localhost:9090\nBaja hasta el final del todo y haz clic en Save & test. (Debería salir un tick verde que dice “Data source is working”).\n\nB. Importar el Panel (Dashboard): Grafana tiene paneles ya creados por la comunidad para que no tengas que empezar de cero.\n\nEn el menú izquierdo, ve a Dashboards (paneles) y haz clic en el botón New (Nuevo) en la esquina superior derecha, y elige Import.\n\nEn la casilla que dice “Import via grafana.com”, escribe el número 14694 y dale al botón “Load” a la derecha.\nEn la siguiente pantalla, abajo del todo donde dice “Prometheus”, despliega y selecciona la base de datos de Prometheus que creamos en el paso anterior.\nHaz clic en Import.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -137,8 +137,8 @@
     "objectID": "system_monitor_grafana.html#paso-5-crear-tu-propio-gráfico-desde-cero-bonus",
     "href": "system_monitor_grafana.html#paso-5-crear-tu-propio-gráfico-desde-cero-bonus",
     "title": "Monitor con Grafana",
-    "section": "",
-    "text": "Importar está genial, pero para dominar la herramienta hay que saber pescar los datos. Vamos a crear un panel muy sencillo que nos muestre una línea con la Memoria RAM libre de nuestro equipo.\n\nEn tu dashboard actual (o en uno nuevo), haz clic en el botón Edit para poner el tablero en modo de edición\nAdd new element en la barra lateral derecha y luego selecciona + en el panel y después Edit visualization\n\nTe aparecerá la pantalla de edición. En la mitad inferior, verás una pestaña llamada Query. Asegúrate de que el origen de datos (Data source) seleccionado sea Prometheus.\nEn la caja de texto que dice Metric , escribe exactamente esta métrica que genera el Exporter: windows_memory_physical_free_bites\nSelecciona el tipo de grafico que quieres: time series.\n¡A ponerlo bonito! En el menú de la derecha, busca la sección Panel options y en Title escribe “RAM Libre”.\nBaja un poco más en ese mismo menú derecho hasta la sección Standard options. En Unit (Unidad), haz clic en “Choose”, escribe “bytes” y selecciona Data &gt; bytes(IEC). Esto hará que Grafana traduzca automáticamente esos millones de bytes crudos a Gigabytes (GB) de forma legible.\nPara terminar, haz clic en el botón azul Save arriba a la derecha.\n\n\nComo hemos instalado Grafana y Windows Exporter usando instaladores oficiales, Windows ya los ha configurado automáticamente como Servicios (exactamente esos que estudiaste en tus apuntes). Es decir, arrancan solos de forma invisible cada vez que enciendes el PC.\nSin embargo, Prometheus lo descargamos en un .zip portátil. Ahora mismo está corriendo en esa ventana negra de consola. Si la cierras (o si reinicias el ordenador), Prometheus se apaga. Grafana seguirá funcionando y cargando la web, pero las gráficas se quedarán congeladas porque la base de datos no está recogiendo información nueva.\nPara que tu monitor sea 100% autónomo y no tengas que abrir Prometheus a mano cada día, vamos a ver un truco de Administrador de Sistemas usando una herramienta nativa de Windows: el Programador de tareas.\nAquí tienes cómo hacerlo en un par de clics para que arranque solo y de forma invisible:\n\nCierra la ventana negra de Prometheus (para apagarlo ahora mismo).\nAbre el menú de inicio de Windows, escribe Programador de tareas (o Task Scheduler si lo tienes en inglés) y ábrelo.\nEn el menú de la derecha, haz clic en “Crear tarea básica...”.\nNombre: Ponle algo como Iniciar Prometheus y dale a Siguiente.\nDesencadenador: Elige “Al iniciar el equipo” y dale a Siguiente.\nAcción: Elige “Iniciar un programa” y dale a Siguiente.\nPrograma/script: Dale a “Examinar” y busca tu archivo prometheus.exe.\nMUY IMPORTANTE - Iniciar en (opcional): Aquí tienes que escribir la ruta de la carpeta donde está Prometheus (por ejemplo: C:\\Prometheus\\). Si no pones esto, Prometheus no sabrá dónde encontrar su archivo de configuración .yml. Dale a Siguiente y luego a Finalizar.\n\nEl último toque maestro (para que sea invisible):\n\nEn la lista del Programador de tareas, busca la tarea que acabas de crear (“Iniciar Prometheus”), haz doble clic sobre ella para abrir sus Propiedades.\nEn la pestaña General, marca la casilla “Ejecutar tanto si el usuario inició sesión como si no” y también marca “Ejecutar con los privilegios más altos”. (Te pedirá la contraseña de tu usuario de Windows para confirmar).\n\n¡Y listo! Ya puedes reiniciar el ordenador tranquilamente. A partir de ahora, Grafana, Windows Exporter y Prometheus arrancarán solos en segundo plano sin que tú veas ninguna consola negra, y tendrás tu dashboard de métricas siempre disponible en localhost:3000.\n\nLos datos de Prometheus\n\n¿Dónde se guardan? Cuando arrancas Prometheus por primera vez, él crea automáticamente una carpeta llamada data justo al lado del archivo prometheus.exe. Ahí dentro es donde va escribiendo todo el historial en su propio formato. Aunque cierres la ventana negra y la vuelvas a abrir mañana, Prometheus leerá esa carpeta y el gráfico continuará donde lo dejaste.\nEl borrado automático (Retención): Por defecto, Prometheus está configurado para guardar los datos durante 15 días. Una vez que se alcanza el día 16, empieza a borrar automáticamente los datos más antiguos. Nunca va a crecer de forma descontrolada.\n¿Cómo borrarlo tú manualmente? Como esto es un laboratorio para hacer pruebas, si algún día quieres hacer “borrón y cuenta nueva”, es súper sencillo:\n\nCierra la ventana negra de Prometheus.\nVe a la carpeta donde lo tienes guardado.\nSelecciona la carpeta data y bórrala sin miedo.\nLa próxima vez que arranques Prometheus, creará una carpeta data nueva y empezará a grabar desde cero.",
+    "section": "1.5 Paso 5: Crear tu propio gráfico desde cero (Bonus)",
+    "text": "1.5 Paso 5: Crear tu propio gráfico desde cero (Bonus)\nImportar está genial, pero para dominar la herramienta hay que saber pescar los datos. Vamos a crear un panel muy sencillo que nos muestre una línea con la Memoria RAM libre de nuestro equipo.\n\nEn tu dashboard actual (o en uno nuevo), haz clic en el botón Edit para poner el tablero en modo de edición\nAdd new element en la barra lateral derecha y luego selecciona + en el panel y después Edit visualization\n\nTe aparecerá la pantalla de edición. En la mitad inferior, verás una pestaña llamada Query. Asegúrate de que el origen de datos (Data source) seleccionado sea Prometheus.\nEn la caja de texto que dice Metric , escribe exactamente esta métrica que genera el Exporter: windows_memory_physical_free_bites\nSelecciona el tipo de grafico que quieres: time series.\n¡A ponerlo bonito! En el menú de la derecha, busca la sección Panel options y en Title escribe “RAM Libre”.\nBaja un poco más en ese mismo menú derecho hasta la sección Standard options. En Unit (Unidad), haz clic en “Choose”, escribe “bytes” y selecciona Data &gt; bytes(IEC). Esto hará que Grafana traduzca automáticamente esos millones de bytes crudos a Gigabytes (GB) de forma legible.\nPara terminar, haz clic en el botón azul Save arriba a la derecha.\n\n\nComo hemos instalado Grafana y Windows Exporter usando instaladores oficiales, Windows ya los ha configurado automáticamente como Servicios (exactamente esos que estudiaste en tus apuntes). Es decir, arrancan solos de forma invisible cada vez que enciendes el PC.\nSin embargo, Prometheus lo descargamos en un .zip portátil. Ahora mismo está corriendo en esa ventana negra de consola. Si la cierras (o si reinicias el ordenador), Prometheus se apaga. Grafana seguirá funcionando y cargando la web, pero las gráficas se quedarán congeladas porque la base de datos no está recogiendo información nueva.\nPara que tu monitor sea 100% autónomo y no tengas que abrir Prometheus a mano cada día, vamos a ver un truco de Administrador de Sistemas usando una herramienta nativa de Windows: el Programador de tareas.\nAquí tienes cómo hacerlo en un par de clics para que arranque solo y de forma invisible:\n\nCierra la ventana negra de Prometheus (para apagarlo ahora mismo).\nAbre el menú de inicio de Windows, escribe Programador de tareas (o Task Scheduler si lo tienes en inglés) y ábrelo.\nEn el menú de la derecha, haz clic en “Crear tarea básica…”.\nNombre: Ponle algo como Iniciar Prometheus y dale a Siguiente.\nDesencadenador: Elige “Al iniciar el equipo” y dale a Siguiente.\nAcción: Elige “Iniciar un programa” y dale a Siguiente.\nPrograma/script: Dale a “Examinar” y busca tu archivo prometheus.exe.\nMUY IMPORTANTE - Iniciar en (opcional): Aquí tienes que escribir la ruta de la carpeta donde está Prometheus (por ejemplo: C:\\Prometheus\\). Si no pones esto, Prometheus no sabrá dónde encontrar su archivo de configuración .yml. Dale a Siguiente y luego a Finalizar.\n\nEl último toque maestro (para que sea invisible):\n\nEn la lista del Programador de tareas, busca la tarea que acabas de crear (“Iniciar Prometheus”), haz doble clic sobre ella para abrir sus Propiedades.\nEn la pestaña General, marca la casilla “Ejecutar tanto si el usuario inició sesión como si no” y también marca “Ejecutar con los privilegios más altos”. (Te pedirá la contraseña de tu usuario de Windows para confirmar).\n\n¡Y listo! Ya puedes reiniciar el ordenador tranquilamente. A partir de ahora, Grafana, Windows Exporter y Prometheus arrancarán solos en segundo plano sin que tú veas ninguna consola negra, y tendrás tu dashboard de métricas siempre disponible en localhost:3000.\n\nLos datos de Prometheus\n\n¿Dónde se guardan? Cuando arrancas Prometheus por primera vez, él crea automáticamente una carpeta llamada data justo al lado del archivo prometheus.exe. Ahí dentro es donde va escribiendo todo el historial en su propio formato. Aunque cierres la ventana negra y la vuelvas a abrir mañana, Prometheus leerá esa carpeta y el gráfico continuará donde lo dejaste.\nEl borrado automático (Retención): Por defecto, Prometheus está configurado para guardar los datos durante 15 días. Una vez que se alcanza el día 16, empieza a borrar automáticamente los datos más antiguos. Nunca va a crecer de forma descontrolada.\n¿Cómo borrarlo tú manualmente? Como esto es un laboratorio para hacer pruebas, si algún día quieres hacer “borrón y cuenta nueva”, es súper sencillo:\n\nCierra la ventana negra de Prometheus.\nVe a la carpeta donde lo tienes guardado.\nSelecciona la carpeta data y bórrala sin miedo.\nLa próxima vez que arranques Prometheus, creará una carpeta data nueva y empezará a grabar desde cero.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -251,159 +251,567 @@
     ]
   },
   {
-    "objectID": "ordenadores.html",
-    "href": "ordenadores.html",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "objectID": "procesos.html",
+    "href": "procesos.html",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
     "section": "",
-    "text": "Físicamente, un ordenador de escritorio, un portátil y un servidor corporativo están compuestos por los mismos tipos de componentes esenciales (procesador, memoria, almacenamiento). La diferencia fundamental no radica en su naturaleza física, sino en el servicio y la carga de trabajo para los que están diseñados, así como en su redundancia, potencia y tolerancia a fallos.",
+    "text": "Un proceso es un programa en ejecución. Un proceso incluye:\n\nEl código del programa.\nLa memoria que usa (variables, datos, pila, heap).\nSus recursos asignados (CPU, archivos abiertos, puertos, etc.).\nSu estado (ejecutándose, esperando, detenido).\n\nCada proceso tiene un PID (Process ID) único.\nEjemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL. Puede crear subprocesos o threads.\n\n\nDentro de cada proceso existen subprocesos (threads), que son las unidades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario….\nEl sistema operativo los gestiona mediante un planificador que reparte CPU.\n\n\n\n\nUn servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas.\n\nSe inician automáticamente al arrancar el sistema (o bajo demanda).\nNo requieren interacción del usuario.\nSuelen ser críticos para el funcionamiento del sistema.\n\nEjemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).\n\nEn Windows: se llaman Servicios. En Linux: se gestionan con systemd y se llaman daemons (terminan en “d”, como sshd).\n\n\n\n\nUna tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar. Una tarea puede conllevar procesos y servicios.\nEl administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.\nEjemplos: programar copias de seguridad.\n\n\n\nSon procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.\nPueden ser servicios, demonios o procesos lanzados manualmente.\nUn proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).\nEjemplos: sincronización de OneDrive.exe\n\n\n\nSon los pilares invisibles del SO. Los servicios son procesos especiales que:\n\nSe inician antes de que el usuario inicie sesión\nno tienen interfaz gráfica visible\nSe administran mediante la Consola de Servicios services.msc\nRealizan funciones críticas del sistema\n\nTodos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.\n\n\nProceso: programa en ejecución con recursos asignados.\nServicio: proceso del sistema que corre en segundo plano y ofrece funciones.\nTarea: unidad de trabajo (proceso, hilo o trabajo programado).\nProceso en segundo plano: proceso sin interacción directa con el usuario.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#interfaces-de-entradasalida",
-    "href": "ordenadores.html#interfaces-de-entradasalida",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "1.1 Interfaces de entrada/Salida",
-    "text": "1.1 Interfaces de entrada/Salida\n\nConector: Parte física donde se enchufa algo (USB, HDMI, RJ45…)\nPuerto: Puerto de conexión físico o lógico. Si es físico se está refieriendo a un conector\nInterfaz: Reglas físicas y lógicas de comunicación.\n\nInterfaces Internas (Dentro de la torre/servidor)\n\nSATA (Serial ATA): El cable y conector estándar de toda la vida para discos duros mecánicos (HDD) y SSDs de 2.5 pulgadas. Es fiable, pero hoy en día es el “cuello de botella” en velocidad.\nPCIe (Peripheral Component Interconnect Express): El bus principal y más rápido de la placa base. Son las ranuras largas donde se pinchan las tarjetas gráficas, tarjetas de red de alta velocidad y los adaptadores para SSDs modernos.\nM.2: Es un formato físico miniatura (parece un paquete de chicles plano). Se conecta directamente pegado a la placa base y se usa para SSDs modernos (usando el protocolo ultrarrápido NVMe) o tarjetas Wi-Fi en portátiles.\nU.2 / U.3: Son los conectores de “gama alta” equivalentes al M.2 pero diseñados exclusivamente para servidores empresariales. Permiten conectar SSDs NVMe muy potentes con cables y sacarlos “en caliente” sin apagar el servidor.\nSAS (Serial Attached SCSI): El “hermano mayor y profesional” del SATA. Es una interfaz de conexión para discos duros diseñada para servidores de bases de datos de alto rendimiento, preparada para estar leyendo y escribiendo datos 24/7 sin fallar.\n\nInterfaces Externas (Periféricos y conexiones fuera de la caja)\n\nUSB / USB4 (Universal Serial Bus): El conector universal por excelencia para ratones, teclados, pendrives, etc. Sus últimas versiones (USB-C / USB4) son tan rápidas que pueden transmitir datos masivos, energía e imagen a la vez.\nHDMI / DisplayPort: Los cables dedicados exclusivamente a mandar vídeo y audio desde el ordenador al monitor. HDMI es el estándar de las televisiones, y DisplayPort es el estándar informático preferido para monitores de altísima resolución o muchos hercios.\nEthernet RJ45: La clavija clásica de plástico transparente con un “clic” para el cable de red. Es la forma física de conectar tu ordenador por cable al router o al switch para tener una conexión a internet o red local (LAN) estable y rápida.\nThunderbolt: Una tecnología desarrollada por Intel y Apple. Físicamente usa el mismo conector que un USB-C, pero por dentro es una “autopista” muchísimo más rápida. Permite cosas extremas como conectar varias pantallas 4K en cadena o conectar una tarjeta gráfica externa a un portátil.\n\n\nBus: Canal Compartido entre componentes.\nProtocolo: Reglas de comunicación entre dispositivos.\n\nVamos a separarlo con una analogía que no falla. Imagina que dos empresas (el procesador y un disco duro, por ejemplo) tienen que trabajar juntas y pasarse mercancía de un lado a otro.\n\nEl Conector o Puerto es la parte puramente física. Es el muelle de carga de la fábrica. Tiene una forma y un tamaño concretos para que los camiones encajen y no puedas meter el enchufe al revés.\nEl Protocolo es la parte puramente lógica. Es el “idioma” que hablan los trabajadores y las reglas del intercambio: “yo te paso dos cajas, tú me firmas un albarán para confirmar que las tienes, y luego te paso otras dos”.\nLa Interfaz es el acuerdo completo. Es el estándar que define ambas cosas a la vez: cómo es la conexión física (los pines, el cable, el voltaje) y cómo es la comunicación lógica (la velocidad, el formato de los datos, el idioma).\n\nUn ejemplo para aterrizarlo\nPiensa en la interfaz SATA (la típica de los discos duros antiguos). Cuando dices que un disco es SATA, no solo te refieres a que usa ese cablecito de plástico con forma de “L”. Te refieres a que usa ese cable y además habla el idioma “SATA” con la placa base para transmitir los datos a una velocidad concreta. Es el paquete entero.\n¿Por qué existen tantas interfaces distintas (USB, PCIe, HDMI…)? Porque no todos los componentes necesitan el mismo nivel de exigencia:\n\nUn teclado solo necesita enviar datos muy simples y lentos (las letras que pulsas). Por eso usa la interfaz USB, que físicamente es un enchufe pequeño y lógicamente es un idioma muy universal y fácil de gestionar.\nUn disco duro moderno de alto rendimiento para bases de datos necesita mover gigabytes de información en milisegundos. Por eso usa la interfaz PCIe (o M.2), que físicamente es una ranura con muchísimos conectores dorados pegada a la placa base, y lógicamente es una “autopista” de múltiples carriles directos al procesador.\n\nBásicamente, la interfaz es el “contrato” total que firman dos piezas de hardware para poder conectarse y entenderse sin problemas.",
+    "objectID": "procesos.html#procesos",
+    "href": "procesos.html#procesos",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "",
+    "text": "Un proceso es un programa en ejecución. Un proceso incluye:\n\nEl código del programa.\nLa memoria que usa (variables, datos, pila, heap).\nSus recursos asignados (CPU, archivos abiertos, puertos, etc.).\nSu estado (ejecutándose, esperando, detenido).\n\nCada proceso tiene un PID (Process ID) único.\nEjemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL. Puede crear subprocesos o threads.\n\n\nDentro de cada proceso existen subprocesos (threads), que son las unidades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario….\nEl sistema operativo los gestiona mediante un planificador que reparte CPU.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#controladoras-y-drivers",
-    "href": "ordenadores.html#controladoras-y-drivers",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "1.2 Controladoras y Drivers",
-    "text": "1.2 Controladoras y Drivers\nUna controladora es el componente (hardware) encargado de gestionar un dispositivo o un conjunto de dispositivos. Actúa como intermediario entre el sistema y el hardware real, permitiendo que el equipo pueda usarlo correctamente. Puede estar ubicada en varios sitios:\n\nIntegrada en la placa base (muy común en PCs y servidores).\nIntegrada en el propio dispositivo (por ejemplo, un SSD NVMe).\nEn una tarjeta de expansión (como una controladora RAID dedicada).\nIncluso dentro del procesador (controladoras de memoria modernas).\n\n\n1.2.1 Tipos habituales de controladoras\n\nSATA: controla discos duros y SSD SATA.\nUSB: gestiona puertos y dispositivos USB.\nRed: controla la interfaz de red (Ethernet o Wi‑Fi).\nGráfica: gestiona la salida de vídeo y el procesamiento gráfico.\nRAID: combina varios discos para mejorar rendimiento o tolerancia a fallos.\nNVMe: controla SSDs de alta velocidad conectados por PCIe.\n\n\n\n1.2.2 Drivers\nUn driver es el software que permite que el sistema operativo se comunique con el hardware. Sin el driver adecuado, el dispositivo no funciona o funciona de forma limitada.\n\n1.2.2.1 Importancia en servidores En entornos de servidor, los drivers son especialmente críticos en:\n\nControladoras RAID\nTarjetas de red\nAdaptadores de almacenamiento (SAS, NVMe, Fibre Channel)\n\nAntes de instalar un sistema operativo en un servidor, es fundamental verificar la compatibilidad de los drivers, ya que un driver incorrecto puede impedir que el sistema detecte discos, redes o almacenamiento externo.",
+    "objectID": "procesos.html#servicios",
+    "href": "procesos.html#servicios",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "",
+    "text": "Un servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas.\n\nSe inician automáticamente al arrancar el sistema (o bajo demanda).\nNo requieren interacción del usuario.\nSuelen ser críticos para el funcionamiento del sistema.\n\nEjemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).\n\nEn Windows: se llaman Servicios. En Linux: se gestionan con systemd y se llaman daemons (terminan en “d”, como sshd).",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#dispositivos-de-interconexión-de-red-hub-switch-y-router",
-    "href": "ordenadores.html#dispositivos-de-interconexión-de-red-hub-switch-y-router",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "1.3 Dispositivos de Interconexión de Red: Hub, Switch y Router",
-    "text": "1.3 Dispositivos de Interconexión de Red: Hub, Switch y Router\nLos dispositivos de interconexión permiten construir y organizar redes locales, así como conectarlas entre sí o con redes externas. Los tres más comunes son el hub, el switch y el router, cada uno con funciones y niveles de inteligencia diferentes dentro del modelo OSI. ### Hub Un hub es un dispositivo de red muy básico que simplemente repite todo el tráfico que recibe por cualquiera de sus puertos hacia todos los demás puertos. #### Cómo funciona - No “entiende” direcciones MAC ni IP. - No decide a quién enviar los datos: los difunde a todos. - Genera muchas colisiones y congestión en redes grandes.\n\n1.3.0.1 Relación con los puertos\n\nSus puertos funcionan como simples puntos de conexión eléctrica.\nNo distinguen qué dispositivo está conectado en cada puerto.\nTodo lo que entra por un puerto se replica a todos los demás, sin filtrado. #### Características clave\nCapa OSI: Capa 1 (Física).\nNo ofrece seguridad ni segmentación.\nObsoleto en la mayoría de entornos profesionales.\n\n\n\n1.3.0.2 Cuándo se usaba\n\nRedes pequeñas y antiguas donde el tráfico era mínimo. ### Switch Un switch es un dispositivo de red que conecta equipos dentro de una misma red local (LAN) y envía los datos solo al puerto donde está el destinatario. #### Cómo funciona\nAprende las direcciones MAC de los dispositivos conectados.\nConstruye una tabla MAC para reenviar tráfico de forma eficiente.\nReduce colisiones y mejora el rendimiento respecto a un hub. #### Relación con los puertos\nCada puerto se asocia a una dirección MAC aprendida dinámicamente.\nEl switch construye una tabla MAC que relaciona puerto ↔︎ dispositivo.\nEsto permite reenviar los datos solo al puerto correcto, reduciendo colisiones y mejorando el rendimiento. #### Características clave\nCapa OSI: Capa 2 (Enlace), aunque existen switches de Capa 3.\nPermite segmentación mediante VLANs.\nEs el estándar actual para redes LAN.\n\n\n\n1.3.0.3 Ventajas\n\nMás rápido, seguro y eficiente que un hub.\nPermite mayor control del tráfico interno.\n\n\n\n1.3.1 Router\nUn router es el dispositivo encargado de interconectar redes distintas y decidir por qué camino deben viajar los paquetes para llegar a su destino. #### Cómo funciona - Trabaja con direcciones IP. - Mantiene tablas de enrutamiento para decidir la mejor ruta. - Es el dispositivo que normalmente actúa como puerta de enlace predeterminada. #### Relación con los puertos - Sus puertos representan interfaces de red independientes, cada una con su propia dirección IP. - Cada puerto pertenece a una red distinta (por ejemplo, WAN y LAN). - El router utiliza estos puertos para interconectar redes y decidir la ruta que deben seguir los paquetes. #### Características clave - Capa OSI: Capa 3 (Red). - Permite conectar: - LAN ↔︎ Internet\n- LAN ↔︎ LAN\n- Subredes internas entre sí - Puede incluir funciones adicionales: NAT, firewall, DHCP, etc.\n\n1.3.1.1 Ejemplo típico\nEn una casa o empresa pequeña, el router: - Conecta la red local a Internet. - Asigna IPs (si tiene DHCP). - Hace NAT para que varios dispositivos compartan una sola IP pública. ## Puntos de Acceso (Access Point)\nUn Punto de Acceso o Access Point (AP) es un dispositivo de red que permite conectar dispositivos inalámbricos (móviles, portátiles, tablets, IoT…) a una red local (LAN). Su función principal es convertir la red cableada en una red Wi‑Fi, actuando como puente entre ambos medios. A diferencia de un router doméstico, un AP no enruta tráfico ni asigna direcciones IP por sí mismo (a menos que sea un modelo híbrido). Su misión es puramente proporcionar conectividad inalámbrica dentro de una red ya existente. ### Funciones principales - Proveer acceso Wi‑Fi a dispositivos inalámbricos. - Convertir tráfico inalámbrico en tráfico cableado y viceversa. - Gestionar múltiples clientes simultáneamente. - Controlar la potencia, canales y estándares Wi‑Fi (2.4 GHz, 5 GHz, 6 GHz según modelo). - Extender la cobertura de una red LAN sin crear una red nueva. ### Cómo funciona 1. El AP se conecta por cable Ethernet a un switch o router. 2. Emite una o varias redes Wi‑Fi (SSID). 3. Los dispositivos se conectan al AP mediante radiofrecuencia. 4. El AP envía ese tráfico al switch/router para que llegue al resto de la red o a Internet. ### Relación con el modelo OSI y TCP/IP - OSI: Trabaja principalmente en Capa 2 (Enlace), igual que un switch, pero usando radio en lugar de cable. - TCP/IP (tu curso): Pertenece a la Capa Física / Enlace de Datos. - No opera en Capa 3, por lo que no enruta ni actúa como puerta de enlace. ### Tipos de Access Point - AP autónomos: Funcionan de forma independiente, configurados uno a uno. - AP gestionados: Controlados por un Controlador Wi‑Fi o por la nube (muy usados en empresas). - AP domésticos integrados en routers: Lo que la mayoría de usuarios tiene en casa (router + switch + AP en un solo aparato). ### Diferencias con otros dispositivos - No es un router: No asigna IP, no enruta, no hace NAT. - No es un repetidor Wi‑Fi: El repetidor copia la señal; el AP crea una red nueva conectada por cable. - Se parece a un switch inalámbrico: Conecta dispositivos, pero usando Wi‑Fi en vez de puertos Ethernet. ### Ventajas - Amplía la cobertura Wi‑Fi de forma profesional. - Permite conectar muchos dispositivos sin saturar un router doméstico. - Ofrece mejor rendimiento y estabilidad que los repetidores.\n\n\n\n1.3.2 Cuándo se usa\n\nOficinas, centros educativos, almacenes, hoteles.\nViviendas grandes con cableado estructurado.\nCualquier entorno donde se necesite Wi‑Fi estable y escalable. ## Comparativa entre Router, Switch, Access Point y Repetidor\n\nPara entender mejor el papel de cada dispositivo dentro de una red, es útil compararlos directamente. Aunque algunos equipos domésticos combinan varias funciones en un solo aparato, a nivel profesional cada dispositivo cumple una misión específica. ### Tabla comparativa\n\n\n\n\n\n\n\n\n\n\n\nDispositivo\nFunción principal\nCapa OSI\nCapa TCP/IP\nInteligencia\nUso típico\n\n\n\n\nRouter\nConecta redes distintas y enruta tráfico entre ellas\nCapa 3 (Red)\nCapa de Red\nEnruta IP, NAT, puerta de enlace\nSalida a Internet, interconexión de subredes\n\n\nSwitch\nConecta dispositivos dentro de la misma LAN\nCapa 2 (Enlace)\nCapa Física / Enlace\nAprende MAC, segmenta tráfico\nRedes modernas cableadas\n\n\nAccess Point (AP)\nProporciona conectividad Wi‑Fi dentro de una LAN\nCapa 2 (Enlace)\nCapa Física / Enlace\nGestiona clientes Wi‑Fi, puente inalámbrico\nAmpliar cobertura Wi‑Fi profesional\n\n\nRepetidor Wi‑Fi\nAmplifica y retransmite una señal Wi‑Fi existente\nCapa 1–2\nCapa Física / Enlace\nCopia la señal sin cable\nExtender Wi‑Fi en casas pequeñas",
+    "objectID": "procesos.html#tareas",
+    "href": "procesos.html#tareas",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "",
+    "text": "Una tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar. Una tarea puede conllevar procesos y servicios.\nEl administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.\nEjemplos: programar copias de seguridad.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#diferencias-clave-entre-los-dispositivos",
-    "href": "ordenadores.html#diferencias-clave-entre-los-dispositivos",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "1.4 Diferencias clave entre los dispositivos",
-    "text": "1.4 Diferencias clave entre los dispositivos\n\n1.4.1 Router\n\nConecta redes distintas.\nAsigna IP (si tiene DHCP).\nHace NAT para salir a Internet.\nEs la puerta de enlace de la red. ### Switch\nConecta dispositivos dentro de la misma red.\nUsa direcciones MAC para enviar tráfico solo al puerto correcto.\nReduce colisiones y mejora el rendimiento.\n\n\n\n1.4.2 Access Point (AP)\n\nProporciona Wi‑Fi a una red cableada.\nNo enruta ni asigna IP (salvo modelos híbridos).\nActúa como un switch inalámbrico. ### Repetidor Wi‑Fi\nNo crea una red nueva.\nSolo repite la señal Wi‑Fi existente.\nReduce el ancho de banda disponible al dividirlo entre recepción y retransmisión. ## Cuándo usar cada uno\nRouter: cuando necesitas conectar tu red a Internet o unir varias subredes.\nSwitch: cuando necesitas más puertos Ethernet o segmentar tráfico interno.\nAccess Point: cuando necesitas ampliar la cobertura Wi‑Fi de forma profesional y estable.\nRepetidor: cuando no puedes tirar cable y solo necesitas ampliar señal de forma sencilla.",
+    "objectID": "procesos.html#procesos-en-segundo-plano",
+    "href": "procesos.html#procesos-en-segundo-plano",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "",
+    "text": "Son procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.\nPueden ser servicios, demonios o procesos lanzados manualmente.\nUn proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).\nEjemplos: sincronización de OneDrive.exe",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#el-juego-de-instrucciones-isa",
-    "href": "ordenadores.html#el-juego-de-instrucciones-isa",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "2.1 El juego de instrucciones (ISA)",
-    "text": "2.1 El juego de instrucciones (ISA)\nEl ISA (Instruction Set Architecture) es el conjunto de instrucciones que un procesador entiende y puede ejecutar. Define el “idioma” de la CPU: cómo se representan las instrucciones, cómo se accede a memoria, qué registros existen y qué operaciones están permitidas. El ISA es la frontera entre hardware y software:\n- El hardware implementa el ISA.\n\nEl software (compiladores, ensamblador, SO) genera instrucciones según ese ISA.\n\nPor eso un programa compilado para un ISA no funciona en otro.\n\n2.1.1 Familias de ISA\nExisten varias familias importantes, cada una con su propio conjunto de instrucciones:\n\nx86 / x86‑64 (Intel, AMD) Arquitectura CISC muy extendida en PCs y servidores.\nARM / ARM64 Arquitectura RISC usada en móviles, tablets y procesadores Apple Silicon.\nRISC‑V ISA abierto y modular, cada vez más popular en investigación y hardware embebido.\nMIPS, PowerPC, SPARC Otras arquitecturas RISC históricas o especializadas. Cada familia tiene su propio ensamblador y su propio lenguaje máquina. ### Tipos de instrucciones\n\nAunque cada ISA tiene sus particularidades, casi todos incluyen los mismos tipos básicos de instrucciones:\n\nAritméticas y lógicas ADD, SUB, MUL, AND, OR, XOR…\nMovimiento de datos MOV, LOAD, STORE\n(mover datos entre registros y memoria)\nControl de flujo JMP, CALL, RET, JE, JNE\n(saltos, llamadas a funciones, bucles)\nGestión de memoria y pila PUSH, POP, direccionamiento, acceso a pila\nInstrucciones especiales Dependientes del ISA: SIMD, criptografía, virtualización, etc.\n\n\n\n2.1.2 Resumen para memorizar\n\nISA = conjunto de instrucciones de la CPU.\nCada arquitectura tiene su propio ISA (x86, ARM, RISC‑V…). -\nLos tipos de instrucciones suelen ser: aritméticas, movimiento, saltos y especiales.",
+    "objectID": "procesos.html#servicios-del-sistema.",
+    "href": "procesos.html#servicios-del-sistema.",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "",
+    "text": "Son los pilares invisibles del SO. Los servicios son procesos especiales que:\n\nSe inician antes de que el usuario inicie sesión\nno tienen interfaz gráfica visible\nSe administran mediante la Consola de Servicios services.msc\nRealizan funciones críticas del sistema\n\nTodos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.\n\n\nProceso: programa en ejecución con recursos asignados.\nServicio: proceso del sistema que corre en segundo plano y ofrece funciones.\nTarea: unidad de trabajo (proceso, hilo o trabajo programado).\nProceso en segundo plano: proceso sin interacción directa con el usuario.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#cisc-vs-risc",
-    "href": "ordenadores.html#cisc-vs-risc",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "2.2 CISC vs RISC",
-    "text": "2.2 CISC vs RISC\nLas arquitecturas CISC (Complex Instruction Set Computer) y RISC (Reduced Instruction Set Computer) representan dos enfoques distintos en el diseño de procesadores. No son compatibles entre sí porque cada una utiliza un conjunto de instrucciones diferente, es decir, un “lenguaje máquina” propio que la otra no puede ejecutar directamente.\n\n2.2.1 CISC (Complex Instruction Set Computer)\n\nConjunto de instrucciones amplio y complejo.\nUna sola instrucción puede realizar operaciones de alto nivel.\nLas instrucciones suelen requerir más ciclos de reloj, pero hacen más trabajo por instrucción.\nEjemplo: x86 / x86‑64 (Intel, AMD).\n\n\n\n2.2.2 RISC (Reduced Instruction Set Computer)\n\nConjunto de instrucciones reducido, simple y muy optimizado.\nCada instrucción realiza una operación básica y suele ejecutarse en un ciclo de reloj.\nPermite pipelines más eficientes y menor consumo energético.\nEjemplo: ARM (móviles, tablets, Apple Silicon, servidores modernos). ### Diferencias clave\nCISC: instrucciones complejas, hardware más sofisticado, más trabajo por instrucción.\nRISC: instrucciones simples, ejecución rápida y eficiente, ideal para bajo consumo y alto rendimiento por vatio. ### Por qué no son compatibles Cada arquitectura tiene su propio conjunto de instrucciones, su propio formato de registros y su propia forma de acceder a memoria. Un programa compilado para x86 no puede ejecutarse en ARM sin traducción o emulación.",
+    "objectID": "procesos.html#rendimiento-de-los-sistemas.",
+    "href": "procesos.html#rendimiento-de-los-sistemas.",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "2.1 Rendimiento de los Sistemas.",
+    "text": "2.1 Rendimiento de los Sistemas.\nEl rendimiento de un sistema informático es la capacidad de un equipo o servidor para ejecutar sus tareas de forma eficiente, estable y dentro de unos tiempos aceptables. No debemos confundir rendimiento con “tener un procesador potente”: un sistema puede tener una CPU moderna y funcionar mal si tiene poca RAM, disco saturado o procesos mal configurados. Los recurosos principales que debemos observar son CPU, Memoria RAM, Disco, Red, Procesos/Servicios y Sistemas de Archivos.\n\n\n\n\n\n\n\n\nRecurso\nQué representa\nProblemas típicos\n\n\n\n\nCPU\nCapacidad de cálculo\nProcesos al 100%, hilos bloqueados\n\n\nRAM\nEspacio de trabajo\nFalta de memoria, uso excesivo de swap\n\n\nDisco\nLectura y escritura\nCola de disco, latencia alta, poco espacio\n\n\nRed\nComunicación\nSaturación, pérdida de paquetes, errores DNS\n\n\nProcesos\nProgramas en ejecución\nFugas de memoria, procesos zombies\n\n\nSis. Archivos\nOrganización del almacenamiento\nFragmentación, permisos incorrectos, logs excesivos",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#lenguaje-máquina-ensamblador-y-lenguajes-de-alto-nivel",
-    "href": "ordenadores.html#lenguaje-máquina-ensamblador-y-lenguajes-de-alto-nivel",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "2.3 Lenguaje máquina, ensamblador y lenguajes de alto nivel",
-    "text": "2.3 Lenguaje máquina, ensamblador y lenguajes de alto nivel\nEl lenguaje máquina es el nivel más bajo de programación: una secuencia de bits (0 y 1) que la CPU entiende directamente. Cada arquitectura (x86, ARM, etc.) tiene su propio conjunto de instrucciones en binario.\nEl ensamblador (assembly) es una representación más legible del lenguaje máquina. Usa mnemónicos como MOV, `ADD",
+    "objectID": "procesos.html#tipos-de-situaciones-de-rendimiento",
+    "href": "procesos.html#tipos-de-situaciones-de-rendimiento",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "2.2 Tipos de situaciones de rendimiento",
+    "text": "2.2 Tipos de situaciones de rendimiento\n\nUso alto normal: Ej. Una copia de seguridad programada consumiendo disco de forma esperada.\nUso alto anómalo: Ej. Un proceso bloqueado consumiendo CPU indefinidamente sin motivo\nSaturación: El recurso no solo se usa mucho, sino que ya no responde con fluidez\nCuello de botella: Recurso que limita el rendimiento global del sistema completo.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#el-ciclo-básico-de-instrucción",
-    "href": "ordenadores.html#el-ciclo-básico-de-instrucción",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "3.1 El Ciclo Básico de Instrucción",
-    "text": "3.1 El Ciclo Básico de Instrucción\nCada tarea que realiza un procesador se divide en micro-pasos repetidos de manera cíclica e indefinida a lo largo de cinco etapas consecutivas:\n\nFetch (Captura/Lectura): La Unidad de Control busca la instrucción apuntada por el Contador de Programas (PC) en la memoria principal (o la caché) y la trae a los registros del procesador.\nDecode (Decodificación): La Unidad de Control interpreta los bits de la instrucción para saber qué operación se solicita (por ejemplo, si es una suma, un salto o un almacenamiento de datos) y qué componentes necesitará.\nExecute (Ejecución): Los componentes de la CPU pertinentes (como la ALU o la FPU) realizan la operación física indicada por la instrucción.\nMemory (Acceso a Memoria): Si la instrucción requiere leer o escribir datos adicionales en la memoria RAM, este acceso se gestiona en esta fase.\nWrite Back (Escritura): El resultado de la operación ejecutada se escribe y consolida en los registros de la CPU o en la memoria principal para su posterior uso.",
+    "objectID": "procesos.html#modelos-predictivos-y-análisis-de-tendencias",
+    "href": "procesos.html#modelos-predictivos-y-análisis-de-tendencias",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "2.3 Modelos predictivos y análisis de tendencias",
+    "text": "2.3 Modelos predictivos y análisis de tendencias\nUn modelo predictivo en administración de sistemas consiste en observar datos históricos, detectar patrones y anticiparse a problemas. El objetivo es pasar de una administración reactiva a una administración preventiva. Por ejemplo saber cuánto crece el alamacenamiento a diario y preveer cuándo necesitaremos más.\n\nLinea base (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.\nUmbral: valor a partir del cual se genera aviso.\nTendencia: evolución de una métrica en el tiempo.\nEstacionalidad: patrón que se repite a lo largo de determinados periodos de tiempo.\nCapacidad: recursos disponibles para absorber la demanda actual y futura.\n\nData collector Sets, Get-Counter, logman, WPR/WPA para tendencias y accounting.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#factores-determinantes-del-rendimiento",
-    "href": "ordenadores.html#factores-determinantes-del-rendimiento",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "3.2 Factores Determinantes del Rendimiento",
-    "text": "3.2 Factores Determinantes del Rendimiento\nEl rendimiento de una CPU no depende únicamente de un único factor, sino de la combinación de los siguientes elementos:\n\nFrecuencia de Reloj (Velocidad en GHz): Determina cuántos ciclos de instrucción puede realizar el procesador por segundo. El reloj emite pulsos eléctricos constantes para sincronizar todos los componentes de la CPU.\n\n\\(1 \\text{ Hz} = 1 \\text{ ciclo por segundo.}\\)\n\\(1 \\text{ KHz} = 1.000 \\text{ ciclos por segundo.}\\)\n\\(1 \\text{ GHz (GigaHercio)} = 1.000.000.000 \\text{ (mil millones) de ciclos por segundo.}\\)\nEjemplo: Un procesador a \\(3.5 \\text{ GHz}\\) puede realizar 3.500 millones de ciclos de reloj por segundo.\n\nNúcleos (Cores) e Hilos (Threads):\n\nNúcleos: Son las unidades de procesamiento físicas e independientes que contiene un chip. Un procesador “Multicore” contiene varias CPUs reales dentro de la misma pastilla de silicio.\nHilos (Hilos de ejecución / Threads): Es una tecnología lógica (como Hyper-Threading de Intel o SMT de AMD) que permite a un único núcleo físico simular que es dos núcleos virtuales, gestionando dos tareas en paralelo al aprovechar los tiempos muertos de espera.\n\nArquitecturas Modernas de Núcleos: Las CPUs de hoy en día distribuyen el trabajo en núcleos especializados:\n\nP-Cores (Performance Cores): Núcleos de alto rendimiento optimizados para tareas pesadas en primer plano que requieren la mínima latencia (como consultas intensivas a bases de datos o procesamiento en lote). Consumen mucha energía.\nE-Cores (Efficient Cores): Núcleos más pequeños y de bajo consumo diseñados para procesar tareas secundarias o en segundo plano (servicios del sistema operativo, sincronizaciones) de manera eficiente.\nNPU (Neural Processing Unit): Un coprocesador especializado diseñado específicamente para acelerar algoritmos de Inteligencia Artificial y Machine Learning de forma local (procesamiento de redes neuronales), liberando de esa carga a la CPU y la GPU.\n\nLa Memoria Caché y sus Niveles: Funciona en una estructura jerárquica de tres niveles (L1, L2 y L3) para maximizar la velocidad:\n\nL1: Es la más rápida, pero la más pequeña (unos pocos kilobytes). Está integrada directamente en el corazón de cada núcleo. Se divide en L1d (datos) y L1i (instrucciones).\nL2: Un poco más lenta que la L1, pero con mayor capacidad (varios megabytes). Suele seguir estando dedicada a cada núcleo de forma individual.\nL3: La más lenta de las tres (aunque muchísimo más rápida que la RAM) y la de mayor tamaño. La característica principal de la L3 es que es compartida por todos los núcleos del procesador.\n\n\nPrincipio de Funcionamiento: Cada núcleo consulta primero su L1; si no encuentra el dato, busca en su L2; si no está, va a la L3 compartida; y si falla en los tres niveles, se ve obligado a buscar en la memoria RAM, lo que genera una penalización de tiempo de espera (latencia).",
+    "objectID": "procesos.html#planes-de-pruebas-de-preproducción",
+    "href": "procesos.html#planes-de-pruebas-de-preproducción",
+    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "section": "2.4 Planes de pruebas de preproducción",
+    "text": "2.4 Planes de pruebas de preproducción\nUn entorno de preproducción intenta parecerse lo máximo posible a producción, pero sin afectar a usuarios reales ni datos críticos. Su objetivo es validar cambios antes de aplicarlos en producción.\nEjemplos de cambios que deben probarse en preproducción:\n\nSO: Instalación, actualización del kernel, parches de seguridad.\nBases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.\nRed y almacenamiento: Cambio de configuración de red, migración de almacenamiento.\nAplicaciones: cambio de versión, modificación de políticas de seguridad.\n\nEstructura del plan de pruebas:\n\n\n\n\n\nflowchart LR\n    A([🎯 1.&lt;br&gt;Objetivo]) --&gt; B([🔭 2.&lt;br&gt;Alcance])\n    B --&gt; C([🖥️ 3.&lt;br&gt;Entorno])\n    C --&gt; D([💾 4.&lt;br&gt;Datos de&lt;br&gt;Prueba])\n    D --&gt; E([🛠️ 5.&lt;br&gt;Herramientas])\n    E --&gt; F([📊 6.&lt;br&gt;Métricas])\n    F --&gt; G([📝 7.&lt;br&gt;Escenarios])\n    G --&gt; H([✅ 8.&lt;br&gt;Criterios de&lt;br&gt;Aceptación])\n    H --&gt; I([🔙 9.&lt;br&gt;Reversión])\n    \n    %% Estilos para mantener los tonos de tu web\n    style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px\n    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px\n\n\n\n\n\n\n\n2.4.1 Ejemplo de Plan de Pruebas: Ampliación de Memoria en SGBD\n\n🎯 Objetivo: Validar que el aumento del parámetro de límite de memoria (MEM_LIMIT) asignado al motor de base de datos mejora el tiempo de respuesta de las consultas complejas sin provocar inestabilidad en el sistema operativo del servidor.\n🔭 Alcance: Las pruebas se limitarán a los nodos de procesamiento de base de datos en preproducción. Se excluyen pruebas de latencia de red y validación de la integridad del almacenamiento físico en disco.\n🖥️ Entorno: Clúster de preproducción con la misma versión del SGBD y sistema operativo (Linux) que el entorno de producción. Los recursos hardware son escalados a la mitad (CPU/RAM) respecto a producción, por lo que las métricas se evaluarán de forma proporcional.\n💾 Datos de Prueba: Tablas externas particionadas que simulen el entorno real (por ejemplo, registros históricos de tráfico o telemetría) con un volumen mínimo de 10 millones de filas. Los datos estarán ofuscados y no contendrán información sensible.\n🛠️ Herramientas: - Para carga: Scripts SQL automatizados lanzados desde terminal.\n\nPara monitorización de OS: top (CPU), free -h (RAM) y vmstat.\nPara SGBD: Panel de administración del clúster y logs de ejecución de consultas.\n\n📊 Métricas a observar: - Tiempo total de ejecución de la consulta (duration).\n\nPicos de consumo de RAM por el proceso de la base de datos (GB).\nUso de memoria Swap en el sistema operativo (MB/GB).\nNúmero de fallos o bloqueos por falta de memoria (Errores OOM - Out of Memory).\n\n📝 Escenarios: - Escenario 1 (Línea base): Lanzar un set de 5 consultas pesadas (que incluyan múltiples JOIN y GROUP BY) con la configuración original y anotar tiempos.\n\nEscenario 2 (Carga normal): Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.\nEscenario 3 (Prueba de estrés): Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.\n\n✅ Criterios de Aceptación: El cambio se considerará válido para pasar a producción si:\n\nEl tiempo de ejecución de las consultas se reduce en al menos un 15%.\nEl sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.\nEl uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.\n\n🔙 Reversión (Rollback): En caso de fallo o inestabilidad, se ejecutará un script preconfigurado que:\n\nRestaura el archivo de configuración .conf desde el backup generado antes de la prueba.\nFuerza un reinicio seguro de los servicios de la base de datos.\nEjecuta una consulta de prueba rápida (SELECT 1) para verificar que el servicio ha levantado correctamente.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
     ]
   },
   {
-    "objectID": "ordenadores.html#especificaciones-de-los-procesadores-en-servidores",
-    "href": "ordenadores.html#especificaciones-de-los-procesadores-en-servidores",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "3.3 Especificaciones de los Procesadores en Servidores",
-    "text": "3.3 Especificaciones de los Procesadores en Servidores\nEn un entorno de producción (servidores corporativos y de bases de datos), las prioridades cambian drásticamente respecto a un ordenador personal. En los servidores se busca maximizar:\n\nGran soporte para memoria RAM: Capacidad de gestionar terabytes de memoria principal.\nCompatibilidad con memoria ECC (Error Correcting Code): Tipo de memoria RAM especial que detecta y corrige automáticamente errores de corrupción de datos de un solo bit en tiempo real, evitando cuelgues del sistema en entornos críticos.\nMayor número de núcleos físicos: Permite procesar miles de peticiones simultáneas de red.\nSoporte Multiprocesador: Placas base diseñadas con 2, 4 o más zócalos (sockets) para instalar múltiples procesadores físicos independientes trabajando en paralelo.\nLíneas PCIe masivas: Para interconectar múltiples controladoras de discos NVMe de alta velocidad y tarjetas de red de fibra de 10Gbps o superiores.",
+    "objectID": "monitor_Grafana_Ubuntu.html",
+    "href": "monitor_Grafana_Ubuntu.html",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "",
+    "text": "Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde el host (Windows) y para eso usaremos:\nLa práctica se realizará con Docker Compose, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. (Docker Documentation) Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. (Grafana Labs)\nEscenario de la práctica\nVamos a simular una pequeña infraestructura empresarial. Tendremos un servidor Ubuntu que queremos monitorizar.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
     ]
   },
   {
-    "objectID": "ordenadores.html#el-problema-de-la-falta-de-ram-memoria-swap",
-    "href": "ordenadores.html#el-problema-de-la-falta-de-ram-memoria-swap",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "4.1 El problema de la falta de RAM: Memoria SWAP",
-    "text": "4.1 El problema de la falta de RAM: Memoria SWAP\nSi abrimos demasiadas aplicaciones o cargamos una base de datos pesada y la memoria RAM se llena por completo, el Sistema Operativo utiliza una técnica llamada Memoria Virtual o SWAP (Espacio de Intercambio).\n\nCómo funciona: El sistema operativo coge una porción del disco duro (HDD o SSD) y la simula como si fuera memoria RAM para evitar que el equipo se bloquee.\nConsecuencia: Como los discos de almacenamiento son órdenes de magnitud más lentos que la RAM, el rendimiento del sistema sufre una caída drástica y notable (cuello de botella), haciendo que las aplicaciones dejen de responder con fluidez.",
+    "objectID": "monitor_Grafana_Ubuntu.html#cambiar-a-ip-fija-un-servidor-existente.",
+    "href": "monitor_Grafana_Ubuntu.html#cambiar-a-ip-fija-un-servidor-existente.",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "1.1 Cambiar a ip fija un servidor existente.",
+    "text": "1.1 Cambiar a ip fija un servidor existente.\nLos pasos anteriores funcionarán para una instalación limpia, pero si ya tienes un servidor ubuntu con DHCP activo, tendrás que cambiarlo usando el yaml.\n\n1.1.1 Editar el archivo de configuración de Netplan\nNormalmente está en:\n/etc/netplan/00-installer-config.yaml \nO algo similar dentro de /etc/netplan/.\n\nÁbrelo:\nsudo nano /etc/netplan/00-installer-config.yaml \n\n\n\n1.1.2 Configurar la IP fija\nEjemplo de configuración estática:\nyaml\nnetwork:\n  ethernets:\n    enp0s3:\n      addresses:\n      - 10.0.20.44/24\n      match:\n        macaddress: 08:00:27:b5:78:28\n      nameservers:\n        addresses:\n        - 8.8.8.8\n        - 1.1.1.1\n        search: []\n      routes:\n      - to: default\n        via: 10.0.20.1\n      set-name: enp0s3\n  version: 2\nCambia ens33 por tu interfaz y ajusta la IP, gateway y DNS a tu red.\n\n\n1.1.3 Aplicar los cambios\nsudo netplan apply \nSi por alguna razón falla:\nsudo netplan try \n\n\n1.1.4 Verificar que funciona\nping 8.8.8.8 ping google.com \nSi responde, ya tienes tu IP fija funcionando.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
     ]
   },
   {
-    "objectID": "ordenadores.html#evolución-de-los-tipos-de-ram",
-    "href": "ordenadores.html#evolución-de-los-tipos-de-ram",
-    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
-    "section": "4.2 Evolución de los Tipos de RAM",
-    "text": "4.2 Evolución de los Tipos de RAM\n\n4.2.1 La estructura interna (El motor)\nAntes de hablar de DDR, la tecnología pasó por tres etapas para ver cómo guardaba la información y cómo se comunicaba con la placa:\n\nDRAM (Dynamic RAM): La abuela de las memorias. Guarda los datos en minúsculos “almacenes” (condensadores) que pierden energía continuamente. Por eso necesita que un circuito la esté refrescando miles de veces por segundo. ¿Su gran problema? Iba “a su bola”, no estaba coordinada con el ritmo del procesador. La CPU le pedía un dato y tenía que quedarse esperando a que la DRAM respondiera.Uso principal: La memoria RAM general del equipo.\nSDRAM (Synchronous DRAM): Aquí está la clave. La “S” significa Síncrona. Alguien dijo: “Oye, vamos a hacer que la DRAM interna se sincronice con el reloj del sistema”. A partir de ese momento, la memoria y el procesador empezaron a bailar al mismo ritmo. Esta tecnología (chips que se sincronizan) fue tan buena que se convirtió en el estándar para siempre. Toda la RAM que usas hoy en día sigue siendo, por dentro, de tipo SDRAM\n\n\n\nSRAM (Static RAM): No necesita refrescar sus datos constantemente para mantenerlos. Es extremadamente rápida y eficiente, pero su fabricación es muy costosa y ocupa mucho espacio físico en el silicio. Uso principal: Memoria caché de la CPU.\n\n\n\n4.2.2 La velocidad exterior:\nLa memoria estándar actual es la SDRAM (Synchronous Dynamic RAM), la cual se sincroniza con el reloj de la CPU para evitar tiempos de espera. Su evolución se basa en la tecnología DDR (Double Data Rate), que es capaz de enviar el doble de datos por cada ciclo de reloj (aprovechando tanto el flanco de subida como el de bajada de la señal eléctrica).\nLa cronología de evolución técnica es: \\[\\text{SDRAM} \\rightarrow \\text{DDR} \\rightarrow \\text{DDR2} \\rightarrow \\text{DDR3} \\rightarrow \\text{DDR4} \\rightarrow \\text{DDR5}\\]\n\nNota de Compatibilidad Crítica: Los módulos de memoria DDR no son retrocompatibles entre generaciones. Cada generación tiene una muesca física en una posición diferente del conector y trabaja a voltajes distintos. Un módulo de memoria DDR4 no puede instalarse físicamente en una ranura de placa base diseñada para DDR5, ni viceversa.",
+    "objectID": "monitor_Grafana_Ubuntu.html#instalar-actualizaciones",
+    "href": "monitor_Grafana_Ubuntu.html#instalar-actualizaciones",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.1 Instalar actualizaciones",
+    "text": "2.1 Instalar actualizaciones\nComo siempre, antes de instalar nada actualizamos el sistema:\n\nsudo apt update\nsudo apt upgrade -y\n\napt update: actualiza la lista de paquetes disponibles en los repositorios.\napt upgrade: instala las versiones más recientes de los paquetes ya instalados.\n\nEs importante hacerlo antes de instalar Docker para evitar conflictos con dependencias antiguas.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Conceptos de ordenadores y servidores"
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#instalar-paquetes-necesarios",
+    "href": "monitor_Grafana_Ubuntu.html#instalar-paquetes-necesarios",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.2 Instalar paquetes necesarios",
+    "text": "2.2 Instalar paquetes necesarios\nsudo apt install -y ca-certificates curl gnupg\n\nca-certificates: permite validar certificados HTTPS (sin esto no puedes descargar cosas de forma segura).\ncurl: herramienta para descargar archivos desde Internet.\ngnupg: permite manejar claves GPG (necesarias para verificar que los paquetes de Docker son auténticos).",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#crear-directorio-para-la-clave-gpg-de-docker",
+    "href": "monitor_Grafana_Ubuntu.html#crear-directorio-para-la-clave-gpg-de-docker",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.3 Crear directorio para la clave GPG de Docker",
+    "text": "2.3 Crear directorio para la clave GPG de Docker\nsudo install -m 0755 -d /etc/apt/keyrings\nUbuntu ahora recomienda guardar las claves GPG en /etc/apt/keyrings en lugar de /etc/apt/trusted.gpg. Este comando:\n\nCrea el directorio si no existe.\nLe da permisos seguros (0755).",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#descargar-la-clave-oficial-de-docker",
+    "href": "monitor_Grafana_Ubuntu.html#descargar-la-clave-oficial-de-docker",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.4 Descargar la clave oficial de Docker",
+    "text": "2.4 Descargar la clave oficial de Docker\ncurl -fsSL https://download.docker.com/linux/ubuntu/gpg | \\ \nsudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg \n\nDescarga la clave GPG de Docker.\nLa convierte al formato .gpg (binario) con gpg --dearmor.\nLa guarda en /etc/apt/keyrings/docker.gpg.\n\nEsta clave sirve para verificar que los paquetes que instales realmente vienen de Docker y no están manipulados.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#dar-permisos-a-la-clave",
+    "href": "monitor_Grafana_Ubuntu.html#dar-permisos-a-la-clave",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.5 Dar permisos a la clave",
+    "text": "2.5 Dar permisos a la clave\nsudo chmod a+r /etc/apt/keyrings/docker.gpg \nAPT necesita poder leer la clave para validar los paquetes. Sin este permiso, el repositorio no funcionaría.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#añadir-el-repositorio-oficial-de-docker",
+    "href": "monitor_Grafana_Ubuntu.html#añadir-el-repositorio-oficial-de-docker",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.6 Añadir el repositorio oficial de Docker",
+    "text": "2.6 Añadir el repositorio oficial de Docker\necho \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null\nCrea un archivo llamado /etc/apt/sources.list.d/docker.list\nCon el contenido:\n\ndeb → indica que es un repositorio de paquetes binarios.\narch=$(dpkg –print-architecture) → detecta si tu sistema es amd64, arm64, etc.\nsigned-by=… → indica qué clave GPG debe usarse para verificar este repositorio.\nVERSION_CODENAME → detecta tu versión de Ubuntu (ej. jammy, focal).\n\nEsto añade el repositorio oficial de Docker, que contiene las versiones más recientes.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#actualizar-repositorios",
+    "href": "monitor_Grafana_Ubuntu.html#actualizar-repositorios",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.7 Actualizar repositorios",
+    "text": "2.7 Actualizar repositorios\nsudo apt update \nAhora que has añadido un repositorio nuevo, apt debe volver a actualizar la lista de paquetes.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#instalar-docker-y-docker-compose",
+    "href": "monitor_Grafana_Ubuntu.html#instalar-docker-y-docker-compose",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.8 Instalar Docker y Docker Compose",
+    "text": "2.8 Instalar Docker y Docker Compose\nsudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \n\n\n2.8.1 ¿Qué instala cada paquete?\n\ndocker-ce → Docker Community Edition (el motor principal).\ndocker-ce-cli → comandos de Docker (docker run, docker ps, etc.).\ncontainerd.io → el runtime que gestiona los contenedores.\ndocker-buildx-plugin → herramienta avanzada para construir imágenes.\ndocker-compose-plugin → versión moderna de Docker Compose (docker compose).",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#comprobar-que-docker-funciona",
+    "href": "monitor_Grafana_Ubuntu.html#comprobar-que-docker-funciona",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.9 Comprobar que Docker funciona",
+    "text": "2.9 Comprobar que Docker funciona\ndocker --version docker compose version \n\nSi ves versiones, todo está bien.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#probar-docker",
+    "href": "monitor_Grafana_Ubuntu.html#probar-docker",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.10 Probar Docker",
+    "text": "2.10 Probar Docker\nsudo docker run hello-world \nEsto descarga una imagen mínima y la ejecuta. Si funciona, Docker está correctamente instalado.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#usar-docker-sin-sudo",
+    "href": "monitor_Grafana_Ubuntu.html#usar-docker-sin-sudo",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.11 Usar Docker sin sudo",
+    "text": "2.11 Usar Docker sin sudo\nsudo usermod -aG docker $USER \nAñade tu usuario al grupo docker.\nDocker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes cerrar sesión y volver a entrar para que el cambio se aplique. (para hacer logout usa exit y luego login para entrar de nuevo)\n\nEste bloque de comandos:\n\n\nActualiza Ubuntu.\nInstala herramientas necesarias.\nAñade la clave GPG de Docker.\nAñade el repositorio oficial.\nInstala Docker + Compose.\nVerifica que funciona.\nTe permite usar Docker sin sudo.\n\nEs la forma correcta, segura y recomendada de instalar Docker en Ubuntu.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#crear-la-estructura-de-trabajo",
+    "href": "monitor_Grafana_Ubuntu.html#crear-la-estructura-de-trabajo",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "2.12 Crear la estructura de trabajo",
+    "text": "2.12 Crear la estructura de trabajo\nCreamos una carpeta (directorio) para la práctica:\n mkdir -p ~/grafana-practica/prometheus\n\nmkdir → crea directorios\n-p → parents, crea también los directorios padre si no existen\n\n cd ~/grafana-practica",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#crear-el-fichero",
+    "href": "monitor_Grafana_Ubuntu.html#crear-el-fichero",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "3.1 Crear el fichero",
+    "text": "3.1 Crear el fichero\nnano prometheus/prometheus.yml \n\n3.1.1 Pegar el contenido\nglobal:\n  scrape_interval: 5s\n\nscrape_configs:\n  - job_name: \"prometheus\"\n    static_configs:\n      - targets: [\"prometheus:9090\"]\n\n  - job_name: \"node\"\n    static_configs:\n      - targets: [\"node-exporter:9100\"]\nglobal.scrape_interval: 5s : Prometheus recogerá métricas cada 5 segundos.\njob_name: “prometheus”: Prometheus también se monitoriza a sí mismo. El target \"prometheus:9090\" funciona porque en Docker Compose el servicio se llama prometheus, y Docker crea una red interna donde los contenedores se ven por nombre.\njob_name: “node” :Este es el trabajo que recoge métricas del servidor Linux.\ntargets: [“node-exporter:9100”]: Prometheus irá al contenedor llamado node-exporter en el puerto 9100.\n\n\n3.1.2 Guardar el fichero\nEn nano:\n\nCTRL + O → guardar\nENTER → confirmar\nCTRL + X → salir",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#contenedores-que-estamos-configurando-en-este-archivo",
+    "href": "monitor_Grafana_Ubuntu.html#contenedores-que-estamos-configurando-en-este-archivo",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "4.1 Contenedores que estamos configurando en este archivo:",
+    "text": "4.1 Contenedores que estamos configurando en este archivo:\n\n4.1.1 Prometheus\n\nUsa la imagen oficial prom/prometheus.\nExpone el puerto 9090 para acceder a la interfaz web.\nMonta tu fichero prometheus.yml dentro del contenedor.\nGuarda los datos en un volumen persistente prometheus-data.\nRetiene datos durante 15 días.\n\n\n\n4.1.2 Node Exporter\n\nEs el agente de monitorización del servidor\nExpone el puerto 9100.\nMonta / del host en modo lectura para poder leer métricas del sistema.\nDocker lo aísla, pero con --path.rootfs=/host puede acceder a la información del host.\n\n\n\n4.1.3 Grafana\n\nUsa la imagen oficial grafana/grafana.\nExpone el puerto 3000.\nUsuario y contraseña inicial:\n\nadmin\nAdmin123*\n\nGuarda dashboards y configuración en grafana-data.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema",
+    "href": "monitor_Grafana_Ubuntu.html#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "5.1 Descarga las imágenes necesarias (si no existen en el sistema)",
+    "text": "5.1 Descarga las imágenes necesarias (si no existen en el sistema)\nimage: prom/prometheus:latest\nimage: grafana/grafana:latest\nimage: prom/node-exporter:latest\nSi estas imágenes no están ya en tu máquina, Docker las descarga automáticamente desde Docker Hub. Esto sustituye completamente la instalación manual de Prometheus, Grafana o Node Exporter en Ubuntu. No instalamos nada en el sistema operativo, todo viene dentro de las imágenes.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#crea-los-contenedores-a-partir-de-esas-imágenes",
+    "href": "monitor_Grafana_Ubuntu.html#crea-los-contenedores-a-partir-de-esas-imágenes",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "5.2 Crea los contenedores a partir de esas imágenes",
+    "text": "5.2 Crea los contenedores a partir de esas imágenes\nCada servicio del YAML se convierte en un contenedor:\n\nprometheus → contenedor Prometheus\ngrafana → contenedor Grafana\nnode-exporter → contenedor Node Exporter\n\nCada uno es un entorno aislado, con su propio filesystem, su propio proceso y su propia configuración.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#configura-redes-puertos-y-volúmenes-automáticamente",
+    "href": "monitor_Grafana_Ubuntu.html#configura-redes-puertos-y-volúmenes-automáticamente",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "5.3 Configura redes, puertos y volúmenes automáticamente",
+    "text": "5.3 Configura redes, puertos y volúmenes automáticamente\nEsto es clave: los contenedores se comunican entre sí por nombre, no por IP.\nEjemplos:\n\nports: \"3000:3000\" → expone Grafana al exterior\nvolumes: → monta configuraciones persistentes\ncommand: → pasa parámetros a Prometheus o Node Exporter\nred interna de Docker → permite que Grafana acceda a Prometheus usando http://prometheus:9090",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#verificar-que-funciona-1",
+    "href": "monitor_Grafana_Ubuntu.html#verificar-que-funciona-1",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "5.4 Verificar que funciona",
+    "text": "5.4 Verificar que funciona\n\n5.4.1 Contenedores\nComprobar los logs del contenedor: docker compose logs -f y CTRL + C para salir\n\n\n5.4.2 Prometheus:\nhttp://{TU_IP}:9090 por ejemplo http://10.0.20.44:9090/\nSi estamos dentro de la propia máquina: http://localhost:9090\n\n\nEntramos en: Status &gt; Target health\nO directamente: http://{IP_DEL_SERVIDOR}:9090/targets\n\n\n5.4.2.1 Hacer una primera consulta en Prometheus\nEn Prometheus, vamos a la pestaña de consulta y probamos: up\nPulsamos Execute.\n\nInterpretación:\n\n1 = el servicio está accesible\n0 = el servicio no está accesible\n\nProbamos ahora: node_memory_MemTotal_bytes\n\nY después: node_cpu_seconds_total\n\nEstas métricas serán las que luego usaremos en Grafana.\n\n\n\n5.4.3 Node Exporter:\nhttp://{TU_IP}:9100/metrics\n\nNode Exporter debería estar exponiendo métricas en el puerto 9100.\nEjecutamos: curl http://localhost:9100/metrics | head\nSi queremos ver solo métricas relacionadas con el sistema: curl http://localhost:9100/metrics | grep node_cpu | head\n\n\n5.4.4 Grafana:\nhttp://{TU_IP}:3000 Usuario: admin Contraseña: Admin123*",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#añadir-prometheus-como-fuente-de-datos-en-grafana",
+    "href": "monitor_Grafana_Ubuntu.html#añadir-prometheus-como-fuente-de-datos-en-grafana",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "6.1 Añadir Prometheus como fuente de datos en Grafana",
+    "text": "6.1 Añadir Prometheus como fuente de datos en Grafana\nDentro de Grafana: Connections / Data sources -&gt; Add data source -&gt; Prometheus\nImportante: dentro de Docker no usamos localhost:9090 como aparece por defecto, porque localhost sería la máquina desde donde nos estamos conectando mediante el navegador web. Docker Compose crea una red interna donde cada servicio se resuelve por su nombre. Usamos el nombre del servicio Docker: (prometheus)\nEn la URL ponemos: http://prometheus:9090\n\nPulsamos: Save & test",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#crear-nuestro-primer-dashboard-manual",
+    "href": "monitor_Grafana_Ubuntu.html#crear-nuestro-primer-dashboard-manual",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "6.2 Crear nuestro primer dashboard manual",
+    "text": "6.2 Crear nuestro primer dashboard manual\n\n6.2.1 Añadir una visualización nueva\nEntramos en: Dashboards &gt; New &gt; New dashboard &gt; Add visualization\n\n\n\n6.2.1.1 Seleccionamos la fuente de datos:\nPrometheus\n\n\nTipo de visualización recomendado para todos los graficos: Time series\n\nEn todas las métricas daremos una ventana de tiempo para los intervalos de tiempo a mostrar:\nLa ventana [1m] suaviza picos y evita que las métricas fluctúen demasiado. Se pueden usar intervalos menores si se desea [5s] o [30s]. Prometheus no está calculando una media de los valores durante 1 minuto. Está calculando la velocidad de cambio por segundo, usando todos los puntos de datos recogidos en ese minuto. Es decir: Prometheus mira cómo ha cambiado la métrica en los últimos 60 segundos y calcula la pendiente (slope) de esa serie.\n\n\n\n\n6.2.2 Ejemplo sencillo con 5 mediciones y un pico\nVamos a imaginar una métrica de CPU idle (porcentaje de tiempo que la CPU está “sin hacer nada”) medida cada 15 segundos durante 1 minuto:\n\nTiempo total: 60 segundos\n5 puntos: t0,t15,t30,t45,t60\n\nSupongamos estos valores de idle%:\n\n\n\nInstante\nIdle (%)\n\n\n\n\nt0\n90\n\n\nt15\n90\n\n\nt30\n10 ← pico de actividad (CPU casi ocupada)\n\n\nt45\n90\n\n\nt60\n90\n\n\n\n\n\n6.2.3 1. Media simple de los valores\nCalculamos la media aritmética:\nmedia=90+90+10+90+905=3705=74\n\nIdle medio: 74%\nUso medio de CPU: 100−74=26%\n\nLa media “se come” el pico y lo reparte por todo el minuto.\n\n\n6.2.4 2. Qué hace rate() bajo el capó (versión conceptual)\nEn realidad, rate(node_cpu_seconds_total{mode=\"idle\"}[1m]) no trabaja con porcentajes, sino con un contador de segundos idle. Simplifiquemos con un ejemplo equivalente:\nSupongamos que el contador de segundos idle (node_cpu_seconds_total{mode=\"idle\"}) tiene estos valores:\n\n\n\nInstante\nIdle seconds (contador)\n\n\n\n\nt0\n0\n\n\nt15\n13.5\n\n\nt30\n14.0\n\n\nt45\n27.5\n\n\nt60\n41.0\n\n\n\nInterpretación:\n\nEntre t0 y t15: la CPU ha estado idle el 90% del tiempo → 13.5 s\nEntre t15 y t30: idle baja mucho (pico de actividad) → solo 0.5 s más\nEntre t30 y t45: vuelve a estar muy idle → suma 13.5 s\nEntre t45 y t60: otra vez muy idle → suma 13.5 s\n\nrate() hace, conceptualmente, esto:\n\nMira todos los puntos en la ventana [1m].\nAjusta una recta (regresión lineal) al contador.\nCalcula la pendiente de esa recta → segundos idle por segundo.\n\nPodemos aproximar la pendiente usando el primer y último punto:\npendiente≈41.0−060=4160≈0.6833\nEso significa:\n\nIdle rate: 0.6833 segundos idle por segundo → 68.33% idle\nUso de CPU: 100−68.33≈31.67%\n\n\n\n6.2.5 3. Comparación media vs rate() en tabla\n\n\n\n\n\n\n\n\n\nMétodo\nQué hace\nResultado idle\nResultado uso CPU\n\n\n\n\nMedia simple\nPromedia los 5 valores de idle%\n74%\n26%\n\n\nrate() + 1m\nCalcula la pendiente del contador en 60 s\n≈68.33%\n≈31.67%\n\n\n\n\n\n6.2.6 Idea clave\n\nLa media trata el pico como un valor más y lo reparte uniformemente.\nrate() mira cómo ha evolucionado el contador en todo el minuto y devuelve una tendencia (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.\n\n\n\n\n6.2.6.1 Panel 1: Uso de CPU (%)\nConsulta PromQL: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100)\n\nUnidad: Percent (0-100)\n\n\n6.2.6.1.1 Explicación de la métrica:\nnode_cpu_seconds_total{mode=\"idle\"}\nEsta métrica mide cuántos segundos de CPU ha pasado el sistema en estado idle (sin hacer nada).\nrate(...[1m])\nrate() calcula la velocidad de cambio por segundo en los últimos 1 minuto. En este caso: Qué porcentaje del tiempo reciente la CPU ha estado idle.\navg by (instance)(...)Prometheus tiene varios cores por instancia. Este avg calcula el promedio de idle entre todos los cores de la máquina.\nMultiplicación por 100: Convierte el valor en porcentaje: idle% = avg(rate(idle)) * 100\n100 - idle%Si restas el porcentaje de idle a 100 obtienes: CPU usada (%)\nEjemplo: Si la CPU está idle un 20% → 100 - 20 = 80% de uso.\nPor qué se usa el modo idle en lugar de user, system, etc.\nPorque:\n\nLa suma de todos los modos (user, system, iowait, idle…) es 100%.\nIdle es el más fácil de interpretar.\nSi sabes cuánto está idle, sabes cuánto está ocupada.\n\nEs la forma más robusta de medir uso real de CPU.\nLa fórmula calcula el porcentaje de CPU usada restando el porcentaje de tiempo idle al 100%. Usa rate() para medir actividad reciente y avg para promediar todos los cores de la instancia.\n\n\n\n6.2.6.2 Panel 2: Uso de memoria RAM (%)\nConsulta: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))\nUnidad: Percent (0-100)\nInterpretación: Muestra qué porcentaje de RAM está en uso. MemAvailable es la métrica recomendada por el kernel para medir memoria realmente libre, porque incluye caché y buffers reutilizables.\n\n\n6.2.6.3 Panel 3: Uso de disco raíz (%)\nConsulta: 100 * (1 - (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}/node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}))\nExplicación: node_filesystem_avail_bytesEs el espacio disponible (libre) en bytes. node_filesystem_size_bytesEs el tamaño total del filesystem.mountpoint=\"/\"esto especifica el disco raíz.\nEsto excluye los ficheros temporales o virtuales porque no representan almacenamiento real en el disco:\nfstype!~\"tmpfs|overlay|squashfs\"\nUnidad:Percent (0-100):\nInterpretación: Muestra cuánto espacio se está usando en la partición principal.\n\n\n6.2.6.4 Panel 4: tráfico de red recibido\nConsulta: rate(node_network_receive_bytes_total{device!=\"lo\"}[1m])\nUnidad: bytes/sec\n\n\n6.2.6.5 Panel 5: Tráfico de red enviado\nConsulta: rate(node_network_transmit_bytes_total{device!=\"lo\"}[1m])\nUnidad: bytes/sec\n\n\n6.2.6.6 Panel 6: Escritura en disco (B/s)\nConsulta: sum by (instance) ( rate(node_disk_written_bytes_total{device!~\"loop.*|ram.*\"}[1m]) )\nTipo de visualización: Time series\nUnidad: bytes/sec\n\n\n6.2.6.7 Resultado esperado\nEste panel debería mostrar picos cuando el sistema escriba datos en disco. Por ejemplo, al crear un fichero grande, instalar paquetes o realizar operaciones intensivas de escritura.\n\n\n6.2.6.8 Panel 7: Lectura en disco (B/s)\nConsulta: sum by (instance) ( rate(node_disk_read_bytes_total{device!~\"loop.*|ram.*\"}[1m]) )\nTipo de visualización: Time series\nUnidad: bytes/sec\n\n\n6.2.6.9 Resultado esperado\nEste panel debería mostrar picos cuando el sistema lea datos del disco. Por ejemplo, al abrir ficheros grandes, cargar datos o leer información desde una base de datos.\n\n\n6.2.6.10 Guardar el dashboard\nMonitorización básica del servidor Ubuntu\nDescripción: Dashboard básico para visualizar CPU, memoria, disco y red mediante Grafana, Prometheus y Node Exporter.\n\n\n6.2.7 Generar carga para ver cambios en el dashboard\nAhora vamos a provocar algo de actividad para que el dashboard lo muestre\nGeneramos carga de CPU durante 60 segundos:\ntimeout 60s bash -c 'while true; do true; done' &timeout 60s bash -c 'while true; do true; done' &wait\nEsto genera carga de CPU durante 60 segundos usando dos procesos.\nVolvemos a Grafana y observamos el panel de CPU.\nAhora generamos algo de uso de disco:\ndd if=/dev/zero of=/tmp/prueba-grafana.dat bs=1M count=512 oflag=direct\nEliminamos el fichero:\nrm /tmp/prueba-grafana.dat\nAhora vamos a provocar actividad de escritura para comprobar que el panel funciona.\nEjecutamos:\nsudo dd if=/dev/zero of=/tmp/prueba-escritura.img bs=1M count=2048 status=progress conv=fsync\nUna vez creado el fichero anterior, vamos a leerlo para comprobar el panel de lectura.\nEjecutamos:\nsudo dd if=/tmp/prueba-escritura.img of=/dev/null bs=1M status=progress iflag=direct\nLimpiar la prueba\nCuando terminemos, eliminamos el fichero de prueba:\nsudo rm /tmp/prueba-escritura.img\n\n\n6.2.8 Preguntas para responder:\n1. ¿Qué panel ha cambiado al ejecutar stress-ng?\n\n2. ¿Qué métrica permite ver el uso de CPU? node_cpu_seconds_total\n3. ¿Qué diferencia hay entre ver la información en Prometheus y verla en Grafana? grafana permite crear graficas\n4. ¿Qué ventaja tiene guardar un dashboard? poder agrupar metricas similares y monitorizar actividad relacionada\n5. ¿Qué problemas podríamos detectar antes de que el usuario final se queje? creando alertas podemos saber cuando un recurso esta bajo presión",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#importar-un-dashboard-ya-preparado",
+    "href": "monitor_Grafana_Ubuntu.html#importar-un-dashboard-ya-preparado",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "6.3 Importar un dashboard ya preparado",
+    "text": "6.3 Importar un dashboard ya preparado\nAdemás del dashboard manual, podemos importar un dashboard ya creado por la comunidad.\nEn Grafana: Dashboards &gt;New&gt; Import\n\nEn el campo de ID ponemos: 1860\nEse dashboard corresponde a Node Exporter Full, preparado para mostrar muchas métricas de Linux usando Prometheus Node Exporter. La propia página del dashboard indica que usa el job_name: node, por eso en esta práctica hemos llamado node al trabajo de Prometheus. (Grafana Labs)\nEs posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas no activadas. No pasa nada: para esta práctica lo importante es entender el flujo de monitorización.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#estado-de-los-contenedores",
+    "href": "monitor_Grafana_Ubuntu.html#estado-de-los-contenedores",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "7.1 Estado de los contenedores",
+    "text": "7.1 Estado de los contenedores\nEjecutamos: docker compose ps",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#puertos",
+    "href": "monitor_Grafana_Ubuntu.html#puertos",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "7.2 Puertos",
+    "text": "7.2 Puertos\nComprobamos los puertos: ss -tulnp | grep -E \"3000|9090|9100\"\nDeberíamos ver:\n\n3000 → Grafana\n9090 → Prometheus\n9100 → Node Exporter",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#métricas-node-exporter",
+    "href": "monitor_Grafana_Ubuntu.html#métricas-node-exporter",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "7.3 Métricas Node Exporter",
+    "text": "7.3 Métricas Node Exporter\nComprobamos métricas: curl http://localhost:9100/metrics | grep node_memory | headEste comando está consultando las métricas de memoria que expone Node Exporter en el endpoint /metrics, y luego filtrando solo las que empiezan por node_memory_.\nhead hará que sólo se muestren las 10 primeras filas de información.\nLo que dará es información detallada del estado de la memoria RAM de tu máquina, desglosada en diferentes categorías internas del kernel de Linux.\n\nExplicación del output\n1. # HELP node_memory_Active_anon_bytes\n\nDescripción de la métrica Prometheus siempre incluye una línea HELP explicando qué es la métrica.\n\n2. # TYPE node_memory_Active_anon_bytes gauge\n\nTipo de métrica Es un gauge, es decir, un valor que sube y baja (no es un contador).\n\n3. node_memory_Active_anon_bytes 3.1092736e+08\n\nValor actual de la métrica Aquí tienes el valor en bytes: 3.1092736e+08 ≈ 310 MB\n\n¿Qué significa Active_anon_bytes?\n\nActive = páginas de memoria que el kernel considera “activas”, es decir, que se han usado recientemente y no se pueden descartar.\nanon = anonymous memory, memoria que no pertenece a ningún archivo (por ejemplo, variables de procesos, heap, stack).\n\nEn resumen: Memoria activa usada por procesos (no asociada a archivos).\n4. node_memory_Active_bytes 7.97720576e+08\nMemoria activa total que el sistema está usando y no puede liberar. Esto incluye toda la memoria activa, tanto:\n\nanónima (Active_anon)\nde archivos (Active_file)\n\n5. node_memory_Active_file_bytes 4.86793216e+08Esto es la parte de la memoria activa que sí está asociada a archivos, por ejemplo:\n\nbinarios cargados\nbibliotecas dinámicas\npáginas de archivos que se han usado recientemente\n\n6. node_memory_AnonHugePages_bytesAquí empieza la siguiente métrica, pero tu head corta justo después.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#comprobamos-prometheus",
+    "href": "monitor_Grafana_Ubuntu.html#comprobamos-prometheus",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "7.4 Comprobamos Prometheus:",
+    "text": "7.4 Comprobamos Prometheus:\nhttp://{IP_DEL_SERVIDOR}:9090/targets\n\nComprobamos Grafana:\nhttp://IP_DEL_SERVIDOR:3000",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#grafana-no-abre",
+    "href": "monitor_Grafana_Ubuntu.html#grafana-no-abre",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "9.1 Grafana no abre",
+    "text": "9.1 Grafana no abre\nComprobar que el contenedor está activo: docker compose ps\nComprobar logs: docker compose logs grafana\nComprobar puerto: ss -tulnp | grep 3000",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#prometheus-no-muestra-el-target-node-en-up",
+    "href": "monitor_Grafana_Ubuntu.html#prometheus-no-muestra-el-target-node-en-up",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "9.2 Prometheus no muestra el target node en UP",
+    "text": "9.2 Prometheus no muestra el target node en UP\nRevisar el fichero: cat prometheus/prometheus.yml\nDebe aparecer:\n- job_name: “node”\nstatic_configs:\n\ntargets: [“node-exporter:9100”]\n\nReiniciar:\ndocker compose restart prometheus",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#grafana-no-conecta-con-prometheus",
+    "href": "monitor_Grafana_Ubuntu.html#grafana-no-conecta-con-prometheus",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "9.3 Grafana no conecta con Prometheus",
+    "text": "9.3 Grafana no conecta con Prometheus\nLa URL correcta dentro de Grafana es: http://prometheus:9090 No usar: http://localhost:9090",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
+    ]
+  },
+  {
+    "objectID": "monitor_Grafana_Ubuntu.html#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión",
+    "href": "monitor_Grafana_Ubuntu.html#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión",
+    "title": "Creación de un monitor de sistema en linux con Grafana",
+    "section": "9.4 En VirtualBox no puedo acceder desde el equipo anfitrión",
+    "text": "9.4 En VirtualBox no puedo acceder desde el equipo anfitrión\nOpciones:\n1. Usar Adaptador Puente en la VM.\n2. Usar red NAT con redirección de puertos.\n3. Abrir Grafana desde el navegador dentro de la propia VM, si tiene entorno gráfico.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "monitor_Grafana_Ubuntu"
     ]
   },
   {
@@ -489,14 +897,14 @@
     "href": "index.html",
     "title": "Índice de Contenidos",
     "section": "",
-    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\nMonitorización de Sistemas\n\nMonitorización de Sistemas Windows\nMonitorización de Sistemas Linux\n\n\n\n\n\n\n\nIntroducción a los datos y bases de datos\nEjercicio: Modelado de Datos\n\n\n\n\n\nUbuntu Cheat Sheet"
+    "text": "Redes y Protocolos\nServidores Proxy\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\nContenedores\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\nMonitorización de Sistemas\n\nMonitorización de Sistemas Windows\nMonitorización de Sistemas Linux\nmonitor_Grafana_Ubuntu\n\n\n\n\n\n\n\nIntroducción a los datos y bases de datos\nEjercicio: Modelado de Datos\n\n\n\n\n\nUbuntu Cheat Sheet"
   },
   {
     "objectID": "index.html#bloque-1-redes-e-infraestructura",
     "href": "index.html#bloque-1-redes-e-infraestructura",
     "title": "Índice de Contenidos",
     "section": "",
-    "text": "Redes y Protocolos\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\nMonitorización de Sistemas\n\nMonitorización de Sistemas Windows\nMonitorización de Sistemas Linux"
+    "text": "Redes y Protocolos\nServidores Proxy\nConceptos de ordenadores y servidores\nSistemas Operativos\nVirtualizacion\n\nVirtualizacion\nGuía de Pruebas de Conectividad en Entornos de Virtualización\nManejando un servidor Linux\nPráctica: manejando un servidor Linux\nGuía: Configuración de SSH en Ubuntu\nContenedores\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\n\nProcesos, Servicios, Tareas y Procesos en Segundo Plano\nPráctica extra: monitor sencillo con grafana\nMonitorización de Sistemas\n\nMonitorización de Sistemas Windows\nMonitorización de Sistemas Linux\nmonitor_Grafana_Ubuntu"
   },
   {
     "objectID": "index.html#bloque-2-bases-de-datos",
@@ -523,6 +931,136 @@
       "Bloque 1: Redes e Infraestructura",
       "Virtualizacion",
       "Práctica: manejando un servidor Linux"
+    ]
+  },
+  {
+    "objectID": "contenedores.html",
+    "href": "contenedores.html",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Un contenedor es una unidad ligera y aislada que empaqueta una aplicación junto con todo lo necesario para ejecutarla: dependencias, librerías, configuración y entorno. La clave es que no incluye un sistema operativo completo, sino solo lo imprescindible.\n\n\n\nIndependiente de la máquina donde se ejecuta El contenedor funciona igual en cualquier sistema que tenga Docker instalado, sin importar el hardware o el sistema operativo del host.\nPortable Puedes moverlo entre tu portátil, un servidor Linux, un clúster Kubernetes o Azure Container Instances sin modificar nada.\nAislamiento Cada contenedor tiene su propio entorno. Si una prueba falla o una app se rompe, no afecta al resto.\nEficiente en recursos Usa solo la infraestructura necesaria para la aplicación, sin cargar un sistema operativo completo como una máquina virtual.\nDespliegue ágil Crear, iniciar o destruir contenedores es extremadamente rápido (segundos), lo que facilita pruebas, CI/CD y desarrollo.\nMultiplicidad Un único host puede ejecutar muchas aplicaciones en muchos contenedores simultáneamente.\n\n\n\n\n\nDocker es la plataforma más popular para crear, ejecutar y gestionar contenedores.\nIncluye:\n\nDocker Engine → el motor que ejecuta contenedores.\nDocker CLI → comandos para construir imágenes, correr contenedores, etc.\nDocker Hub → repositorio de imágenes públicas y privadas.\n\nDocker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.\n\n\n\nUna imagen Docker es una plantilla inmutable que contiene todo lo necesario para crear un contenedor.\nPiensa en ella como:\n\nEl molde del que se crean los contenedores.\nUn archivo que describe el entorno: sistema base, dependencias, configuración, aplicación.\n\nCaracterísticas:\n\nInmutable: no cambia una vez creada.\nVersionable: puedes tener app:v1, app:v2, etc.\nPortable: se puede subir a Docker Hub o Azure Container Registry.\nReutilizable: puedes crear miles de contenedores a partir de la misma imagen.\n\n\n\n\n\n\n\n\n\n\n\n\nConcepto\nImagen Docker\nContenedor\n\n\n\n\nQué es\nPlantilla, receta, blueprint\nInstancia en ejecución\n\n\nEstado\nInmutable\nMutable (puede tener cambios mientras corre)\n\n\nFunción\nDefine cómo debe ser el entorno\nEjecuta la aplicación\n\n\nVida\nPermanente (archivo)\nTemporal (se crea, corre y se destruye)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCaracterística\nContenedor\nMáquina Virtual\n\n\n\n\nSistema operativo\nNo incluye SO completo; comparte kernel del host\nIncluye un SO completo (Windows, Linux…)\n\n\nPeso\nMuy ligero (MB)\nPesado (GB)\n\n\nVelocidad de inicio\nSegundos\nMinutos\n\n\nAislamiento\nA nivel de proceso\nA nivel de hardware\n\n\nRecursos\nUsa solo lo necesario para la app\nUsa RAM, CPU y disco para el SO entero\n\n\nPortabilidad\nMuy alta\nMenor, depende del hipervisor\n\n\nUso típico\nMicroservicios, CI/CD, despliegues rápidos\nSistemas completos, entornos legacy\n\n\n\n\nLos contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.\n\n\n\n\n\nImagen → Receta de cocina.\nContenedor → Plato preparado siguiendo la receta.\nMáquina virtual → Una cocina completa montada solo para preparar ese plato.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#qué-es-un-contenedor",
+    "href": "contenedores.html#qué-es-un-contenedor",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Un contenedor es una unidad ligera y aislada que empaqueta una aplicación junto con todo lo necesario para ejecutarla: dependencias, librerías, configuración y entorno. La clave es que no incluye un sistema operativo completo, sino solo lo imprescindible.\n\n\n\nIndependiente de la máquina donde se ejecuta El contenedor funciona igual en cualquier sistema que tenga Docker instalado, sin importar el hardware o el sistema operativo del host.\nPortable Puedes moverlo entre tu portátil, un servidor Linux, un clúster Kubernetes o Azure Container Instances sin modificar nada.\nAislamiento Cada contenedor tiene su propio entorno. Si una prueba falla o una app se rompe, no afecta al resto.\nEficiente en recursos Usa solo la infraestructura necesaria para la aplicación, sin cargar un sistema operativo completo como una máquina virtual.\nDespliegue ágil Crear, iniciar o destruir contenedores es extremadamente rápido (segundos), lo que facilita pruebas, CI/CD y desarrollo.\nMultiplicidad Un único host puede ejecutar muchas aplicaciones en muchos contenedores simultáneamente.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#qué-es-docker",
+    "href": "contenedores.html#qué-es-docker",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Docker es la plataforma más popular para crear, ejecutar y gestionar contenedores.\nIncluye:\n\nDocker Engine → el motor que ejecuta contenedores.\nDocker CLI → comandos para construir imágenes, correr contenedores, etc.\nDocker Hub → repositorio de imágenes públicas y privadas.\n\nDocker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#qué-es-una-imagen-docker",
+    "href": "contenedores.html#qué-es-una-imagen-docker",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Una imagen Docker es una plantilla inmutable que contiene todo lo necesario para crear un contenedor.\nPiensa en ella como:\n\nEl molde del que se crean los contenedores.\nUn archivo que describe el entorno: sistema base, dependencias, configuración, aplicación.\n\nCaracterísticas:\n\nInmutable: no cambia una vez creada.\nVersionable: puedes tener app:v1, app:v2, etc.\nPortable: se puede subir a Docker Hub o Azure Container Registry.\nReutilizable: puedes crear miles de contenedores a partir de la misma imagen.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#diferencia-entre-una-imagen-docker-y-un-contenedor",
+    "href": "contenedores.html#diferencia-entre-una-imagen-docker-y-un-contenedor",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Concepto\nImagen Docker\nContenedor\n\n\n\n\nQué es\nPlantilla, receta, blueprint\nInstancia en ejecución\n\n\nEstado\nInmutable\nMutable (puede tener cambios mientras corre)\n\n\nFunción\nDefine cómo debe ser el entorno\nEjecuta la aplicación\n\n\nVida\nPermanente (archivo)\nTemporal (se crea, corre y se destruye)",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#diferencia-entre-contenedores-y-máquinas-virtuales",
+    "href": "contenedores.html#diferencia-entre-contenedores-y-máquinas-virtuales",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Característica\nContenedor\nMáquina Virtual\n\n\n\n\nSistema operativo\nNo incluye SO completo; comparte kernel del host\nIncluye un SO completo (Windows, Linux…)\n\n\nPeso\nMuy ligero (MB)\nPesado (GB)\n\n\nVelocidad de inicio\nSegundos\nMinutos\n\n\nAislamiento\nA nivel de proceso\nA nivel de hardware\n\n\nRecursos\nUsa solo lo necesario para la app\nUsa RAM, CPU y disco para el SO entero\n\n\nPortabilidad\nMuy alta\nMenor, depende del hipervisor\n\n\nUso típico\nMicroservicios, CI/CD, despliegues rápidos\nSistemas completos, entornos legacy\n\n\n\n\nLos contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#ejemplo-mental-para-recordar",
+    "href": "contenedores.html#ejemplo-mental-para-recordar",
+    "title": "Contenedores",
+    "section": "",
+    "text": "Imagen → Receta de cocina.\nContenedor → Plato preparado siguiendo la receta.\nMáquina virtual → Una cocina completa montada solo para preparar ese plato.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#qué-es-docker-compose",
+    "href": "contenedores.html#qué-es-docker-compose",
+    "title": "Contenedores",
+    "section": "2.1 Qué es docker-compose",
+    "text": "2.1 Qué es docker-compose\ndocker-compose es una herramienta que permite definir y ejecutar múltiples contenedores como un solo servicio. Usa un archivo llamado docker-compose.yml.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#para-qué-sirve",
+    "href": "contenedores.html#para-qué-sirve",
+    "title": "Contenedores",
+    "section": "2.2 Para qué sirve",
+    "text": "2.2 Para qué sirve\n\nLevantar varios contenedores con un solo comando.\nDefinir redes, volúmenes y dependencias.\nFacilitar entornos de desarrollo y pruebas.\nOrquestar microservicios simples sin necesidad de Kubernetes.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
+    ]
+  },
+  {
+    "objectID": "contenedores.html#idea-clave",
+    "href": "contenedores.html#idea-clave",
+    "title": "Contenedores",
+    "section": "2.3 Idea clave",
+    "text": "2.3 Idea clave\n\ndocker-compose permite levantar bases de datos, APIs, frontends y servicios auxiliares juntos, con un solo archivo y un solo comando.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Virtualizacion",
+      "Contenedores"
     ]
   },
   {
@@ -1082,133 +1620,219 @@
     ]
   },
   {
-    "objectID": "procesos.html",
-    "href": "procesos.html",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "ordenadores.html",
+    "href": "ordenadores.html",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
     "section": "",
-    "text": "Un proceso es un programa en ejecución. Un proceso incluye:\n\nEl código del programa.\nLa memoria que usa (variables, datos, pila, heap).\nSus recursos asignados (CPU, archivos abiertos, puertos, etc.).\nSu estado (ejecutándose, esperando, detenido).\n\nCada proceso tiene un PID (Process ID) único.\nEjemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL. Puede crear subprocesos o threads.\n\n\nDentro de cada proceso existen subprocesos (threads), que son las unidades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario….\nEl sistema operativo los gestiona mediante un planificador que reparte CPU.\n\n\n\n\nUn servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas.\n\nSe inician automáticamente al arrancar el sistema (o bajo demanda).\nNo requieren interacción del usuario.\nSuelen ser críticos para el funcionamiento del sistema.\n\nEjemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).\n\nEn Windows: se llaman Servicios. En Linux: se gestionan con systemd y se llaman daemons (terminan en “d”, como sshd).\n\n\n\n\nUna tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar. Una tarea puede conllevar procesos y servicios.\nEl administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.\nEjemplos: programar copias de seguridad.\n\n\n\nSon procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.\nPueden ser servicios, demonios o procesos lanzados manualmente.\nUn proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).\nEjemplos: sincronización de OneDrive.exe\n\n\n\nSon los pilares invisibles del SO. Los servicios son procesos especiales que:\n\nSe inician antes de que el usuario inicie sesión\nno tienen interfaz gráfica visible\nSe administran mediante la Consola de Servicios services.msc\nRealizan funciones críticas del sistema\n\nTodos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.\n\n\nProceso: programa en ejecución con recursos asignados.\nServicio: proceso del sistema que corre en segundo plano y ofrece funciones.\nTarea: unidad de trabajo (proceso, hilo o trabajo programado).\nProceso en segundo plano: proceso sin interacción directa con el usuario.",
+    "text": "Físicamente, un ordenador de escritorio, un portátil y un servidor corporativo están compuestos por los mismos tipos de componentes esenciales (procesador, memoria, almacenamiento). La diferencia fundamental no radica en su naturaleza física, sino en el servicio y la carga de trabajo para los que están diseñados, así como en su redundancia, potencia y tolerancia a fallos.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Conceptos de ordenadores y servidores"
     ]
   },
   {
-    "objectID": "procesos.html#procesos",
-    "href": "procesos.html#procesos",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "ordenadores.html#interfaces-de-entradasalida",
+    "href": "ordenadores.html#interfaces-de-entradasalida",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "1.1 Interfaces de entrada/Salida",
+    "text": "1.1 Interfaces de entrada/Salida\n\nConector: Parte física donde se enchufa algo (USB, HDMI, RJ45…)\nPuerto: Puerto de conexión físico o lógico. Si es físico se está refieriendo a un conector\nInterfaz: Reglas físicas y lógicas de comunicación.\n\nInterfaces Internas (Dentro de la torre/servidor)\n\nSATA (Serial ATA): El cable y conector estándar de toda la vida para discos duros mecánicos (HDD) y SSDs de 2.5 pulgadas. Es fiable, pero hoy en día es el “cuello de botella” en velocidad.\nPCIe (Peripheral Component Interconnect Express): El bus principal y más rápido de la placa base. Son las ranuras largas donde se pinchan las tarjetas gráficas, tarjetas de red de alta velocidad y los adaptadores para SSDs modernos.\nM.2: Es un formato físico miniatura (parece un paquete de chicles plano). Se conecta directamente pegado a la placa base y se usa para SSDs modernos (usando el protocolo ultrarrápido NVMe) o tarjetas Wi-Fi en portátiles.\nU.2 / U.3: Son los conectores de “gama alta” equivalentes al M.2 pero diseñados exclusivamente para servidores empresariales. Permiten conectar SSDs NVMe muy potentes con cables y sacarlos “en caliente” sin apagar el servidor.\nSAS (Serial Attached SCSI): El “hermano mayor y profesional” del SATA. Es una interfaz de conexión para discos duros diseñada para servidores de bases de datos de alto rendimiento, preparada para estar leyendo y escribiendo datos 24/7 sin fallar.\n\nInterfaces Externas (Periféricos y conexiones fuera de la caja)\n\nUSB / USB4 (Universal Serial Bus): El conector universal por excelencia para ratones, teclados, pendrives, etc. Sus últimas versiones (USB-C / USB4) son tan rápidas que pueden transmitir datos masivos, energía e imagen a la vez.\nHDMI / DisplayPort: Los cables dedicados exclusivamente a mandar vídeo y audio desde el ordenador al monitor. HDMI es el estándar de las televisiones, y DisplayPort es el estándar informático preferido para monitores de altísima resolución o muchos hercios.\nEthernet RJ45: La clavija clásica de plástico transparente con un “clic” para el cable de red. Es la forma física de conectar tu ordenador por cable al router o al switch para tener una conexión a internet o red local (LAN) estable y rápida.\nThunderbolt: Una tecnología desarrollada por Intel y Apple. Físicamente usa el mismo conector que un USB-C, pero por dentro es una “autopista” muchísimo más rápida. Permite cosas extremas como conectar varias pantallas 4K en cadena o conectar una tarjeta gráfica externa a un portátil.\n\n\nBus: Canal Compartido entre componentes.\nProtocolo: Reglas de comunicación entre dispositivos.\n\nVamos a separarlo con una analogía que no falla. Imagina que dos empresas (el procesador y un disco duro, por ejemplo) tienen que trabajar juntas y pasarse mercancía de un lado a otro.\n\nEl Conector o Puerto es la parte puramente física. Es el muelle de carga de la fábrica. Tiene una forma y un tamaño concretos para que los camiones encajen y no puedas meter el enchufe al revés.\nEl Protocolo es la parte puramente lógica. Es el “idioma” que hablan los trabajadores y las reglas del intercambio: “yo te paso dos cajas, tú me firmas un albarán para confirmar que las tienes, y luego te paso otras dos”.\nLa Interfaz es el acuerdo completo. Es el estándar que define ambas cosas a la vez: cómo es la conexión física (los pines, el cable, el voltaje) y cómo es la comunicación lógica (la velocidad, el formato de los datos, el idioma).\n\nUn ejemplo para aterrizarlo\nPiensa en la interfaz SATA (la típica de los discos duros antiguos). Cuando dices que un disco es SATA, no solo te refieres a que usa ese cablecito de plástico con forma de “L”. Te refieres a que usa ese cable y además habla el idioma “SATA” con la placa base para transmitir los datos a una velocidad concreta. Es el paquete entero.\n¿Por qué existen tantas interfaces distintas (USB, PCIe, HDMI…)? Porque no todos los componentes necesitan el mismo nivel de exigencia:\n\nUn teclado solo necesita enviar datos muy simples y lentos (las letras que pulsas). Por eso usa la interfaz USB, que físicamente es un enchufe pequeño y lógicamente es un idioma muy universal y fácil de gestionar.\nUn disco duro moderno de alto rendimiento para bases de datos necesita mover gigabytes de información en milisegundos. Por eso usa la interfaz PCIe (o M.2), que físicamente es una ranura con muchísimos conectores dorados pegada a la placa base, y lógicamente es una “autopista” de múltiples carriles directos al procesador.\n\nBásicamente, la interfaz es el “contrato” total que firman dos piezas de hardware para poder conectarse y entenderse sin problemas.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#controladoras-y-drivers",
+    "href": "ordenadores.html#controladoras-y-drivers",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "1.2 Controladoras y Drivers",
+    "text": "1.2 Controladoras y Drivers\nUna controladora es el componente (hardware) encargado de gestionar un dispositivo o un conjunto de dispositivos. Actúa como intermediario entre el sistema y el hardware real, permitiendo que el equipo pueda usarlo correctamente. Puede estar ubicada en varios sitios:\n\nIntegrada en la placa base (muy común en PCs y servidores).\nIntegrada en el propio dispositivo (por ejemplo, un SSD NVMe).\nEn una tarjeta de expansión (como una controladora RAID dedicada).\nIncluso dentro del procesador (controladoras de memoria modernas).\n\n\n1.2.1 Tipos habituales de controladoras\n\nSATA: controla discos duros y SSD SATA.\nUSB: gestiona puertos y dispositivos USB.\nRed: controla la interfaz de red (Ethernet o Wi‑Fi).\nGráfica: gestiona la salida de vídeo y el procesamiento gráfico.\nRAID: combina varios discos para mejorar rendimiento o tolerancia a fallos.\nNVMe: controla SSDs de alta velocidad conectados por PCIe.\n\n\n\n1.2.2 Drivers\nUn driver es el software que permite que el sistema operativo se comunique con el hardware. Sin el driver adecuado, el dispositivo no funciona o funciona de forma limitada.\n\n1.2.2.1 Importancia en servidores En entornos de servidor, los drivers son especialmente críticos en:\n\nControladoras RAID\nTarjetas de red\nAdaptadores de almacenamiento (SAS, NVMe, Fibre Channel)\n\nAntes de instalar un sistema operativo en un servidor, es fundamental verificar la compatibilidad de los drivers, ya que un driver incorrecto puede impedir que el sistema detecte discos, redes o almacenamiento externo.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#dispositivos-de-interconexión-de-red-hub-switch-y-router",
+    "href": "ordenadores.html#dispositivos-de-interconexión-de-red-hub-switch-y-router",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "1.3 Dispositivos de Interconexión de Red: Hub, Switch y Router",
+    "text": "1.3 Dispositivos de Interconexión de Red: Hub, Switch y Router\nLos dispositivos de interconexión permiten construir y organizar redes locales, así como conectarlas entre sí o con redes externas. Los tres más comunes son el hub, el switch y el router, cada uno con funciones y niveles de inteligencia diferentes dentro del modelo OSI. ### Hub Un hub es un dispositivo de red muy básico que simplemente repite todo el tráfico que recibe por cualquiera de sus puertos hacia todos los demás puertos. #### Cómo funciona - No “entiende” direcciones MAC ni IP. - No decide a quién enviar los datos: los difunde a todos. - Genera muchas colisiones y congestión en redes grandes.\n\n1.3.0.1 Relación con los puertos\n\nSus puertos funcionan como simples puntos de conexión eléctrica.\nNo distinguen qué dispositivo está conectado en cada puerto.\nTodo lo que entra por un puerto se replica a todos los demás, sin filtrado. #### Características clave\nCapa OSI: Capa 1 (Física).\nNo ofrece seguridad ni segmentación.\nObsoleto en la mayoría de entornos profesionales.\n\n\n\n1.3.0.2 Cuándo se usaba\n\nRedes pequeñas y antiguas donde el tráfico era mínimo. ### Switch Un switch es un dispositivo de red que conecta equipos dentro de una misma red local (LAN) y envía los datos solo al puerto donde está el destinatario. #### Cómo funciona\nAprende las direcciones MAC de los dispositivos conectados.\nConstruye una tabla MAC para reenviar tráfico de forma eficiente.\nReduce colisiones y mejora el rendimiento respecto a un hub. #### Relación con los puertos\nCada puerto se asocia a una dirección MAC aprendida dinámicamente.\nEl switch construye una tabla MAC que relaciona puerto ↔︎ dispositivo.\nEsto permite reenviar los datos solo al puerto correcto, reduciendo colisiones y mejorando el rendimiento. #### Características clave\nCapa OSI: Capa 2 (Enlace), aunque existen switches de Capa 3.\nPermite segmentación mediante VLANs.\nEs el estándar actual para redes LAN.\n\n\n\n1.3.0.3 Ventajas\n\nMás rápido, seguro y eficiente que un hub.\nPermite mayor control del tráfico interno.\n\n\n\n1.3.1 Router\nUn router es el dispositivo encargado de interconectar redes distintas y decidir por qué camino deben viajar los paquetes para llegar a su destino. #### Cómo funciona - Trabaja con direcciones IP. - Mantiene tablas de enrutamiento para decidir la mejor ruta. - Es el dispositivo que normalmente actúa como puerta de enlace predeterminada. #### Relación con los puertos - Sus puertos representan interfaces de red independientes, cada una con su propia dirección IP. - Cada puerto pertenece a una red distinta (por ejemplo, WAN y LAN). - El router utiliza estos puertos para interconectar redes y decidir la ruta que deben seguir los paquetes. #### Características clave - Capa OSI: Capa 3 (Red). - Permite conectar: - LAN ↔︎ Internet\n- LAN ↔︎ LAN\n- Subredes internas entre sí - Puede incluir funciones adicionales: NAT, firewall, DHCP, etc.\n\n1.3.1.1 Ejemplo típico\nEn una casa o empresa pequeña, el router: - Conecta la red local a Internet. - Asigna IPs (si tiene DHCP). - Hace NAT para que varios dispositivos compartan una sola IP pública. ## Puntos de Acceso (Access Point)\nUn Punto de Acceso o Access Point (AP) es un dispositivo de red que permite conectar dispositivos inalámbricos (móviles, portátiles, tablets, IoT…) a una red local (LAN). Su función principal es convertir la red cableada en una red Wi‑Fi, actuando como puente entre ambos medios. A diferencia de un router doméstico, un AP no enruta tráfico ni asigna direcciones IP por sí mismo (a menos que sea un modelo híbrido). Su misión es puramente proporcionar conectividad inalámbrica dentro de una red ya existente. ### Funciones principales - Proveer acceso Wi‑Fi a dispositivos inalámbricos. - Convertir tráfico inalámbrico en tráfico cableado y viceversa. - Gestionar múltiples clientes simultáneamente. - Controlar la potencia, canales y estándares Wi‑Fi (2.4 GHz, 5 GHz, 6 GHz según modelo). - Extender la cobertura de una red LAN sin crear una red nueva. ### Cómo funciona 1. El AP se conecta por cable Ethernet a un switch o router. 2. Emite una o varias redes Wi‑Fi (SSID). 3. Los dispositivos se conectan al AP mediante radiofrecuencia. 4. El AP envía ese tráfico al switch/router para que llegue al resto de la red o a Internet. ### Relación con el modelo OSI y TCP/IP - OSI: Trabaja principalmente en Capa 2 (Enlace), igual que un switch, pero usando radio en lugar de cable. - TCP/IP (tu curso): Pertenece a la Capa Física / Enlace de Datos. - No opera en Capa 3, por lo que no enruta ni actúa como puerta de enlace. ### Tipos de Access Point - AP autónomos: Funcionan de forma independiente, configurados uno a uno. - AP gestionados: Controlados por un Controlador Wi‑Fi o por la nube (muy usados en empresas). - AP domésticos integrados en routers: Lo que la mayoría de usuarios tiene en casa (router + switch + AP en un solo aparato). ### Diferencias con otros dispositivos - No es un router: No asigna IP, no enruta, no hace NAT. - No es un repetidor Wi‑Fi: El repetidor copia la señal; el AP crea una red nueva conectada por cable. - Se parece a un switch inalámbrico: Conecta dispositivos, pero usando Wi‑Fi en vez de puertos Ethernet. ### Ventajas - Amplía la cobertura Wi‑Fi de forma profesional. - Permite conectar muchos dispositivos sin saturar un router doméstico. - Ofrece mejor rendimiento y estabilidad que los repetidores.\n\n\n\n1.3.2 Cuándo se usa\n\nOficinas, centros educativos, almacenes, hoteles.\nViviendas grandes con cableado estructurado.\nCualquier entorno donde se necesite Wi‑Fi estable y escalable. ## Comparativa entre Router, Switch, Access Point y Repetidor\n\nPara entender mejor el papel de cada dispositivo dentro de una red, es útil compararlos directamente. Aunque algunos equipos domésticos combinan varias funciones en un solo aparato, a nivel profesional cada dispositivo cumple una misión específica. ### Tabla comparativa\n\n\n\n\n\n\n\n\n\n\n\nDispositivo\nFunción principal\nCapa OSI\nCapa TCP/IP\nInteligencia\nUso típico\n\n\n\n\nRouter\nConecta redes distintas y enruta tráfico entre ellas\nCapa 3 (Red)\nCapa de Red\nEnruta IP, NAT, puerta de enlace\nSalida a Internet, interconexión de subredes\n\n\nSwitch\nConecta dispositivos dentro de la misma LAN\nCapa 2 (Enlace)\nCapa Física / Enlace\nAprende MAC, segmenta tráfico\nRedes modernas cableadas\n\n\nAccess Point (AP)\nProporciona conectividad Wi‑Fi dentro de una LAN\nCapa 2 (Enlace)\nCapa Física / Enlace\nGestiona clientes Wi‑Fi, puente inalámbrico\nAmpliar cobertura Wi‑Fi profesional\n\n\nRepetidor Wi‑Fi\nAmplifica y retransmite una señal Wi‑Fi existente\nCapa 1–2\nCapa Física / Enlace\nCopia la señal sin cable\nExtender Wi‑Fi en casas pequeñas",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#diferencias-clave-entre-los-dispositivos",
+    "href": "ordenadores.html#diferencias-clave-entre-los-dispositivos",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "1.4 Diferencias clave entre los dispositivos",
+    "text": "1.4 Diferencias clave entre los dispositivos\n\n1.4.1 Router\n\nConecta redes distintas.\nAsigna IP (si tiene DHCP).\nHace NAT para salir a Internet.\nEs la puerta de enlace de la red. ### Switch\nConecta dispositivos dentro de la misma red.\nUsa direcciones MAC para enviar tráfico solo al puerto correcto.\nReduce colisiones y mejora el rendimiento.\n\n\n\n1.4.2 Access Point (AP)\n\nProporciona Wi‑Fi a una red cableada.\nNo enruta ni asigna IP (salvo modelos híbridos).\nActúa como un switch inalámbrico. ### Repetidor Wi‑Fi\nNo crea una red nueva.\nSolo repite la señal Wi‑Fi existente.\nReduce el ancho de banda disponible al dividirlo entre recepción y retransmisión. ## Cuándo usar cada uno\nRouter: cuando necesitas conectar tu red a Internet o unir varias subredes.\nSwitch: cuando necesitas más puertos Ethernet o segmentar tráfico interno.\nAccess Point: cuando necesitas ampliar la cobertura Wi‑Fi de forma profesional y estable.\nRepetidor: cuando no puedes tirar cable y solo necesitas ampliar señal de forma sencilla.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#el-juego-de-instrucciones-isa",
+    "href": "ordenadores.html#el-juego-de-instrucciones-isa",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "2.1 El juego de instrucciones (ISA)",
+    "text": "2.1 El juego de instrucciones (ISA)\nEl ISA (Instruction Set Architecture) es el conjunto de instrucciones que un procesador entiende y puede ejecutar. Define el “idioma” de la CPU: cómo se representan las instrucciones, cómo se accede a memoria, qué registros existen y qué operaciones están permitidas. El ISA es la frontera entre hardware y software:\n- El hardware implementa el ISA.\n\nEl software (compiladores, ensamblador, SO) genera instrucciones según ese ISA.\n\nPor eso un programa compilado para un ISA no funciona en otro.\n\n2.1.1 Familias de ISA\nExisten varias familias importantes, cada una con su propio conjunto de instrucciones:\n\nx86 / x86‑64 (Intel, AMD) Arquitectura CISC muy extendida en PCs y servidores.\nARM / ARM64 Arquitectura RISC usada en móviles, tablets y procesadores Apple Silicon.\nRISC‑V ISA abierto y modular, cada vez más popular en investigación y hardware embebido.\nMIPS, PowerPC, SPARC Otras arquitecturas RISC históricas o especializadas. Cada familia tiene su propio ensamblador y su propio lenguaje máquina. ### Tipos de instrucciones\n\nAunque cada ISA tiene sus particularidades, casi todos incluyen los mismos tipos básicos de instrucciones:\n\nAritméticas y lógicas ADD, SUB, MUL, AND, OR, XOR…\nMovimiento de datos MOV, LOAD, STORE\n(mover datos entre registros y memoria)\nControl de flujo JMP, CALL, RET, JE, JNE\n(saltos, llamadas a funciones, bucles)\nGestión de memoria y pila PUSH, POP, direccionamiento, acceso a pila\nInstrucciones especiales Dependientes del ISA: SIMD, criptografía, virtualización, etc.\n\n\n\n2.1.2 Resumen para memorizar\n\nISA = conjunto de instrucciones de la CPU.\nCada arquitectura tiene su propio ISA (x86, ARM, RISC‑V…). -\nLos tipos de instrucciones suelen ser: aritméticas, movimiento, saltos y especiales.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#cisc-vs-risc",
+    "href": "ordenadores.html#cisc-vs-risc",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "2.2 CISC vs RISC",
+    "text": "2.2 CISC vs RISC\nLas arquitecturas CISC (Complex Instruction Set Computer) y RISC (Reduced Instruction Set Computer) representan dos enfoques distintos en el diseño de procesadores. No son compatibles entre sí porque cada una utiliza un conjunto de instrucciones diferente, es decir, un “lenguaje máquina” propio que la otra no puede ejecutar directamente.\n\n2.2.1 CISC (Complex Instruction Set Computer)\n\nConjunto de instrucciones amplio y complejo.\nUna sola instrucción puede realizar operaciones de alto nivel.\nLas instrucciones suelen requerir más ciclos de reloj, pero hacen más trabajo por instrucción.\nEjemplo: x86 / x86‑64 (Intel, AMD).\n\n\n\n2.2.2 RISC (Reduced Instruction Set Computer)\n\nConjunto de instrucciones reducido, simple y muy optimizado.\nCada instrucción realiza una operación básica y suele ejecutarse en un ciclo de reloj.\nPermite pipelines más eficientes y menor consumo energético.\nEjemplo: ARM (móviles, tablets, Apple Silicon, servidores modernos). ### Diferencias clave\nCISC: instrucciones complejas, hardware más sofisticado, más trabajo por instrucción.\nRISC: instrucciones simples, ejecución rápida y eficiente, ideal para bajo consumo y alto rendimiento por vatio. ### Por qué no son compatibles Cada arquitectura tiene su propio conjunto de instrucciones, su propio formato de registros y su propia forma de acceder a memoria. Un programa compilado para x86 no puede ejecutarse en ARM sin traducción o emulación.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#lenguaje-máquina-ensamblador-y-lenguajes-de-alto-nivel",
+    "href": "ordenadores.html#lenguaje-máquina-ensamblador-y-lenguajes-de-alto-nivel",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "2.3 Lenguaje máquina, ensamblador y lenguajes de alto nivel",
+    "text": "2.3 Lenguaje máquina, ensamblador y lenguajes de alto nivel\nEl lenguaje máquina es el nivel más bajo de programación: una secuencia de bits (0 y 1) que la CPU entiende directamente. Cada arquitectura (x86, ARM, etc.) tiene su propio conjunto de instrucciones en binario.\nEl ensamblador (assembly) es una representación más legible del lenguaje máquina. Usa mnemónicos como MOV, `ADD",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#el-ciclo-básico-de-instrucción",
+    "href": "ordenadores.html#el-ciclo-básico-de-instrucción",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "3.1 El Ciclo Básico de Instrucción",
+    "text": "3.1 El Ciclo Básico de Instrucción\nCada tarea que realiza un procesador se divide en micro-pasos repetidos de manera cíclica e indefinida a lo largo de cinco etapas consecutivas:\n\nFetch (Captura/Lectura): La Unidad de Control busca la instrucción apuntada por el Contador de Programas (PC) en la memoria principal (o la caché) y la trae a los registros del procesador.\nDecode (Decodificación): La Unidad de Control interpreta los bits de la instrucción para saber qué operación se solicita (por ejemplo, si es una suma, un salto o un almacenamiento de datos) y qué componentes necesitará.\nExecute (Ejecución): Los componentes de la CPU pertinentes (como la ALU o la FPU) realizan la operación física indicada por la instrucción.\nMemory (Acceso a Memoria): Si la instrucción requiere leer o escribir datos adicionales en la memoria RAM, este acceso se gestiona en esta fase.\nWrite Back (Escritura): El resultado de la operación ejecutada se escribe y consolida en los registros de la CPU o en la memoria principal para su posterior uso.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#factores-determinantes-del-rendimiento",
+    "href": "ordenadores.html#factores-determinantes-del-rendimiento",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "3.2 Factores Determinantes del Rendimiento",
+    "text": "3.2 Factores Determinantes del Rendimiento\nEl rendimiento de una CPU no depende únicamente de un único factor, sino de la combinación de los siguientes elementos:\n\nFrecuencia de Reloj (Velocidad en GHz): Determina cuántos ciclos de instrucción puede realizar el procesador por segundo. El reloj emite pulsos eléctricos constantes para sincronizar todos los componentes de la CPU.\n\n\\(1 \\text{ Hz} = 1 \\text{ ciclo por segundo.}\\)\n\\(1 \\text{ KHz} = 1.000 \\text{ ciclos por segundo.}\\)\n\\(1 \\text{ GHz (GigaHercio)} = 1.000.000.000 \\text{ (mil millones) de ciclos por segundo.}\\)\nEjemplo: Un procesador a \\(3.5 \\text{ GHz}\\) puede realizar 3.500 millones de ciclos de reloj por segundo.\n\nNúcleos (Cores) e Hilos (Threads):\n\nNúcleos: Son las unidades de procesamiento físicas e independientes que contiene un chip. Un procesador “Multicore” contiene varias CPUs reales dentro de la misma pastilla de silicio.\nHilos (Hilos de ejecución / Threads): Es una tecnología lógica (como Hyper-Threading de Intel o SMT de AMD) que permite a un único núcleo físico simular que es dos núcleos virtuales, gestionando dos tareas en paralelo al aprovechar los tiempos muertos de espera.\n\nArquitecturas Modernas de Núcleos: Las CPUs de hoy en día distribuyen el trabajo en núcleos especializados:\n\nP-Cores (Performance Cores): Núcleos de alto rendimiento optimizados para tareas pesadas en primer plano que requieren la mínima latencia (como consultas intensivas a bases de datos o procesamiento en lote). Consumen mucha energía.\nE-Cores (Efficient Cores): Núcleos más pequeños y de bajo consumo diseñados para procesar tareas secundarias o en segundo plano (servicios del sistema operativo, sincronizaciones) de manera eficiente.\nNPU (Neural Processing Unit): Un coprocesador especializado diseñado específicamente para acelerar algoritmos de Inteligencia Artificial y Machine Learning de forma local (procesamiento de redes neuronales), liberando de esa carga a la CPU y la GPU.\n\nLa Memoria Caché y sus Niveles: Funciona en una estructura jerárquica de tres niveles (L1, L2 y L3) para maximizar la velocidad:\n\nL1: Es la más rápida, pero la más pequeña (unos pocos kilobytes). Está integrada directamente en el corazón de cada núcleo. Se divide en L1d (datos) y L1i (instrucciones).\nL2: Un poco más lenta que la L1, pero con mayor capacidad (varios megabytes). Suele seguir estando dedicada a cada núcleo de forma individual.\nL3: La más lenta de las tres (aunque muchísimo más rápida que la RAM) y la de mayor tamaño. La característica principal de la L3 es que es compartida por todos los núcleos del procesador.\n\n\nPrincipio de Funcionamiento: Cada núcleo consulta primero su L1; si no encuentra el dato, busca en su L2; si no está, va a la L3 compartida; y si falla en los tres niveles, se ve obligado a buscar en la memoria RAM, lo que genera una penalización de tiempo de espera (latencia).",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#especificaciones-de-los-procesadores-en-servidores",
+    "href": "ordenadores.html#especificaciones-de-los-procesadores-en-servidores",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "3.3 Especificaciones de los Procesadores en Servidores",
+    "text": "3.3 Especificaciones de los Procesadores en Servidores\nEn un entorno de producción (servidores corporativos y de bases de datos), las prioridades cambian drásticamente respecto a un ordenador personal. En los servidores se busca maximizar:\n\nGran soporte para memoria RAM: Capacidad de gestionar terabytes de memoria principal.\nCompatibilidad con memoria ECC (Error Correcting Code): Tipo de memoria RAM especial que detecta y corrige automáticamente errores de corrupción de datos de un solo bit en tiempo real, evitando cuelgues del sistema en entornos críticos.\nMayor número de núcleos físicos: Permite procesar miles de peticiones simultáneas de red.\nSoporte Multiprocesador: Placas base diseñadas con 2, 4 o más zócalos (sockets) para instalar múltiples procesadores físicos independientes trabajando en paralelo.\nLíneas PCIe masivas: Para interconectar múltiples controladoras de discos NVMe de alta velocidad y tarjetas de red de fibra de 10Gbps o superiores.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#el-problema-de-la-falta-de-ram-memoria-swap",
+    "href": "ordenadores.html#el-problema-de-la-falta-de-ram-memoria-swap",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "4.1 El problema de la falta de RAM: Memoria SWAP",
+    "text": "4.1 El problema de la falta de RAM: Memoria SWAP\nSi abrimos demasiadas aplicaciones o cargamos una base de datos pesada y la memoria RAM se llena por completo, el Sistema Operativo utiliza una técnica llamada Memoria Virtual o SWAP (Espacio de Intercambio).\n\nCómo funciona: El sistema operativo coge una porción del disco duro (HDD o SSD) y la simula como si fuera memoria RAM para evitar que el equipo se bloquee.\nConsecuencia: Como los discos de almacenamiento son órdenes de magnitud más lentos que la RAM, el rendimiento del sistema sufre una caída drástica y notable (cuello de botella), haciendo que las aplicaciones dejen de responder con fluidez.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "ordenadores.html#evolución-de-los-tipos-de-ram",
+    "href": "ordenadores.html#evolución-de-los-tipos-de-ram",
+    "title": "Conceptos de Ordenadores y Servidores de Propósito General.",
+    "section": "4.2 Evolución de los Tipos de RAM",
+    "text": "4.2 Evolución de los Tipos de RAM\n\n4.2.1 La estructura interna (El motor)\nAntes de hablar de DDR, la tecnología pasó por tres etapas para ver cómo guardaba la información y cómo se comunicaba con la placa:\n\nDRAM (Dynamic RAM): La abuela de las memorias. Guarda los datos en minúsculos “almacenes” (condensadores) que pierden energía continuamente. Por eso necesita que un circuito la esté refrescando miles de veces por segundo. ¿Su gran problema? Iba “a su bola”, no estaba coordinada con el ritmo del procesador. La CPU le pedía un dato y tenía que quedarse esperando a que la DRAM respondiera.Uso principal: La memoria RAM general del equipo.\nSDRAM (Synchronous DRAM): Aquí está la clave. La “S” significa Síncrona. Alguien dijo: “Oye, vamos a hacer que la DRAM interna se sincronice con el reloj del sistema”. A partir de ese momento, la memoria y el procesador empezaron a bailar al mismo ritmo. Esta tecnología (chips que se sincronizan) fue tan buena que se convirtió en el estándar para siempre. Toda la RAM que usas hoy en día sigue siendo, por dentro, de tipo SDRAM\n\n\n\nSRAM (Static RAM): No necesita refrescar sus datos constantemente para mantenerlos. Es extremadamente rápida y eficiente, pero su fabricación es muy costosa y ocupa mucho espacio físico en el silicio. Uso principal: Memoria caché de la CPU.\n\n\n\n4.2.2 La velocidad exterior:\nLa memoria estándar actual es la SDRAM (Synchronous Dynamic RAM), la cual se sincroniza con el reloj de la CPU para evitar tiempos de espera. Su evolución se basa en la tecnología DDR (Double Data Rate), que es capaz de enviar el doble de datos por cada ciclo de reloj (aprovechando tanto el flanco de subida como el de bajada de la señal eléctrica).\nLa cronología de evolución técnica es: \\[\\text{SDRAM} \\rightarrow \\text{DDR} \\rightarrow \\text{DDR2} \\rightarrow \\text{DDR3} \\rightarrow \\text{DDR4} \\rightarrow \\text{DDR5}\\]\n\nNota de Compatibilidad Crítica: Los módulos de memoria DDR no son retrocompatibles entre generaciones. Cada generación tiene una muesca física en una posición diferente del conector y trabaja a voltajes distintos. Un módulo de memoria DDR4 no puede instalarse físicamente en una ranura de placa base diseñada para DDR5, ni viceversa.",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Conceptos de ordenadores y servidores"
+    ]
+  },
+  {
+    "objectID": "proxy.html",
+    "href": "proxy.html",
+    "title": "Proxy",
     "section": "",
-    "text": "Un proceso es un programa en ejecución. Un proceso incluye:\n\nEl código del programa.\nLa memoria que usa (variables, datos, pila, heap).\nSus recursos asignados (CPU, archivos abiertos, puertos, etc.).\nSu estado (ejecutándose, esperando, detenido).\n\nCada proceso tiene un PID (Process ID) único.\nEjemplos: chrome.exe cuando abres Chrome, mysqld cuando se ejecuta MySQL. Puede crear subprocesos o threads.\n\n\nDentro de cada proceso existen subprocesos (threads), que son las unidades básicas a las que el sistema operativo asigna tiempo de procesador. Permiten que un programa realice múltiples tareas en paralelo. Por ejemplo, un navegador web puede tener, un subproceso descargando imágenes, otro renderizando la página, otro respondiendo a clics de usuario….\nEl sistema operativo los gestiona mediante un planificador que reparte CPU.",
+    "text": "Un proxy es un servidor intermediario que se sitúa entre un cliente (tu ordenador, una aplicación, un navegador) y el servidor final al que quieres acceder. En vez de conectarte directamente a Internet, tus peticiones pasan primero por el proxy, que decide qué hacer con ellas.\nPiensa en él como un filtro inteligente que puede observar, modificar, bloquear, acelerar o registrar el tráfico.\n\n\n\n\nEl proxy puede permitir o bloquear el acceso a ciertos sitios o tipos de contenido.\n\nBloqueo de webs (por ejemplo, redes sociales en empresas).\nRestricción por categorías (adultos, juegos, descargas).\nFiltrado por palabras clave o tipos de archivo.\nAplicación de políticas corporativas.\n\nEsto se usa mucho en entornos empresariales, educativos y redes seguras.\n\n\n\nUn proxy puede guardar copias de páginas o recursos que se solicitan con frecuencia.\n\nSi otro usuario pide lo mismo, el proxy lo entrega sin ir a Internet.\nReduce el consumo de ancho de banda.\nAcelera la carga de páginas.\nDisminuye la carga en servidores externos.\n\nEsto es especialmente útil en redes con muchos usuarios (oficinas, universidades).\n\n\n\nEl proxy puede ocultar tu IP real.\n\nEl servidor final solo ve la IP del proxy.\nReduce rastreo y exposición.\nPermite navegar con mayor privacidad.\n\nEsto es la base de los proxies anónimos y de algunos servicios de privacidad.\n\n\n\nEl proxy puede registrar:\n\nQué webs se visitan.\nCuánto tráfico genera cada usuario.\nQué tipo de contenido se descarga.\nIntentos de acceso no permitidos.\n\nEsto permite auditoría, seguridad y análisis de uso.\n\n\n\nUn proxy inverso se coloca delante de servidores internos.\nFunciones típicas:\n\nDistribuir carga entre varios servidores.\nProteger servidores internos ocultando su IP.\nTerminar conexiones TLS/SSL.\nAplicar reglas de seguridad (WAF).\nMejorar rendimiento con caché de servidor.\n\nEs muy usado en entornos web (Nginx, HAProxy, Traefik).\n\n\n\nSi un servicio solo está disponible en ciertos países o redes:\n\nEl proxy puede actuar como “puente”.\nPermite acceder como si estuvieras en otra ubicación.\n\nEsto se usa para pruebas, restricciones geográficas o políticas internas.\n\n\n\n\n\nEl cliente envía una petición (ej: abrir una web).\nLa petición llega al proxy.\nEl proxy decide:\n\n¿La dejo pasar?\n¿La bloqueo?\n¿La sirvo desde caché?\n¿La modifico?\n\nSi procede, el proxy reenvía la petición al servidor final.\nEl servidor responde al proxy.\nEl proxy devuelve la respuesta al cliente.\n\n\n\n\n\n\n\n\n\n\n\n\nTipo de proxy\nDescripción\nFunciones principales\n\n\n\n\nForward proxy (directo)\nCliente → Proxy → Internet. Intermediario clásico usado por usuarios finales.\nFiltrado de contenidos, caché, anonimización, control de tráfico.\n\n\nReverse proxy (inverso)\nInternet → Proxy → Servidores internos. Se coloca delante de servidores.\nBalanceo de carga, seguridad, aceleración, ocultar servidores internos.\n\n\nProxy transparente\nEl usuario no sabe que existe; se aplica automáticamente en la red.\nFiltrado sin configuración del cliente, control corporativo, monitorización.\n\n\nProxy anónimo\nOculta la IP del cliente frente al servidor final.\nPrivacidad, evitar rastreo, ocultar identidad del usuario.\n\n\nProxy de caché\nGuarda copias de contenido para entregarlo más rápido.\nOptimizar rendimiento, reducir tráfico, acelerar acceso a recursos.\n\n\n\n\n\n\n\nUn proxy es un servidor intermediario que gestiona las peticiones entre un cliente y un servidor. Permite filtrar contenido, aplicar políticas, acelerar el acceso mediante caché, ocultar la IP del usuario, monitorizar tráfico y proteger servidores internos mediante funciones de reverse proxy.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Servidores Proxy"
     ]
   },
   {
-    "objectID": "procesos.html#servicios",
-    "href": "procesos.html#servicios",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "proxy.html#funciones-principales-de-un-proxy",
+    "href": "proxy.html#funciones-principales-de-un-proxy",
+    "title": "Proxy",
     "section": "",
-    "text": "Un servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas.\n\nSe inician automáticamente al arrancar el sistema (o bajo demanda).\nNo requieren interacción del usuario.\nSuelen ser críticos para el funcionamiento del sistema.\n\nEjemplos: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).\n\nEn Windows: se llaman Servicios. En Linux: se gestionan con systemd y se llaman daemons (terminan en “d”, como sshd).",
+    "text": "El proxy puede permitir o bloquear el acceso a ciertos sitios o tipos de contenido.\n\nBloqueo de webs (por ejemplo, redes sociales en empresas).\nRestricción por categorías (adultos, juegos, descargas).\nFiltrado por palabras clave o tipos de archivo.\nAplicación de políticas corporativas.\n\nEsto se usa mucho en entornos empresariales, educativos y redes seguras.\n\n\n\nUn proxy puede guardar copias de páginas o recursos que se solicitan con frecuencia.\n\nSi otro usuario pide lo mismo, el proxy lo entrega sin ir a Internet.\nReduce el consumo de ancho de banda.\nAcelera la carga de páginas.\nDisminuye la carga en servidores externos.\n\nEsto es especialmente útil en redes con muchos usuarios (oficinas, universidades).\n\n\n\nEl proxy puede ocultar tu IP real.\n\nEl servidor final solo ve la IP del proxy.\nReduce rastreo y exposición.\nPermite navegar con mayor privacidad.\n\nEsto es la base de los proxies anónimos y de algunos servicios de privacidad.\n\n\n\nEl proxy puede registrar:\n\nQué webs se visitan.\nCuánto tráfico genera cada usuario.\nQué tipo de contenido se descarga.\nIntentos de acceso no permitidos.\n\nEsto permite auditoría, seguridad y análisis de uso.\n\n\n\nUn proxy inverso se coloca delante de servidores internos.\nFunciones típicas:\n\nDistribuir carga entre varios servidores.\nProteger servidores internos ocultando su IP.\nTerminar conexiones TLS/SSL.\nAplicar reglas de seguridad (WAF).\nMejorar rendimiento con caché de servidor.\n\nEs muy usado en entornos web (Nginx, HAProxy, Traefik).\n\n\n\nSi un servicio solo está disponible en ciertos países o redes:\n\nEl proxy puede actuar como “puente”.\nPermite acceder como si estuvieras en otra ubicación.\n\nEsto se usa para pruebas, restricciones geográficas o políticas internas.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Servidores Proxy"
     ]
   },
   {
-    "objectID": "procesos.html#tareas",
-    "href": "procesos.html#tareas",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "proxy.html#cómo-funciona-un-proxy-paso-a-paso",
+    "href": "proxy.html#cómo-funciona-un-proxy-paso-a-paso",
+    "title": "Proxy",
     "section": "",
-    "text": "Una tarea es una unidad de trabajo programada o un proceso que el sistema debe ejecutar. Una tarea puede conllevar procesos y servicios.\nEl administrador de Tareas muestra todos los procesos activos en tiempo real. Permite ver el uso de CPU, memoria y finalizar procesos problemáticos.\nEjemplos: programar copias de seguridad.",
+    "text": "El cliente envía una petición (ej: abrir una web).\nLa petición llega al proxy.\nEl proxy decide:\n\n¿La dejo pasar?\n¿La bloqueo?\n¿La sirvo desde caché?\n¿La modifico?\n\nSi procede, el proxy reenvía la petición al servidor final.\nEl servidor responde al proxy.\nEl proxy devuelve la respuesta al cliente.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Servidores Proxy"
     ]
   },
   {
-    "objectID": "procesos.html#procesos-en-segundo-plano",
-    "href": "procesos.html#procesos-en-segundo-plano",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "proxy.html#tabla-tipos-de-proxy-y-sus-funciones",
+    "href": "proxy.html#tabla-tipos-de-proxy-y-sus-funciones",
+    "title": "Proxy",
     "section": "",
-    "text": "Son procesos que se ejecutan sin interacción directa con el usuario. No requieren supervisión.\nPueden ser servicios, demonios o procesos lanzados manualmente.\nUn proceso sigue ejecutándose aunque cierres la terminal (si está nohup o disowned).\nEjemplos: sincronización de OneDrive.exe",
+    "text": "Tipo de proxy\nDescripción\nFunciones principales\n\n\n\n\nForward proxy (directo)\nCliente → Proxy → Internet. Intermediario clásico usado por usuarios finales.\nFiltrado de contenidos, caché, anonimización, control de tráfico.\n\n\nReverse proxy (inverso)\nInternet → Proxy → Servidores internos. Se coloca delante de servidores.\nBalanceo de carga, seguridad, aceleración, ocultar servidores internos.\n\n\nProxy transparente\nEl usuario no sabe que existe; se aplica automáticamente en la red.\nFiltrado sin configuración del cliente, control corporativo, monitorización.\n\n\nProxy anónimo\nOculta la IP del cliente frente al servidor final.\nPrivacidad, evitar rastreo, ocultar identidad del usuario.\n\n\nProxy de caché\nGuarda copias de contenido para entregarlo más rápido.\nOptimizar rendimiento, reducir tráfico, acelerar acceso a recursos.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Servidores Proxy"
     ]
   },
   {
-    "objectID": "procesos.html#servicios-del-sistema.",
-    "href": "procesos.html#servicios-del-sistema.",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+    "objectID": "proxy.html#resumen-para-tus-apuntes",
+    "href": "proxy.html#resumen-para-tus-apuntes",
+    "title": "Proxy",
     "section": "",
-    "text": "Son los pilares invisibles del SO. Los servicios son procesos especiales que:\n\nSe inician antes de que el usuario inicie sesión\nno tienen interfaz gráfica visible\nSe administran mediante la Consola de Servicios services.msc\nRealizan funciones críticas del sistema\n\nTodos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.\n\n\nProceso: programa en ejecución con recursos asignados.\nServicio: proceso del sistema que corre en segundo plano y ofrece funciones.\nTarea: unidad de trabajo (proceso, hilo o trabajo programado).\nProceso en segundo plano: proceso sin interacción directa con el usuario.",
+    "text": "Un proxy es un servidor intermediario que gestiona las peticiones entre un cliente y un servidor. Permite filtrar contenido, aplicar políticas, acelerar el acceso mediante caché, ocultar la IP del usuario, monitorizar tráfico y proteger servidores internos mediante funciones de reverse proxy.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
-    ]
-  },
-  {
-    "objectID": "procesos.html#rendimiento-de-los-sistemas.",
-    "href": "procesos.html#rendimiento-de-los-sistemas.",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-    "section": "2.1 Rendimiento de los Sistemas.",
-    "text": "2.1 Rendimiento de los Sistemas.\nEl rendimiento de un sistema informático es la capacidad de un equipo o servidor para ejecutar sus tareas de forma eficiente, estable y dentro de unos tiempos aceptables. No debemos confundir rendimiento con “tener un procesador potente”: un sistema puede tener una CPU moderna y funcionar mal si tiene poca RAM, disco saturado o procesos mal configurados. Los recurosos principales que debemos observar son CPU, Memoria RAM, Disco, Red, Procesos/Servicios y Sistemas de Archivos.\n\n\n\n\n\n\n\n\nRecurso\nQué representa\nProblemas típicos\n\n\n\n\nCPU\nCapacidad de cálculo\nProcesos al 100%, hilos bloqueados\n\n\nRAM\nEspacio de trabajo\nFalta de memoria, uso excesivo de swap\n\n\nDisco\nLectura y escritura\nCola de disco, latencia alta, poco espacio\n\n\nRed\nComunicación\nSaturación, pérdida de paquetes, errores DNS\n\n\nProcesos\nProgramas en ejecución\nFugas de memoria, procesos zombies\n\n\nSis. Archivos\nOrganización del almacenamiento\nFragmentación, permisos incorrectos, logs excesivos",
-    "crumbs": [
-      "Inicio",
-      "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
-    ]
-  },
-  {
-    "objectID": "procesos.html#tipos-de-situaciones-de-rendimiento",
-    "href": "procesos.html#tipos-de-situaciones-de-rendimiento",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-    "section": "2.2 Tipos de situaciones de rendimiento",
-    "text": "2.2 Tipos de situaciones de rendimiento\n\nUso alto normal: Ej. Una copia de seguridad programada consumiendo disco de forma esperada.\nUso alto anómalo: Ej. Un proceso bloqueado consumiendo CPU indefinidamente sin motivo\nSaturación: El recurso no solo se usa mucho, sino que ya no responde con fluidez\nCuello de botella: Recurso que limita el rendimiento global del sistema completo.",
-    "crumbs": [
-      "Inicio",
-      "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
-    ]
-  },
-  {
-    "objectID": "procesos.html#modelos-predictivos-y-análisis-de-tendencias",
-    "href": "procesos.html#modelos-predictivos-y-análisis-de-tendencias",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-    "section": "2.3 Modelos predictivos y análisis de tendencias",
-    "text": "2.3 Modelos predictivos y análisis de tendencias\nUn modelo predictivo en administración de sistemas consiste en observar datos históricos, detectar patrones y anticiparse a problemas. El objetivo es pasar de una administración reactiva a una administración preventiva. Por ejemplo saber cuánto crece el alamacenamiento a diario y preveer cuándo necesitaremos más.\n\nLinea base (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.\nUmbral: valor a partir del cual se genera aviso.\nTendencia: evolución de una métrica en el tiempo.\nEstacionalidad: patrón que se repite a lo largo de determinados periodos de tiempo.\nCapacidad: recursos disponibles para absorber la demanda actual y futura.\n\nData collector Sets, Get-Counter, logman, WPR/WPA para tendencias y accounting.",
-    "crumbs": [
-      "Inicio",
-      "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
-    ]
-  },
-  {
-    "objectID": "procesos.html#planes-de-pruebas-de-preproducción",
-    "href": "procesos.html#planes-de-pruebas-de-preproducción",
-    "title": "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-    "section": "2.4 Planes de pruebas de preproducción",
-    "text": "2.4 Planes de pruebas de preproducción\nUn entorno de preproducción intenta parecerse lo máximo posible a producción, pero sin afectar a usuarios reales ni datos críticos. Su objetivo es validar cambios antes de aplicarlos en producción.\nEjemplos de cambios que deben probarse en preproducción:\n\nSO: Instalación, actualización del kernel, parches de seguridad.\nBases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.\nRed y almacenamiento: Cambio de configuración de red, migración de almacenamiento.\nAplicaciones: cambio de versión, modificación de políticas de seguridad.\n\nEstructura del plan de pruebas:\n\n\n\n\n\nflowchart LR\n    A([🎯 1.&lt;br&gt;Objetivo]) --&gt; B([🔭 2.&lt;br&gt;Alcance])\n    B --&gt; C([🖥️ 3.&lt;br&gt;Entorno])\n    C --&gt; D([💾 4.&lt;br&gt;Datos de&lt;br&gt;Prueba])\n    D --&gt; E([🛠️ 5.&lt;br&gt;Herramientas])\n    E --&gt; F([📊 6.&lt;br&gt;Métricas])\n    F --&gt; G([📝 7.&lt;br&gt;Escenarios])\n    G --&gt; H([✅ 8.&lt;br&gt;Criterios de&lt;br&gt;Aceptación])\n    H --&gt; I([🔙 9.&lt;br&gt;Reversión])\n    \n    %% Estilos para mantener los tonos de tu web\n    style A fill:#f0f7ff,stroke:#2780e3,stroke-width:2px\n    style I fill:#fffaf0,stroke:#ff9800,stroke-width:2px\n\n\n\n\n\n\n\n2.4.1 Ejemplo de Plan de Pruebas: Ampliación de Memoria en SGBD\n\n🎯 Objetivo: Validar que el aumento del parámetro de límite de memoria (MEM_LIMIT) asignado al motor de base de datos mejora el tiempo de respuesta de las consultas complejas sin provocar inestabilidad en el sistema operativo del servidor.\n🔭 Alcance: Las pruebas se limitarán a los nodos de procesamiento de base de datos en preproducción. Se excluyen pruebas de latencia de red y validación de la integridad del almacenamiento físico en disco.\n🖥️ Entorno: Clúster de preproducción con la misma versión del SGBD y sistema operativo (Linux) que el entorno de producción. Los recursos hardware son escalados a la mitad (CPU/RAM) respecto a producción, por lo que las métricas se evaluarán de forma proporcional.\n💾 Datos de Prueba: Tablas externas particionadas que simulen el entorno real (por ejemplo, registros históricos de tráfico o telemetría) con un volumen mínimo de 10 millones de filas. Los datos estarán ofuscados y no contendrán información sensible.\n🛠️ Herramientas: - Para carga: Scripts SQL automatizados lanzados desde terminal.\n\nPara monitorización de OS: top (CPU), free -h (RAM) y vmstat.\nPara SGBD: Panel de administración del clúster y logs de ejecución de consultas.\n\n📊 Métricas a observar: - Tiempo total de ejecución de la consulta (duration).\n\nPicos de consumo de RAM por el proceso de la base de datos (GB).\nUso de memoria Swap en el sistema operativo (MB/GB).\nNúmero de fallos o bloqueos por falta de memoria (Errores OOM - Out of Memory).\n\n📝 Escenarios: - Escenario 1 (Línea base): Lanzar un set de 5 consultas pesadas (que incluyan múltiples JOIN y GROUP BY) con la configuración original y anotar tiempos.\n\nEscenario 2 (Carga normal): Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.\nEscenario 3 (Prueba de estrés): Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.\n\n✅ Criterios de Aceptación: El cambio se considerará válido para pasar a producción si:\n\nEl tiempo de ejecución de las consultas se reduce en al menos un 15%.\nEl sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.\nEl uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.\n\n🔙 Reversión (Rollback): En caso de fallo o inestabilidad, se ejecutará un script preconfigurado que:\n\nRestaura el archivo de configuración .conf desde el backup generado antes de la prueba.\nFuerza un reinicio seguro de los servicios de la base de datos.\nEjecuta una consulta de prueba rápida (SELECT 1) para verificar que el servicio ha levantado correctamente.",
-    "crumbs": [
-      "Inicio",
-      "Bloque 1: Redes e Infraestructura",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
-      "Procesos, Servicios, Tareas y Procesos en Segundo Plano"
+      "Servidores Proxy"
     ]
   },
   {

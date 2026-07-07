@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Configuración SSH (Secure Shell) en Ubuntu – Apuntes: Administración de Bases de Datos</title>
+<title>Proxy – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -139,7 +104,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./ubuntu_ssh.html">Guía: Configuración de SSH en Ubuntu</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./proxy.html">Servidores Proxy</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -176,7 +141,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Servidores Proxy</span></a>
   </div>
 </li>
@@ -194,13 +159,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
  <span class="menu-text">Virtualizacion</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 show">  
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
@@ -227,7 +192,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link active">
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
   </div>
 </li>
@@ -338,15 +303,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#qué-es-un-proxy" id="toc-qué-es-un-proxy" class="nav-link active" data-scroll-target="#qué-es-un-proxy"><span class="header-section-number">1</span> Qué es un proxy</a>
+  <ul>
+  <li><a href="#funciones-principales-de-un-proxy" id="toc-funciones-principales-de-un-proxy" class="nav-link" data-scroll-target="#funciones-principales-de-un-proxy"><span class="header-section-number">1.1</span> <strong>Funciones principales de un proxy</strong></a>
+  <ul class="collapse">
+  <li><a href="#filtrado-de-contenidos" id="toc-filtrado-de-contenidos" class="nav-link" data-scroll-target="#filtrado-de-contenidos"><span class="header-section-number">1.1.1</span> <strong>Filtrado de contenidos</strong></a></li>
+  <li><a href="#caché-aceleración-de-contenido" id="toc-caché-aceleración-de-contenido" class="nav-link" data-scroll-target="#caché-aceleración-de-contenido"><span class="header-section-number">1.1.2</span> <strong>Caché (aceleración de contenido)</strong></a></li>
+  <li><a href="#anonimización-y-privacidad" id="toc-anonimización-y-privacidad" class="nav-link" data-scroll-target="#anonimización-y-privacidad"><span class="header-section-number">1.1.3</span> <strong>Anonimización y privacidad</strong></a></li>
+  <li><a href="#control-y-monitorización-del-tráfico" id="toc-control-y-monitorización-del-tráfico" class="nav-link" data-scroll-target="#control-y-monitorización-del-tráfico"><span class="header-section-number">1.1.4</span> <strong>Control y monitorización del tráfico</strong></a></li>
+  <li><a href="#balanceo-y-protección-reverse-proxy" id="toc-balanceo-y-protección-reverse-proxy" class="nav-link" data-scroll-target="#balanceo-y-protección-reverse-proxy"><span class="header-section-number">1.1.5</span> <strong>Balanceo y protección (reverse proxy)</strong></a></li>
+  <li><a href="#acceso-a-contenido-restringido" id="toc-acceso-a-contenido-restringido" class="nav-link" data-scroll-target="#acceso-a-contenido-restringido"><span class="header-section-number">1.1.6</span> <strong>Acceso a contenido restringido</strong></a></li>
+  </ul></li>
+  <li><a href="#cómo-funciona-un-proxy-paso-a-paso" id="toc-cómo-funciona-un-proxy-paso-a-paso" class="nav-link" data-scroll-target="#cómo-funciona-un-proxy-paso-a-paso"><span class="header-section-number">1.2</span> <strong>Cómo funciona un proxy (paso a paso)</strong></a></li>
+  <li><a href="#tabla-tipos-de-proxy-y-sus-funciones" id="toc-tabla-tipos-de-proxy-y-sus-funciones" class="nav-link" data-scroll-target="#tabla-tipos-de-proxy-y-sus-funciones"><span class="header-section-number">1.3</span> <strong>Tabla: Tipos de Proxy y sus funciones</strong></a></li>
+  <li><a href="#resumen-para-tus-apuntes" id="toc-resumen-para-tus-apuntes" class="nav-link" data-scroll-target="#resumen-para-tus-apuntes"><span class="header-section-number">1.4</span> <strong>Resumen para tus apuntes</strong></a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./ubuntu_ssh.html">Guía: Configuración de SSH en Ubuntu</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./proxy.html">Servidores Proxy</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Configuración SSH (Secure Shell) en Ubuntu</h1>
+<h1 class="title">Proxy</h1>
 </div>
 
 
@@ -363,22 +348,148 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Para conectarnos a un servidor Linux de forma remota, podemos usar el protocolo SSH (Secure Shell). Para ello, necesitamos tener un cliente SSH instalado en nuestra máquina local y conocer la dirección IP o el nombre de dominio del servidor al que queremos conectarnos, así como las credenciales de usuario.</p>
-<p>Para comprobar si tenemos un cliente SSH instalado, podemos abrir una terminal y ejecutar el comando <code>ssh -V</code>. Si el cliente está instalado, veremos la versión del mismo. Si no está instalado, podemos instalarlo usando el gestor de paquetes de nuestra distribución de Linux o descargarlo desde el sitio web oficial.</p>
-<p>En Debian, Ubuntu, o Mint puedes instalarlo:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update <span class="co"># Actualiza la lista de paquetes disponibles (el catálogo). Este comando no instala nada.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade <span class="co"># Actualiza los paquetes instalados en tu sistema.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install openssh-server</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Para ver si está habilitado o deshabilitado el servicio SSH en el servidor, podemos usar el comando <code>systemctl status ssh</code> o <code>systemctl status sshd</code>, dependiendo de la distribución de Linux. Si el servicio está activo, veremos un mensaje indicando que está en ejecución.</p>
-<p><img src="images/paste-1.png" class="img-fluid"></p>
-<p>Si está instalado pero no está activo, podemos iniciarlo con <code>sudo systemctl start ssh</code> o <code>sudo systemctl start sshd</code>. También podemos usar <code>systemctl enable ssh</code> o <code>systemctl enable sshd</code> para habilitar el servicio SSH para que se inicie automáticamente al arrancar el sistema.</p>
-<p>El comando básico para conectarse a un servidor remoto es:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> usuario@direccion_ip_del_servidor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Por ejemplo, si nuestro nombre de usuario es “juan” y la dirección IP del servidor es “12.34.56.78”, el comando sería:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> juan@12.34.56.78</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Si es la primera vez que nos conectamos a ese servidor, se nos pedirá que confirmemos la autenticidad del host y que aceptemos su clave pública. Una vez aceptada, se nos pedirá la contraseña del usuario para iniciar sesión. Si la autenticidad del host ya ha sido confirmada previamente, se nos pedirá directamente la contraseña del usuario.</p>
+<section id="qué-es-un-proxy" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Qué es un proxy</h1>
+<p>Un <strong>proxy</strong> es un <strong>servidor intermediario</strong> que se sitúa entre un cliente (tu ordenador, una aplicación, un navegador) y el servidor final al que quieres acceder. En vez de conectarte directamente a Internet, <strong>tus peticiones pasan primero por el proxy</strong>, que decide qué hacer con ellas.</p>
+<p>Piensa en él como un <strong>filtro inteligente</strong> que puede observar, modificar, bloquear, acelerar o registrar el tráfico.</p>
+<section id="funciones-principales-de-un-proxy" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="funciones-principales-de-un-proxy"><span class="header-section-number">1.1</span> <strong>Funciones principales de un proxy</strong></h2>
+<section id="filtrado-de-contenidos" class="level3" data-number="1.1.1">
+<h3 data-number="1.1.1" class="anchored" data-anchor-id="filtrado-de-contenidos"><span class="header-section-number">1.1.1</span> <strong>Filtrado de contenidos</strong></h3>
+<p>El proxy puede <strong>permitir o bloquear</strong> el acceso a ciertos sitios o tipos de contenido.</p>
+<ul>
+<li><p>Bloqueo de webs (por ejemplo, redes sociales en empresas).</p></li>
+<li><p>Restricción por categorías (adultos, juegos, descargas).</p></li>
+<li><p>Filtrado por palabras clave o tipos de archivo.</p></li>
+<li><p>Aplicación de políticas corporativas.</p></li>
+</ul>
+<p>Esto se usa mucho en <strong>entornos empresariales, educativos y redes seguras</strong>.</p>
+</section>
+<section id="caché-aceleración-de-contenido" class="level3" data-number="1.1.2">
+<h3 data-number="1.1.2" class="anchored" data-anchor-id="caché-aceleración-de-contenido"><span class="header-section-number">1.1.2</span> <strong>Caché (aceleración de contenido)</strong></h3>
+<p>Un proxy puede <strong>guardar copias</strong> de páginas o recursos que se solicitan con frecuencia.</p>
+<ul>
+<li><p>Si otro usuario pide lo mismo, el proxy lo entrega <strong>sin ir a Internet</strong>.</p></li>
+<li><p>Reduce el consumo de ancho de banda.</p></li>
+<li><p>Acelera la carga de páginas.</p></li>
+<li><p>Disminuye la carga en servidores externos.</p></li>
+</ul>
+<p>Esto es especialmente útil en redes con muchos usuarios (oficinas, universidades).</p>
+</section>
+<section id="anonimización-y-privacidad" class="level3" data-number="1.1.3">
+<h3 data-number="1.1.3" class="anchored" data-anchor-id="anonimización-y-privacidad"><span class="header-section-number">1.1.3</span> <strong>Anonimización y privacidad</strong></h3>
+<p>El proxy puede <strong>ocultar tu IP real</strong>.</p>
+<ul>
+<li><p>El servidor final solo ve la IP del proxy.</p></li>
+<li><p>Reduce rastreo y exposición.</p></li>
+<li><p>Permite navegar con mayor privacidad.</p></li>
+</ul>
+<p>Esto es la base de los <strong>proxies anónimos</strong> y de algunos servicios de privacidad.</p>
+</section>
+<section id="control-y-monitorización-del-tráfico" class="level3" data-number="1.1.4">
+<h3 data-number="1.1.4" class="anchored" data-anchor-id="control-y-monitorización-del-tráfico"><span class="header-section-number">1.1.4</span> <strong>Control y monitorización del tráfico</strong></h3>
+<p>El proxy puede registrar:</p>
+<ul>
+<li><p>Qué webs se visitan.</p></li>
+<li><p>Cuánto tráfico genera cada usuario.</p></li>
+<li><p>Qué tipo de contenido se descarga.</p></li>
+<li><p>Intentos de acceso no permitidos.</p></li>
+</ul>
+<p>Esto permite auditoría, seguridad y análisis de uso.</p>
+</section>
+<section id="balanceo-y-protección-reverse-proxy" class="level3" data-number="1.1.5">
+<h3 data-number="1.1.5" class="anchored" data-anchor-id="balanceo-y-protección-reverse-proxy"><span class="header-section-number">1.1.5</span> <strong>Balanceo y protección (reverse proxy)</strong></h3>
+<p>Un <strong>proxy inverso</strong> se coloca delante de servidores internos.</p>
+<p>Funciones típicas:</p>
+<ul>
+<li><p>Distribuir carga entre varios servidores.</p></li>
+<li><p>Proteger servidores internos ocultando su IP.</p></li>
+<li><p>Terminar conexiones TLS/SSL.</p></li>
+<li><p>Aplicar reglas de seguridad (WAF).</p></li>
+<li><p>Mejorar rendimiento con caché de servidor.</p></li>
+</ul>
+<p>Es muy usado en entornos web (Nginx, HAProxy, Traefik).</p>
+</section>
+<section id="acceso-a-contenido-restringido" class="level3" data-number="1.1.6">
+<h3 data-number="1.1.6" class="anchored" data-anchor-id="acceso-a-contenido-restringido"><span class="header-section-number">1.1.6</span> <strong>Acceso a contenido restringido</strong></h3>
+<p>Si un servicio solo está disponible en ciertos países o redes:</p>
+<ul>
+<li><p>El proxy puede actuar como “puente”.</p></li>
+<li><p>Permite acceder como si estuvieras en otra ubicación.</p></li>
+</ul>
+<p>Esto se usa para pruebas, restricciones geográficas o políticas internas.</p>
+</section>
+</section>
+<section id="cómo-funciona-un-proxy-paso-a-paso" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="cómo-funciona-un-proxy-paso-a-paso"><span class="header-section-number">1.2</span> <strong>Cómo funciona un proxy (paso a paso)</strong></h2>
+<ol type="1">
+<li><p>El cliente envía una petición (ej: abrir una web).</p></li>
+<li><p>La petición llega al proxy.</p></li>
+<li><p>El proxy decide:</p>
+<ul>
+<li><p>¿La dejo pasar?</p></li>
+<li><p>¿La bloqueo?</p></li>
+<li><p>¿La sirvo desde caché?</p></li>
+<li><p>¿La modifico?</p></li>
+</ul></li>
+<li><p>Si procede, el proxy reenvía la petición al servidor final.</p></li>
+<li><p>El servidor responde al proxy.</p></li>
+<li><p>El proxy devuelve la respuesta al cliente.</p></li>
+</ol>
+</section>
+<section id="tabla-tipos-de-proxy-y-sus-funciones" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="tabla-tipos-de-proxy-y-sus-funciones"><span class="header-section-number">1.3</span> <strong>Tabla: Tipos de Proxy y sus funciones</strong></h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 38%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Tipo de proxy</strong></th>
+<th><strong>Descripción</strong></th>
+<th><strong>Funciones principales</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Forward proxy (directo)</strong></td>
+<td>Cliente → Proxy → Internet. Intermediario clásico usado por usuarios finales.</td>
+<td>Filtrado de contenidos, caché, anonimización, control de tráfico.</td>
+</tr>
+<tr class="even">
+<td><strong>Reverse proxy (inverso)</strong></td>
+<td>Internet → Proxy → Servidores internos. Se coloca delante de servidores.</td>
+<td>Balanceo de carga, seguridad, aceleración, ocultar servidores internos.</td>
+</tr>
+<tr class="odd">
+<td><strong>Proxy transparente</strong></td>
+<td>El usuario no sabe que existe; se aplica automáticamente en la red.</td>
+<td>Filtrado sin configuración del cliente, control corporativo, monitorización.</td>
+</tr>
+<tr class="even">
+<td><strong>Proxy anónimo</strong></td>
+<td>Oculta la IP del cliente frente al servidor final.</td>
+<td>Privacidad, evitar rastreo, ocultar identidad del usuario.</td>
+</tr>
+<tr class="odd">
+<td><strong>Proxy de caché</strong></td>
+<td>Guarda copias de contenido para entregarlo más rápido.</td>
+<td>Optimizar rendimiento, reducir tráfico, acelerar acceso a recursos.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="resumen-para-tus-apuntes" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="resumen-para-tus-apuntes"><span class="header-section-number">1.4</span> <strong>Resumen para tus apuntes</strong></h2>
+<blockquote class="blockquote">
+<p><strong>Un proxy es un servidor intermediario que gestiona las peticiones entre un cliente y un servidor. Permite filtrar contenido, aplicar políticas, acelerar el acceso mediante caché, ocultar la IP del usuario, monitorizar tráfico y proteger servidores internos mediante funciones de reverse proxy.</strong></p>
+</blockquote>
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Configuración SSH (Secure Shell) en Ubuntu – Apuntes: Administración de Bases de Datos</title>
+<title>Contenedores – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -139,7 +104,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./ubuntu_ssh.html">Guía: Configuración de SSH en Ubuntu</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./contenedores.html">Contenedores</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -227,13 +192,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link active">
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Contenedores</span></a>
   </div>
 </li>
@@ -338,15 +303,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#contenedores-y-docker" id="toc-contenedores-y-docker" class="nav-link active" data-scroll-target="#contenedores-y-docker"><span class="header-section-number">1</span> <strong>Contenedores y Docker</strong></a>
+  <ul>
+  <li><a href="#qué-es-un-contenedor" id="toc-qué-es-un-contenedor" class="nav-link" data-scroll-target="#qué-es-un-contenedor"><span class="header-section-number">1.1</span> <strong>Qué es un contenedor</strong></a>
+  <ul class="collapse">
+  <li><a href="#características-esenciales" id="toc-características-esenciales" class="nav-link" data-scroll-target="#características-esenciales"><span class="header-section-number">1.1.1</span> Características esenciales</a></li>
+  </ul></li>
+  <li><a href="#qué-es-docker" id="toc-qué-es-docker" class="nav-link" data-scroll-target="#qué-es-docker"><span class="header-section-number">1.2</span> <strong>Qué es Docker</strong></a></li>
+  <li><a href="#qué-es-una-imagen-docker" id="toc-qué-es-una-imagen-docker" class="nav-link" data-scroll-target="#qué-es-una-imagen-docker"><span class="header-section-number">1.3</span> <strong>Qué es una imagen Docker</strong></a></li>
+  <li><a href="#diferencia-entre-una-imagen-docker-y-un-contenedor" id="toc-diferencia-entre-una-imagen-docker-y-un-contenedor" class="nav-link" data-scroll-target="#diferencia-entre-una-imagen-docker-y-un-contenedor"><span class="header-section-number">1.4</span> <strong>Diferencia entre una imagen Docker y un contenedor</strong></a></li>
+  <li><a href="#diferencia-entre-contenedores-y-máquinas-virtuales" id="toc-diferencia-entre-contenedores-y-máquinas-virtuales" class="nav-link" data-scroll-target="#diferencia-entre-contenedores-y-máquinas-virtuales"><span class="header-section-number">1.5</span> <strong>Diferencia entre contenedores y máquinas virtuales</strong></a></li>
+  <li><a href="#ejemplo-mental-para-recordar" id="toc-ejemplo-mental-para-recordar" class="nav-link" data-scroll-target="#ejemplo-mental-para-recordar"><span class="header-section-number">1.6</span> <strong>Ejemplo mental para recordar</strong></a></li>
+  </ul></li>
+  <li><a href="#docker-compose-qué-es-y-para-qué-sirve" id="toc-docker-compose-qué-es-y-para-qué-sirve" class="nav-link" data-scroll-target="#docker-compose-qué-es-y-para-qué-sirve"><span class="header-section-number">2</span> <strong>docker-compose: qué es y para qué sirve</strong></a>
+  <ul>
+  <li><a href="#qué-es-docker-compose" id="toc-qué-es-docker-compose" class="nav-link" data-scroll-target="#qué-es-docker-compose"><span class="header-section-number">2.1</span> Qué es docker-compose</a></li>
+  <li><a href="#para-qué-sirve" id="toc-para-qué-sirve" class="nav-link" data-scroll-target="#para-qué-sirve"><span class="header-section-number">2.2</span> Para qué sirve</a></li>
+  <li><a href="#idea-clave" id="toc-idea-clave" class="nav-link" data-scroll-target="#idea-clave"><span class="header-section-number">2.3</span> Idea clave</a></li>
+  </ul></li>
+  <li><a href="#tabla-de-comandos-esenciales-de-docker" id="toc-tabla-de-comandos-esenciales-de-docker" class="nav-link" data-scroll-target="#tabla-de-comandos-esenciales-de-docker"><span class="header-section-number">3</span> <strong>Tabla de comandos esenciales de Docker</strong></a></li>
+  <li><a href="#resumen" id="toc-resumen" class="nav-link" data-scroll-target="#resumen"><span class="header-section-number">4</span> <strong>Resumen</strong></a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./ubuntu_ssh.html">Guía: Configuración de SSH en Ubuntu</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./virtualizacion.html">Virtualizacion</a></li><li class="breadcrumb-item"><a href="./contenedores.html">Contenedores</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Configuración SSH (Secure Shell) en Ubuntu</h1>
+<h1 class="title">Contenedores</h1>
 </div>
 
 
@@ -363,22 +353,265 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Para conectarnos a un servidor Linux de forma remota, podemos usar el protocolo SSH (Secure Shell). Para ello, necesitamos tener un cliente SSH instalado en nuestra máquina local y conocer la dirección IP o el nombre de dominio del servidor al que queremos conectarnos, así como las credenciales de usuario.</p>
-<p>Para comprobar si tenemos un cliente SSH instalado, podemos abrir una terminal y ejecutar el comando <code>ssh -V</code>. Si el cliente está instalado, veremos la versión del mismo. Si no está instalado, podemos instalarlo usando el gestor de paquetes de nuestra distribución de Linux o descargarlo desde el sitio web oficial.</p>
-<p>En Debian, Ubuntu, o Mint puedes instalarlo:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update <span class="co"># Actualiza la lista de paquetes disponibles (el catálogo). Este comando no instala nada.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade <span class="co"># Actualiza los paquetes instalados en tu sistema.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install openssh-server</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Para ver si está habilitado o deshabilitado el servicio SSH en el servidor, podemos usar el comando <code>systemctl status ssh</code> o <code>systemctl status sshd</code>, dependiendo de la distribución de Linux. Si el servicio está activo, veremos un mensaje indicando que está en ejecución.</p>
-<p><img src="images/paste-1.png" class="img-fluid"></p>
-<p>Si está instalado pero no está activo, podemos iniciarlo con <code>sudo systemctl start ssh</code> o <code>sudo systemctl start sshd</code>. También podemos usar <code>systemctl enable ssh</code> o <code>systemctl enable sshd</code> para habilitar el servicio SSH para que se inicie automáticamente al arrancar el sistema.</p>
-<p>El comando básico para conectarse a un servidor remoto es:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> usuario@direccion_ip_del_servidor</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Por ejemplo, si nuestro nombre de usuario es “juan” y la dirección IP del servidor es “12.34.56.78”, el comando sería:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> juan@12.34.56.78</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Si es la primera vez que nos conectamos a ese servidor, se nos pedirá que confirmemos la autenticidad del host y que aceptemos su clave pública. Una vez aceptada, se nos pedirá la contraseña del usuario para iniciar sesión. Si la autenticidad del host ya ha sido confirmada previamente, se nos pedirá directamente la contraseña del usuario.</p>
+<section id="contenedores-y-docker" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> <strong>Contenedores y Docker</strong></h1>
+<section id="qué-es-un-contenedor" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="qué-es-un-contenedor"><span class="header-section-number">1.1</span> <strong>Qué es un contenedor</strong></h2>
+<p>Un <strong>contenedor</strong> es una unidad ligera y aislada que empaqueta una aplicación junto con todo lo necesario para ejecutarla: dependencias, librerías, configuración y entorno. La clave es que <strong>no incluye un sistema operativo completo</strong>, sino solo lo imprescindible.</p>
+<section id="características-esenciales" class="level3" data-number="1.1.1">
+<h3 data-number="1.1.1" class="anchored" data-anchor-id="características-esenciales"><span class="header-section-number">1.1.1</span> Características esenciales</h3>
+<ul>
+<li><p><strong>Independiente de la máquina donde se ejecuta</strong> El contenedor funciona igual en cualquier sistema que tenga Docker instalado, sin importar el hardware o el sistema operativo del host.</p></li>
+<li><p><strong>Portable</strong> Puedes moverlo entre tu portátil, un servidor Linux, un clúster Kubernetes o Azure Container Instances sin modificar nada.</p></li>
+<li><p><strong>Aislamiento</strong> Cada contenedor tiene su propio entorno. Si una prueba falla o una app se rompe, no afecta al resto.</p></li>
+<li><p><strong>Eficiente en recursos</strong> Usa solo la infraestructura necesaria para la aplicación, sin cargar un sistema operativo completo como una máquina virtual.</p></li>
+<li><p><strong>Despliegue ágil</strong> Crear, iniciar o destruir contenedores es extremadamente rápido (segundos), lo que facilita pruebas, CI/CD y desarrollo.</p></li>
+<li><p><strong>Multiplicidad</strong> Un único host puede ejecutar <strong>muchas aplicaciones en muchos contenedores</strong> simultáneamente.</p></li>
+</ul>
+</section>
+</section>
+<section id="qué-es-docker" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="qué-es-docker"><span class="header-section-number">1.2</span> <strong>Qué es Docker</strong></h2>
+<p><a href="https://www.docker.com/"><strong>Docker</strong></a> es la plataforma más popular para crear, ejecutar y gestionar contenedores.</p>
+<p>Incluye:</p>
+<ul>
+<li><p><strong>Docker Engine</strong> → el motor que ejecuta contenedores.</p></li>
+<li><p><strong>Docker CLI</strong> → comandos para construir imágenes, correr contenedores, etc.</p></li>
+<li><p><strong>Docker Hub</strong> → repositorio de imágenes públicas y privadas.</p></li>
+</ul>
+<p>Docker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.</p>
+</section>
+<section id="qué-es-una-imagen-docker" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="qué-es-una-imagen-docker"><span class="header-section-number">1.3</span> <strong>Qué es una imagen Docker</strong></h2>
+<p>Una <strong>imagen Docker</strong> es una <strong>plantilla inmutable</strong> que contiene todo lo necesario para crear un contenedor.</p>
+<p>Piensa en ella como:</p>
+<ul>
+<li><p>El <em>molde</em> del que se crean los contenedores.</p></li>
+<li><p>Un archivo que describe el entorno: sistema base, dependencias, configuración, aplicación.</p></li>
+</ul>
+<p>Características:</p>
+<ul>
+<li><p><strong>Inmutable</strong>: no cambia una vez creada.</p></li>
+<li><p><strong>Versionable</strong>: puedes tener <code>app:v1</code>, <code>app:v2</code>, etc.</p></li>
+<li><p><strong>Portable</strong>: se puede subir a Docker Hub o Azure Container Registry.</p></li>
+<li><p><strong>Reutilizable</strong>: puedes crear miles de contenedores a partir de la misma imagen.</p></li>
+</ul>
+</section>
+<section id="diferencia-entre-una-imagen-docker-y-un-contenedor" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="diferencia-entre-una-imagen-docker-y-un-contenedor"><span class="header-section-number">1.4</span> <strong>Diferencia entre una imagen Docker y un contenedor</strong></h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 38%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concepto</th>
+<th>Imagen Docker</th>
+<th>Contenedor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Qué es</td>
+<td>Plantilla, receta, blueprint</td>
+<td>Instancia en ejecución</td>
+</tr>
+<tr class="even">
+<td>Estado</td>
+<td>Inmutable</td>
+<td>Mutable (puede tener cambios mientras corre)</td>
+</tr>
+<tr class="odd">
+<td>Función</td>
+<td>Define cómo debe ser el entorno</td>
+<td>Ejecuta la aplicación</td>
+</tr>
+<tr class="even">
+<td>Vida</td>
+<td>Permanente (archivo)</td>
+<td>Temporal (se crea, corre y se destruye)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="diferencia-entre-contenedores-y-máquinas-virtuales" class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="diferencia-entre-contenedores-y-máquinas-virtuales"><span class="header-section-number">1.5</span> <strong>Diferencia entre contenedores y máquinas virtuales</strong></h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 39%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Característica</th>
+<th>Contenedor</th>
+<th>Máquina Virtual</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sistema operativo</td>
+<td>No incluye SO completo; comparte kernel del host</td>
+<td>Incluye un SO completo (Windows, Linux…)</td>
+</tr>
+<tr class="even">
+<td>Peso</td>
+<td>Muy ligero (MB)</td>
+<td>Pesado (GB)</td>
+</tr>
+<tr class="odd">
+<td>Velocidad de inicio</td>
+<td>Segundos</td>
+<td>Minutos</td>
+</tr>
+<tr class="even">
+<td>Aislamiento</td>
+<td>A nivel de proceso</td>
+<td>A nivel de hardware</td>
+</tr>
+<tr class="odd">
+<td>Recursos</td>
+<td>Usa solo lo necesario para la app</td>
+<td>Usa RAM, CPU y disco para el SO entero</td>
+</tr>
+<tr class="even">
+<td>Portabilidad</td>
+<td>Muy alta</td>
+<td>Menor, depende del hipervisor</td>
+</tr>
+<tr class="odd">
+<td>Uso típico</td>
+<td>Microservicios, CI/CD, despliegues rápidos</td>
+<td>Sistemas completos, entornos legacy</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Los contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.</strong></p>
+</blockquote>
+</section>
+<section id="ejemplo-mental-para-recordar" class="level2" data-number="1.6">
+<h2 data-number="1.6" class="anchored" data-anchor-id="ejemplo-mental-para-recordar"><span class="header-section-number">1.6</span> <strong>Ejemplo mental para recordar</strong></h2>
+<ul>
+<li><p><strong>Imagen</strong> → Receta de cocina.</p></li>
+<li><p><strong>Contenedor</strong> → Plato preparado siguiendo la receta.</p></li>
+<li><p><strong>Máquina virtual</strong> → Una cocina completa montada solo para preparar ese plato.</p></li>
+</ul>
+</section>
+</section>
+<section id="docker-compose-qué-es-y-para-qué-sirve" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> <strong>docker-compose: qué es y para qué sirve</strong></h1>
+<section id="qué-es-docker-compose" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="qué-es-docker-compose"><span class="header-section-number">2.1</span> Qué es docker-compose</h2>
+<p><strong>docker-compose</strong> es una herramienta que permite <strong>definir y ejecutar múltiples contenedores</strong> como un solo servicio. Usa un archivo llamado <strong>docker-compose.yml</strong>.</p>
+</section>
+<section id="para-qué-sirve" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="para-qué-sirve"><span class="header-section-number">2.2</span> Para qué sirve</h2>
+<ul>
+<li><p>Levantar varios contenedores con un solo comando.</p></li>
+<li><p>Definir redes, volúmenes y dependencias.</p></li>
+<li><p>Facilitar entornos de desarrollo y pruebas.</p></li>
+<li><p>Orquestar microservicios simples sin necesidad de Kubernetes.</p></li>
+</ul>
+</section>
+<section id="idea-clave" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="idea-clave"><span class="header-section-number">2.3</span> Idea clave</h2>
+<blockquote class="blockquote">
+<p>docker-compose permite levantar <strong>bases de datos, APIs, frontends y servicios auxiliares</strong> juntos, con un solo archivo y un solo comando.</p>
+</blockquote>
+</section>
+</section>
+<section id="tabla-de-comandos-esenciales-de-docker" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> <strong>Tabla de comandos esenciales de Docker</strong></h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Comando</strong></th>
+<th><strong>Función</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>docker build -t nombre .</code></td>
+<td>Construir una imagen desde un Dockerfile</td>
+</tr>
+<tr class="even">
+<td><code>docker images</code></td>
+<td>Listar imágenes disponibles</td>
+</tr>
+<tr class="odd">
+<td><code>docker run nombre</code></td>
+<td>Ejecutar un contenedor</td>
+</tr>
+<tr class="even">
+<td><code>docker run -d nombre</code></td>
+<td>Ejecutar en segundo plano</td>
+</tr>
+<tr class="odd">
+<td><code>docker ps</code></td>
+<td>Ver contenedores en ejecución</td>
+</tr>
+<tr class="even">
+<td><code>docker ps -a</code></td>
+<td>Ver todos los contenedores (incluidos detenidos)</td>
+</tr>
+<tr class="odd">
+<td><code>docker stop id</code></td>
+<td>Detener un contenedor</td>
+</tr>
+<tr class="even">
+<td><code>docker rm id</code></td>
+<td>Eliminar un contenedor</td>
+</tr>
+<tr class="odd">
+<td><code>docker rmi imagen</code></td>
+<td>Eliminar una imagen</td>
+</tr>
+<tr class="even">
+<td><code>docker logs id</code></td>
+<td>Ver logs del contenedor</td>
+</tr>
+<tr class="odd">
+<td><code>docker exec -it id bash</code></td>
+<td>Entrar dentro del contenedor</td>
+</tr>
+<tr class="even">
+<td><code>docker pull nombre</code></td>
+<td>Descargar una imagen desde Docker Hub</td>
+</tr>
+<tr class="odd">
+<td><code>docker push nombre</code></td>
+<td>Subir una imagen a un registro</td>
+</tr>
+<tr class="even">
+<td><code>docker-compose up</code></td>
+<td>Levantar servicios definidos en docker-compose.yml</td>
+</tr>
+<tr class="odd">
+<td><code>docker-compose down</code></td>
+<td>Detener y eliminar servicios</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="resumen" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> <strong>Resumen</strong></h1>
+<ul>
+<li><p><strong>Imagen Docker</strong> → plantilla inmutable.</p></li>
+<li><p><strong>Contenedor</strong> → instancia en ejecución, ligera y aislada.</p></li>
+<li><p><strong>docker-compose</strong> → orquestación simple de múltiples contenedores.</p></li>
+<li><p><strong>Comandos esenciales</strong> → construir, ejecutar, detener, inspeccionar y orquestar contenedores.</p></li>
+</ul>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
