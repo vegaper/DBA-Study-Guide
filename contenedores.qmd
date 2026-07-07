@@ -23,9 +23,23 @@ Un **contenedor** es una unidad ligera y aislada que empaqueta una aplicación j
 
 -   **Multiplicidad** Un único host puede ejecutar **muchas aplicaciones en muchos contenedores** simultáneamente.
 
+## **Diferencia entre contenedores y máquinas virtuales**
+
+| Característica | Contenedor | Máquina Virtual |
+|------------------|---------------------------|---------------------------|
+| Sistema operativo | No incluye SO completo; comparte kernel del host | Incluye un SO completo (Windows, Linux…) |
+| Peso | Muy ligero (MB) | Pesado (GB) |
+| Velocidad de inicio | Segundos | Minutos |
+| Aislamiento | A nivel de proceso | A nivel de hardware |
+| Recursos | Usa solo lo necesario para la app | Usa RAM, CPU y disco para el SO entero |
+| Portabilidad | Muy alta | Menor, depende del hipervisor |
+| Uso típico | Microservicios, CI/CD, despliegues rápidos | Sistemas completos, entornos legacy |
+
+> **Los contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.**
+
 ## **Qué es Docker**
 
-[**Docker**](https://www.docker.com/) es la plataforma más popular para crear, ejecutar y gestionar contenedores.
+[**Docker**](https://www.docker.com/) es la plataforma más popular para crear, ejecutar y gestionar contenedores. Docker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.
 
 Incluye:
 
@@ -34,8 +48,6 @@ Incluye:
 -   **Docker CLI** → comandos para construir imágenes, correr contenedores, etc.
 
 -   **Docker Hub** → repositorio de imágenes públicas y privadas.
-
-Docker estandarizó el formato de contenedores y simplificó su uso, convirtiéndose en el estándar de facto.
 
 ## **Qué es una imagen Docker**
 
@@ -60,25 +72,11 @@ Características:
 ## **Diferencia entre una imagen Docker y un contenedor**
 
 | Concepto | Imagen Docker | Contenedor |
-|---------------|------------------------|------------------------|
+|------------------|---------------------------|---------------------------|
 | Qué es | Plantilla, receta, blueprint | Instancia en ejecución |
 | Estado | Inmutable | Mutable (puede tener cambios mientras corre) |
 | Función | Define cómo debe ser el entorno | Ejecuta la aplicación |
 | Vida | Permanente (archivo) | Temporal (se crea, corre y se destruye) |
-
-## **Diferencia entre contenedores y máquinas virtuales**
-
-| Característica | Contenedor | Máquina Virtual |
-|-------------|------------------------|------------------------|
-| Sistema operativo | No incluye SO completo; comparte kernel del host | Incluye un SO completo (Windows, Linux…) |
-| Peso | Muy ligero (MB) | Pesado (GB) |
-| Velocidad de inicio | Segundos | Minutos |
-| Aislamiento | A nivel de proceso | A nivel de hardware |
-| Recursos | Usa solo lo necesario para la app | Usa RAM, CPU y disco para el SO entero |
-| Portabilidad | Muy alta | Menor, depende del hipervisor |
-| Uso típico | Microservicios, CI/CD, despliegues rápidos | Sistemas completos, entornos legacy |
-
-> **Los contenedores son más ligeros, rápidos y portables que las máquinas virtuales porque no necesitan un sistema operativo completo.**
 
 ## **Ejemplo mental para recordar**
 
@@ -108,6 +106,67 @@ Características:
 
 > docker-compose permite levantar **bases de datos, APIs, frontends y servicios auxiliares** juntos, con un solo archivo y un solo comando.
 
+::: extra
+### El Archivo YAML y Conceptos Críticos (Puertos y Volúmenes)
+
+Para usar `docker-compose`, debes escribir un archivo **YAML**. YAML es un formato muy fácil de leer, pero tiene dos reglas de oro:
+
+1.  **La indentación lo es todo:** No usa llaves `{}`. La jerarquía se define usando **espacios** al principio de la línea (nunca tabuladores, siempre 2 o 4 espacios).
+
+2.  **Clave-Valor:** Funciona con un formato `clave: valor` (fíjate en el espacio obligatorio después de los dos puntos).
+
+Para un **Administrador de Bases de Datos (DBA)**, al leer o crear este archivo hay dos conceptos que jamás se deben olvidar:
+
+-   **Mapeo de Puertos (Ports):** Los contenedores están aislados. Si tu BD corre en el puerto 5432 dentro del contenedor, tu PC no la ve. Tienes que mapear un puerto local hacia el contenedor (ej. `"5432:5432"`).
+
+-   **Volúmenes (Volumes):** **¡VITAL!** Los contenedores son efímeros. Si lo borras, pierdes los datos de tu BD para siempre. Un volumen "enchufa" una carpeta de tu disco duro real dentro del contenedor para que los datos persistan aunque el contenedor se destruya.
+
+### Anatomía de un `docker-compose.yml` (Ejemplo PostgreSQL + pgAdmin)
+
+Así se vería el archivo para levantar una base de datos y su interfaz web de administración simultáneamente:
+
+---
+version: '3.8'
+
+services:
+  # ---------------------------------------------
+  # SERVICIO 1: Nuestra Base de Datos
+  # ---------------------------------------------
+  mi_base_datos:
+    image: postgres:15
+    container_name: servidor_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: administrador
+      POSTGRES_PASSWORD: super_password_123
+      POSTGRES_DB: base_datos_curso
+    ports:
+      - "5432:5432" # Host : Contenedor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Guarda los datos de forma permanente
+
+  # ---------------------------------------------
+  # SERVICIO 2: Interfaz Gráfica para administrar
+  # ---------------------------------------------
+  interfaz_pgadmin:
+    image: dpage/pgadmin4
+    container_name: panel_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@curso.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80" # Tu PC (localhost:8080) se conecta al 80 del contenedor
+
+# ---------------------------------------------
+# DECLARACIÓN DE VOLÚMENES
+# ---------------------------------------------
+volumes:
+  postgres_data:
+---
+
+Con este archivo guardado, simplemente abres la terminal en esa carpeta y escribes `docker-compose up -d`. Docker descargará todo, conectará la BD con pgAdmin, guardará tus datos de forma segura en un volumen y te dejará el entorno listo en segundos.
+
 # **Tabla de comandos esenciales de Docker**
 
 | **Comando** | **Función** |
@@ -127,13 +186,12 @@ Características:
 | `docker push nombre` | Subir una imagen a un registro |
 | `docker-compose up` | Levantar servicios definidos en docker-compose.yml |
 | `docker-compose down` | Detener y eliminar servicios |
+:::
 
-# **Resumen** 
-
+::: summary
 -   **Imagen Docker** → plantilla inmutable.
 
 -   **Contenedor** → instancia en ejecución, ligera y aislada.
 
 -   **docker-compose** → orquestación simple de múltiples contenedores.
-
--   **Comandos esenciales** → construir, ejecutar, detener, inspeccionar y orquestar contenedores.
+:::
