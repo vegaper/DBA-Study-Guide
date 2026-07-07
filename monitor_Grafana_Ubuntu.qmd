@@ -3,7 +3,13 @@ title: "Creación de un monitor de sistema en linux con Grafana"
 format: html
 ---
 
-Vamos a moninotizar el sistema operativo Linux de nuestro servidor virtual desde el host (Windows) y para eso usaremos: - Node Exporter: expone las métricas del sistema operativo Linux en un endpoint HTTP. - Prometheus: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales. - Grafana: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.
+Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde el host (Windows) y para eso usaremos:
+
+- Node Exporter: expone las métricas del sistema operativo Linux en un endpoint HTTP.
+
+- Prometheus: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales.
+
+- Grafana: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.
 
 La práctica se realizará con **Docker Compose**, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. ([Docker Documentation](https://docs.docker.com/compose/)) Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. ([Grafana Labs](https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/))
 
@@ -118,7 +124,7 @@ Si responde, ya tienes tu IP fija funcionando.
 
 ## Instalar actualizaciones
 
-Como siempre, antes de instalar nada actualizadmos el sistema:
+Como siempre, antes de instalar nada actualizamos el sistema:
 
 ``` bash
 
@@ -258,17 +264,13 @@ sudo usermod -aG docker $USER
 
 Añade tu usuario al grupo `docker`.
 
-Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo.
+Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes **cerrar sesión y volver a entrar** para que el cambio se aplique. (para hacer logout usa `exit` y luego `login` para entrar de nuevo)
 
 ![](images/paste-52.png)
 
-Después debes **cerrar sesión y volver a entrar** para que el cambio se aplique.
-
-![](images/paste-53.png)
-
-::: summary
 Este bloque de comandos:
 
+::: summary
 - Actualiza Ubuntu.
 
 - Instala herramientas necesarias.
@@ -294,17 +296,19 @@ Creamos una carpeta (directorio) para la práctica:
  mkdir -p ~/grafana-practica/prometheus
 ```
 
+- `mkdir` → crea directorios
+
+- `-p` → *parents*, crea también los directorios padre si no existen
+
 ``` bash
  cd ~/grafana-practica
 ```
-
-Comprobamos dónde estamos con pwd
 
 # Crear el fichero de configuración de Prometheus
 
 Este fichero le dice a Prometheus **qué debe monitorizar** y **cada cuánto tiempo**.
 
-Primero asegúrate de estar en tu carpeta de práctica.
+Primero asegúrate de estar en tu carpeta de práctica. Comprobamos dónde estamos con `pwd`
 
 ## Crear el fichero
 
@@ -360,7 +364,7 @@ Este fichero define **los tres servicios**:
 
 Y cómo deben ejecutarse juntos.
 
-## Crear el fichero
+**Crear el fichero**
 
 Asegúrate de estar en la carpeta correcta `cd ~/grafana-practica`
 
@@ -368,7 +372,7 @@ Asegúrate de estar en la carpeta correcta `cd ~/grafana-practica`
 nano docker-compose.yml 
 ```
 
-## Pegar el contenido
+**Pegar el contenido**
 
 ``` yaml
 services:
@@ -413,9 +417,119 @@ volumes:
   grafana-data:
 ```
 
-### Explicación detallada de cada servicio
+::: {.nota-importante .extra}
+🔐 **Nota importante sobre seguridad en producción**
 
-#### **Prometheus**
+Hasta ahora hemos usado en `docker-compose.yml` credenciales como:
+
+GF_SECURITY_ADMIN_USER=admin\
+GF_SECURITY_ADMIN_PASSWORD=Admin123\*
+
+Esto está bien para una **práctica**, pero **en producción nunca se deben usar credenciales por defecto ni contraseñas en texto plano dentro del compose**. Es un riesgo grave porque:
+
+- cualquiera que vea el archivo puede leer la contraseña
+
+- si el repositorio se publica, la contraseña queda expuesta
+
+- si el servidor tiene varios usuarios, todos pueden verla
+
+- las contraseñas en texto plano son un vector de ataque muy común
+
+Por eso, en entornos reales se usan **variables de entorno externas** o **gestores de secretos**.
+
+✔️ **Alternativa recomendada: archivo** `.env` **(seguro y sencillo)**
+
+La forma más práctica y segura de gestionar credenciales en Docker es usar un archivo `.env` que **no se sube al repositorio**.
+
+1\. Crear un archivo `.env` en la misma carpeta del compose
+
+Contenido del `.env`:
+
+```         
+GF_SECURITY_ADMIN_USER=admin 
+```
+
+```         
+GF_SECURITY_ADMIN_PASSWORD=MiPasswordSegura123! 
+```
+
+Este archivo **no se publica** y solo existe en el servidor donde se despliega.
+
+2\. Modificar el `docker-compose.yml` para usar variables
+
+``` yaml
+environment:
+  - GF_SECURITY_ADMIN_USER
+  - GF_SECURITY_ADMIN_PASSWORD
+```
+
+Docker sustituirá automáticamente las variables por los valores del `.env`.
+
+3\. Asegurarse de que `.env` no se sube a GitHub
+
+En tu `.gitignore` añade:
+
+```         
+.env 
+```
+
+Con esto, aunque publiques tu proyecto, **las credenciales nunca salen del servidor**.
+
+✔️ **Alternativa 2: variables de entorno del sistema**
+
+En el servidor:
+
+``` bash
+export GF_SECURITY_ADMIN_USER=admin export GF_SECURITY_ADMIN_PASSWORD=$(openssl rand -base64 32) 
+```
+
+Y en el compose:
+
+``` yaml
+environment:
+  - GF_SECURITY_ADMIN_USER
+  - GF_SECURITY_ADMIN_PASSWORD
+```
+
+Docker toma las variables directamente del entorno del sistema.
+
+✔️ **Alternativa 3: gestores de secretos (producción real)**
+
+En entornos profesionales como Azure, AWS o Kubernetes se usan:
+
+- Azure Key Vault
+
+- AWS Secrets Manager
+
+- HashiCorp Vault
+
+- Docker Swarm Secrets
+
+- Kubernetes Secrets
+
+Ejemplo con Docker Swarm:
+
+``` bash
+docker secret create grafana_admin_password password.txt 
+```
+
+Y en el compose:
+
+``` yaml
+secrets:
+  - grafana_admin_password
+```
+
+La contraseña nunca aparece en texto plano.
+
+**Resumen**
+
+> **En producción nunca se deben usar credenciales por defecto ni contraseñas dentro del docker-compose.** **La alternativa correcta es usar variables de entorno externas, preferiblemente en un archivo** `.env` **que no se sube al repositorio.** **En entornos avanzados se usan gestores de secretos como Azure Key Vault o Docker Swarm Secrets.**
+:::
+
+## Contenedores que estamos configurando en este archivo:
+
+### **Prometheus**
 
 - Usa la imagen oficial `prom/prometheus`.
 
@@ -427,9 +541,9 @@ volumes:
 
 - Retiene datos durante **15 días**.
 
-#### **Node Exporter**
+### **Node Exporter**
 
-- Es el “chivato” del servidor Linux.
+- Es el agente de monitorización del servidor
 
 - Expone el puerto **9100**.
 
@@ -437,7 +551,7 @@ volumes:
 
 - Docker lo aísla, pero con `--path.rootfs=/host` puede acceder a la información del host.
 
-## **Grafana**
+### **Grafana**
 
 - Usa la imagen oficial `grafana/grafana`.
 
@@ -451,16 +565,6 @@ volumes:
 
 - Guarda dashboards y configuración en `grafana-data`.
 
-## Guardar el fichero
-
-En nano:
-
-- **CTRL + O**
-
-- **ENTER**
-
-- **CTRL + X**
-
 # Levantar todo el stack
 
 Desde la carpeta `~/grafana-practica`:
@@ -469,20 +573,53 @@ Desde la carpeta `~/grafana-practica`:
 docker compose up -d 
 ```
 
-Esto arrancará en segundo plano.:
+Docker Compose realiza **tres tareas fundamentales**:
 
-- Prometheus
+## **Descarga las imágenes necesarias (si no existen en el sistema)**
 
-- Node Exporter
+``` yaml
+image: prom/prometheus:latest
+image: grafana/grafana:latest
+image: prom/node-exporter:latest
+```
 
-- Grafana
+Si estas imágenes no están ya en tu máquina, Docker las descarga automáticamente desde Docker Hub. Esto sustituye completamente la instalación manual de Prometheus, Grafana o Node Exporter en Ubuntu. No instalamos nada en el sistema operativo, todo viene dentro de las imágenes.
 
-  ![](images/paste-58.png)
+## Crea los contenedores a partir de esas imágenes
 
-Verificar que funciona\
+Cada servicio del YAML se convierte en un contenedor:
+
+- `prometheus` → contenedor Prometheus
+
+- `grafana` → contenedor Grafana
+
+- `node-exporter` → contenedor Node Exporter
+
+Cada uno es un entorno aislado, con su propio filesystem, su propio proceso y su propia configuración.
+
+## **Configura redes, puertos y volúmenes automáticamente**
+
+Esto es clave: **los contenedores se comunican entre sí por nombre**, no por IP.
+
+Ejemplos:
+
+- `ports: "3000:3000"` → expone Grafana al exterior
+
+- `volumes:` → monta configuraciones persistentes
+
+- `command:` → pasa parámetros a Prometheus o Node Exporter
+
+- **red interna de Docker** → permite que Grafana acceda a Prometheus usando `http://prometheus:9090`
+
+![](images/paste-58.png)
+
+## Verificar que funciona
+
+### Contenedores
+
 Comprobar los logs del contenedor: `docker compose logs -f` y `CTRL + C` para salir
 
-## Prometheus:
+### Prometheus:
 
 http://{TU_IP}:9090 por ejemplo <http://10.0.20.44:9090/>
 
@@ -495,7 +632,7 @@ Entramos en: `Status > Target health`
 O directamente: http://{IP_DEL_SERVIDOR}:9090/targets\
 ![](images/paste-60.png)
 
-### **Hacer una primera consulta en Prometheus**
+#### **Hacer una primera consulta en Prometheus**
 
 En Prometheus, vamos a la pestaña de consulta y probamos: `up`
 
@@ -505,13 +642,11 @@ Pulsamos **Execute**.
 
 Interpretación:
 
-1 = el servicio está accesible
+- 1 = el servicio está accesible
 
-0 = el servicio no está accesible
+- 0 = el servicio no está accesible
 
-Probamos ahora:
-
-`node_memory_MemTotal_bytes`
+Probamos ahora: `node_memory_MemTotal_bytes`
 
 ![](images/paste-62.png)
 
@@ -521,7 +656,7 @@ Y después: `node_cpu_seconds_total`
 
 Estas métricas serán las que luego usaremos en Grafana.
 
-## Node Exporter:
+### Node Exporter:
 
 http://{TU_IP}:9100/metrics\
 ![](images/paste-56.png)
@@ -532,7 +667,7 @@ Ejecutamos: `curl http://localhost:9100/metrics | head`
 
 Si queremos ver solo métricas relacionadas con el sistema: `curl http://localhost:9100/metrics | grep node_cpu | head`![](images/paste-59.png)
 
-## Grafana:
+### Grafana:
 
 http://{TU_IP}:3000 Usuario: **admin** Contraseña: **Admin123**\*\
 ![](images/paste-57.png)
@@ -545,7 +680,7 @@ Grafana puede pedir cambiar la contraseña. Para la práctica podemos cambiarla 
 
 Dentro de Grafana: `Connections / Data sources -> Add data source -> Prometheus`![](images/paste-64.png)
 
-Importante: dentro de Docker **no usamos** localhost:9090, porque localhost sería el propio contenedor de Grafana. Usamos el nombre del servicio Docker:
+Importante: dentro de Docker **no usamos** localhost:9090 como aparece por defecto, porque localhost sería la máquina desde donde nos estamos conectando mediante el navegador web. Docker Compose crea una red interna donde cada servicio se resuelve por su nombre. Usamos el nombre del servicio Docker: (prometheus)
 
 En la URL ponemos: http://prometheus:9090\
 ![](images/paste-65.png)
@@ -572,7 +707,98 @@ Prometheus
 
 ![](images/paste-70.png)
 
-Tipo de visualización recomendado para todos los graficos: Time series
+Tipo de visualización recomendado para todos los graficos: Time series\
+\
+En todas las métricas daremos una ventana de tiempo para los intervalos de tiempo a mostrar:
+
+La ventana `[1m]` suaviza picos y evita que las métricas fluctúen demasiado. Se pueden usar intervalos menores si se desea `[5s]` o `[30s]`. Prometheus **no** está calculando una media de los valores durante 1 minuto. Está calculando **la velocidad de cambio por segundo**, usando **todos los puntos de datos recogidos en ese minuto**. Es decir: **Prometheus mira cómo ha cambiado la métrica en los últimos 60 segundos y calcula la pendiente (slope) de esa serie.**
+
+::: extra
+### Ejemplo sencillo con 5 mediciones y un pico
+
+Vamos a imaginar una métrica de **CPU idle** (porcentaje de tiempo que la CPU está “sin hacer nada”) medida cada 15 segundos durante 1 minuto:
+
+- Tiempo total: 60 segundos
+
+- 5 puntos: t0,t15,t30,t45,t60
+
+Supongamos estos valores de **idle%**:
+
+| **Instante** | **Idle (%)**                               |
+|--------------|--------------------------------------------|
+| t0           | 90                                         |
+| t15          | 90                                         |
+| t30          | 10 ← pico de actividad (CPU casi ocupada)  |
+| t45          | 90                                         |
+| t60          | 90                                         |
+
+### 1. Media simple de los valores
+
+Calculamos la media aritmética:
+
+media=90+90+10+90+905=3705=74
+
+- **Idle medio**: 74%
+
+- **Uso medio de CPU**: 100−74=26%
+
+La media “se come” el pico y lo reparte por todo el minuto.
+
+### 2. Qué hace `rate()` bajo el capó (versión conceptual)
+
+En realidad, `rate(node_cpu_seconds_total{mode="idle"}[1m])` no trabaja con porcentajes, sino con un **contador de segundos idle**. Simplifiquemos con un ejemplo equivalente:
+
+Supongamos que el contador de segundos idle (`node_cpu_seconds_total{mode="idle"}`) tiene estos valores:
+
+| **Instante** | **Idle seconds (contador)** |
+|--------------|-----------------------------|
+| t0           | 0                           |
+| t15          | 13.5                        |
+| t30          | 14.0                        |
+| t45          | 27.5                        |
+| t60          | 41.0                        |
+
+Interpretación:
+
+- Entre t0 y t15: la CPU ha estado idle el 90% del tiempo → 13.5 s
+
+- Entre t15 y t30: idle baja mucho (pico de actividad) → solo 0.5 s más
+
+- Entre t30 y t45: vuelve a estar muy idle → suma 13.5 s
+
+- Entre t45 y t60: otra vez muy idle → suma 13.5 s
+
+`rate()` hace, conceptualmente, esto:
+
+1.  Mira todos los puntos en la ventana `[1m]`.
+
+2.  Ajusta una **recta** (regresión lineal) al contador.
+
+3.  Calcula la **pendiente** de esa recta → segundos idle por segundo.
+
+Podemos aproximar la pendiente usando el primer y último punto:
+
+pendiente≈41.0−060=4160≈0.6833
+
+Eso significa:
+
+- **Idle rate**: 0.6833 segundos idle por segundo → 68.33% idle
+
+- **Uso de CPU**: 100−68.33≈31.67%
+
+### 3. Comparación media vs `rate()` en tabla
+
+| **Método** | **Qué hace** | **Resultado idle** | **Resultado uso CPU** |
+|----|----|----|----|
+| **Media simple** | Promedia los 5 valores de idle% | 74% | 26% |
+| `rate()` **+ 1m** | Calcula la pendiente del contador en 60 s | ≈68.33% | ≈31.67% |
+
+### Idea clave
+
+- La **media** trata el pico como un valor más y lo reparte uniformemente.
+
+- `rate()` mira **cómo ha evolucionado el contador en todo el minuto** y devuelve una **tendencia** (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.
+:::
 
 #### **Panel 1:** Uso de CPU (%)
 
@@ -622,7 +848,7 @@ Consulta: `100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_byt
 
 Unidad: Percent (0-100)
 
-Interpretación: Muestra qué porcentaje de RAM está en uso.
+Interpretación: Muestra qué porcentaje de RAM está en uso. MemAvailable es la métrica recomendada por el kernel para medir memoria realmente libre, porque incluye caché y buffers reutilizables.
 
 #### **Panel 3:** Uso de disco raíz (%)
 
@@ -630,7 +856,7 @@ Consulta: `100 * (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs
 
 Explicación: `node_filesystem_avail_bytes`Es el **espacio disponible** (libre) en bytes. `node_filesystem_size_bytes`Es el **tamaño total** del filesystem.`mountpoint="/"`esto especifica el disco raíz.
 
-Esto excluye los ficheros temporales o virtuales porqeu no representan almacenamiento real en el disco:
+Esto excluye los ficheros temporales o virtuales porque no representan almacenamiento real en el disco:
 
 ```         
 fstype!~"tmpfs|overlay|squashfs"
@@ -684,7 +910,7 @@ Descripción: Dashboard básico para visualizar CPU, memoria, disco y red median
 
 ### **Generar carga para ver cambios en el dashboard**
 
-Ahora vamos a provocar algo de actividad para que el dashboard no parezca un electrocardiograma de un muñeco de cera.
+Ahora vamos a provocar algo de actividad para que el dashboard lo muestre
 
 Generamos carga de CPU durante 60 segundos:
 
@@ -733,7 +959,7 @@ Cuando terminemos, eliminamos el fichero de prueba:
 
 5\. ¿Qué problemas podríamos detectar antes de que el usuario final se queje? creando alertas podemos saber cuando un recurso esta bajo presión
 
-### **Importar un dashboard ya preparado**
+## **Importar un dashboard ya preparado**
 
 Además del dashboard manual, podemos importar un dashboard ya creado por la comunidad.
 
@@ -827,37 +1053,61 @@ http://IP_DEL_SERVIDOR:3000
 
 # **Entregables de la práctica**
 
-Cada estudiante debería entregar:
+**Preguntas de reflexión**
 
-1.  Captura de docker compose ps con los tres contenedores en ejecución.
+1\. **¿Qué función cumple Grafana?** Grafana es la herramienta que visualiza las métricas. Permite crear dashboards, gráficas, paneles y alertas para interpretar los datos que recoge Prometheus.
 
-2.  Captura de Prometheus mostrando los targets en estado UP.
+2\. **¿Qué función cumple Prometheus?** Prometheus es el sistema que recoge, almacena y consulta las métricas. Lee los endpoints de Node Explorer, guarda las series temporales y permite hacer consultas PromQL
 
-3.  Captura de Grafana con la fuente de datos Prometheus configurada correctamente.
+3\. **¿Qué función cumple Node Exporter?** Node Exporter es el sistema que métricas del sistema operativo en /metrics
 
-4.  Captura del dashboard creado manualmente.
+4\. **¿Por qué Grafana necesita una fuente de datos?** Porque Grafana **no almacena métricas**. Solo las visualiza. Necesita conectarse a Prometheus para obtener los datos que mostrará en los paneles.
 
-5.  Respuestas a las preguntas de reflexión.
-
-**20. Preguntas de reflexión**
-
-1\. ¿Qué función cumple Grafana?
-
-2\. ¿Qué función cumple Prometheus?
-
-3\. ¿Qué función cumple Node Exporter?
-
-4\. ¿Por qué Grafana necesita una fuente de datos?
-
-5\. ¿Qué significa que un target esté en estado UP?
+5\. **¿Qué significa que un target esté en estado UP?** Significa que Prometheus **puede acceder** al endpoint del target y está recibiendo métricas correctamente.
 
 6\. ¿Qué métrica usaríamos para detectar falta de memoria?
 
-7\. ¿Qué métrica usaríamos para detectar falta de espacio en disco?
+```         
+node_memory_MemAvailable_bytes
+```
 
-8\. ¿Qué ventaja tiene observar tendencias en lugar de mirar solo el estado actual?
+7\. ¿Qué métrica usaríamos para detectar falta de espacio en disco? Las métricas del filesystem:
 
-9\. ¿Por qué sería útil este sistema en un servidor de bases de datos?
+- `node_filesystem_avail_bytes` → espacio libre
+
+- `node_filesystem_size_bytes` → tamaño total
+
+8\. ¿Qué ventaja tiene observar tendencias en lugar de mirar solo el estado actual? Observar tendencias permite:
+
+- detectar problemas **antes** de que ocurran
+
+- ver si un recurso se está agotando progresivamente
+
+- anticipar fallos (disco llenándose, RAM consumiéndose, CPU saturándose)
+
+9\. ¿Por qué sería útil este sistema en un servidor de bases de datos? Porque un servidor de bases de datos depende críticamente de:
+
+- CPU
+
+- RAM
+
+- disco (lectura/escritura)
+
+- red
+
+Monitorizar estos recursos permite:
+
+- detectar cuellos de botella
+
+- anticipar saturación
+
+- evitar caídas
+
+- mantener el rendimiento de consultas
+
+- reaccionar antes de que los usuarios sufran lentitud
+
+Es exactamente el tipo de servidor donde Prometheus + Grafana + Node Exporter es más útil.
 
 # **Problemas frecuentes**
 
