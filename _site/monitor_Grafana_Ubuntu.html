@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Creación de un monitor de sistema en linux con Grafana – Apuntes: Administración de Bases de Datos</title>
+<title>Crear un monitor sencillo con Grafana en Ubuntu Sever – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -254,12 +254,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Práctica extra: monitor sencillo con grafana</span></a>
-  </div>
-</li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
@@ -277,6 +271,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Monitorización de Sistemas Linux</span></a>
   </div>
@@ -285,6 +285,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
   </div>
 </li>
       </ul>
@@ -369,81 +375,74 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#comprobar-que-docker-funciona" id="toc-comprobar-que-docker-funciona" class="nav-link" data-scroll-target="#comprobar-que-docker-funciona"><span class="header-section-number">2.9</span> Comprobar que Docker funciona</a></li>
   <li><a href="#probar-docker" id="toc-probar-docker" class="nav-link" data-scroll-target="#probar-docker"><span class="header-section-number">2.10</span> Probar Docker</a></li>
   <li><a href="#usar-docker-sin-sudo" id="toc-usar-docker-sin-sudo" class="nav-link" data-scroll-target="#usar-docker-sin-sudo"><span class="header-section-number">2.11</span> Usar Docker sin sudo</a></li>
-  <li><a href="#crear-la-estructura-de-trabajo" id="toc-crear-la-estructura-de-trabajo" class="nav-link" data-scroll-target="#crear-la-estructura-de-trabajo"><span class="header-section-number">2.12</span> Crear la estructura de trabajo</a></li>
   </ul></li>
-  <li><a href="#crear-el-fichero-de-configuración-de-prometheus" id="toc-crear-el-fichero-de-configuración-de-prometheus" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-prometheus"><span class="header-section-number">3</span> Crear el fichero de configuración de Prometheus</a>
+  <li><a href="#crear-la-estructura-de-trabajo-y-la-configuración-de-los-servicios" id="toc-crear-la-estructura-de-trabajo-y-la-configuración-de-los-servicios" class="nav-link" data-scroll-target="#crear-la-estructura-de-trabajo-y-la-configuración-de-los-servicios"><span class="header-section-number">3</span> Crear la estructura de trabajo y la configuración de los servicios</a>
   <ul>
-  <li><a href="#crear-el-fichero" id="toc-crear-el-fichero" class="nav-link" data-scroll-target="#crear-el-fichero"><span class="header-section-number">3.1</span> Crear el fichero</a>
+  <li><a href="#crear-el-fichero-de-configuración-de-prometheus" id="toc-crear-el-fichero-de-configuración-de-prometheus" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-prometheus"><span class="header-section-number">3.1</span> Crear el fichero de configuración de Prometheus</a></li>
+  <li><a href="#crear-el-fichero-de-configuración-de-docker-compose" id="toc-crear-el-fichero-de-configuración-de-docker-compose" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-docker-compose"><span class="header-section-number">3.2</span> Crear el fichero de configuración de docker compose</a>
   <ul class="collapse">
-  <li><a href="#pegar-el-contenido" id="toc-pegar-el-contenido" class="nav-link" data-scroll-target="#pegar-el-contenido"><span class="header-section-number">3.1.1</span> Pegar el contenido</a></li>
-  <li><a href="#guardar-el-fichero" id="toc-guardar-el-fichero" class="nav-link" data-scroll-target="#guardar-el-fichero"><span class="header-section-number">3.1.2</span> Guardar el fichero</a></li>
+  <li><a href="#contenedores-que-estamos-configurando-en-este-archivo" id="toc-contenedores-que-estamos-configurando-en-este-archivo" class="nav-link" data-scroll-target="#contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.1</span> Contenedores que estamos configurando en este archivo:</a></li>
+  <li><a href="#prometheus" id="toc-prometheus" class="nav-link" data-scroll-target="#prometheus"><span class="header-section-number">3.2.2</span> <strong>Prometheus</strong></a></li>
+  <li><a href="#node-exporter" id="toc-node-exporter" class="nav-link" data-scroll-target="#node-exporter"><span class="header-section-number">3.2.3</span> <strong>Node Exporter</strong></a></li>
+  <li><a href="#grafana" id="toc-grafana" class="nav-link" data-scroll-target="#grafana"><span class="header-section-number">3.2.4</span> <strong>Grafana</strong></a></li>
   </ul></li>
   </ul></li>
-  <li><a href="#crear-el-fichero-de-configuración-de-docker-compose" id="toc-crear-el-fichero-de-configuración-de-docker-compose" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-docker-compose"><span class="header-section-number">4</span> Crear el fichero de configuración de docker compose</a>
+  <li><a href="#levantar-todo-el-stack" id="toc-levantar-todo-el-stack" class="nav-link" data-scroll-target="#levantar-todo-el-stack"><span class="header-section-number">4</span> Levantar todo el stack</a>
   <ul>
-  <li><a href="#contenedores-que-estamos-configurando-en-este-archivo" id="toc-contenedores-que-estamos-configurando-en-este-archivo" class="nav-link" data-scroll-target="#contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">4.1</span> Contenedores que estamos configurando en este archivo:</a>
+  <li><a href="#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" id="toc-descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" class="nav-link" data-scroll-target="#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema"><span class="header-section-number">4.1</span> <strong>Descarga las imágenes necesarias (si no existen en el sistema)</strong></a></li>
+  <li><a href="#crea-los-contenedores-a-partir-de-esas-imágenes" id="toc-crea-los-contenedores-a-partir-de-esas-imágenes" class="nav-link" data-scroll-target="#crea-los-contenedores-a-partir-de-esas-imágenes"><span class="header-section-number">4.2</span> Crea los contenedores a partir de esas imágenes</a></li>
+  <li><a href="#configura-redes-puertos-y-volúmenes-automáticamente" id="toc-configura-redes-puertos-y-volúmenes-automáticamente" class="nav-link" data-scroll-target="#configura-redes-puertos-y-volúmenes-automáticamente"><span class="header-section-number">4.3</span> Configura redes, puertos y volúmenes automáticamente</a></li>
+  <li><a href="#verificar-que-funciona-1" id="toc-verificar-que-funciona-1" class="nav-link" data-scroll-target="#verificar-que-funciona-1"><span class="header-section-number">4.4</span> Verificar que funciona</a>
   <ul class="collapse">
-  <li><a href="#prometheus" id="toc-prometheus" class="nav-link" data-scroll-target="#prometheus"><span class="header-section-number">4.1.1</span> <strong>Prometheus</strong></a></li>
-  <li><a href="#node-exporter" id="toc-node-exporter" class="nav-link" data-scroll-target="#node-exporter"><span class="header-section-number">4.1.2</span> <strong>Node Exporter</strong></a></li>
-  <li><a href="#grafana" id="toc-grafana" class="nav-link" data-scroll-target="#grafana"><span class="header-section-number">4.1.3</span> <strong>Grafana</strong></a></li>
+  <li><a href="#contenedores" id="toc-contenedores" class="nav-link" data-scroll-target="#contenedores"><span class="header-section-number">4.4.1</span> Contenedores</a></li>
+  <li><a href="#prometheus-1" id="toc-prometheus-1" class="nav-link" data-scroll-target="#prometheus-1"><span class="header-section-number">4.4.2</span> Prometheus:</a>
+  <ul class="collapse">
+  <li><a href="#hacer-una-primera-consulta-en-prometheus" id="toc-hacer-una-primera-consulta-en-prometheus" class="nav-link" data-scroll-target="#hacer-una-primera-consulta-en-prometheus"><span class="header-section-number">4.4.2.1</span> Hacer una primera consulta en Prometheus</a></li>
+  </ul></li>
+  <li><a href="#node-exporter-1" id="toc-node-exporter-1" class="nav-link" data-scroll-target="#node-exporter-1"><span class="header-section-number">4.4.3</span> Node Exporter:</a></li>
+  <li><a href="#grafana-1" id="toc-grafana-1" class="nav-link" data-scroll-target="#grafana-1"><span class="header-section-number">4.4.4</span> Grafana:</a></li>
   </ul></li>
   </ul></li>
-  <li><a href="#levantar-todo-el-stack" id="toc-levantar-todo-el-stack" class="nav-link" data-scroll-target="#levantar-todo-el-stack"><span class="header-section-number">5</span> Levantar todo el stack</a>
+  <li><a href="#trabajar-en-grafana" id="toc-trabajar-en-grafana" class="nav-link" data-scroll-target="#trabajar-en-grafana"><span class="header-section-number">5</span> Trabajar en Grafana</a>
   <ul>
-  <li><a href="#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" id="toc-descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" class="nav-link" data-scroll-target="#descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema"><span class="header-section-number">5.1</span> <strong>Descarga las imágenes necesarias (si no existen en el sistema)</strong></a></li>
-  <li><a href="#crea-los-contenedores-a-partir-de-esas-imágenes" id="toc-crea-los-contenedores-a-partir-de-esas-imágenes" class="nav-link" data-scroll-target="#crea-los-contenedores-a-partir-de-esas-imágenes"><span class="header-section-number">5.2</span> Crea los contenedores a partir de esas imágenes</a></li>
-  <li><a href="#configura-redes-puertos-y-volúmenes-automáticamente" id="toc-configura-redes-puertos-y-volúmenes-automáticamente" class="nav-link" data-scroll-target="#configura-redes-puertos-y-volúmenes-automáticamente"><span class="header-section-number">5.3</span> <strong>Configura redes, puertos y volúmenes automáticamente</strong></a></li>
-  <li><a href="#verificar-que-funciona-1" id="toc-verificar-que-funciona-1" class="nav-link" data-scroll-target="#verificar-que-funciona-1"><span class="header-section-number">5.4</span> Verificar que funciona</a>
+  <li><a href="#añadir-prometheus-como-fuente-de-datos-en-grafana" id="toc-añadir-prometheus-como-fuente-de-datos-en-grafana" class="nav-link" data-scroll-target="#añadir-prometheus-como-fuente-de-datos-en-grafana"><span class="header-section-number">5.1</span> Añadir Prometheus como fuente de datos en Grafana</a></li>
+  <li><a href="#crear-nuestro-primer-dashboard-manual" id="toc-crear-nuestro-primer-dashboard-manual" class="nav-link" data-scroll-target="#crear-nuestro-primer-dashboard-manual"><span class="header-section-number">5.2</span> Crear nuestro primer dashboard manual</a>
   <ul class="collapse">
-  <li><a href="#contenedores" id="toc-contenedores" class="nav-link" data-scroll-target="#contenedores"><span class="header-section-number">5.4.1</span> Contenedores</a></li>
-  <li><a href="#prometheus-1" id="toc-prometheus-1" class="nav-link" data-scroll-target="#prometheus-1"><span class="header-section-number">5.4.2</span> Prometheus:</a>
+  <li><a href="#añadir-una-visualización-nueva" id="toc-añadir-una-visualización-nueva" class="nav-link" data-scroll-target="#añadir-una-visualización-nueva"><span class="header-section-number">5.2.1</span> Añadir una visualización nueva</a>
   <ul class="collapse">
-  <li><a href="#hacer-una-primera-consulta-en-prometheus" id="toc-hacer-una-primera-consulta-en-prometheus" class="nav-link" data-scroll-target="#hacer-una-primera-consulta-en-prometheus"><span class="header-section-number">5.4.2.1</span> <strong>Hacer una primera consulta en Prometheus</strong></a></li>
+  <li><a href="#seleccionamos-la-fuente-de-datos" id="toc-seleccionamos-la-fuente-de-datos" class="nav-link" data-scroll-target="#seleccionamos-la-fuente-de-datos"><span class="header-section-number">5.2.1.1</span> Seleccionamos la fuente de datos:</a></li>
   </ul></li>
-  <li><a href="#node-exporter-1" id="toc-node-exporter-1" class="nav-link" data-scroll-target="#node-exporter-1"><span class="header-section-number">5.4.3</span> Node Exporter:</a></li>
-  <li><a href="#grafana-1" id="toc-grafana-1" class="nav-link" data-scroll-target="#grafana-1"><span class="header-section-number">5.4.4</span> Grafana:</a></li>
+  <li><a href="#panel-1-uso-de-cpu" id="toc-panel-1-uso-de-cpu" class="nav-link" data-scroll-target="#panel-1-uso-de-cpu"><span class="header-section-number">5.2.6.1</span> <strong>Panel 1:</strong> Uso de CPU (%)</a></li>
+  <li><a href="#panel-2-uso-de-memoria-ram" id="toc-panel-2-uso-de-memoria-ram" class="nav-link" data-scroll-target="#panel-2-uso-de-memoria-ram"><span class="header-section-number">5.2.6.2</span> <strong>Panel 2:</strong> Uso de memoria RAM (%)</a></li>
+  <li><a href="#panel-3-uso-de-disco-raíz" id="toc-panel-3-uso-de-disco-raíz" class="nav-link" data-scroll-target="#panel-3-uso-de-disco-raíz"><span class="header-section-number">5.2.6.3</span> <strong>Panel 3:</strong> Uso de disco raíz (%)</a></li>
+  <li><a href="#panel-4-tráfico-de-red-recibido" id="toc-panel-4-tráfico-de-red-recibido" class="nav-link" data-scroll-target="#panel-4-tráfico-de-red-recibido"><span class="header-section-number">5.2.6.4</span> <strong>Panel 4: tráfico de red recibido</strong></a></li>
+  <li><a href="#panel-5-tráfico-de-red-enviado" id="toc-panel-5-tráfico-de-red-enviado" class="nav-link" data-scroll-target="#panel-5-tráfico-de-red-enviado"><span class="header-section-number">5.2.6.5</span> <strong>Panel 5:</strong> Tráfico de red enviado</a></li>
+  <li><a href="#panel-6-escritura-en-disco-bs" id="toc-panel-6-escritura-en-disco-bs" class="nav-link" data-scroll-target="#panel-6-escritura-en-disco-bs"><span class="header-section-number">5.2.6.6</span> <strong>Panel 6:</strong> Escritura en disco (B/s)</a></li>
+  <li><a href="#resultado-esperado" id="toc-resultado-esperado" class="nav-link" data-scroll-target="#resultado-esperado"><span class="header-section-number">5.2.6.7</span> <strong>Resultado esperado</strong></a></li>
+  <li><a href="#panel-7-lectura-en-disco-bs" id="toc-panel-7-lectura-en-disco-bs" class="nav-link" data-scroll-target="#panel-7-lectura-en-disco-bs"><span class="header-section-number">5.2.6.8</span> <strong>Panel 7: Lectura en disco</strong> (B/s)</a></li>
+  <li><a href="#resultado-esperado-1" id="toc-resultado-esperado-1" class="nav-link" data-scroll-target="#resultado-esperado-1"><span class="header-section-number">5.2.6.9</span> <strong>Resultado esperado</strong></a></li>
+  <li><a href="#guardar-el-dashboard" id="toc-guardar-el-dashboard" class="nav-link" data-scroll-target="#guardar-el-dashboard"><span class="header-section-number">5.2.6.10</span> <strong>Guardar el dashboard</strong></a></li>
+  <li><a href="#generar-carga-para-ver-cambios-en-el-dashboard" id="toc-generar-carga-para-ver-cambios-en-el-dashboard" class="nav-link" data-scroll-target="#generar-carga-para-ver-cambios-en-el-dashboard"><span class="header-section-number">5.2.7</span> <strong>Generar carga para ver cambios en el dashboard</strong></a></li>
+  <li><a href="#preguntas-para-responder" id="toc-preguntas-para-responder" class="nav-link" data-scroll-target="#preguntas-para-responder"><span class="header-section-number">5.2.8</span> Preguntas para responder:</a></li>
   </ul></li>
+  <li><a href="#importar-un-dashboard-ya-preparado" id="toc-importar-un-dashboard-ya-preparado" class="nav-link" data-scroll-target="#importar-un-dashboard-ya-preparado"><span class="header-section-number">5.3</span> Importar un dashboard ya preparado</a></li>
   </ul></li>
-  <li><a href="#trabajar-en-grafana" id="toc-trabajar-en-grafana" class="nav-link" data-scroll-target="#trabajar-en-grafana"><span class="header-section-number">6</span> Trabajar en Grafana</a>
+  <li><a href="#comprobaciones-finales" id="toc-comprobaciones-finales" class="nav-link" data-scroll-target="#comprobaciones-finales"><span class="header-section-number">6</span> Comprobaciones finales</a>
   <ul>
-  <li><a href="#añadir-prometheus-como-fuente-de-datos-en-grafana" id="toc-añadir-prometheus-como-fuente-de-datos-en-grafana" class="nav-link" data-scroll-target="#añadir-prometheus-como-fuente-de-datos-en-grafana"><span class="header-section-number">6.1</span> Añadir Prometheus como fuente de datos en Grafana</a></li>
-  <li><a href="#crear-nuestro-primer-dashboard-manual" id="toc-crear-nuestro-primer-dashboard-manual" class="nav-link" data-scroll-target="#crear-nuestro-primer-dashboard-manual"><span class="header-section-number">6.2</span> Crear nuestro primer dashboard manual</a>
-  <ul class="collapse">
-  <li><a href="#añadir-una-visualización-nueva" id="toc-añadir-una-visualización-nueva" class="nav-link" data-scroll-target="#añadir-una-visualización-nueva"><span class="header-section-number">6.2.1</span> Añadir una visualización nueva</a>
-  <ul class="collapse">
-  <li><a href="#seleccionamos-la-fuente-de-datos" id="toc-seleccionamos-la-fuente-de-datos" class="nav-link" data-scroll-target="#seleccionamos-la-fuente-de-datos"><span class="header-section-number">6.2.1.1</span> Seleccionamos la fuente de datos:</a></li>
+  <li><a href="#estado-de-los-contenedores" id="toc-estado-de-los-contenedores" class="nav-link" data-scroll-target="#estado-de-los-contenedores"><span class="header-section-number">6.1</span> Estado de los contenedores</a></li>
+  <li><a href="#puertos" id="toc-puertos" class="nav-link" data-scroll-target="#puertos"><span class="header-section-number">6.2</span> Puertos</a></li>
+  <li><a href="#métricas-node-exporter" id="toc-métricas-node-exporter" class="nav-link" data-scroll-target="#métricas-node-exporter"><span class="header-section-number">6.3</span> Métricas Node Exporter</a></li>
+  <li><a href="#comprobamos-prometheus" id="toc-comprobamos-prometheus" class="nav-link" data-scroll-target="#comprobamos-prometheus"><span class="header-section-number">6.4</span> Comprobamos Prometheus:</a></li>
   </ul></li>
-  <li><a href="#panel-1-uso-de-cpu" id="toc-panel-1-uso-de-cpu" class="nav-link" data-scroll-target="#panel-1-uso-de-cpu"><span class="header-section-number">6.2.6.1</span> <strong>Panel 1:</strong> Uso de CPU (%)</a></li>
-  <li><a href="#panel-2-uso-de-memoria-ram" id="toc-panel-2-uso-de-memoria-ram" class="nav-link" data-scroll-target="#panel-2-uso-de-memoria-ram"><span class="header-section-number">6.2.6.2</span> <strong>Panel 2:</strong> Uso de memoria RAM (%)</a></li>
-  <li><a href="#panel-3-uso-de-disco-raíz" id="toc-panel-3-uso-de-disco-raíz" class="nav-link" data-scroll-target="#panel-3-uso-de-disco-raíz"><span class="header-section-number">6.2.6.3</span> <strong>Panel 3:</strong> Uso de disco raíz (%)</a></li>
-  <li><a href="#panel-4-tráfico-de-red-recibido" id="toc-panel-4-tráfico-de-red-recibido" class="nav-link" data-scroll-target="#panel-4-tráfico-de-red-recibido"><span class="header-section-number">6.2.6.4</span> <strong>Panel 4: tráfico de red recibido</strong></a></li>
-  <li><a href="#panel-5-tráfico-de-red-enviado" id="toc-panel-5-tráfico-de-red-enviado" class="nav-link" data-scroll-target="#panel-5-tráfico-de-red-enviado"><span class="header-section-number">6.2.6.5</span> <strong>Panel 5:</strong> Tráfico de red enviado</a></li>
-  <li><a href="#panel-6-escritura-en-disco-bs" id="toc-panel-6-escritura-en-disco-bs" class="nav-link" data-scroll-target="#panel-6-escritura-en-disco-bs"><span class="header-section-number">6.2.6.6</span> <strong>Panel 6:</strong> Escritura en disco (B/s)</a></li>
-  <li><a href="#resultado-esperado" id="toc-resultado-esperado" class="nav-link" data-scroll-target="#resultado-esperado"><span class="header-section-number">6.2.6.7</span> <strong>Resultado esperado</strong></a></li>
-  <li><a href="#panel-7-lectura-en-disco-bs" id="toc-panel-7-lectura-en-disco-bs" class="nav-link" data-scroll-target="#panel-7-lectura-en-disco-bs"><span class="header-section-number">6.2.6.8</span> <strong>Panel 7: Lectura en disco</strong> (B/s)</a></li>
-  <li><a href="#resultado-esperado-1" id="toc-resultado-esperado-1" class="nav-link" data-scroll-target="#resultado-esperado-1"><span class="header-section-number">6.2.6.9</span> <strong>Resultado esperado</strong></a></li>
-  <li><a href="#guardar-el-dashboard" id="toc-guardar-el-dashboard" class="nav-link" data-scroll-target="#guardar-el-dashboard"><span class="header-section-number">6.2.6.10</span> <strong>Guardar el dashboard</strong></a></li>
-  <li><a href="#generar-carga-para-ver-cambios-en-el-dashboard" id="toc-generar-carga-para-ver-cambios-en-el-dashboard" class="nav-link" data-scroll-target="#generar-carga-para-ver-cambios-en-el-dashboard"><span class="header-section-number">6.2.7</span> <strong>Generar carga para ver cambios en el dashboard</strong></a></li>
-  <li><a href="#preguntas-para-responder" id="toc-preguntas-para-responder" class="nav-link" data-scroll-target="#preguntas-para-responder"><span class="header-section-number">6.2.8</span> Preguntas para responder:</a></li>
-  </ul></li>
-  <li><a href="#importar-un-dashboard-ya-preparado" id="toc-importar-un-dashboard-ya-preparado" class="nav-link" data-scroll-target="#importar-un-dashboard-ya-preparado"><span class="header-section-number">6.3</span> Importar un dashboard ya preparado</a></li>
-  </ul></li>
-  <li><a href="#comprobaciones-finales" id="toc-comprobaciones-finales" class="nav-link" data-scroll-target="#comprobaciones-finales"><span class="header-section-number">7</span> Comprobaciones finales</a>
+  <li><a href="#entregables-de-la-práctica" id="toc-entregables-de-la-práctica" class="nav-link" data-scroll-target="#entregables-de-la-práctica"><span class="header-section-number">7</span> Entregables de la práctica</a></li>
+  <li><a href="#problemas-frecuentes" id="toc-problemas-frecuentes" class="nav-link" data-scroll-target="#problemas-frecuentes"><span class="header-section-number">8</span> Problemas frecuentes</a>
   <ul>
-  <li><a href="#estado-de-los-contenedores" id="toc-estado-de-los-contenedores" class="nav-link" data-scroll-target="#estado-de-los-contenedores"><span class="header-section-number">7.1</span> Estado de los contenedores</a></li>
-  <li><a href="#puertos" id="toc-puertos" class="nav-link" data-scroll-target="#puertos"><span class="header-section-number">7.2</span> Puertos</a></li>
-  <li><a href="#métricas-node-exporter" id="toc-métricas-node-exporter" class="nav-link" data-scroll-target="#métricas-node-exporter"><span class="header-section-number">7.3</span> Métricas Node Exporter</a></li>
-  <li><a href="#comprobamos-prometheus" id="toc-comprobamos-prometheus" class="nav-link" data-scroll-target="#comprobamos-prometheus"><span class="header-section-number">7.4</span> Comprobamos Prometheus:</a></li>
+  <li><a href="#grafana-no-abre" id="toc-grafana-no-abre" class="nav-link" data-scroll-target="#grafana-no-abre"><span class="header-section-number">8.1</span> Grafana no abre</a></li>
+  <li><a href="#prometheus-no-muestra-el-target-node-en-up" id="toc-prometheus-no-muestra-el-target-node-en-up" class="nav-link" data-scroll-target="#prometheus-no-muestra-el-target-node-en-up"><span class="header-section-number">8.2</span> Prometheus no muestra el target node en UP</a></li>
+  <li><a href="#grafana-no-conecta-con-prometheus" id="toc-grafana-no-conecta-con-prometheus" class="nav-link" data-scroll-target="#grafana-no-conecta-con-prometheus"><span class="header-section-number">8.3</span> Grafana no conecta con Prometheus</a></li>
+  <li><a href="#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" id="toc-en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" class="nav-link" data-scroll-target="#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión"><span class="header-section-number">8.4</span> En VirtualBox no puedo acceder desde el equipo anfitrión</a></li>
   </ul></li>
-  <li><a href="#entregables-de-la-práctica" id="toc-entregables-de-la-práctica" class="nav-link" data-scroll-target="#entregables-de-la-práctica"><span class="header-section-number">8</span> Entregables de la práctica</a></li>
-  <li><a href="#problemas-frecuentes" id="toc-problemas-frecuentes" class="nav-link" data-scroll-target="#problemas-frecuentes"><span class="header-section-number">9</span> Problemas frecuentes</a>
-  <ul>
-  <li><a href="#grafana-no-abre" id="toc-grafana-no-abre" class="nav-link" data-scroll-target="#grafana-no-abre"><span class="header-section-number">9.1</span> Grafana no abre</a></li>
-  <li><a href="#prometheus-no-muestra-el-target-node-en-up" id="toc-prometheus-no-muestra-el-target-node-en-up" class="nav-link" data-scroll-target="#prometheus-no-muestra-el-target-node-en-up"><span class="header-section-number">9.2</span> Prometheus no muestra el target node en UP</a></li>
-  <li><a href="#grafana-no-conecta-con-prometheus" id="toc-grafana-no-conecta-con-prometheus" class="nav-link" data-scroll-target="#grafana-no-conecta-con-prometheus"><span class="header-section-number">9.3</span> Grafana no conecta con Prometheus</a></li>
-  <li><a href="#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" id="toc-en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" class="nav-link" data-scroll-target="#en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión"><span class="header-section-number">9.4</span> En VirtualBox no puedo acceder desde el equipo anfitrión</a></li>
-  </ul></li>
-  <li><a href="#parar-o-eliminar-la-práctica" id="toc-parar-o-eliminar-la-práctica" class="nav-link" data-scroll-target="#parar-o-eliminar-la-práctica"><span class="header-section-number">10</span> Parar o eliminar la práctica</a></li>
+  <li><a href="#parar-o-eliminar-la-práctica" id="toc-parar-o-eliminar-la-práctica" class="nav-link" data-scroll-target="#parar-o-eliminar-la-práctica"><span class="header-section-number">9</span> Parar o eliminar la práctica</a></li>
   </ul>
 </nav>
     </div>
@@ -452,7 +451,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./monitor_Grafana_Ubuntu.html">Crear un monitor sencillo con Grafana en Ubuntu Sever</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Creación de un monitor de sistema en linux con Grafana</h1>
+<h1 class="title">Crear un monitor sencillo con Grafana en Ubuntu Sever</h1>
 </div>
 
 
@@ -469,13 +468,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde el host (Windows) y para eso usaremos:</p>
+<p>Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde un navegador en el host (Windows) y para eso usaremos:</p>
 <ul>
-<li><p>Node Exporter: expone las métricas del sistema operativo Linux en un endpoint HTTP.</p></li>
-<li><p>Prometheus: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales.</p></li>
-<li><p>Grafana: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.</p></li>
+<li><p><strong>Node Exporter</strong>: expone las métricas del sistema operativo Linux en un endpoint HTTP.</p></li>
+<li><p><strong>Prometheus</strong>: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales.</p></li>
+<li><p><strong>Grafana</strong>: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.</p></li>
 </ul>
-<p>La práctica se realizará con <strong>Docker Compose</strong>, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. (<a href="https://docs.docker.com/compose/">Docker Documentation</a>) Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. (<a href="https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/">Grafana Labs</a>)</p>
+<p>La práctica se realizará con <strong>Docker Compose</strong>, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. (<a href="https://docs.docker.com/compose/">Docker Documentation</a>)</p>
+<p>Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. (<a href="https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/">Grafana Labs</a>)</p>
 <p><strong>Escenario de la práctica</strong></p>
 <p>Vamos a simular una pequeña infraestructura empresarial. Tendremos un servidor Ubuntu que queremos monitorizar.</p>
 <ul>
@@ -488,9 +488,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <section id="creamos-un-servidor-ubuntu-con-ip-fija" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Creamos un servidor ubuntu con ip fija</h1>
-<p>La configuración de red será en adaptador puente</p>
+<p>La configuración de red será en <strong>adaptador puente.</strong></p>
 <p>Para evitar que se nos rompa el monitor, necesitaremos tener la misma ip siempre, para eso vamos a cambiar la configuración ip de automática asignada por DHCP a manual</p>
-<p>Para introducir una dirección ip manual paramos en este punto de la instalación y seleccionamos para editar enp0s3</p>
+<p>Para introducir una dirección ip manual paramos en este punto de la instalación de ubuntu server en nuestra máquina virtual y seleccionamos para editar <code>enp0s3</code></p>
 <p><img src="images/paste-41.png" class="img-fluid"></p>
 <p><img src="images/paste-44.png" class="img-fluid"></p>
 <p>y ponemos la configuración de red de forma manual, aunque usamos la misma que nos ha dado por defecto el DHCP</p>
@@ -514,24 +514,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="configurar-la-ip-fija" class="level3" data-number="1.1.2">
 <h3 data-number="1.1.2" class="anchored" data-anchor-id="configurar-la-ip-fija"><span class="header-section-number">1.1.2</span> Configurar la IP fija</h3>
 <p>Ejemplo de configuración estática:</p>
-<p>yaml</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">network:</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="ex">ethernets:</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="ex">enp0s3:</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="ex">addresses:</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="ex">-</span> 10.0.20.44/24</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="ex">match:</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="ex">macaddress:</span> 08:00:27:b5:78:28</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="ex">nameservers:</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="ex">addresses:</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="ex">-</span> 8.8.8.8</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="ex">-</span> 1.1.1.1</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="ex">search:</span> []</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      <span class="ex">routes:</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      <span class="ex">-</span> to: default</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="ex">via:</span> 10.0.20.1</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      <span class="ex">set-name:</span> enp0s3</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="ex">version:</span> 2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">network</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">ethernets</span><span class="kw">:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">enp0s3</span><span class="kw">:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">addresses</span><span class="kw">:</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> 10.0.20.44/24</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">match</span><span class="kw">:</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">macaddress</span><span class="kw">:</span><span class="at"> 08:00:27:b5:78:28</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">nameservers</span><span class="kw">:</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">addresses</span><span class="kw">:</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="fl">8.8.8.8</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="fl">1.1.1.1</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">search</span><span class="kw">:</span><span class="at"> </span><span class="kw">[]</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">routes</span><span class="kw">:</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">to</span><span class="kw">:</span><span class="at"> default</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">via</span><span class="kw">:</span><span class="at"> </span><span class="fl">10.0.20.1</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">set-name</span><span class="kw">:</span><span class="at"> enp0s3</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="dv">2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Cambia <code>ens33</code> por tu interfaz y ajusta la IP, gateway y DNS a tu red.</p>
 </section>
 <section id="aplicar-los-cambios" class="level3" data-number="1.1.3">
@@ -644,11 +643,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="usar-docker-sin-sudo" class="level2" data-number="2.11">
 <h2 data-number="2.11" class="anchored" data-anchor-id="usar-docker-sin-sudo"><span class="header-section-number">2.11</span> Usar Docker sin sudo</h2>
+<p>Añade tu usuario al grupo <code>docker</code>, esto le permitirá ejecutar sin necesidad de usar permisos de superusuario. Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes <strong>cerrar sesión y volver a entrar</strong> para que el cambio se aplique. (para hacer logout usa <code>exit</code> y luego <code>login</code> para entrar de nuevo)</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> usermod <span class="at">-aG</span> docker <span class="va">$USER</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Añade tu usuario al grupo <code>docker</code>.</p>
-<p>Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes <strong>cerrar sesión y volver a entrar</strong> para que el cambio se aplique. (para hacer logout usa <code>exit</code> y luego <code>login</code> para entrar de nuevo)</p>
+<p>puedes verificar después que estás en el grupo usando <code>groups</code></p>
 <p><img src="images/paste-52.png" class="img-fluid"></p>
-<p>Este bloque de comandos:</p>
 <div class="summary">
 <ul>
 <li><p>Actualiza Ubuntu.</p></li>
@@ -662,8 +660,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Es la forma <strong>correcta, segura y recomendada</strong> de instalar Docker en Ubuntu.</p>
 </div>
 </section>
-<section id="crear-la-estructura-de-trabajo" class="level2" data-number="2.12">
-<h2 data-number="2.12" class="anchored" data-anchor-id="crear-la-estructura-de-trabajo"><span class="header-section-number">2.12</span> Crear la estructura de trabajo</h2>
+</section>
+<section id="crear-la-estructura-de-trabajo-y-la-configuración-de-los-servicios" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Crear la estructura de trabajo y la configuración de los servicios</h1>
 <p>Creamos una carpeta (directorio) para la práctica:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a> <span class="fu">mkdir</span> <span class="at">-p</span> ~/grafana-practica/prometheus</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <ul>
@@ -671,17 +670,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><code>-p</code> → <em>parents</em>, crea también los directorios padre si no existen</p></li>
 </ul>
 <div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a> <span class="bu">cd</span> ~/grafana-practica</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</section>
-</section>
-<section id="crear-el-fichero-de-configuración-de-prometheus" class="level1" data-number="3">
-<h1 data-number="3"><span class="header-section-number">3</span> Crear el fichero de configuración de Prometheus</h1>
+<section id="crear-el-fichero-de-configuración-de-prometheus" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="crear-el-fichero-de-configuración-de-prometheus"><span class="header-section-number">3.1</span> Crear el fichero de configuración de Prometheus</h2>
 <p>Este fichero le dice a Prometheus <strong>qué debe monitorizar</strong> y <strong>cada cuánto tiempo</strong>.</p>
 <p>Primero asegúrate de estar en tu carpeta de práctica. Comprobamos dónde estamos con <code>pwd</code></p>
-<section id="crear-el-fichero" class="level2" data-number="3.1">
-<h2 data-number="3.1" class="anchored" data-anchor-id="crear-el-fichero"><span class="header-section-number">3.1</span> Crear el fichero</h2>
+<p><strong>Crear el fichero</strong></p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> prometheus/prometheus.yml </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<section id="pegar-el-contenido" class="level3" data-number="3.1.1">
-<h3 data-number="3.1.1" class="anchored" data-anchor-id="pegar-el-contenido"><span class="header-section-number">3.1.1</span> Pegar el contenido</h3>
+<p><strong>Pegar el contenido</strong></p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global</span><span class="kw">:</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">scrape_interval</span><span class="kw">:</span><span class="at"> 5s</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -697,9 +692,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>job_name: “prometheus”:</strong> Prometheus también se monitoriza a sí mismo. El target <code>"prometheus:9090"</code> funciona porque en <code>Docker Compose</code> el servicio se llama <code>prometheus</code>, y Docker crea una red interna donde los contenedores se ven por nombre.</p>
 <p><strong>job_name: “node” :</strong>Este es el trabajo que recoge métricas del servidor Linux.</p>
 <p><strong>targets: [“node-exporter:9100”]:</strong> Prometheus irá al contenedor llamado <code>node-exporter</code> en el puerto 9100.</p>
-</section>
-<section id="guardar-el-fichero" class="level3" data-number="3.1.2">
-<h3 data-number="3.1.2" class="anchored" data-anchor-id="guardar-el-fichero"><span class="header-section-number">3.1.2</span> Guardar el fichero</h3>
+<p><strong>Guardar el fichero</strong></p>
 <p>En nano:</p>
 <ul>
 <li><p><strong>CTRL + O</strong> → guardar</p></li>
@@ -707,10 +700,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><strong>CTRL + X</strong> → salir</p></li>
 </ul>
 </section>
-</section>
-</section>
-<section id="crear-el-fichero-de-configuración-de-docker-compose" class="level1" data-number="4">
-<h1 data-number="4"><span class="header-section-number">4</span> Crear el fichero de configuración de docker compose</h1>
+<section id="crear-el-fichero-de-configuración-de-docker-compose" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="crear-el-fichero-de-configuración-de-docker-compose"><span class="header-section-number">3.2</span> Crear el fichero de configuración de docker compose</h2>
 <p><code>docker-compose.yml</code></p>
 <p>Este fichero define <strong>los tres servicios</strong>:</p>
 <ul>
@@ -820,10 +811,11 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <p><strong>En producción nunca se deben usar credenciales por defecto ni contraseñas dentro del docker-compose.</strong> <strong>La alternativa correcta es usar variables de entorno externas, preferiblemente en un archivo</strong> <code>.env</code> <strong>que no se sube al repositorio.</strong> <strong>En entornos avanzados se usan gestores de secretos como Azure Key Vault o Docker Swarm Secrets.</strong></p>
 </blockquote>
 </div>
-<section id="contenedores-que-estamos-configurando-en-este-archivo" class="level2" data-number="4.1">
-<h2 data-number="4.1" class="anchored" data-anchor-id="contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">4.1</span> Contenedores que estamos configurando en este archivo:</h2>
-<section id="prometheus" class="level3" data-number="4.1.1">
-<h3 data-number="4.1.1" class="anchored" data-anchor-id="prometheus"><span class="header-section-number">4.1.1</span> <strong>Prometheus</strong></h3>
+<section id="contenedores-que-estamos-configurando-en-este-archivo" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.1</span> Contenedores que estamos configurando en este archivo:</h3>
+</section>
+<section id="prometheus" class="level3" data-number="3.2.2">
+<h3 data-number="3.2.2" class="anchored" data-anchor-id="prometheus"><span class="header-section-number">3.2.2</span> <strong>Prometheus</strong></h3>
 <ul>
 <li><p>Usa la imagen oficial <code>prom/prometheus</code>.</p></li>
 <li><p>Expone el puerto <strong>9090</strong> para acceder a la interfaz web.</p></li>
@@ -832,8 +824,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <li><p>Retiene datos durante <strong>15 días</strong>.</p></li>
 </ul>
 </section>
-<section id="node-exporter" class="level3" data-number="4.1.2">
-<h3 data-number="4.1.2" class="anchored" data-anchor-id="node-exporter"><span class="header-section-number">4.1.2</span> <strong>Node Exporter</strong></h3>
+<section id="node-exporter" class="level3" data-number="3.2.3">
+<h3 data-number="3.2.3" class="anchored" data-anchor-id="node-exporter"><span class="header-section-number">3.2.3</span> <strong>Node Exporter</strong></h3>
 <ul>
 <li><p>Es el agente de monitorización del servidor</p></li>
 <li><p>Expone el puerto <strong>9100</strong>.</p></li>
@@ -841,8 +833,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <li><p>Docker lo aísla, pero con <code>--path.rootfs=/host</code> puede acceder a la información del host.</p></li>
 </ul>
 </section>
-<section id="grafana" class="level3" data-number="4.1.3">
-<h3 data-number="4.1.3" class="anchored" data-anchor-id="grafana"><span class="header-section-number">4.1.3</span> <strong>Grafana</strong></h3>
+<section id="grafana" class="level3" data-number="3.2.4">
+<h3 data-number="3.2.4" class="anchored" data-anchor-id="grafana"><span class="header-section-number">3.2.4</span> <strong>Grafana</strong></h3>
 <ul>
 <li><p>Usa la imagen oficial <code>grafana/grafana</code>.</p></li>
 <li><p>Expone el puerto <strong>3000</strong>.</p></li>
@@ -856,20 +848,20 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 </section>
 </section>
 </section>
-<section id="levantar-todo-el-stack" class="level1" data-number="5">
-<h1 data-number="5"><span class="header-section-number">5</span> Levantar todo el stack</h1>
+<section id="levantar-todo-el-stack" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Levantar todo el stack</h1>
 <p>Desde la carpeta <code>~/grafana-practica</code>:</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Docker Compose realiza <strong>tres tareas fundamentales</strong>:</p>
-<section id="descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" class="level2" data-number="5.1">
-<h2 data-number="5.1" class="anchored" data-anchor-id="descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema"><span class="header-section-number">5.1</span> <strong>Descarga las imágenes necesarias (si no existen en el sistema)</strong></h2>
+<section id="descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="descarga-las-imágenes-necesarias-si-no-existen-en-el-sistema"><span class="header-section-number">4.1</span> <strong>Descarga las imágenes necesarias (si no existen en el sistema)</strong></h2>
 <div class="sourceCode" id="cb33"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span><span class="kw">:</span><span class="at"> prom/prometheus:latest</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span><span class="kw">:</span><span class="at"> grafana/grafana:latest</span></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">image</span><span class="kw">:</span><span class="at"> prom/node-exporter:latest</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Si estas imágenes no están ya en tu máquina, Docker las descarga automáticamente desde Docker Hub. Esto sustituye completamente la instalación manual de Prometheus, Grafana o Node Exporter en Ubuntu. No instalamos nada en el sistema operativo, todo viene dentro de las imágenes.</p>
 </section>
-<section id="crea-los-contenedores-a-partir-de-esas-imágenes" class="level2" data-number="5.2">
-<h2 data-number="5.2" class="anchored" data-anchor-id="crea-los-contenedores-a-partir-de-esas-imágenes"><span class="header-section-number">5.2</span> Crea los contenedores a partir de esas imágenes</h2>
+<section id="crea-los-contenedores-a-partir-de-esas-imágenes" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="crea-los-contenedores-a-partir-de-esas-imágenes"><span class="header-section-number">4.2</span> Crea los contenedores a partir de esas imágenes</h2>
 <p>Cada servicio del YAML se convierte en un contenedor:</p>
 <ul>
 <li><p><code>prometheus</code> → contenedor Prometheus</p></li>
@@ -878,8 +870,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 </ul>
 <p>Cada uno es un entorno aislado, con su propio filesystem, su propio proceso y su propia configuración.</p>
 </section>
-<section id="configura-redes-puertos-y-volúmenes-automáticamente" class="level2" data-number="5.3">
-<h2 data-number="5.3" class="anchored" data-anchor-id="configura-redes-puertos-y-volúmenes-automáticamente"><span class="header-section-number">5.3</span> <strong>Configura redes, puertos y volúmenes automáticamente</strong></h2>
+<section id="configura-redes-puertos-y-volúmenes-automáticamente" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="configura-redes-puertos-y-volúmenes-automáticamente"><span class="header-section-number">4.3</span> Configura redes, puertos y volúmenes automáticamente</h2>
 <p>Esto es clave: <strong>los contenedores se comunican entre sí por nombre</strong>, no por IP.</p>
 <p>Ejemplos:</p>
 <ul>
@@ -890,14 +882,14 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 </ul>
 <p><img src="images/paste-58.png" class="img-fluid"></p>
 </section>
-<section id="verificar-que-funciona-1" class="level2" data-number="5.4">
-<h2 data-number="5.4" class="anchored" data-anchor-id="verificar-que-funciona-1"><span class="header-section-number">5.4</span> Verificar que funciona</h2>
-<section id="contenedores" class="level3" data-number="5.4.1">
-<h3 data-number="5.4.1" class="anchored" data-anchor-id="contenedores"><span class="header-section-number">5.4.1</span> Contenedores</h3>
+<section id="verificar-que-funciona-1" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="verificar-que-funciona-1"><span class="header-section-number">4.4</span> Verificar que funciona</h2>
+<section id="contenedores" class="level3" data-number="4.4.1">
+<h3 data-number="4.4.1" class="anchored" data-anchor-id="contenedores"><span class="header-section-number">4.4.1</span> Contenedores</h3>
 <p>Comprobar los logs del contenedor: <code>docker compose logs -f</code> y <code>CTRL + C</code> para salir</p>
 </section>
-<section id="prometheus-1" class="level3" data-number="5.4.2">
-<h3 data-number="5.4.2" class="anchored" data-anchor-id="prometheus-1"><span class="header-section-number">5.4.2</span> Prometheus:</h3>
+<section id="prometheus-1" class="level3" data-number="4.4.2">
+<h3 data-number="4.4.2" class="anchored" data-anchor-id="prometheus-1"><span class="header-section-number">4.4.2</span> Prometheus:</h3>
 <p>http://{TU_IP}:9090 por ejemplo <a href="http://10.0.20.44:9090/" class="uri">http://10.0.20.44:9090/</a></p>
 <p>Si estamos dentro de la propia máquina: <code>http://localhost:9090</code><br>
 <br>
@@ -905,8 +897,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <p>Entramos en: <code>Status &gt; Target health</code></p>
 <p>O directamente: http://{IP_DEL_SERVIDOR}:9090/targets<br>
 <img src="images/paste-60.png" class="img-fluid"></p>
-<section id="hacer-una-primera-consulta-en-prometheus" class="level4" data-number="5.4.2.1">
-<h4 data-number="5.4.2.1" class="anchored" data-anchor-id="hacer-una-primera-consulta-en-prometheus"><span class="header-section-number">5.4.2.1</span> <strong>Hacer una primera consulta en Prometheus</strong></h4>
+<section id="hacer-una-primera-consulta-en-prometheus" class="level4" data-number="4.4.2.1">
+<h4 data-number="4.4.2.1" class="anchored" data-anchor-id="hacer-una-primera-consulta-en-prometheus"><span class="header-section-number">4.4.2.1</span> Hacer una primera consulta en Prometheus</h4>
 <p>En Prometheus, vamos a la pestaña de consulta y probamos: <code>up</code></p>
 <p>Pulsamos <strong>Execute</strong>.</p>
 <p><img src="images/paste-61.png" class="img-fluid"></p>
@@ -922,26 +914,26 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <p>Estas métricas serán las que luego usaremos en Grafana.</p>
 </section>
 </section>
-<section id="node-exporter-1" class="level3" data-number="5.4.3">
-<h3 data-number="5.4.3" class="anchored" data-anchor-id="node-exporter-1"><span class="header-section-number">5.4.3</span> Node Exporter:</h3>
+<section id="node-exporter-1" class="level3" data-number="4.4.3">
+<h3 data-number="4.4.3" class="anchored" data-anchor-id="node-exporter-1"><span class="header-section-number">4.4.3</span> Node Exporter:</h3>
 <p>http://{TU_IP}:9100/metrics<br>
 <img src="images/paste-56.png" class="img-fluid"></p>
 <p>Node Exporter debería estar exponiendo métricas en el puerto 9100.</p>
 <p>Ejecutamos: <code>curl http://localhost:9100/metrics | head</code></p>
 <p>Si queremos ver solo métricas relacionadas con el sistema: <code>curl http://localhost:9100/metrics | grep node_cpu | head</code><img src="images/paste-59.png" class="img-fluid"></p>
 </section>
-<section id="grafana-1" class="level3" data-number="5.4.4">
-<h3 data-number="5.4.4" class="anchored" data-anchor-id="grafana-1"><span class="header-section-number">5.4.4</span> Grafana:</h3>
+<section id="grafana-1" class="level3" data-number="4.4.4">
+<h3 data-number="4.4.4" class="anchored" data-anchor-id="grafana-1"><span class="header-section-number">4.4.4</span> Grafana:</h3>
 <p>http://{TU_IP}:3000 Usuario: <strong>admin</strong> Contraseña: <strong>Admin123</strong>*<br>
 <img src="images/paste-57.png" class="img-fluid"></p>
 </section>
 </section>
 </section>
-<section id="trabajar-en-grafana" class="level1" data-number="6">
-<h1 data-number="6"><span class="header-section-number">6</span> Trabajar en Grafana</h1>
+<section id="trabajar-en-grafana" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Trabajar en Grafana</h1>
 <p>Grafana puede pedir cambiar la contraseña. Para la práctica podemos cambiarla por otra sencilla o saltar el cambio si nos lo permite.</p>
-<section id="añadir-prometheus-como-fuente-de-datos-en-grafana" class="level2" data-number="6.1">
-<h2 data-number="6.1" class="anchored" data-anchor-id="añadir-prometheus-como-fuente-de-datos-en-grafana"><span class="header-section-number">6.1</span> Añadir Prometheus como fuente de datos en Grafana</h2>
+<section id="añadir-prometheus-como-fuente-de-datos-en-grafana" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="añadir-prometheus-como-fuente-de-datos-en-grafana"><span class="header-section-number">5.1</span> Añadir Prometheus como fuente de datos en Grafana</h2>
 <p>Dentro de Grafana: <code>Connections / Data sources -&gt; Add data source -&gt; Prometheus</code><img src="images/paste-64.png" class="img-fluid"></p>
 <p>Importante: dentro de Docker <strong>no usamos</strong> localhost:9090 como aparece por defecto, porque localhost sería la máquina desde donde nos estamos conectando mediante el navegador web. Docker Compose crea una red interna donde cada servicio se resuelve por su nombre. Usamos el nombre del servicio Docker: (prometheus)</p>
 <p>En la URL ponemos: http://prometheus:9090<br>
@@ -949,15 +941,15 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <p>Pulsamos: <code>Save &amp; test</code></p>
 <p><img src="images/paste-66.png" class="img-fluid"></p>
 </section>
-<section id="crear-nuestro-primer-dashboard-manual" class="level2" data-number="6.2">
-<h2 data-number="6.2" class="anchored" data-anchor-id="crear-nuestro-primer-dashboard-manual"><span class="header-section-number">6.2</span> Crear nuestro primer dashboard manual</h2>
-<section id="añadir-una-visualización-nueva" class="level3" data-number="6.2.1">
-<h3 data-number="6.2.1" class="anchored" data-anchor-id="añadir-una-visualización-nueva"><span class="header-section-number">6.2.1</span> Añadir una visualización nueva</h3>
+<section id="crear-nuestro-primer-dashboard-manual" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="crear-nuestro-primer-dashboard-manual"><span class="header-section-number">5.2</span> Crear nuestro primer dashboard manual</h2>
+<section id="añadir-una-visualización-nueva" class="level3" data-number="5.2.1">
+<h3 data-number="5.2.1" class="anchored" data-anchor-id="añadir-una-visualización-nueva"><span class="header-section-number">5.2.1</span> Añadir una visualización nueva</h3>
 <p>Entramos en: Dashboards &gt; New &gt; New dashboard &gt; Add visualization</p>
 <p><img src="images/paste-67.png" class="img-fluid"></p>
 <p><img src="images/paste-68.png" class="img-fluid"></p>
-<section id="seleccionamos-la-fuente-de-datos" class="level4" data-number="6.2.1.1">
-<h4 data-number="6.2.1.1" class="anchored" data-anchor-id="seleccionamos-la-fuente-de-datos"><span class="header-section-number">6.2.1.1</span> Seleccionamos la fuente de datos:</h4>
+<section id="seleccionamos-la-fuente-de-datos" class="level4" data-number="5.2.1.1">
+<h4 data-number="5.2.1.1" class="anchored" data-anchor-id="seleccionamos-la-fuente-de-datos"><span class="header-section-number">5.2.1.1</span> Seleccionamos la fuente de datos:</h4>
 <p>Prometheus</p>
 <p><img src="images/paste-69.png" class="img-fluid"></p>
 <p><img src="images/paste-70.png" class="img-fluid"></p>
@@ -968,8 +960,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </section>
 </section>
 <div class="extra">
-<section id="ejemplo-sencillo-con-5-mediciones-y-un-pico" class="level3" data-number="6.2.2">
-<h3 data-number="6.2.2" class="anchored" data-anchor-id="ejemplo-sencillo-con-5-mediciones-y-un-pico"><span class="header-section-number">6.2.2</span> Ejemplo sencillo con 5 mediciones y un pico</h3>
+<section id="ejemplo-sencillo-con-5-mediciones-y-un-pico" class="level3" data-number="5.2.2">
+<h3 data-number="5.2.2" class="anchored" data-anchor-id="ejemplo-sencillo-con-5-mediciones-y-un-pico"><span class="header-section-number">5.2.2</span> Ejemplo sencillo con 5 mediciones y un pico</h3>
 <p>Vamos a imaginar una métrica de <strong>CPU idle</strong> (porcentaje de tiempo que la CPU está “sin hacer nada”) medida cada 15 segundos durante 1 minuto:</p>
 <ul>
 <li><p>Tiempo total: 60 segundos</p></li>
@@ -1007,8 +999,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </tbody>
 </table>
 </section>
-<section id="media-simple-de-los-valores" class="level3" data-number="6.2.3">
-<h3 data-number="6.2.3" class="anchored" data-anchor-id="media-simple-de-los-valores"><span class="header-section-number">6.2.3</span> 1. Media simple de los valores</h3>
+<section id="media-simple-de-los-valores" class="level3" data-number="5.2.3">
+<h3 data-number="5.2.3" class="anchored" data-anchor-id="media-simple-de-los-valores"><span class="header-section-number">5.2.3</span> 1. Media simple de los valores</h3>
 <p>Calculamos la media aritmética:</p>
 <p>media=90+90+10+90+905=3705=74</p>
 <ul>
@@ -1017,8 +1009,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </ul>
 <p>La media “se come” el pico y lo reparte por todo el minuto.</p>
 </section>
-<section id="qué-hace-rate-bajo-el-capó-versión-conceptual" class="level3" data-number="6.2.4">
-<h3 data-number="6.2.4" class="anchored" data-anchor-id="qué-hace-rate-bajo-el-capó-versión-conceptual"><span class="header-section-number">6.2.4</span> 2. Qué hace <code>rate()</code> bajo el capó (versión conceptual)</h3>
+<section id="qué-hace-rate-bajo-el-capó-versión-conceptual" class="level3" data-number="5.2.4">
+<h3 data-number="5.2.4" class="anchored" data-anchor-id="qué-hace-rate-bajo-el-capó-versión-conceptual"><span class="header-section-number">5.2.4</span> 2. Qué hace <code>rate()</code> bajo el capó (versión conceptual)</h3>
 <p>En realidad, <code>rate(node_cpu_seconds_total{mode="idle"}[1m])</code> no trabaja con porcentajes, sino con un <strong>contador de segundos idle</strong>. Simplifiquemos con un ejemplo equivalente:</p>
 <p>Supongamos que el contador de segundos idle (<code>node_cpu_seconds_total{mode="idle"}</code>) tiene estos valores:</p>
 <table class="caption-top table">
@@ -1072,8 +1064,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <li><p><strong>Uso de CPU</strong>: 100−68.33≈31.67%</p></li>
 </ul>
 </section>
-<section id="comparación-media-vs-rate-en-tabla" class="level3" data-number="6.2.5">
-<h3 data-number="6.2.5" class="anchored" data-anchor-id="comparación-media-vs-rate-en-tabla"><span class="header-section-number">6.2.5</span> 3. Comparación media vs <code>rate()</code> en tabla</h3>
+<section id="comparación-media-vs-rate-en-tabla" class="level3" data-number="5.2.5">
+<h3 data-number="5.2.5" class="anchored" data-anchor-id="comparación-media-vs-rate-en-tabla"><span class="header-section-number">5.2.5</span> 3. Comparación media vs <code>rate()</code> en tabla</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -1105,22 +1097,22 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </tbody>
 </table>
 </section>
-<section id="idea-clave" class="level3" data-number="6.2.6">
-<h3 data-number="6.2.6" class="anchored" data-anchor-id="idea-clave"><span class="header-section-number">6.2.6</span> Idea clave</h3>
+<section id="idea-clave" class="level3" data-number="5.2.6">
+<h3 data-number="5.2.6" class="anchored" data-anchor-id="idea-clave"><span class="header-section-number">5.2.6</span> Idea clave</h3>
 <ul>
 <li><p>La <strong>media</strong> trata el pico como un valor más y lo reparte uniformemente.</p></li>
 <li><p><code>rate()</code> mira <strong>cómo ha evolucionado el contador en todo el minuto</strong> y devuelve una <strong>tendencia</strong> (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.</p></li>
 </ul>
 </section>
 </div>
-<section id="panel-1-uso-de-cpu" class="level4" data-number="6.2.6.1">
-<h4 data-number="6.2.6.1" class="anchored" data-anchor-id="panel-1-uso-de-cpu"><span class="header-section-number">6.2.6.1</span> <strong>Panel 1:</strong> Uso de CPU (%)</h4>
+<section id="panel-1-uso-de-cpu" class="level4" data-number="5.2.6.1">
+<h4 data-number="5.2.6.1" class="anchored" data-anchor-id="panel-1-uso-de-cpu"><span class="header-section-number">5.2.6.1</span> <strong>Panel 1:</strong> Uso de CPU (%)</h4>
 <p>Consulta PromQL: <code>100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)</code></p>
 <p><img src="images/paste-71.png" class="img-fluid"></p>
 <p>Unidad: Percent (0-100)</p>
 <p><img src="images/paste-72.png" class="img-fluid"></p>
-<section id="explicación-de-la-métrica" class="level5" data-number="6.2.6.1.1">
-<h5 data-number="6.2.6.1.1" class="anchored" data-anchor-id="explicación-de-la-métrica"><span class="header-section-number">6.2.6.1.1</span> Explicación de la métrica:</h5>
+<section id="explicación-de-la-métrica" class="level5" data-number="5.2.6.1.1">
+<h5 data-number="5.2.6.1.1" class="anchored" data-anchor-id="explicación-de-la-métrica"><span class="header-section-number">5.2.6.1.1</span> Explicación de la métrica:</h5>
 <p><code>node_cpu_seconds_total{mode="idle"}</code></p>
 <p>Esta métrica mide <strong>cuántos segundos de CPU</strong> ha pasado el sistema <strong>en estado idle</strong> (sin hacer nada).</p>
 <p><code>rate(...[1m])</code></p>
@@ -1140,14 +1132,14 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p><strong>La fórmula calcula el porcentaje de CPU usada restando el porcentaje de tiempo idle al 100%. Usa</strong> <code>rate()</code> <strong>para medir actividad reciente y</strong> <code>avg</code> <strong>para promediar todos los cores de la instancia.</strong></p>
 </section>
 </section>
-<section id="panel-2-uso-de-memoria-ram" class="level4" data-number="6.2.6.2">
-<h4 data-number="6.2.6.2" class="anchored" data-anchor-id="panel-2-uso-de-memoria-ram"><span class="header-section-number">6.2.6.2</span> <strong>Panel 2:</strong> Uso de memoria RAM (%)</h4>
+<section id="panel-2-uso-de-memoria-ram" class="level4" data-number="5.2.6.2">
+<h4 data-number="5.2.6.2" class="anchored" data-anchor-id="panel-2-uso-de-memoria-ram"><span class="header-section-number">5.2.6.2</span> <strong>Panel 2:</strong> Uso de memoria RAM (%)</h4>
 <p>Consulta: <code>100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))</code></p>
 <p>Unidad: Percent (0-100)</p>
 <p>Interpretación: Muestra qué porcentaje de RAM está en uso. MemAvailable es la métrica recomendada por el kernel para medir memoria realmente libre, porque incluye caché y buffers reutilizables.</p>
 </section>
-<section id="panel-3-uso-de-disco-raíz" class="level4" data-number="6.2.6.3">
-<h4 data-number="6.2.6.3" class="anchored" data-anchor-id="panel-3-uso-de-disco-raíz"><span class="header-section-number">6.2.6.3</span> <strong>Panel 3:</strong> Uso de disco raíz (%)</h4>
+<section id="panel-3-uso-de-disco-raíz" class="level4" data-number="5.2.6.3">
+<h4 data-number="5.2.6.3" class="anchored" data-anchor-id="panel-3-uso-de-disco-raíz"><span class="header-section-number">5.2.6.3</span> <strong>Panel 3:</strong> Uso de disco raíz (%)</h4>
 <p>Consulta: <code>100 * (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}/node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}))</code></p>
 <p>Explicación: <code>node_filesystem_avail_bytes</code>Es el <strong>espacio disponible</strong> (libre) en bytes. <code>node_filesystem_size_bytes</code>Es el <strong>tamaño total</strong> del filesystem.<code>mountpoint="/"</code>esto especifica el disco raíz.</p>
 <p>Esto excluye los ficheros temporales o virtuales porque no representan almacenamiento real en el disco:</p>
@@ -1155,43 +1147,43 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p>Unidad:Percent (0-100):</p>
 <p>Interpretación: Muestra cuánto espacio se está usando en la partición principal.</p>
 </section>
-<section id="panel-4-tráfico-de-red-recibido" class="level4" data-number="6.2.6.4">
-<h4 data-number="6.2.6.4" class="anchored" data-anchor-id="panel-4-tráfico-de-red-recibido"><span class="header-section-number">6.2.6.4</span> <strong>Panel 4: tráfico de red recibido</strong></h4>
+<section id="panel-4-tráfico-de-red-recibido" class="level4" data-number="5.2.6.4">
+<h4 data-number="5.2.6.4" class="anchored" data-anchor-id="panel-4-tráfico-de-red-recibido"><span class="header-section-number">5.2.6.4</span> <strong>Panel 4: tráfico de red recibido</strong></h4>
 <p>Consulta: <code>rate(node_network_receive_bytes_total{device!="lo"}[1m])</code></p>
 <p>Unidad: bytes/sec</p>
 </section>
-<section id="panel-5-tráfico-de-red-enviado" class="level4" data-number="6.2.6.5">
-<h4 data-number="6.2.6.5" class="anchored" data-anchor-id="panel-5-tráfico-de-red-enviado"><span class="header-section-number">6.2.6.5</span> <strong>Panel 5:</strong> Tráfico de red enviado</h4>
+<section id="panel-5-tráfico-de-red-enviado" class="level4" data-number="5.2.6.5">
+<h4 data-number="5.2.6.5" class="anchored" data-anchor-id="panel-5-tráfico-de-red-enviado"><span class="header-section-number">5.2.6.5</span> <strong>Panel 5:</strong> Tráfico de red enviado</h4>
 <p>Consulta: <code>rate(node_network_transmit_bytes_total{device!="lo"}[1m])</code></p>
 <p>Unidad: bytes/sec</p>
 </section>
-<section id="panel-6-escritura-en-disco-bs" class="level4" data-number="6.2.6.6">
-<h4 data-number="6.2.6.6" class="anchored" data-anchor-id="panel-6-escritura-en-disco-bs"><span class="header-section-number">6.2.6.6</span> <strong>Panel 6:</strong> Escritura en disco (B/s)</h4>
+<section id="panel-6-escritura-en-disco-bs" class="level4" data-number="5.2.6.6">
+<h4 data-number="5.2.6.6" class="anchored" data-anchor-id="panel-6-escritura-en-disco-bs"><span class="header-section-number">5.2.6.6</span> <strong>Panel 6:</strong> Escritura en disco (B/s)</h4>
 <p>Consulta: <code>sum by (instance) ( rate(node_disk_written_bytes_total{device!~"loop.*|ram.*"}[1m]) )</code></p>
 <p>Tipo de visualización: Time series</p>
 <p>Unidad: bytes/sec</p>
 </section>
-<section id="resultado-esperado" class="level4" data-number="6.2.6.7">
-<h4 data-number="6.2.6.7" class="anchored" data-anchor-id="resultado-esperado"><span class="header-section-number">6.2.6.7</span> <strong>Resultado esperado</strong></h4>
+<section id="resultado-esperado" class="level4" data-number="5.2.6.7">
+<h4 data-number="5.2.6.7" class="anchored" data-anchor-id="resultado-esperado"><span class="header-section-number">5.2.6.7</span> <strong>Resultado esperado</strong></h4>
 <p>Este panel debería mostrar picos cuando el sistema escriba datos en disco. Por ejemplo, al crear un fichero grande, instalar paquetes o realizar operaciones intensivas de escritura.</p>
 </section>
-<section id="panel-7-lectura-en-disco-bs" class="level4" data-number="6.2.6.8">
-<h4 data-number="6.2.6.8" class="anchored" data-anchor-id="panel-7-lectura-en-disco-bs"><span class="header-section-number">6.2.6.8</span> <strong>Panel 7: Lectura en disco</strong> (B/s)</h4>
+<section id="panel-7-lectura-en-disco-bs" class="level4" data-number="5.2.6.8">
+<h4 data-number="5.2.6.8" class="anchored" data-anchor-id="panel-7-lectura-en-disco-bs"><span class="header-section-number">5.2.6.8</span> <strong>Panel 7: Lectura en disco</strong> (B/s)</h4>
 <p>Consulta: <code>sum by (instance) ( rate(node_disk_read_bytes_total{device!~"loop.*|ram.*"}[1m]) )</code></p>
 <p>Tipo de visualización: Time series</p>
 <p>Unidad: bytes/sec</p>
 </section>
-<section id="resultado-esperado-1" class="level4" data-number="6.2.6.9">
-<h4 data-number="6.2.6.9" class="anchored" data-anchor-id="resultado-esperado-1"><span class="header-section-number">6.2.6.9</span> <strong>Resultado esperado</strong></h4>
+<section id="resultado-esperado-1" class="level4" data-number="5.2.6.9">
+<h4 data-number="5.2.6.9" class="anchored" data-anchor-id="resultado-esperado-1"><span class="header-section-number">5.2.6.9</span> <strong>Resultado esperado</strong></h4>
 <p>Este panel debería mostrar picos cuando el sistema lea datos del disco. Por ejemplo, al abrir ficheros grandes, cargar datos o leer información desde una base de datos.</p>
 </section>
-<section id="guardar-el-dashboard" class="level4" data-number="6.2.6.10">
-<h4 data-number="6.2.6.10" class="anchored" data-anchor-id="guardar-el-dashboard"><span class="header-section-number">6.2.6.10</span> <strong>Guardar el dashboard</strong></h4>
+<section id="guardar-el-dashboard" class="level4" data-number="5.2.6.10">
+<h4 data-number="5.2.6.10" class="anchored" data-anchor-id="guardar-el-dashboard"><span class="header-section-number">5.2.6.10</span> <strong>Guardar el dashboard</strong></h4>
 <p><strong>Monitorización básica del servidor Ubuntu</strong></p>
 <p>Descripción: Dashboard básico para visualizar CPU, memoria, disco y red mediante Grafana, Prometheus y Node Exporter.</p>
 </section>
-<section id="generar-carga-para-ver-cambios-en-el-dashboard" class="level3" data-number="6.2.7">
-<h3 data-number="6.2.7" class="anchored" data-anchor-id="generar-carga-para-ver-cambios-en-el-dashboard"><span class="header-section-number">6.2.7</span> <strong>Generar carga para ver cambios en el dashboard</strong></h3>
+<section id="generar-carga-para-ver-cambios-en-el-dashboard" class="level3" data-number="5.2.7">
+<h3 data-number="5.2.7" class="anchored" data-anchor-id="generar-carga-para-ver-cambios-en-el-dashboard"><span class="header-section-number">5.2.7</span> <strong>Generar carga para ver cambios en el dashboard</strong></h3>
 <p>Ahora vamos a provocar algo de actividad para que el dashboard lo muestre</p>
 <p>Generamos carga de CPU durante 60 segundos:</p>
 <p><code>timeout 60s bash -c 'while true; do true; done' &amp;timeout 60s bash -c 'while true; do true; done' &amp;wait</code></p>
@@ -1211,8 +1203,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p>Cuando terminemos, eliminamos el fichero de prueba:</p>
 <p><code>sudo rm /tmp/prueba-escritura.img</code></p>
 </section>
-<section id="preguntas-para-responder" class="level3" data-number="6.2.8">
-<h3 data-number="6.2.8" class="anchored" data-anchor-id="preguntas-para-responder"><span class="header-section-number">6.2.8</span> Preguntas para responder:</h3>
+<section id="preguntas-para-responder" class="level3" data-number="5.2.8">
+<h3 data-number="5.2.8" class="anchored" data-anchor-id="preguntas-para-responder"><span class="header-section-number">5.2.8</span> Preguntas para responder:</h3>
 <p>1. ¿Qué panel ha cambiado al ejecutar stress-ng?<br>
 <img src="images/paste-73.png" class="img-fluid"></p>
 <p>2. ¿Qué métrica permite ver el uso de CPU? <code>node_cpu_seconds_total</code></p>
@@ -1221,8 +1213,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p>5. ¿Qué problemas podríamos detectar antes de que el usuario final se queje? creando alertas podemos saber cuando un recurso esta bajo presión</p>
 </section>
 </section>
-<section id="importar-un-dashboard-ya-preparado" class="level2" data-number="6.3">
-<h2 data-number="6.3" class="anchored" data-anchor-id="importar-un-dashboard-ya-preparado"><span class="header-section-number">6.3</span> Importar un dashboard ya preparado</h2>
+<section id="importar-un-dashboard-ya-preparado" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="importar-un-dashboard-ya-preparado"><span class="header-section-number">5.3</span> Importar un dashboard ya preparado</h2>
 <p>Además del dashboard manual, podemos importar un dashboard ya creado por la comunidad.</p>
 <p>En Grafana: Dashboards &gt;New&gt; Import<br>
 <img src="images/paste-74.png" class="img-fluid"></p>
@@ -1231,15 +1223,15 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p>Es posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas no activadas. No pasa nada: para esta práctica lo importante es entender el flujo de monitorización.</p>
 </section>
 </section>
-<section id="comprobaciones-finales" class="level1" data-number="7">
-<h1 data-number="7"><span class="header-section-number">7</span> Comprobaciones finales</h1>
-<section id="estado-de-los-contenedores" class="level2" data-number="7.1">
-<h2 data-number="7.1" class="anchored" data-anchor-id="estado-de-los-contenedores"><span class="header-section-number">7.1</span> Estado de los contenedores</h2>
+<section id="comprobaciones-finales" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Comprobaciones finales</h1>
+<section id="estado-de-los-contenedores" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="estado-de-los-contenedores"><span class="header-section-number">6.1</span> Estado de los contenedores</h2>
 <p>Ejecutamos: <code>docker compose ps</code></p>
 <p><img src="images/paste-75.png" class="img-fluid"></p>
 </section>
-<section id="puertos" class="level2" data-number="7.2">
-<h2 data-number="7.2" class="anchored" data-anchor-id="puertos"><span class="header-section-number">7.2</span> Puertos</h2>
+<section id="puertos" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="puertos"><span class="header-section-number">6.2</span> Puertos</h2>
 <p>Comprobamos los puertos: <code>ss -tulnp | grep -E "3000|9090|9100"</code><img src="images/paste-76.png" class="img-fluid"></p>
 <p>Deberíamos ver:</p>
 <ul>
@@ -1248,8 +1240,8 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <li><p>9100 → Node Exporter</p></li>
 </ul>
 </section>
-<section id="métricas-node-exporter" class="level2" data-number="7.3">
-<h2 data-number="7.3" class="anchored" data-anchor-id="métricas-node-exporter"><span class="header-section-number">7.3</span> Métricas Node Exporter</h2>
+<section id="métricas-node-exporter" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="métricas-node-exporter"><span class="header-section-number">6.3</span> Métricas Node Exporter</h2>
 <p>Comprobamos métricas: <code>curl http://localhost:9100/metrics | grep node_memory | head</code>Este comando está consultando <strong>las métricas de memoria</strong> que expone <strong>Node Exporter</strong> en el endpoint <code>/metrics</code>, y luego filtrando solo las que empiezan por <code>node_memory_</code>.<br>
 <code>head</code> hará que sólo se muestren las 10 primeras filas de información.</p>
 <p>Lo que dará es <strong>información detallada del estado de la memoria RAM</strong> de tu máquina, desglosada en diferentes categorías internas del kernel de Linux.</p>
@@ -1287,16 +1279,16 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </ul>
 <p>6. <code>node_memory_AnonHugePages_bytes</code>Aquí empieza la siguiente métrica, pero tu <code>head</code> corta justo después.</p>
 </section>
-<section id="comprobamos-prometheus" class="level2" data-number="7.4">
-<h2 data-number="7.4" class="anchored" data-anchor-id="comprobamos-prometheus"><span class="header-section-number">7.4</span> Comprobamos Prometheus:</h2>
+<section id="comprobamos-prometheus" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="comprobamos-prometheus"><span class="header-section-number">6.4</span> Comprobamos Prometheus:</h2>
 <p>http://{IP_DEL_SERVIDOR}:9090/targets</p>
 <p><img src="images/paste-78.png" class="img-fluid"></p>
 <p>Comprobamos Grafana:</p>
 <p>http://IP_DEL_SERVIDOR:3000</p>
 </section>
 </section>
-<section id="entregables-de-la-práctica" class="level1" data-number="8">
-<h1 data-number="8"><span class="header-section-number">8</span> Entregables de la práctica</h1>
+<section id="entregables-de-la-práctica" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Entregables de la práctica</h1>
 <p><strong>Preguntas de reflexión</strong></p>
 <p>1. <strong>¿Qué función cumple Grafana?</strong> Grafana es la herramienta que visualiza las métricas. Permite crear dashboards, gráficas, paneles y alertas para interpretar los datos que recoge Prometheus.</p>
 <p>2. <strong>¿Qué función cumple Prometheus?</strong> Prometheus es el sistema que recoge, almacena y consulta las métricas. Lee los endpoints de Node Explorer, guarda las series temporales y permite hacer consultas PromQL</p>
@@ -1333,16 +1325,16 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </ul>
 <p>Es exactamente el tipo de servidor donde Prometheus + Grafana + Node Exporter es más útil.</p>
 </section>
-<section id="problemas-frecuentes" class="level1" data-number="9">
-<h1 data-number="9"><span class="header-section-number">9</span> Problemas frecuentes</h1>
-<section id="grafana-no-abre" class="level2" data-number="9.1">
-<h2 data-number="9.1" class="anchored" data-anchor-id="grafana-no-abre"><span class="header-section-number">9.1</span> Grafana no abre</h2>
+<section id="problemas-frecuentes" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Problemas frecuentes</h1>
+<section id="grafana-no-abre" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="grafana-no-abre"><span class="header-section-number">8.1</span> Grafana no abre</h2>
 <p>Comprobar que el contenedor está activo: <code>docker compose ps</code></p>
 <p>Comprobar logs: <code>docker compose logs grafana</code></p>
 <p>Comprobar puerto: <code>ss -tulnp | grep 3000</code></p>
 </section>
-<section id="prometheus-no-muestra-el-target-node-en-up" class="level2" data-number="9.2">
-<h2 data-number="9.2" class="anchored" data-anchor-id="prometheus-no-muestra-el-target-node-en-up"><span class="header-section-number">9.2</span> Prometheus no muestra el target node en UP</h2>
+<section id="prometheus-no-muestra-el-target-node-en-up" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="prometheus-no-muestra-el-target-node-en-up"><span class="header-section-number">8.2</span> Prometheus no muestra el target node en UP</h2>
 <p>Revisar el fichero: <code>cat prometheus/prometheus.yml</code></p>
 <p>Debe aparecer:</p>
 <p>- job_name: “node”</p>
@@ -1353,20 +1345,20 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 <p>Reiniciar:</p>
 <p><code>docker compose restart prometheus</code></p>
 </section>
-<section id="grafana-no-conecta-con-prometheus" class="level2" data-number="9.3">
-<h2 data-number="9.3" class="anchored" data-anchor-id="grafana-no-conecta-con-prometheus"><span class="header-section-number">9.3</span> Grafana no conecta con Prometheus</h2>
+<section id="grafana-no-conecta-con-prometheus" class="level2" data-number="8.3">
+<h2 data-number="8.3" class="anchored" data-anchor-id="grafana-no-conecta-con-prometheus"><span class="header-section-number">8.3</span> Grafana no conecta con Prometheus</h2>
 <p>La URL correcta dentro de Grafana es: <code>http://prometheus:9090</code> No usar: <code>http://localhost:9090</code></p>
 </section>
-<section id="en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" class="level2" data-number="9.4">
-<h2 data-number="9.4" class="anchored" data-anchor-id="en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión"><span class="header-section-number">9.4</span> En VirtualBox no puedo acceder desde el equipo anfitrión</h2>
+<section id="en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión" class="level2" data-number="8.4">
+<h2 data-number="8.4" class="anchored" data-anchor-id="en-virtualbox-no-puedo-acceder-desde-el-equipo-anfitrión"><span class="header-section-number">8.4</span> En VirtualBox no puedo acceder desde el equipo anfitrión</h2>
 <p>Opciones:</p>
 <p>1. Usar Adaptador Puente en la VM.</p>
 <p>2. Usar red NAT con redirección de puertos.</p>
 <p>3. Abrir Grafana desde el navegador dentro de la propia VM, si tiene entorno gráfico.</p>
 </section>
 </section>
-<section id="parar-o-eliminar-la-práctica" class="level1" data-number="10">
-<h1 data-number="10"><span class="header-section-number">10</span> Parar o eliminar la práctica</h1>
+<section id="parar-o-eliminar-la-práctica" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Parar o eliminar la práctica</h1>
 <p>Para parar los contenedores: <code>docker compose stop</code></p>
 <p>Para volver a arrancarlos: <code>docker compose start</code></p>
 <p>Para eliminarlos sin borrar los datos: <code>docker compose down</code></p>

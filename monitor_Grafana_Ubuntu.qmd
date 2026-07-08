@@ -1,39 +1,41 @@
 ---
-title: "Creación de un monitor de sistema en linux con Grafana"
+title: "Crear un monitor sencillo con Grafana en Ubuntu Sever"
 format: html
 ---
 
-Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde el host (Windows) y para eso usaremos:
+Vamos a monitorizar el sistema operativo Linux de nuestro servidor virtual desde un navegador en el host (Windows) y para eso usaremos:
 
-- Node Exporter: expone las métricas del sistema operativo Linux en un endpoint HTTP.
+-   **Node Exporter**: expone las métricas del sistema operativo Linux en un endpoint HTTP.
 
-- Prometheus: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales.
+-   **Prometheus**: lee las métricas de Node Exporter y las almacena en una base de datos de series temporales.
 
-- Grafana: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.
+-   **Grafana**: se conecta a Prometheus y permite crear dashboards para visualizar las métricas.
 
-La práctica se realizará con **Docker Compose**, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. ([Docker Documentation](https://docs.docker.com/compose/)) Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. ([Grafana Labs](https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/))
+La práctica se realizará con **Docker Compose**, porque permite levantar varios servicios mediante un único fichero YAML. Docker Compose está pensado precisamente para definir y ejecutar aplicaciones formadas por varios contenedores desde un único archivo de configuración. ([Docker Documentation](https://docs.docker.com/compose/))
+
+Grafana dispone de instalación oficial mediante imágenes Docker y docker-compose; además, actualmente la imagen OSS recomendada es grafana/grafana. ([Grafana Labs](https://grafana.com/docs/grafana/latest/setup-grafana/installation/docker/))
 
 **Escenario de la práctica**
 
 Vamos a simular una pequeña infraestructura empresarial. Tendremos un servidor Ubuntu que queremos monitorizar.
 
-- ¿Cuánta CPU está consumiendo el servidor?
+-   ¿Cuánta CPU está consumiendo el servidor?
 
-- ¿Cuánta memoria RAM queda disponible?
+-   ¿Cuánta memoria RAM queda disponible?
 
-- ¿Cuánto espacio de disco se está utilizando?
+-   ¿Cuánto espacio de disco se está utilizando?
 
-- ¿Hay tráfico de red?
+-   ¿Hay tráfico de red?
 
-- ¿Podemos ver estos datos en un dashboard?\
+-   ¿Podemos ver estos datos en un dashboard?\
 
 # Creamos un servidor ubuntu con ip fija
 
-La configuración de red será en adaptador puente
+La configuración de red será en **adaptador puente.**
 
 Para evitar que se nos rompa el monitor, necesitaremos tener la misma ip siempre, para eso vamos a cambiar la configuración ip de automática asignada por DHCP a manual
 
-Para introducir una dirección ip manual paramos en este punto de la instalación y seleccionamos para editar enp0s3
+Para introducir una dirección ip manual paramos en este punto de la instalación de ubuntu server en nuestra máquina virtual y seleccionamos para editar `enp0s3`
 
 ![](images/paste-41.png)
 
@@ -76,9 +78,7 @@ sudo nano /etc/netplan/00-installer-config.yaml
 
 Ejemplo de configuración estática:
 
-yaml
-
-``` bash
+``` yaml
 network:
   ethernets:
     enp0s3:
@@ -132,9 +132,9 @@ sudo apt update
 sudo apt upgrade -y
 ```
 
-- **apt update**: actualiza la lista de paquetes disponibles en los repositorios.
+-   **apt update**: actualiza la lista de paquetes disponibles en los repositorios.
 
-- **apt upgrade**: instala las versiones más recientes de los paquetes ya instalados.
+-   **apt upgrade**: instala las versiones más recientes de los paquetes ya instalados.
 
 Es importante hacerlo antes de instalar Docker para evitar conflictos con dependencias antiguas.
 
@@ -144,13 +144,13 @@ Es importante hacerlo antes de instalar Docker para evitar conflictos con depend
 sudo apt install -y ca-certificates curl gnupg
 ```
 
-- **ca-certificates**: permite validar certificados HTTPS (sin esto no puedes descargar cosas de forma segura).
+-   **ca-certificates**: permite validar certificados HTTPS (sin esto no puedes descargar cosas de forma segura).
 
-- **curl**: herramienta para descargar archivos desde Internet.
+-   **curl**: herramienta para descargar archivos desde Internet.
 
-- **gnupg**: permite manejar claves GPG (necesarias para verificar que los paquetes de Docker son auténticos).
+-   **gnupg**: permite manejar claves GPG (necesarias para verificar que los paquetes de Docker son auténticos).
 
-  ![](images/paste-48.png)
+    ![](images/paste-48.png)
 
 ## Crear directorio para la clave GPG de Docker
 
@@ -160,9 +160,9 @@ sudo install -m 0755 -d /etc/apt/keyrings
 
 Ubuntu ahora recomienda guardar las claves GPG en `/etc/apt/keyrings` en lugar de `/etc/apt/trusted.gpg`. Este comando:
 
-- Crea el directorio si no existe.
+-   Crea el directorio si no existe.
 
-- Le da permisos seguros (0755).
+-   Le da permisos seguros (0755).
 
 ## Descargar la clave oficial de Docker
 
@@ -171,11 +171,11 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
 sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg 
 ```
 
-- Descarga la clave GPG de Docker.
+-   Descarga la clave GPG de Docker.
 
-- La convierte al formato `.gpg` (binario) con `gpg --dearmor`.
+-   La convierte al formato `.gpg` (binario) con `gpg --dearmor`.
 
-- La guarda en `/etc/apt/keyrings/docker.gpg`.
+-   La guarda en `/etc/apt/keyrings/docker.gpg`.
 
 Esta clave sirve para verificar que los paquetes que instales realmente vienen de Docker y no están manipulados.
 
@@ -197,13 +197,13 @@ Crea un archivo llamado `/etc/apt/sources.list.d/docker.list`
 
 Con el contenido:
 
-- **deb** → indica que es un repositorio de paquetes binarios.
+-   **deb** → indica que es un repositorio de paquetes binarios.
 
-- **arch=\$(dpkg --print-architecture)** → detecta si tu sistema es amd64, arm64, etc.
+-   **arch=\$(dpkg --print-architecture)** → detecta si tu sistema es amd64, arm64, etc.
 
-- **signed-by=...** → indica qué clave GPG debe usarse para verificar este repositorio.
+-   **signed-by=...** → indica qué clave GPG debe usarse para verificar este repositorio.
 
-- **VERSION_CODENAME** → detecta tu versión de Ubuntu (ej. jammy, focal).
+-   **VERSION_CODENAME** → detecta tu versión de Ubuntu (ej. jammy, focal).
 
 Esto añade el repositorio oficial de Docker, que contiene las versiones más recientes.
 
@@ -225,15 +225,15 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 
 ### ¿Qué instala cada paquete?
 
-- **docker-ce** → Docker Community Edition (el motor principal).
+-   **docker-ce** → Docker Community Edition (el motor principal).
 
-- **docker-ce-cli** → comandos de Docker (`docker run`, `docker ps`, etc.).
+-   **docker-ce-cli** → comandos de Docker (`docker run`, `docker ps`, etc.).
 
-- **containerd.io** → el runtime que gestiona los contenedores.
+-   **containerd.io** → el runtime que gestiona los contenedores.
 
-- **docker-buildx-plugin** → herramienta avanzada para construir imágenes.
+-   **docker-buildx-plugin** → herramienta avanzada para construir imágenes.
 
-- **docker-compose-plugin** → versión moderna de Docker Compose (`docker compose`).
+-   **docker-compose-plugin** → versión moderna de Docker Compose (`docker compose`).
 
 ## Comprobar que Docker funciona
 
@@ -258,37 +258,35 @@ Esto descarga una imagen mínima y la ejecuta. Si funciona, Docker está correct
 
 ## Usar Docker sin sudo
 
+Añade tu usuario al grupo `docker`, esto le permitirá ejecutar sin necesidad de usar permisos de superusuario. Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes **cerrar sesión y volver a entrar** para que el cambio se aplique. (para hacer logout usa `exit` y luego `login` para entrar de nuevo)
+
 ``` bash
 sudo usermod -aG docker $USER 
 ```
 
-Añade tu usuario al grupo `docker`.
-
-Docker solo permite ejecutar comandos sin sudo si perteneces a ese grupo. Después debes **cerrar sesión y volver a entrar** para que el cambio se aplique. (para hacer logout usa `exit` y luego `login` para entrar de nuevo)
+puedes verificar después que estás en el grupo usando `groups`
 
 ![](images/paste-52.png)
 
-Este bloque de comandos:
-
 ::: summary
-- Actualiza Ubuntu.
+-   Actualiza Ubuntu.
 
-- Instala herramientas necesarias.
+-   Instala herramientas necesarias.
 
-- Añade la clave GPG de Docker.
+-   Añade la clave GPG de Docker.
 
-- Añade el repositorio oficial.
+-   Añade el repositorio oficial.
 
-- Instala Docker + Compose.
+-   Instala Docker + Compose.
 
-- Verifica que funciona.
+-   Verifica que funciona.
 
-- Te permite usar Docker sin sudo.
+-   Te permite usar Docker sin sudo.
 
 Es la forma **correcta, segura y recomendada** de instalar Docker en Ubuntu.
 :::
 
-## Crear la estructura de trabajo
+# Crear la estructura de trabajo y la configuración de los servicios
 
 Creamos una carpeta (directorio) para la práctica:
 
@@ -296,27 +294,27 @@ Creamos una carpeta (directorio) para la práctica:
  mkdir -p ~/grafana-practica/prometheus
 ```
 
-- `mkdir` → crea directorios
+-   `mkdir` → crea directorios
 
-- `-p` → *parents*, crea también los directorios padre si no existen
+-   `-p` → *parents*, crea también los directorios padre si no existen
 
 ``` bash
  cd ~/grafana-practica
 ```
 
-# Crear el fichero de configuración de Prometheus
+## Crear el fichero de configuración de Prometheus
 
 Este fichero le dice a Prometheus **qué debe monitorizar** y **cada cuánto tiempo**.
 
 Primero asegúrate de estar en tu carpeta de práctica. Comprobamos dónde estamos con `pwd`
 
-## Crear el fichero
+**Crear el fichero**
 
 ``` bash
 nano prometheus/prometheus.yml 
 ```
 
-### Pegar el contenido
+**Pegar el contenido**
 
 ``` yaml
 global:
@@ -340,27 +338,27 @@ scrape_configs:
 
 **targets: \["node-exporter:9100"\]:** Prometheus irá al contenedor llamado `node-exporter` en el puerto 9100.
 
-### Guardar el fichero
+**Guardar el fichero**
 
 En nano:
 
-- **CTRL + O** → guardar
+-   **CTRL + O** → guardar
 
-- **ENTER** → confirmar
+-   **ENTER** → confirmar
 
-- **CTRL + X** → salir
+-   **CTRL + X** → salir
 
-# Crear el fichero de configuración de docker compose
+## Crear el fichero de configuración de docker compose
 
 `docker-compose.yml`
 
 Este fichero define **los tres servicios**:
 
-- Prometheus
+-   Prometheus
 
-- Node Exporter
+-   Node Exporter
 
-- Grafana
+-   Grafana
 
 Y cómo deben ejecutarse juntos.
 
@@ -427,13 +425,13 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123\*
 
 Esto está bien para una **práctica**, pero **en producción nunca se deben usar credenciales por defecto ni contraseñas en texto plano dentro del compose**. Es un riesgo grave porque:
 
-- cualquiera que vea el archivo puede leer la contraseña
+-   cualquiera que vea el archivo puede leer la contraseña
 
-- si el repositorio se publica, la contraseña queda expuesta
+-   si el repositorio se publica, la contraseña queda expuesta
 
-- si el servidor tiene varios usuarios, todos pueden verla
+-   si el servidor tiene varios usuarios, todos pueden verla
 
-- las contraseñas en texto plano son un vector de ataque muy común
+-   las contraseñas en texto plano son un vector de ataque muy común
 
 Por eso, en entornos reales se usan **variables de entorno externas** o **gestores de secretos**.
 
@@ -497,15 +495,15 @@ Docker toma las variables directamente del entorno del sistema.
 
 En entornos profesionales como Azure, AWS o Kubernetes se usan:
 
-- Azure Key Vault
+-   Azure Key Vault
 
-- AWS Secrets Manager
+-   AWS Secrets Manager
 
-- HashiCorp Vault
+-   HashiCorp Vault
 
-- Docker Swarm Secrets
+-   Docker Swarm Secrets
 
-- Kubernetes Secrets
+-   Kubernetes Secrets
 
 Ejemplo con Docker Swarm:
 
@@ -527,43 +525,43 @@ La contraseña nunca aparece en texto plano.
 > **En producción nunca se deben usar credenciales por defecto ni contraseñas dentro del docker-compose.** **La alternativa correcta es usar variables de entorno externas, preferiblemente en un archivo** `.env` **que no se sube al repositorio.** **En entornos avanzados se usan gestores de secretos como Azure Key Vault o Docker Swarm Secrets.**
 :::
 
-## Contenedores que estamos configurando en este archivo:
+### Contenedores que estamos configurando en este archivo:
 
 ### **Prometheus**
 
-- Usa la imagen oficial `prom/prometheus`.
+-   Usa la imagen oficial `prom/prometheus`.
 
-- Expone el puerto **9090** para acceder a la interfaz web.
+-   Expone el puerto **9090** para acceder a la interfaz web.
 
-- Monta tu fichero `prometheus.yml` dentro del contenedor.
+-   Monta tu fichero `prometheus.yml` dentro del contenedor.
 
-- Guarda los datos en un volumen persistente `prometheus-data`.
+-   Guarda los datos en un volumen persistente `prometheus-data`.
 
-- Retiene datos durante **15 días**.
+-   Retiene datos durante **15 días**.
 
 ### **Node Exporter**
 
-- Es el agente de monitorización del servidor
+-   Es el agente de monitorización del servidor
 
-- Expone el puerto **9100**.
+-   Expone el puerto **9100**.
 
-- Monta `/` del host en modo lectura para poder leer métricas del sistema.
+-   Monta `/` del host en modo lectura para poder leer métricas del sistema.
 
-- Docker lo aísla, pero con `--path.rootfs=/host` puede acceder a la información del host.
+-   Docker lo aísla, pero con `--path.rootfs=/host` puede acceder a la información del host.
 
 ### **Grafana**
 
-- Usa la imagen oficial `grafana/grafana`.
+-   Usa la imagen oficial `grafana/grafana`.
 
-- Expone el puerto **3000**.
+-   Expone el puerto **3000**.
 
-- Usuario y contraseña inicial:
+-   Usuario y contraseña inicial:
 
-  - **admin**
+    -   **admin**
 
-  - **Admin123**\*
+    -   **Admin123**\*
 
-- Guarda dashboards y configuración en `grafana-data`.
+-   Guarda dashboards y configuración en `grafana-data`.
 
 # Levantar todo el stack
 
@@ -589,27 +587,27 @@ Si estas imágenes no están ya en tu máquina, Docker las descarga automáticam
 
 Cada servicio del YAML se convierte en un contenedor:
 
-- `prometheus` → contenedor Prometheus
+-   `prometheus` → contenedor Prometheus
 
-- `grafana` → contenedor Grafana
+-   `grafana` → contenedor Grafana
 
-- `node-exporter` → contenedor Node Exporter
+-   `node-exporter` → contenedor Node Exporter
 
 Cada uno es un entorno aislado, con su propio filesystem, su propio proceso y su propia configuración.
 
-## **Configura redes, puertos y volúmenes automáticamente**
+## Configura redes, puertos y volúmenes automáticamente
 
 Esto es clave: **los contenedores se comunican entre sí por nombre**, no por IP.
 
 Ejemplos:
 
-- `ports: "3000:3000"` → expone Grafana al exterior
+-   `ports: "3000:3000"` → expone Grafana al exterior
 
-- `volumes:` → monta configuraciones persistentes
+-   `volumes:` → monta configuraciones persistentes
 
-- `command:` → pasa parámetros a Prometheus o Node Exporter
+-   `command:` → pasa parámetros a Prometheus o Node Exporter
 
-- **red interna de Docker** → permite que Grafana acceda a Prometheus usando `http://prometheus:9090`
+-   **red interna de Docker** → permite que Grafana acceda a Prometheus usando `http://prometheus:9090`
 
 ![](images/paste-58.png)
 
@@ -632,7 +630,7 @@ Entramos en: `Status > Target health`
 O directamente: http://{IP_DEL_SERVIDOR}:9090/targets\
 ![](images/paste-60.png)
 
-#### **Hacer una primera consulta en Prometheus**
+#### Hacer una primera consulta en Prometheus
 
 En Prometheus, vamos a la pestaña de consulta y probamos: `up`
 
@@ -642,9 +640,9 @@ Pulsamos **Execute**.
 
 Interpretación:
 
-- 1 = el servicio está accesible
+-   1 = el servicio está accesible
 
-- 0 = el servicio no está accesible
+-   0 = el servicio no está accesible
 
 Probamos ahora: `node_memory_MemTotal_bytes`
 
@@ -718,9 +716,9 @@ La ventana `[1m]` suaviza picos y evita que las métricas fluctúen demasiado. S
 
 Vamos a imaginar una métrica de **CPU idle** (porcentaje de tiempo que la CPU está “sin hacer nada”) medida cada 15 segundos durante 1 minuto:
 
-- Tiempo total: 60 segundos
+-   Tiempo total: 60 segundos
 
-- 5 puntos: t0,t15,t30,t45,t60
+-   5 puntos: t0,t15,t30,t45,t60
 
 Supongamos estos valores de **idle%**:
 
@@ -738,9 +736,9 @@ Calculamos la media aritmética:
 
 media=90+90+10+90+905=3705=74
 
-- **Idle medio**: 74%
+-   **Idle medio**: 74%
 
-- **Uso medio de CPU**: 100−74=26%
+-   **Uso medio de CPU**: 100−74=26%
 
 La media “se come” el pico y lo reparte por todo el minuto.
 
@@ -760,13 +758,13 @@ Supongamos que el contador de segundos idle (`node_cpu_seconds_total{mode="idle"
 
 Interpretación:
 
-- Entre t0 y t15: la CPU ha estado idle el 90% del tiempo → 13.5 s
+-   Entre t0 y t15: la CPU ha estado idle el 90% del tiempo → 13.5 s
 
-- Entre t15 y t30: idle baja mucho (pico de actividad) → solo 0.5 s más
+-   Entre t15 y t30: idle baja mucho (pico de actividad) → solo 0.5 s más
 
-- Entre t30 y t45: vuelve a estar muy idle → suma 13.5 s
+-   Entre t30 y t45: vuelve a estar muy idle → suma 13.5 s
 
-- Entre t45 y t60: otra vez muy idle → suma 13.5 s
+-   Entre t45 y t60: otra vez muy idle → suma 13.5 s
 
 `rate()` hace, conceptualmente, esto:
 
@@ -782,9 +780,9 @@ pendiente≈41.0−060=4160≈0.6833
 
 Eso significa:
 
-- **Idle rate**: 0.6833 segundos idle por segundo → 68.33% idle
+-   **Idle rate**: 0.6833 segundos idle por segundo → 68.33% idle
 
-- **Uso de CPU**: 100−68.33≈31.67%
+-   **Uso de CPU**: 100−68.33≈31.67%
 
 ### 3. Comparación media vs `rate()` en tabla
 
@@ -795,9 +793,9 @@ Eso significa:
 
 ### Idea clave
 
-- La **media** trata el pico como un valor más y lo reparte uniformemente.
+-   La **media** trata el pico como un valor más y lo reparte uniformemente.
 
-- `rate()` mira **cómo ha evolucionado el contador en todo el minuto** y devuelve una **tendencia** (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.
+-   `rate()` mira **cómo ha evolucionado el contador en todo el minuto** y devuelve una **tendencia** (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.
 :::
 
 #### **Panel 1:** Uso de CPU (%)
@@ -832,11 +830,11 @@ Ejemplo: Si la CPU está idle un 20% → 100 - 20 = **80% de uso**.
 
 Porque:
 
-- La suma de todos los modos (user, system, iowait, idle…) es 100%.
+-   La suma de todos los modos (user, system, iowait, idle…) es 100%.
 
-- Idle es el más fácil de interpretar.
+-   Idle es el más fácil de interpretar.
 
-- Si sabes cuánto está idle, sabes cuánto está ocupada.
+-   Si sabes cuánto está idle, sabes cuánto está ocupada.
 
 Es la forma más robusta de medir uso real de CPU.
 
@@ -986,11 +984,11 @@ Comprobamos los puertos: `ss -tulnp | grep -E "3000|9090|9100"`![](images/paste-
 
 Deberíamos ver:
 
-- 3000 → Grafana
+-   3000 → Grafana
 
-- 9090 → Prometheus
+-   9090 → Prometheus
 
-- 9100 → Node Exporter
+-   9100 → Node Exporter
 
 ## Métricas Node Exporter
 
@@ -1017,9 +1015,9 @@ Lo que dará es **información detallada del estado de la memoria RAM** de tu m�
 
 ¿Qué significa *Active_anon_bytes*?
 
-- **Active** = páginas de memoria que el kernel considera “activas”, es decir, que se han usado recientemente y no se pueden descartar.
+-   **Active** = páginas de memoria que el kernel considera “activas”, es decir, que se han usado recientemente y no se pueden descartar.
 
-- **anon** = *anonymous memory*, memoria que no pertenece a ningún archivo (por ejemplo, variables de procesos, heap, stack).
+-   **anon** = *anonymous memory*, memoria que no pertenece a ningún archivo (por ejemplo, variables de procesos, heap, stack).
 
 **En resumen:** **Memoria activa usada por procesos (no asociada a archivos).**
 
@@ -1027,17 +1025,17 @@ Lo que dará es **información detallada del estado de la memoria RAM** de tu m�
 
 **Memoria activa total que el sistema está usando y no puede liberar.** Esto incluye **toda la memoria activa**, tanto:
 
-- anónima (`Active_anon`)
+-   anónima (`Active_anon`)
 
-- de archivos (`Active_file`)
+-   de archivos (`Active_file`)
 
 5\. `node_memory_Active_file_bytes 4.86793216e+08`Esto es la parte de la memoria activa que **sí está asociada a archivos**, por ejemplo:
 
-- binarios cargados
+-   binarios cargados
 
-- bibliotecas dinámicas
+-   bibliotecas dinámicas
 
-- páginas de archivos que se han usado recientemente
+-   páginas de archivos que se han usado recientemente
 
 6\. `node_memory_AnonHugePages_bytes`Aquí empieza la siguiente métrica, pero tu `head` corta justo después.
 
@@ -1073,39 +1071,39 @@ node_memory_MemAvailable_bytes
 
 7\. ¿Qué métrica usaríamos para detectar falta de espacio en disco? Las métricas del filesystem:
 
-- `node_filesystem_avail_bytes` → espacio libre
+-   `node_filesystem_avail_bytes` → espacio libre
 
-- `node_filesystem_size_bytes` → tamaño total
+-   `node_filesystem_size_bytes` → tamaño total
 
 8\. ¿Qué ventaja tiene observar tendencias en lugar de mirar solo el estado actual? Observar tendencias permite:
 
-- detectar problemas **antes** de que ocurran
+-   detectar problemas **antes** de que ocurran
 
-- ver si un recurso se está agotando progresivamente
+-   ver si un recurso se está agotando progresivamente
 
-- anticipar fallos (disco llenándose, RAM consumiéndose, CPU saturándose)
+-   anticipar fallos (disco llenándose, RAM consumiéndose, CPU saturándose)
 
 9\. ¿Por qué sería útil este sistema en un servidor de bases de datos? Porque un servidor de bases de datos depende críticamente de:
 
-- CPU
+-   CPU
 
-- RAM
+-   RAM
 
-- disco (lectura/escritura)
+-   disco (lectura/escritura)
 
-- red
+-   red
 
 Monitorizar estos recursos permite:
 
-- detectar cuellos de botella
+-   detectar cuellos de botella
 
-- anticipar saturación
+-   anticipar saturación
 
-- evitar caídas
+-   evitar caídas
 
-- mantener el rendimiento de consultas
+-   mantener el rendimiento de consultas
 
-- reaccionar antes de que los usuarios sufran lentitud
+-   reaccionar antes de que los usuarios sufran lentitud
 
 Es exactamente el tipo de servidor donde Prometheus + Grafana + Node Exporter es más útil.
 
@@ -1129,7 +1127,7 @@ Debe aparecer:
 
 static_configs:
 
-- targets: \["node-exporter:9100"\]
+-   targets: \["node-exporter:9100"\]
 
 Reiniciar:
 

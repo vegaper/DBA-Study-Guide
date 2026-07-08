@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Monitorización de tres máquinas virtuales mediante Prometheus y Grafana – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a957552743cf229cecd72dbee48e5bde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./practica_monitorizacion_completa.html">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#objetivo-de-la-práctica" id="toc-objetivo-de-la-práctica" class="nav-link active" data-scroll-target="#objetivo-de-la-práctica"><span class="header-section-number">1</span> Objetivo de la práctica</a></li>
+  <li><a href="#arquitectura-del-escenario" id="toc-arquitectura-del-escenario" class="nav-link" data-scroll-target="#arquitectura-del-escenario"><span class="header-section-number">2</span> Arquitectura del escenario</a></li>
+  <li><a href="#configuración-de-ip-fija-en-las-máquinas" id="toc-configuración-de-ip-fija-en-las-máquinas" class="nav-link" data-scroll-target="#configuración-de-ip-fija-en-las-máquinas"><span class="header-section-number">3</span> Configuración de IP fija en las máquinas</a>
+  <ul>
+  <li><a href="#windows-10-pro" id="toc-windows-10-pro" class="nav-link" data-scroll-target="#windows-10-pro"><span class="header-section-number">3.1</span> Windows 10 Pro</a></li>
+  <li><a href="#ubuntu-server-monitorizado" id="toc-ubuntu-server-monitorizado" class="nav-link" data-scroll-target="#ubuntu-server-monitorizado"><span class="header-section-number">3.2</span> 3.2 Ubuntu Server monitorizado</a></li>
+  <li><a href="#ubuntu-server-monitorización-prometheus-grafana" id="toc-ubuntu-server-monitorización-prometheus-grafana" class="nav-link" data-scroll-target="#ubuntu-server-monitorización-prometheus-grafana"><span class="header-section-number">3.3</span> Ubuntu Server monitorización (Prometheus + Grafana)</a></li>
+  </ul></li>
+  <li><a href="#instalación-de-windows-exporter-como-servicio" id="toc-instalación-de-windows-exporter-como-servicio" class="nav-link" data-scroll-target="#instalación-de-windows-exporter-como-servicio"><span class="header-section-number">4</span> Instalación de Windows Exporter (como servicio)</a>
+  <ul>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"><span class="header-section-number">4.1</span> <img src="images/paste-83.png" class="img-fluid"></a></li>
+  </ul></li>
+  <li><a href="#instalación-de-node-exporter-nativo" id="toc-instalación-de-node-exporter-nativo" class="nav-link" data-scroll-target="#instalación-de-node-exporter-nativo"><span class="header-section-number">5</span> Instalación de Node Exporter (Nativo)</a></li>
+  <li><a href="#redireccionamiento-de-puertos" id="toc-redireccionamiento-de-puertos" class="nav-link" data-scroll-target="#redireccionamiento-de-puertos"><span class="header-section-number">6</span> Redireccionamiento de puertos</a></li>
+  <li><a href="#despliegue-de-prometheus-y-grafana-docker" id="toc-despliegue-de-prometheus-y-grafana-docker" class="nav-link" data-scroll-target="#despliegue-de-prometheus-y-grafana-docker"><span class="header-section-number">7</span> Despliegue de Prometheus y Grafana (Docker)</a>
+  <ul>
+  <li><a href="#instalar-docker-y-docker-compose" id="toc-instalar-docker-y-docker-compose" class="nav-link" data-scroll-target="#instalar-docker-y-docker-compose"><span class="header-section-number">7.1</span> Instalar Docker y Docker Compose</a></li>
+  <li><a href="#estructura-y-configuración" id="toc-estructura-y-configuración" class="nav-link" data-scroll-target="#estructura-y-configuración"><span class="header-section-number">7.2</span> Estructura y Configuración</a></li>
+  <li><a href="#crear-archivo-de-configuración-de-prometheus" id="toc-crear-archivo-de-configuración-de-prometheus" class="nav-link" data-scroll-target="#crear-archivo-de-configuración-de-prometheus"><span class="header-section-number">7.3</span> Crear archivo de configuración de prometheus</a></li>
+  <li><a href="#crear-archivo-docker-compose.yml" id="toc-crear-archivo-docker-compose.yml" class="nav-link" data-scroll-target="#crear-archivo-docker-compose.yml"><span class="header-section-number">7.4</span> Crear archivo <code>docker-compose.yml</code></a></li>
+  <li><a href="#levantar-los-contenedores" id="toc-levantar-los-contenedores" class="nav-link" data-scroll-target="#levantar-los-contenedores"><span class="header-section-number">7.5</span> Levantar los contenedores</a></li>
+  </ul></li>
+  <li><a href="#acceso-seguro-con-túnel-ssh-ssh-port-forwarding" id="toc-acceso-seguro-con-túnel-ssh-ssh-port-forwarding" class="nav-link" data-scroll-target="#acceso-seguro-con-túnel-ssh-ssh-port-forwarding"><span class="header-section-number">8</span> Acceso Seguro con Túnel SSH (SSH Port Forwarding)</a></li>
+  <li><a href="#importación-de-dashboards-en-grafana" id="toc-importación-de-dashboards-en-grafana" class="nav-link" data-scroll-target="#importación-de-dashboards-en-grafana"><span class="header-section-number">9</span> Importación de dashboards en Grafana</a></li>
+  <li><a href="#verificación-de-métricas" id="toc-verificación-de-métricas" class="nav-link" data-scroll-target="#verificación-de-métricas"><span class="header-section-number">10</span> Verificación de métricas</a>
+  <ul>
+  <li><a href="#windows" id="toc-windows" class="nav-link" data-scroll-target="#windows"><span class="header-section-number">10.0.1</span> Windows</a></li>
+  <li><a href="#ubuntu-monitorizado" id="toc-ubuntu-monitorizado" class="nav-link" data-scroll-target="#ubuntu-monitorizado"><span class="header-section-number">10.0.2</span> Ubuntu monitorizado</a></li>
+  </ul></li>
+  <li><a href="#preguntas-de-reflexión" id="toc-preguntas-de-reflexión" class="nav-link" data-scroll-target="#preguntas-de-reflexión"><span class="header-section-number">11</span> Preguntas de reflexión</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./practica_monitorizacion_completa.html">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="objetivo-de-la-práctica" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Objetivo de la práctica</h1>
+<p>En esta práctica configuraremos un entorno de monitorización donde una máquina <strong>Ubuntu Server</strong> actuará como servidor de monitorización utilizando <strong>Prometheus</strong> y <strong>Grafana</strong> en contenedores Docker. Desde esta máquina monitorizaremos:</p>
+<ul>
+<li><p>Una máquina <strong>Windows 10 Pro</strong> mediante <strong>Windows Exporter</strong> (como servicio).</p></li>
+<li><p>Una máquina <strong>Ubuntu Server</strong> mediante <strong>Node Exporter</strong> (sin Docker).</p></li>
+</ul>
+<p>El acceso a Grafana desde el host se realizará mediante <strong>SSH port forwarding</strong> .</p>
+</section>
+<section id="arquitectura-del-escenario" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Arquitectura del escenario</h1>
+<pre><code>                ┌──────────────────────────┐
+                │   Windows 10 Pro         │
+                │   Windows Exporter       │
+                │   IP: 10.0.2.10          │
+                └──────────────┬───────────┘
+                               │
+                               │
+                ┌──────────────┴───────────┐
+                │   Ubuntu Server           │
+                │   Node Exporter           │
+                │   IP: 10.0.2.11           │
+                └──────────────┬───────────┘
+                               │
+                               │
+                ┌──────────────┴───────────┐
+                │   Ubuntu Server           │
+                │   Prometheus + Grafana    │
+                │   Docker                  │
+                │   IP: 10.0.2.12           │
+                └──────────────────────────┘</code></pre>
+</section>
+<section id="configuración-de-ip-fija-en-las-máquinas" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Configuración de IP fija en las máquinas</h1>
+<p>Se da por hecho que se han creado las máquinas virtuales y que todas están conectadas a la misma Red NAT en VirtualBox.</p>
+<section id="windows-10-pro" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="windows-10-pro"><span class="header-section-number">3.1</span> Windows 10 Pro</h2>
+<ol type="1">
+<li><p>Abrir <strong>Configuración → Red e Internet → Cambiar opciones del adaptador</strong></p></li>
+<li><p>Clic derecho en el adaptador → <strong>Propiedades</strong></p></li>
+<li><p>Seleccionar <strong>Protocolo de Internet versión 4 (TCP/IPv4)</strong></p></li>
+<li><p>Configurar:</p>
+<ul>
+<li><p>IP: <strong>10.0.2.10</strong></p></li>
+<li><p>Máscara: <strong>255.255.255.0</strong></p></li>
+<li><p>Puerta de enlace: <strong>10.0.2.1</strong></p></li>
+<li><p>DNS: <strong>8.8.8.8</strong></p></li>
+</ul></li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled" title="Nota sobre Internet en Red NAT">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Nota sobre Internet en Red NAT
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La Red NAT de VirtualBox sí proporciona salida a Internet por defecto. Si al configurar la IP estática en Windows te quedas sin conexión, asegúrate de haber introducido correctamente el DNS (8.8.8.8). Además, a veces Windows se “atasca” al cambiar de IP dinámica a manual; si eso pasa, simplemente deshabilita el adaptador de red y vuélvelo a habilitar para que aplique bien la nueva ruta.</p>
+</div>
+</div>
+<p>Comprobar conectividad:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ping</span> 1.1.1.1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="ubuntu-server-monitorizado" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="ubuntu-server-monitorizado"><span class="header-section-number">3.2</span> 3.2 Ubuntu Server monitorizado</h2>
+<p>Durante la instalación del sistema o mediante Netplan (como vimos en prácticas anteriores).</p>
+<ul>
+<li><p>Seleccionar <strong>Configurar red manualmente</strong></p></li>
+<li><p>Asignar:</p>
+<ul>
+<li><p>IP: <strong>10.0.2.11</strong></p></li>
+<li><p>Máscara: <strong>255.255.255.0</strong></p></li>
+<li><p>Gateway: <strong>10.0.2.1</strong></p></li>
+<li><p>DNS: <strong>8.8.8.8</strong></p></li>
+</ul></li>
+</ul>
+<p><img src="images/paste-89.png" class="img-fluid"></p>
+<p>Comprobar conectividad con la primera máquina, para ello haremos ping desde Windows a esta.</p>
+<p><img src="images/paste-90.png" class="img-fluid"></p>
+</section>
+<section id="ubuntu-server-monitorización-prometheus-grafana" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="ubuntu-server-monitorización-prometheus-grafana"><span class="header-section-number">3.3</span> Ubuntu Server monitorización (Prometheus + Grafana)</h2>
+<p>Durante la instalación:</p>
+<ul>
+<li><p>IP: <strong>10.0.2.12</strong></p></li>
+<li><p>Máscara: <strong>255.255.255.0</strong></p></li>
+<li><p>Gateway: <strong>10.0.2.1</strong></p></li>
+<li><p>DNS: <strong>8.8.8.8</strong></p></li>
+</ul>
+<p><img src="images/paste-87.png" class="img-fluid"></p>
+<p>Comprobar conectividad cruzada: Desde Windows: ping 10.0.2.11 y ping 10.0.2.12 Desde Ubuntu deberíamos poder hacer ping a la otra Ubuntu. Nota: Los pings hacia Windows pueden fallar porque el Firewall de Windows bloquea ICMP (Ping) por defecto.</p>
+</section>
+</section>
+<section id="instalación-de-windows-exporter-como-servicio" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Instalación de Windows Exporter (como servicio)</h1>
+<p>Descargar el instalador MSI desde: <code>https://github.com/prometheus-community/windows_exporter/releases</code> <a href="https://www.bing.com/search?q=%22https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fwindows_exporter%2Freleases%22">(github.com in Bing)</a></p>
+<div class="nota">
+<ul>
+<li><p><strong>El archivo <code>.msi</code> (Microsoft Installer):</strong> Está programado específicamente por los creadores de Windows Exporter para hacer todo el trabajo sucio. Cuando le das a “Siguiente &gt; Siguiente”, el instalador automáticamente coge el programa, lo esconde en el sistema, crea un <strong>Servicio de Windows</strong> oficial que arranca solo cada vez que enciendes el ordenador, y lo deja funcionando en segundo plano.</p></li>
+<li><p><strong>El archivo <code>.exe</code> (Ejecutable binario):</strong> Si descargas el <code>.exe</code> y le haces doble clic, se abrirá una ventana de consola negra (MS-DOS). El exporter funcionará, sí, pero en el momento en que cierres esa ventana negra o reinicies el ordenador, el monitorizador se apagará.</p></li>
+</ul>
+</div>
+<p>Ejecutar el instalador:</p>
+<ul>
+<li><p>Aceptar licencia</p></li>
+<li><p>Seleccionar los collectors por defecto</p></li>
+</ul>
+<p><img src="images/paste-80.png" class="img-fluid"></p>
+<p>Fíjate que durante la instalación te dice qué puerto va a usar, luego vamos a necesitar esto para configurar prometheus en la máquina monitor.</p>
+<p><img src="images/paste-79.png" class="img-fluid"></p>
+<p><strong>Verificar que el servicio está activo:</strong></p>
+<p>En un navegador introduce <code>localhost:9182/metrics</code></p>
+<p><img src="images/paste-81.png" class="img-fluid"></p>
+<p>o en PowerShell (no la consola)</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Service</span> <span class="op">-</span>Name windows_exporter</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><img src="images/paste-82.png" class="img-fluid"></p>
+<p>Comprobar que expone metricas desde power shell</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Invoke-WebRequest</span> http<span class="op">://</span>localhost<span class="op">:</span><span class="dv">9182</span><span class="op">/</span>metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="section" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="section"><span class="header-section-number">4.1</span> <img src="images/paste-83.png" class="img-fluid"></h2>
+</section>
+</section>
+<section id="instalación-de-node-exporter-nativo" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Instalación de Node Exporter (Nativo)</h1>
+<p>En la práctica anterior no instalamos node exporter en la maquina virtual, sino que lo hicimos mediante una imagen docker. En esta ocasión vamos a inslalarlo directamente sobre el SO de la máquina virtual:</p>
+<p>En la máquina <strong>10.0.2.11</strong>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install prometheus-node-exporter <span class="at">-y</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Comprobar que está activo:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> status prometheus-node-exporter </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><img src="images/paste-84.png" class="img-fluid"><br>
+Comprobar métricas:</p>
+<pre><code>curl http://localhost:9100/metrics </code></pre>
+<p><img src="images/paste-85.png" class="img-fluid"></p>
+</section>
+<section id="redireccionamiento-de-puertos" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Redireccionamiento de puertos</h1>
+<p>Para facilitar la configuración, vamos a conectarnos al servidor principal de monitorización (10.0.2.12) desde nuestro Host (Windows real) usando SSH.</p>
+<p>El problema es que en Red NAT el Host no tiene conectividad directa con las IP internas de las máquinas virtuales. Necesitamos configurar una <strong>redirección de puertos</strong> en VirtualBox:</p>
+<ol type="1">
+<li><p>Ve a la configuración de la Red NAT en VirtualBox.</p></li>
+<li><p>Añade una regla de reenvío de puertos:</p>
+<ul>
+<li><p><strong>Host IP:</strong> {la ip del host} (o vacío 0.0.0.0)| <strong>Host Port:</strong> <code>2222</code> (vale cualquier puerto que no esté en uso)</p></li>
+<li><p><strong>Guest IP:</strong> <code>10.0.2.12</code> | <strong>Guest Port:</strong> <code>22</code> (el puerto 22 es el puerto SSH por defecto)</p></li>
+</ul></li>
+</ol>
+<p><img src="images/paste-91.png" class="img-fluid"></p>
+<p>Ahora podemos conectarnos desde nuestro Host usando el puerto redirigido:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-p</span> 2222 sysadmin@localhost</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="despliegue-de-prometheus-y-grafana-docker" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Despliegue de Prometheus y Grafana (Docker)</h1>
+<p>En la máquina <strong>10.0.2.12</strong>:</p>
+<section id="instalar-docker-y-docker-compose" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="instalar-docker-y-docker-compose"><span class="header-section-number">7.1</span> Instalar Docker y Docker Compose</h2>
+<div class="callout callout-style-default callout-note callout-titled" title="Versión Ubuntu vs Oficial">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Versión Ubuntu vs Oficial
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Aquí usaremos docker.io, que es la versión mantenida por Ubuntu. Es más rápida de instalar para un laboratorio. Para entornos de producción críticos, se recomienda el método largo de la <a href="./monitor_Grafana_Ubuntu.html">práctica anterior</a> (instalando docker-ce desde el repositorio oficial).</p>
+</div>
+</div>
+<pre><code>sudo apt update 
+sudo apt install docker.io docker-compose-plugin -y 
+sudo systemctl enable --now docker 
+sudo usermod -aG docker $USER </code></pre>
+<p>(Recuerda que para usar Docker sin sudo debes cerrar sesión exit y volver a entrar).</p>
+</section>
+<section id="estructura-y-configuración" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="estructura-y-configuración"><span class="header-section-number">7.2</span> Estructura y Configuración</h2>
+<pre><code>mkdir monitoring 
+cd monitoring </code></pre>
+</section>
+<section id="crear-archivo-de-configuración-de-prometheus" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="crear-archivo-de-configuración-de-prometheus"><span class="header-section-number">7.3</span> Crear archivo de configuración de prometheus</h2>
+<p>en el directorio de trabajo creamos el archivo <code>prometheus.yml</code> mediante <code>nano prometheus.yml</code> con el siguiente contenido:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">global</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">scrape_interval</span><span class="kw">:</span><span class="at"> 5s</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">scrape_configs</span><span class="kw">:</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">job_name</span><span class="kw">:</span><span class="at"> </span><span class="st">'prometheus'</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">static_configs</span><span class="kw">:</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">targets</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'localhost:9090'</span><span class="kw">]</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">job_name</span><span class="kw">:</span><span class="at"> </span><span class="st">'node_exporter_ubuntu'</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">static_configs</span><span class="kw">:</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">targets</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'10.0.2.11:9100'</span><span class="kw">]</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">job_name</span><span class="kw">:</span><span class="at"> </span><span class="st">'windows_exporter'</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">static_configs</span><span class="kw">:</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">targets</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'10.0.2.10:9182'</span><span class="kw">]</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="crear-archivo-docker-compose.yml" class="level2" data-number="7.4">
+<h2 data-number="7.4" class="anchored" data-anchor-id="crear-archivo-docker-compose.yml"><span class="header-section-number">7.4</span> Crear archivo <code>docker-compose.yml</code></h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> docker-compose.yml</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">services</span><span class="kw">:</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prometheus</span><span class="kw">:</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> prom/prometheus:latest</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> prometheus</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"9090:9090"</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ./prometheus.yml:/etc/prometheus/prometheus.yml:ro</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> prometheus-data:/prometheus</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">command</span><span class="kw">:</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"--config.file=/etc/prometheus/prometheus.yml"</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"--storage.tsdb.retention.time=15d"</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">grafana</span><span class="kw">:</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> grafana/grafana:latest</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> grafana</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"3000:3000"</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> GF_SECURITY_ADMIN_USER=admin</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> GF_SECURITY_ADMIN_PASSWORD=Admin123*</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> grafana-data:/var/lib/grafana</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prometheus-data</span><span class="kw">:</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">grafana-data</span><span class="kw">:</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="levantar-los-contenedores" class="level2" data-number="7.5">
+<h2 data-number="7.5" class="anchored" data-anchor-id="levantar-los-contenedores"><span class="header-section-number">7.5</span> Levantar los contenedores</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="acceso-seguro-con-túnel-ssh-ssh-port-forwarding" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Acceso Seguro con Túnel SSH (SSH Port Forwarding)</h1>
+<p>Para abrir la interfaz web de Grafana o Prometheus sin exponer esos puertos a Internet ni configurar reglas adicionales en VirtualBox, podemos crear un túnel seguro a través de SSH desde nuestro PC Host.</p>
+<p>Abre <strong>otra</strong> terminal en tu Windows (Host) y ejecuta:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-p</span> 2222 <span class="at">-L</span> 3000:localhost:3000 <span class="at">-L</span> 9090:localhost:9090 sysadmin@localhost </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Explicación: Nos conectamos al puerto 2222 (que VirtualBox redirige a la máquina <code>.12</code>) y hacemos que nuestros puertos locales 3000 y 9090 viajen encriptados por el túnel hasta los servicios de la máquina virtual.</em></p>
+<p>Ahora puedes abrir en tu navegador (en tu PC físico):</p>
+<ul>
+<li><p><strong>Prometheus:</strong> <code>http://localhost:9090</code></p></li>
+<li><p><strong>Grafana:</strong> <code>http://localhost:3000</code></p></li>
+</ul>
+</section>
+<section id="importación-de-dashboards-en-grafana" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Importación de dashboards en Grafana</h1>
+<ol type="1">
+<li><p>Entrar en Grafana → <strong>Dashboards → Import</strong></p></li>
+<li><p>Importar:</p>
+<ul>
+<li><p>Dashboard oficial de Node Exporter → ID <strong>1860</strong></p></li>
+<li><p>Dashboard oficial de Windows Exporter → ID <strong>13978</strong></p></li>
+</ul></li>
+<li><p>Seleccionar la fuente de datos <strong>Prometheus</strong>.</p></li>
+</ol>
+</section>
+<section id="verificación-de-métricas" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Verificación de métricas</h1>
+<section id="windows" class="level3" data-number="10.0.1">
+<h3 data-number="10.0.1" class="anchored" data-anchor-id="windows"><span class="header-section-number">10.0.1</span> Windows</h3>
+<ul>
+<li><p>CPU usage</p></li>
+<li><p>Memory</p></li>
+<li><p>Disk I/O</p></li>
+<li><p>Network</p></li>
+</ul>
+</section>
+<section id="ubuntu-monitorizado" class="level3" data-number="10.0.2">
+<h3 data-number="10.0.2" class="anchored" data-anchor-id="ubuntu-monitorizado"><span class="header-section-number">10.0.2</span> Ubuntu monitorizado</h3>
+<ul>
+<li><p>CPU</p></li>
+<li><p>Load average</p></li>
+<li><p>Filesystem</p></li>
+<li><p>Network</p></li>
+</ul>
+</section>
+</section>
+<section id="preguntas-de-reflexión" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Preguntas de reflexión</h1>
+<ol type="1">
+<li><p><strong>¿Qué diferencias observas entre las métricas de Windows y Ubuntu?</strong></p>
+<ul>
+<li>Las métricas son distintas en su nomenclatura (<code>windows_...</code> vs <code>node_...</code>). Además, Windows Exporter expone métricas específicas de IIS, servicios y registro, mientras que Node Exporter se centra en el Kernel de Linux (load average, inodos, buffers).</li>
+</ul></li>
+<li><p><strong>¿Qué ventajas aporta usar exporters sin Docker en máquinas monitorizadas?</strong></p>
+<ul>
+<li>En la Ubuntu secundaria lo instalamos nativo. La ventaja es que evitas la sobrecarga de instalar el motor de Docker entero en un servidor que quizá solo sirve bases de datos. Es más ligero y accede al hardware directamente.</li>
+</ul></li>
+<li><p><strong>¿Por qué es útil usar SSH port forwarding en entornos NAT?</strong></p>
+<ul>
+<li>Permite acceder a aplicaciones web internas (puerto 3000) sin tener que crear reglas manuales en el router/firewall por cada puerto nuevo que utilicemos. Además, todo el tráfico viaja encriptado.</li>
+</ul></li>
+<li><p><strong>¿Qué ocurre si Prometheus no puede alcanzar uno de los targets?</strong></p>
+<ul>
+<li>En <code>http://localhost:9090/targets</code> el servicio aparecerá en estado <strong>DOWN</strong>. Prometheus dejará de recolectar datos y las gráficas en Grafana mostrarán un hueco en blanco en esa franja de tiempo.</li>
+</ul></li>
+<li><p><strong>¿Cómo podrías añadir alertas en Prometheus?</strong></p>
+<ul>
+<li>Utilizando <strong>Alertmanager</strong> (otro componente del stack) y definiendo reglas en un archivo YAML. Por ejemplo, una regla que salte si <code>node_memory_MemAvailable_bytes &lt; 10%</code> durante más de 5 minutos.</li>
+</ul></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
