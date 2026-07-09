@@ -24,17 +24,17 @@ El acceso a Grafana desde el host se realizará mediante **SSH port forwarding**
                                │
                                │
                 ┌──────────────┴───────────┐
-                │   Ubuntu Server           │
-                │   Node Exporter           │
-                │   IP: 10.0.2.11           │
+                │   Ubuntu Server          │
+                │   Node Exporter          │
+                │   IP: 10.0.2.11          │
                 └──────────────┬───────────┘
                                │
                                │
                 ┌──────────────┴───────────┐
-                │   Ubuntu Server           │
-                │   Prometheus + Grafana    │
-                │   Docker                  │
-                │   IP: 10.0.2.12           │
+                │   Ubuntu Server          │
+                │   Prometheus + Grafana   │
+                │   Docker                 │
+                │   IP: 10.0.2.12          │
                 └──────────────────────────┘
 ```
 
@@ -86,11 +86,11 @@ Durante la instalación del sistema o mediante Netplan (como vimos en prácticas
 
   - DNS: **8.8.8.8**
 
-![](images/paste-89.png)
+![](images/paste-89.png){fig-align="center"}
 
 Comprobar conectividad con la primera máquina, para ello haremos ping desde Windows a esta.
 
-![](images/paste-90.png)
+![](images/paste-90.png){fig-align="center"}
 
 ## Ubuntu Server monitorización (Prometheus + Grafana)
 
@@ -124,11 +124,13 @@ Ejecutar el instalador:
 
 - Seleccionar los collectors por defecto
 
-![](images/paste-80.png)
+- [Activar Firewal Exception!]{.highlight}
 
-Fíjate que durante la instalación te dice qué puerto va a usar, luego vamos a necesitar esto para configurar prometheus en la máquina monitor.
+![](images/paste-80.png){fig-align="center"}
 
-![](images/paste-79.png)
+Durante la instalación te dice qué puerto va a usar, luego vamos a necesitar este puerto para configurar prometheus en la máquina monitor: 9182
+
+![](images/paste-79.png){fig-align="center"}
 
 **Verificar que el servicio está activo:**
 
@@ -142,9 +144,9 @@ o en PowerShell (no la consola)
 Get-Service -Name windows_exporter
 ```
 
-![](images/paste-82.png)
+![](images/paste-82.png){fig-align="center"}
 
-Comprobar que expone metricas desde power shell
+Comprobar que expone métricas. Desde PowerShell
 
 ``` powershell
 Invoke-WebRequest http://localhost:9182/metrics
@@ -173,11 +175,11 @@ systemctl status prometheus-node-exporter
 ![](images/paste-84.png)\
 Comprobar métricas:
 
-``` bash         
+``` bash
 curl http://localhost:9100/metrics 
 ```
 
-![](images/paste-85.png)
+![](images/paste-85.png){fig-align="center"}
 
 # Redireccionamiento de puertos
 
@@ -202,9 +204,9 @@ ssh -p 2222 sysadmin@localhost
 ```
 
 ::: nota
-  **Ver conexiones y puertos activos (TCP y UDP):** Usa `ss -tuna` (donde `-t` es TCP, `-u` es UDP, `-n` muestra los puertos en números y `-a` todas las conexiones).
+**Ver conexiones y puertos activos (TCP y UDP):** Usa `ss -tuna` (donde `-t` es TCP, `-u` es UDP, `-n` muestra los puertos en números y `-a` todas las conexiones).
 
-  **Saber qué programas están usando esos puertos:** Usa el comando **`lsof`**:  `sudo lsof -i -P -n | grep LISTEN`
+**Saber qué programas están usando esos puertos:** Usa el comando **`lsof`**: `sudo lsof -i -P -n | grep LISTEN`
 :::
 
 # Despliegue de Prometheus y Grafana (Docker)
@@ -217,7 +219,7 @@ En la máquina **10.0.2.12**:
 Aquí usaremos docker.io, que es la versión mantenida por Ubuntu. Es más rápida de instalar para un laboratorio. Para entornos de producción críticos, se recomienda el método largo de la [práctica anterior](./monitor_Grafana_Ubuntu.html) (instalando docker-ce desde el repositorio oficial).
 :::
 
-``` bash         
+``` bash
 sudo apt update 
 sudo apt install docker.io docker-compose-plugin -y 
 sudo systemctl enable --now docker 
@@ -245,15 +247,24 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
+        
   - job_name: 'node_exporter_ubuntu'
     static_configs:
       - targets: ['10.0.2.11:9100']
+        labels:
+          sistema: "linux"
+          servidor: "ubuntu-server"
+
 
   - job_name: 'windows_exporter'
     static_configs:
       - targets: ['10.0.2.10:9182']
+        labels:
+          sistema: "windows"
+          servidor: "windows-vm"
 ```
+
+Al contrario que en la práctica anterior aqui usamos las ips de las maquinas y su puerto en lugar de usar el nombre del contenedor como usamos en la práctica de monitorización anterior. Además vamos a añadir etiquetas para poder identificar facilmente las máquinas dentro de grafana.
 
 ## Crear archivo `docker-compose.yml`
 
@@ -300,7 +311,24 @@ volumes:
 docker compose up -d 
 ```
 
-# Acceso Seguro con Túnel SSH (SSH Port Forwarding)
+![](images/paste-92.png){fig-align="center"}
+
+# Acceso a grafana desde el host
+
+Grafana se maneja desde una interfaz gráfica, y el ubuntu server que estamos usando para monitorear no permite usar interfaz gráfica, asi que nos tenemos que conectar desde el host que está en Windows. Tenemos varias opciones\
+
+## Mediante redirección de puertos en la interfaz gráfica de Virtual Box
+
+Podemos hacerlo creando una nueva redirección de puertos en la que el puerto X del host se conecte de forma remota al puerto de grafana del servidor monitor.
+
+![](images/paste-93.png)
+
+Ahora en el ordenador host podemos conectarnos a grafana <http://localhost:3000/>
+
+::: extra
+## Acceso Seguro con Túnel SSH (SSH Port Forwarding)
+
+Otra opción es usar la shell en la maquina host.
 
 Para abrir la interfaz web de Grafana o Prometheus sin exponer esos puertos a Internet ni configurar reglas adicionales en VirtualBox, podemos crear un túnel seguro a través de SSH desde nuestro PC Host.
 
@@ -317,6 +345,12 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 - **Prometheus:** `http://localhost:9090`
 
 - **Grafana:** `http://localhost:3000`
+:::
+
+Para poder conectarnos a la interfaz de prometheus desde el host tendremos que redireccionar también ese puerto:
+
+\
+![](images/paste-94.png)
 
 # Importación de dashboards en Grafana
 
@@ -326,7 +360,7 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 
     - Dashboard oficial de Node Exporter → ID **1860**
 
-    - Dashboard oficial de Windows Exporter → ID **13978**
+    - Dashboard oficial de Windows Exporter → ID **14694**
 
 3.  Seleccionar la fuente de datos **Prometheus**.
 
@@ -351,25 +385,3 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 - Filesystem
 
 - Network
-
-# Preguntas de reflexión
-
-1.  **¿Qué diferencias observas entre las métricas de Windows y Ubuntu?**
-
-    - Las métricas son distintas en su nomenclatura (`windows_...` vs `node_...`). Además, Windows Exporter expone métricas específicas de IIS, servicios y registro, mientras que Node Exporter se centra en el Kernel de Linux (load average, inodos, buffers).
-
-2.  **¿Qué ventajas aporta usar exporters sin Docker en máquinas monitorizadas?**
-
-    - En la Ubuntu secundaria lo instalamos nativo. La ventaja es que evitas la sobrecarga de instalar el motor de Docker entero en un servidor que quizá solo sirve bases de datos. Es más ligero y accede al hardware directamente.
-
-3.  **¿Por qué es útil usar SSH port forwarding en entornos NAT?**
-
-    - Permite acceder a aplicaciones web internas (puerto 3000) sin tener que crear reglas manuales en el router/firewall por cada puerto nuevo que utilicemos. Además, todo el tráfico viaja encriptado.
-
-4.  **¿Qué ocurre si Prometheus no puede alcanzar uno de los targets?**
-
-    - En `http://localhost:9090/targets` el servicio aparecerá en estado **DOWN**. Prometheus dejará de recolectar datos y las gráficas en Grafana mostrarán un hueco en blanco en esa franja de tiempo.
-
-5.  **¿Cómo podrías añadir alertas en Prometheus?**
-
-    - Utilizando **Alertmanager** (otro componente del stack) y definiendo reglas en un archivo YAML. Por ejemplo, una regla que salte si `node_memory_MemAvailable_bytes < 10%` durante más de 5 minutos.
