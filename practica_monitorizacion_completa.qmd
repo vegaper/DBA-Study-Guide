@@ -7,9 +7,9 @@ format: html
 
 En esta práctica configuraremos un entorno de monitorización donde una máquina **Ubuntu Server** actuará como servidor de monitorización utilizando **Prometheus** y **Grafana** en contenedores Docker. Desde esta máquina monitorizaremos:
 
--   Una máquina **Windows 10 Pro** mediante **Windows Exporter** (como servicio).
+- Una máquina **Windows 10 Pro** mediante **Windows Exporter** (como servicio).
 
--   Una máquina **Ubuntu Server** mediante **Node Exporter** (sin Docker).
+- Una máquina **Ubuntu Server** mediante **Node Exporter** (sin Docker).
 
 El acceso a Grafana desde el host se realizará mediante **SSH port forwarding** .
 
@@ -52,13 +52,13 @@ Se da por hecho que se han creado las máquinas virtuales y que todas están con
 
 4.  Configurar:
 
-    -   IP: **10.0.2.10**
+    - IP: **10.0.2.10**
 
-    -   Máscara: **255.255.255.0**
+    - Máscara: **255.255.255.0**
 
-    -   Puerta de enlace: **10.0.2.1**
+    - Puerta de enlace: **10.0.2.1**
 
-    -   DNS: **8.8.8.8**
+    - DNS: **8.8.8.8**
 
 ::: {.callout-note title="Nota sobre Internet en Red NAT"}
 La Red NAT de VirtualBox sí proporciona salida a Internet por defecto. Si al configurar la IP estática en Windows te quedas sin conexión, asegúrate de haber introducido correctamente el DNS (8.8.8.8). Además, a veces Windows se "atasca" al cambiar de IP dinámica a manual; si eso pasa, simplemente deshabilita el adaptador de red y vuélvelo a habilitar para que aplique bien la nueva ruta.
@@ -74,17 +74,17 @@ ping 1.1.1.1
 
 Durante la instalación del sistema o mediante Netplan (como vimos en prácticas anteriores).
 
--   Seleccionar **Configurar red manualmente**
+- Seleccionar **Configurar red manualmente**
 
--   Asignar:
+- Asignar:
 
-    -   IP: **10.0.2.11**
+  - IP: **10.0.2.11**
 
-    -   Máscara: **255.255.255.0**
+  - Máscara: **255.255.255.0**
 
-    -   Gateway: **10.0.2.1**
+  - Gateway: **10.0.2.1**
 
-    -   DNS: **8.8.8.8**
+  - DNS: **8.8.8.8**
 
 ![](images/paste-89.png)
 
@@ -96,13 +96,13 @@ Comprobar conectividad con la primera máquina, para ello haremos ping desde Win
 
 Durante la instalación:
 
--   IP: **10.0.2.12**
+- IP: **10.0.2.12**
 
--   Máscara: **255.255.255.0**
+- Máscara: **255.255.255.0**
 
--   Gateway: **10.0.2.1**
+- Gateway: **10.0.2.1**
 
--   DNS: **8.8.8.8**
+- DNS: **8.8.8.8**
 
 ![](images/paste-87.png)
 
@@ -113,16 +113,16 @@ Comprobar conectividad cruzada: Desde Windows: ping 10.0.2.11 y ping 10.0.2.12 D
 Descargar el instalador MSI desde: `https://github.com/prometheus-community/windows_exporter/releases` [(github.com in Bing)](https://www.bing.com/search?q=%22https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fwindows_exporter%2Freleases%22)
 
 ::: nota
--   **El archivo `.msi` (Microsoft Installer):** Está programado específicamente por los creadores de Windows Exporter para hacer todo el trabajo sucio. Cuando le das a "Siguiente \> Siguiente", el instalador automáticamente coge el programa, lo esconde en el sistema, crea un **Servicio de Windows** oficial que arranca solo cada vez que enciendes el ordenador, y lo deja funcionando en segundo plano.
+- **El archivo `.msi` (Microsoft Installer):** Está programado específicamente por los creadores de Windows Exporter para hacer todo el trabajo sucio. Cuando le das a "Siguiente \> Siguiente", el instalador automáticamente coge el programa, lo esconde en el sistema, crea un **Servicio de Windows** oficial que arranca solo cada vez que enciendes el ordenador, y lo deja funcionando en segundo plano.
 
--   **El archivo `.exe` (Ejecutable binario):** Si descargas el `.exe` y le haces doble clic, se abrirá una ventana de consola negra (MS-DOS). El exporter funcionará, sí, pero en el momento en que cierres esa ventana negra o reinicies el ordenador, el monitorizador se apagará.
+- **El archivo `.exe` (Ejecutable binario):** Si descargas el `.exe` y le haces doble clic, se abrirá una ventana de consola negra (MS-DOS). El exporter funcionará, sí, pero en el momento en que cierres esa ventana negra o reinicies el ordenador, el monitorizador se apagará.
 :::
 
 Ejecutar el instalador:
 
--   Aceptar licencia
+- Aceptar licencia
 
--   Seleccionar los collectors por defecto
+- Seleccionar los collectors por defecto
 
 ![](images/paste-80.png)
 
@@ -173,7 +173,7 @@ systemctl status prometheus-node-exporter
 ![](images/paste-84.png)\
 Comprobar métricas:
 
-```         
+``` bash         
 curl http://localhost:9100/metrics 
 ```
 
@@ -189,9 +189,9 @@ El problema es que en Red NAT el Host no tiene conectividad directa con las IP i
 
 2.  Añade una regla de reenvío de puertos:
 
-    -   **Host IP:** {la ip del host} (o vacío 0.0.0.0)\| **Host Port:** `2222` (vale cualquier puerto que no esté en uso)
+    - **Host IP:** {la ip del host} (o vacío 0.0.0.0)\| **Host Port:** `2222` (vale cualquier puerto que no esté en uso)
 
-    -   **Guest IP:** `10.0.2.12` \| **Guest Port:** `22` (el puerto 22 es el puerto SSH por defecto)
+    - **Guest IP:** `10.0.2.12` \| **Guest Port:** `22` (el puerto 22 es el puerto SSH por defecto)
 
 ![](images/paste-91.png)
 
@@ -200,6 +200,12 @@ Ahora podemos conectarnos desde nuestro Host usando el puerto redirigido:
 ``` bash
 ssh -p 2222 sysadmin@localhost
 ```
+
+::: nota
+  **Ver conexiones y puertos activos (TCP y UDP):** Usa `ss -tuna` (donde `-t` es TCP, `-u` es UDP, `-n` muestra los puertos en números y `-a` todas las conexiones).
+
+  **Saber qué programas están usando esos puertos:** Usa el comando **`lsof`**:  `sudo lsof -i -P -n | grep LISTEN`
+:::
 
 # Despliegue de Prometheus y Grafana (Docker)
 
@@ -211,7 +217,7 @@ En la máquina **10.0.2.12**:
 Aquí usaremos docker.io, que es la versión mantenida por Ubuntu. Es más rápida de instalar para un laboratorio. Para entornos de producción críticos, se recomienda el método largo de la [práctica anterior](./monitor_Grafana_Ubuntu.html) (instalando docker-ce desde el repositorio oficial).
 :::
 
-```         
+``` bash         
 sudo apt update 
 sudo apt install docker.io docker-compose-plugin -y 
 sudo systemctl enable --now docker 
@@ -222,7 +228,7 @@ sudo usermod -aG docker $USER
 
 ## Estructura y Configuración
 
-```         
+``` bash
 mkdir monitoring 
 cd monitoring 
 ```
@@ -308,9 +314,9 @@ ssh -p 2222 -L 3000:localhost:3000 -L 9090:localhost:9090 sysadmin@localhost
 
 Ahora puedes abrir en tu navegador (en tu PC físico):
 
--   **Prometheus:** `http://localhost:9090`
+- **Prometheus:** `http://localhost:9090`
 
--   **Grafana:** `http://localhost:3000`
+- **Grafana:** `http://localhost:3000`
 
 # Importación de dashboards en Grafana
 
@@ -318,9 +324,9 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 
 2.  Importar:
 
-    -   Dashboard oficial de Node Exporter → ID **1860**
+    - Dashboard oficial de Node Exporter → ID **1860**
 
-    -   Dashboard oficial de Windows Exporter → ID **13978**
+    - Dashboard oficial de Windows Exporter → ID **13978**
 
 3.  Seleccionar la fuente de datos **Prometheus**.
 
@@ -328,42 +334,42 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 
 ### Windows
 
--   CPU usage
+- CPU usage
 
--   Memory
+- Memory
 
--   Disk I/O
+- Disk I/O
 
--   Network
+- Network
 
 ### Ubuntu monitorizado
 
--   CPU
+- CPU
 
--   Load average
+- Load average
 
--   Filesystem
+- Filesystem
 
--   Network
+- Network
 
 # Preguntas de reflexión
 
 1.  **¿Qué diferencias observas entre las métricas de Windows y Ubuntu?**
 
-    -   Las métricas son distintas en su nomenclatura (`windows_...` vs `node_...`). Además, Windows Exporter expone métricas específicas de IIS, servicios y registro, mientras que Node Exporter se centra en el Kernel de Linux (load average, inodos, buffers).
+    - Las métricas son distintas en su nomenclatura (`windows_...` vs `node_...`). Además, Windows Exporter expone métricas específicas de IIS, servicios y registro, mientras que Node Exporter se centra en el Kernel de Linux (load average, inodos, buffers).
 
 2.  **¿Qué ventajas aporta usar exporters sin Docker en máquinas monitorizadas?**
 
-    -   En la Ubuntu secundaria lo instalamos nativo. La ventaja es que evitas la sobrecarga de instalar el motor de Docker entero en un servidor que quizá solo sirve bases de datos. Es más ligero y accede al hardware directamente.
+    - En la Ubuntu secundaria lo instalamos nativo. La ventaja es que evitas la sobrecarga de instalar el motor de Docker entero en un servidor que quizá solo sirve bases de datos. Es más ligero y accede al hardware directamente.
 
 3.  **¿Por qué es útil usar SSH port forwarding en entornos NAT?**
 
-    -   Permite acceder a aplicaciones web internas (puerto 3000) sin tener que crear reglas manuales en el router/firewall por cada puerto nuevo que utilicemos. Además, todo el tráfico viaja encriptado.
+    - Permite acceder a aplicaciones web internas (puerto 3000) sin tener que crear reglas manuales en el router/firewall por cada puerto nuevo que utilicemos. Además, todo el tráfico viaja encriptado.
 
 4.  **¿Qué ocurre si Prometheus no puede alcanzar uno de los targets?**
 
-    -   En `http://localhost:9090/targets` el servicio aparecerá en estado **DOWN**. Prometheus dejará de recolectar datos y las gráficas en Grafana mostrarán un hueco en blanco en esa franja de tiempo.
+    - En `http://localhost:9090/targets` el servicio aparecerá en estado **DOWN**. Prometheus dejará de recolectar datos y las gráficas en Grafana mostrarán un hueco en blanco en esa franja de tiempo.
 
 5.  **¿Cómo podrías añadir alertas en Prometheus?**
 
-    -   Utilizando **Alertmanager** (otro componente del stack) y definiendo reglas en un archivo YAML. Por ejemplo, una regla que salte si `node_memory_MemAvailable_bytes < 10%` durante más de 5 minutos.
+    - Utilizando **Alertmanager** (otro componente del stack) y definiendo reglas en un archivo YAML. Por ejemplo, una regla que salte si `node_memory_MemAvailable_bytes < 10%` durante más de 5 minutos.
