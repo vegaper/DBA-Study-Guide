@@ -1772,7 +1772,7 @@
     "href": "practica_monitorizacion_completa.html",
     "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
     "section": "",
-    "text": "En esta práctica configuraremos un entorno de monitorización donde una máquina Ubuntu Server actuará como servidor de monitorización utilizando Prometheus y Grafana en contenedores Docker. Desde esta máquina monitorizaremos:\n\nUna máquina Windows 10 Pro mediante Windows Exporter (como servicio).\nUna máquina Ubuntu Server mediante Node Exporter (sin Docker).\n\nEl acceso a Grafana desde el host se realizará mediante SSH port forwarding .",
+    "text": "Antes de realizar esta práctica se recomienda realizar la práctica anterior: Crear un monitor sencillo con Grafana en Ubuntu Sever que tiene instrucciones y explicaciones completas.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -1800,7 +1800,7 @@
     "href": "practica_monitorizacion_completa.html#ubuntu-server-monitorizado",
     "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
     "section": "3.2 3.2 Ubuntu Server monitorizado",
-    "text": "3.2 3.2 Ubuntu Server monitorizado\nDurante la instalación del sistema o mediante Netplan (como vimos en prácticas anteriores).\n\nSeleccionar Configurar red manualmente\nAsignar:\n\nIP: 10.0.2.11\nMáscara: 255.255.255.0\nGateway: 10.0.2.1\nDNS: 8.8.8.8\n\n\n\nComprobar conectividad con la primera máquina, para ello haremos ping desde Windows a esta.",
+    "text": "3.2 3.2 Ubuntu Server monitorizado\nDurante la instalación del sistema o mediante Netplan (como vimos en prácticas anteriores).\n\nSeleccionar Configurar red manualmente\nAsignar:\n\nIP: 10.0.2.11\nMáscara: 255.255.255.0\nGateway: 10.0.2.1\nDNS: 8.8.8.8\n\n\n\n\n\n\n\nComprobar conectividad con la primera máquina, para ello haremos ping desde Windows a esta.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -1870,7 +1870,7 @@
     "href": "practica_monitorizacion_completa.html#crear-archivo-de-configuración-de-prometheus",
     "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
     "section": "7.3 Crear archivo de configuración de prometheus",
-    "text": "7.3 Crear archivo de configuración de prometheus\nen el directorio de trabajo creamos el archivo prometheus.yml mediante nano prometheus.yml con el siguiente contenido:\nglobal:\n  scrape_interval: 5s\n\nscrape_configs:\n  - job_name: 'prometheus'\n    static_configs:\n      - targets: ['localhost:9090']\n\n  - job_name: 'node_exporter_ubuntu'\n    static_configs:\n      - targets: ['10.0.2.11:9100']\n\n  - job_name: 'windows_exporter'\n    static_configs:\n      - targets: ['10.0.2.10:9182']",
+    "text": "7.3 Crear archivo de configuración de prometheus\nen el directorio de trabajo creamos el archivo prometheus.yml mediante nano prometheus.yml con el siguiente contenido:\nglobal:\n  scrape_interval: 5s\n\nscrape_configs:\n  - job_name: 'prometheus'\n    static_configs:\n      - targets: ['localhost:9090']\n        \n  - job_name: 'node_exporter_ubuntu'\n    static_configs:\n      - targets: ['10.0.2.11:9100']\n        labels:\n          sistema: \"linux\"\n          servidor: \"ubuntu-server\"\n\n\n  - job_name: 'windows_exporter'\n    static_configs:\n      - targets: ['10.0.2.10:9182']\n        labels:\n          sistema: \"windows\"\n          servidor: \"windows-vm\"\nAl contrario que en la práctica anterior aqui usamos las ips de las maquinas y su puerto en lugar de usar el nombre del contenedor como usamos en la práctica de monitorización anterior. Además vamos a añadir etiquetas para poder identificar facilmente las máquinas dentro de grafana.",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
@@ -1899,6 +1899,34 @@
     "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
     "section": "7.5 Levantar los contenedores",
     "text": "7.5 Levantar los contenedores\ndocker compose up -d",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana"
+    ]
+  },
+  {
+    "objectID": "practica_monitorizacion_completa.html#mediante-redirección-de-puertos-en-la-interfaz-gráfica-de-virtual-box",
+    "href": "practica_monitorizacion_completa.html#mediante-redirección-de-puertos-en-la-interfaz-gráfica-de-virtual-box",
+    "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
+    "section": "8.1 Mediante redirección de puertos en la interfaz gráfica de Virtual Box",
+    "text": "8.1 Mediante redirección de puertos en la interfaz gráfica de Virtual Box\nPodemos hacerlo creando una nueva redirección de puertos en la que el puerto X del host se conecte de forma remota al puerto de grafana del servidor monitor.\n\nAhora en el ordenador host podemos conectarnos a grafana http://localhost:3000/\nPara poder conectarnos a la interfaz de prometheus desde el host tendremos que redireccionar también ese puerto:",
+    "crumbs": [
+      "Inicio",
+      "Bloque 1: Redes e Infraestructura",
+      "Procesos, Servicios, Tareas y Procesos en Segundo Plano",
+      "Monitorización de Sistemas",
+      "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana"
+    ]
+  },
+  {
+    "objectID": "practica_monitorizacion_completa.html#acceso-seguro-con-túnel-ssh-ssh-port-forwarding",
+    "href": "practica_monitorizacion_completa.html#acceso-seguro-con-túnel-ssh-ssh-port-forwarding",
+    "title": "Monitorización de tres máquinas virtuales mediante Prometheus y Grafana",
+    "section": "8.2 Acceso Seguro con Túnel SSH (SSH Port Forwarding)",
+    "text": "8.2 Acceso Seguro con Túnel SSH (SSH Port Forwarding)\nOtra opción es usar la shell en la maquina host.\nPara abrir la interfaz web de Grafana o Prometheus sin exponer esos puertos a Internet ni configurar reglas adicionales en VirtualBox, podemos crear un túnel seguro a través de SSH desde nuestro PC Host.\nAbre otra terminal en tu Windows (Host) y ejecuta:\nssh -p 2222 -L 3000:localhost:3000 -L 9090:localhost:9090 sysadmin@localhost \nExplicación: Nos conectamos al puerto 2222 (que VirtualBox redirige a la máquina .12) y hacemos que nuestros puertos locales 3000 y 9090 viajen encriptados por el túnel hasta los servicios de la máquina virtual.\nAhora puedes abrir en tu navegador (en tu PC físico):\n\nPrometheus: http://localhost:9090\nGrafana: http://localhost:3000",
     "crumbs": [
       "Inicio",
       "Bloque 1: Redes e Infraestructura",
