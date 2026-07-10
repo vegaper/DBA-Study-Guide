@@ -338,6 +338,12 @@ scrape_configs:
 
 **targets: \["node-exporter:9100"\]:** Prometheus irá al contenedor llamado `node-exporter` en el puerto 9100.
 
+::: callout-note
+Al estar corriendo todos los servicios dentro de docker compose. En Docker, cuando levantas varios contenedores juntos, Docker crea automáticamente una red interna y un servidor DNS propio. Ese DNS permite que el programa encuentre la ip usando nombres como *node-exporter* o *prometheus*.
+
+Cuando no tenemos todos los trabajos en docker, tendremos que usar la ip de la máquina en lugar del nombre del servicio, por ejemplo: `10.0.2.11:9100` en lugar de `node-exporter:9100`.
+:::
+
 **Guardar el fichero**
 
 En nano:
@@ -414,6 +420,68 @@ volumes:
   prometheus-data:
   grafana-data:
 ```
+
+::: extra
+### Explicación del archivo de configuración de docker-compose
+
+**Raíz del archivo**
+
+- **`services:`**: Es la sección principal. Aquí dentro defines cada uno de los contenedores que van a formar tu infraestructura (en tu caso: Prometheus, Node Exporter y Grafana).
+
+**El Servicio de Prometheus (`prometheus:`)**
+
+- **`image: prom/prometheus:latest`**: Descarga la imagen oficial de Prometheus desde Docker Hub. El `:latest` significa que siempre usará la versión más reciente disponible.
+
+- **`container_name: prometheus`**: Le asigna un nombre fijo al contenedor dentro de Docker. Gracias a esto, los otros contenedores de este archivo pueden buscarlo en la red usando la palabra `prometheus`.
+
+- **`ports: - "9090:9090"`**: Abre un "túnel" entre tu ordenador real (Host) y el contenedor. El primer número es el puerto de tu máquina real y el segundo es el del contenedor. Gracias a esto, puedes abrir tu navegador en tu ordenador real e ir a `http://localhost:9090`.
+
+- **`volumes:`**: Mapea (conecta) carpetas de tu ordenador con carpetas de dentro del contenedor.
+
+  - `- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro`: Coge el archivo de configuración que tienes en tu carpeta local (`./prometheus/...`) y se lo mete a Prometheus en su ruta interna. El `:ro` significa **Read-Only** (solo lectura); Prometheus no puede modificar este archivo, solo leerlo.
+
+  - `- prometheus-data:/prometheus`: Guarda los datos e historial de métricas en un volumen gestionado por Docker (lo veremos al final). Si destruyes el contenedor, tus gráficas e histórico no se pierden.
+
+- **`command:`**: Sobrescribe las órdenes que ejecuta Prometheus al arrancar por defecto.
+
+  - `"--config.file=..."`: Le dice a Prometheus exactamente dónde está su archivo de configuración.
+
+  - `"--storage.tsdb.retention.time=15d"`: **Muy importante.** Le dice a Prometheus que guarde la base de datos de métricas durante un máximo de 15 días. Lo que sea más viejo de 15 días, se borra automáticamente para no llenarte el disco duro.
+
+- **`restart: unless-stopped`**: Si el contenedor se cae por un error, o si reinicias tu ordenador real, Docker levantará automáticamente este contenedor de nuevo, a menos que tú lo hayas apagado a mano con un `docker compose stop`.
+
+**El Servicio de Node Exporter (`node-exporter:`)**
+
+- **`image: prom/node-exporter:latest`** y **`container_name: node-exporter`**: Descarga la imagen oficial y nombra al contenedor como `node-exporter` (por eso Prometheus lo puede encontrar por nombre).
+
+- **`ports: - "9100:9100"`**: Expone el puerto `9100` para que puedas ver las métricas en texto plano desde tu navegador si vas a `http://localhost:9100/metrics`.
+
+- **`volumes: - /:/host:ro,rslave`**: **Este volumen es un truco de magia.** Como un contenedor está aislado y no puede ver el hardware de tu ordenador real, con esta línea le "pasas" toda la raíz de tu sistema operativo (`/`) a una carpeta interna del contenedor llamada `/host`. El modo `:ro,rslave` asegura que el contenedor solo pueda leer los datos de tu disco duro sin alterarlos ni romper nada del sistema.
+
+- **`command: - "--path.rootfs=/host"`**: Le dice a Node Exporter: *"Oye, no mires tus propias carpetas internas para medir el uso de disco y CPU; mira en la carpeta `/host`, porque ese es el ordenador real que quiero monitorizar"*.
+
+**El Servicio de Grafana (`grafana:`)**
+
+- **`image: grafana/grafana:latest`** y **`container_name: grafana`**: Descarga y nombra el contenedor de Grafana (la herramienta para hacer los paneles bonitos).
+
+- **`ports: - "3000:3000"`**: Expone el puerto por defecto de Grafana. Para entrar a su interfaz web, usarás `http://localhost:3000`.
+
+- **`environment:`**: Sirve para inyectar variables de entorno dentro del contenedor (configuraciones iniciales).
+
+  - `- GF_SECURITY_ADMIN_USER=admin`: Define el usuario administrador por defecto.
+
+  - `- GF_SECURITY_ADMIN_PASSWORD=Admin123*`: Define la contraseña inicial de la cuenta admin (así te saltas el paso de tener que usar la típica contraseña por defecto `admin/admin`).
+
+- **`volumes: - grafana-data:/var/lib/grafana`**: Conecta un volumen de Docker a la carpeta interna donde Grafana guarda los usuarios, contraseñas y, lo más importante, **los Dashboards (paneles) que tú diseñes**, para que no se borren al apagar el contenedor.
+
+**Bloque de Volúmenes (`volumes:`)**
+
+Se encuentra al final del archivo, completamente a la izquierda (raíz).
+
+- **`volumes:`**: Aquí declaras formalmente los volúmenes virtuales que has usado arriba (`prometheus-data` y `grafana-data`).
+
+- **`prometheus-data:`** y **`grafana-data:`**: Al dejarlos en blanco (solo con los dos puntos), le dices a Docker: *"Crea dos carpetas especiales y seguras en el disco duro de mi ordenador real que yo no voy a tocar a mano; tú te encargas de gestionarlas para que los datos de Prometheus y Grafana sobrevivan siempre"*.
+:::
 
 ::: {.nota-importante .extra}
 🔐 **Nota importante sobre seguridad en producción**

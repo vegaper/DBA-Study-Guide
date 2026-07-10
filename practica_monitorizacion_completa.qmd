@@ -9,9 +9,9 @@ Antes de realizar esta práctica se recomienda realizar la práctica anterior: [
 
 En esta práctica configuraremos un entorno de monitorización donde una máquina **Ubuntu Server** actuará como servidor de monitorización utilizando **Prometheus** y **Grafana** en contenedores Docker. Desde esta máquina monitorizaremos:
 
--   Una máquina **Windows 10 Pro** mediante **Windows Exporter** (como servicio).
+- Una máquina **Windows 10 Pro** mediante **Windows Exporter** (como servicio).
 
--   Una máquina **Ubuntu Server** mediante **Node Exporter** (sin Docker).
+- Una máquina **Ubuntu Server** mediante **Node Exporter** (sin Docker).
 
 El acceso a Grafana desde el host se realizará mediante **SSH port forwarding** .
 
@@ -33,13 +33,13 @@ Se da por hecho que se han creado las máquinas virtuales y que todas están con
 
 4.  Configurar:
 
-    -   IP: **10.0.2.10**
+    - IP: **10.0.2.10**
 
-    -   Máscara: **255.255.255.0**
+    - Máscara: **255.255.255.0**
 
-    -   Puerta de enlace: **10.0.2.1**
+    - Puerta de enlace: **10.0.2.1**
 
-    -   DNS: **8.8.8.8**
+    - DNS: **8.8.8.8**
 
 ::: {.callout-note title="Nota sobre Internet en Red NAT"}
 La Red NAT de VirtualBox sí proporciona salida a Internet por defecto. Si al configurar la IP estática en Windows te quedas sin conexión, asegúrate de haber introducido correctamente el DNS (8.8.8.8). Además, a veces Windows se "atasca" al cambiar de IP dinámica a manual; si eso pasa, simplemente deshabilita el adaptador de red y vuélvelo a habilitar para que aplique bien la nueva ruta.
@@ -55,17 +55,17 @@ ping 1.1.1.1
 
 Durante la instalación del sistema o mediante Netplan (como vimos en prácticas anteriores).
 
--   Seleccionar **Configurar red manualmente**
+- Seleccionar **Configurar red manualmente**
 
--   Asignar:
+- Asignar:
 
-    -   IP: **10.0.2.11**
+  - IP: **10.0.2.11**
 
-    -   Máscara: **255.255.255.0**
+  - Máscara: **255.255.255.0**
 
-    -   Gateway: **10.0.2.1**
+  - Gateway: **10.0.2.1**
 
-    -   DNS: **8.8.8.8**
+  - DNS: **8.8.8.8**
 
 ![](images/paste-89.png){fig-align="center"}
 
@@ -77,13 +77,13 @@ Comprobar conectividad con la primera máquina, para ello haremos ping desde Win
 
 Durante la instalación:
 
--   IP: **10.0.2.12**
+- IP: **10.0.2.12**
 
--   Máscara: **255.255.255.0**
+- Máscara: **255.255.255.0**
 
--   Gateway: **10.0.2.1**
+- Gateway: **10.0.2.1**
 
--   DNS: **8.8.8.8**
+- DNS: **8.8.8.8**
 
 ![](images/paste-87.png)
 
@@ -97,18 +97,18 @@ como se explicó en la [practica anterior](https://vegaper.github.io/DBA-Study-G
 Descargar el instalador **MSI** desde: `https://github.com/prometheus-community/windows_exporter/releases` [(github.com in Bing)](https://www.bing.com/search?q=%22https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fwindows_exporter%2Freleases%22)
 
 ::: nota
--   **El archivo `.msi` (Microsoft Installer):** Está programado específicamente por los creadores de Windows Exporter para hacer todo el trabajo sucio. Cuando le das a "Siguiente \> Siguiente", el instalador automáticamente coge el programa, lo esconde en el sistema, crea un **Servicio de Windows** oficial que arranca solo cada vez que enciendes el ordenador, y lo deja funcionando en segundo plano.
+- **El archivo `.msi` (Microsoft Installer):** Está programado específicamente por los creadores de Windows Exporter para hacer todo el trabajo sucio. Cuando le das a "Siguiente \> Siguiente", el instalador automáticamente coge el programa, lo esconde en el sistema, crea un **Servicio de Windows** oficial que arranca solo cada vez que enciendes el ordenador, y lo deja funcionando en segundo plano.
 
--   **El archivo `.exe` (Ejecutable binario):** Si descargas el `.exe` y le haces doble clic, se abrirá una ventana de consola negra (MS-DOS). El exporter funcionará, sí, pero en el momento en que cierres esa ventana negra o reinicies el ordenador, el monitorizador se apagará.
+- **El archivo `.exe` (Ejecutable binario):** Si descargas el `.exe` y le haces doble clic, se abrirá una ventana de consola negra (MS-DOS). El exporter funcionará, sí, pero en el momento en que cierres esa ventana negra o reinicies el ordenador, el monitorizador se apagará.
 :::
 
 Ejecutar el instalador:
 
--   Aceptar licencia
+- Aceptar licencia
 
--   Seleccionar los collectors por defecto
+- Seleccionar los collectors por defecto
 
--   [Activar Firewal Exception!]{.highlight}
+- [Activar Firewal Exception!]{.highlight}
 
 ![](images/paste-80.png){fig-align="center"}
 
@@ -175,9 +175,9 @@ El problema es que en Red NAT el Host no tiene conectividad directa con las IP i
 
 2.  Añade una regla de reenvío de puertos:
 
-    -   **Host IP:** {la ip del host} (o vacío 0.0.0.0)\| **Host Port:** `2222` (vale cualquier puerto que no esté en uso)
+    - **Host IP:** {la ip del host} (o vacío 0.0.0.0)\| **Host Port:** `2222` (vale cualquier puerto que no esté en uso)
 
-    -   **Guest IP:** `10.0.2.12` \| **Guest Port:** `22` (el puerto 22 es el puerto SSH por defecto)
+    - **Guest IP:** `10.0.2.12` \| **Guest Port:** `22` (el puerto 22 es el puerto SSH por defecto)
 
 ![](images/paste-91.png)
 
@@ -231,14 +231,13 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-        
+
   - job_name: 'node_exporter_ubuntu'
     static_configs:
       - targets: ['10.0.2.11:9100']
         labels:
           sistema: "linux"
           servidor: "ubuntu-server"
-
 
   - job_name: 'windows_exporter'
     static_configs:
@@ -249,6 +248,112 @@ scrape_configs:
 ```
 
 Al contrario que en la práctica anterior aqui usamos las ips de las maquinas y su puerto en lugar de usar el nombre del contenedor como usamos en la práctica de monitorización anterior. Además vamos a añadir etiquetas para poder identificar facilmente las máquinas dentro de grafana.
+
+::: extra
+### Explicación del archivo de configuración de prometheus:
+
+#### Bloque Global (`global`)
+
+Define la configuración por defecto para todo el servidor Prometheus.
+
+- **`global:`**: Inicia la sección de directivas globales. Lo que definas aquí se aplicará a todos los jobs de monitorización a menos que un job lo sobrescriba específicamente.
+
+- **`scrape_interval: 5s`**: Es la frecuencia de muestreo. Le dice a Prometheus que cada 5 segundos debe ir a los servidores que has configurado a pedirles sus métricas. *(Nota: 5 segundos es muy rápido, ideal para laboratorios o pruebas, pero en producción se suele usar entre `15s` y `1min` para no saturar la red ni el disco).*
+
+### Bloque de Configuración de Rastreo (`scrape_configs`)
+
+Aquí es donde le dices a Prometheus **a quién** tiene que vigilar. Cada "quién" es un `job`.
+
+- **`scrape_configs:`**: Inicia la lista de objetivos (targets) a monitorizar.
+
+- **`- job_name: 'prometheus'`**: Define el nombre del primer trabajo. Los nombres de los jobs sirven para agrupar métricas (por ejemplo, en Grafana puedes filtrar todo por `job="prometheus"`). Este en concreto monitoriza al propio Prometheus.
+
+- **`static_configs:`**: Indica que la lista de servidores que viene a continuación es estática; es decir, que tú escribes las IPs a mano en este archivo y no van a cambiar dinámicamente.
+
+- **`- targets: ['localhost:9090']`**: La dirección URL/IP y el puerto donde Prometheus va a buscar sus propias métricas internas.
+
+### Los Jobs de los Exporters (`node_exporter` y `windows_exporter`)
+
+Estos bloques siguen la misma lógica que el anterior, pero añaden **etiquetas (labels)**.
+
+- **`- job_name: 'node_exporter_ubuntu'`**: El trabajo para tu servidor Linux.
+
+- **`- targets: ['10.0.2.11:9100']`**: La IP de tu máquina Ubuntu. El puerto `9100` es el puerto por defecto de **Node Exporter** (el agente de Linux).
+
+- **`labels:`**: Abre la sección para añadir metadatos personalizados a todas las métricas que vengan de esta máquina.
+
+- **`sistema: "linux"`** y **`servidor: "ubuntu-server"`**: Son etiquetas inventadas por ti. Esto es utilísimo porque cuando estés en Grafana o haciendo consultas en PromQL, podrás escribir cosas como `{sistema="linux"}` para ver solo los servidores Linux de golpe.
+
+- **`- job_name: 'windows_exporter'`**: El trabajo para tu máquina Windows.
+
+- **`- targets: ['10.0.2.10:9182']`**: La IP de tu máquina Windows. El puerto `9182` es el puerto por defecto de **Windows Exporter** (antiguamente conocido como WMI Exporter).
+
+#### Otras opciones útiles que no estás usando (y deberías conocer)
+
+A medida que tu entorno crezca, el archivo actual se te puede quedar corto. Aquí tienes las opciones más habituales e interesantes para añadir:
+
+**`evaluation_interval` (En el bloque `global`)**
+
+Al igual que defines cada cuánto tiempo recoges métricas (`scrape_interval`), necesitas definir cada cuánto tiempo comprueba Prometheus si se cumple alguna regla de alerta.
+
+``` yaml
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s # Evalúa las reglas de alerta cada 15 segundos
+```
+
+**`scrape_timeout` (En `global` o por `job`)**
+
+Si un servidor está muy saturado o la red va lenta, Prometheus podría quedarse esperando eternamente. Con esto le pones un límite de tiempo a la petición de métricas.
+
+``` yaml
+
+global:
+  scrape_timeout: 10s # Si en 10 segundos el servidor no responde, desiste
+```
+
+Alertas con Alertmanager (`alerting`)
+
+Prometheus solo recoge métricas y evalúa si hay problemas, pero **no envía correos ni mensajes de Telegram/Slack**. Para eso necesita conectarse a **Alertmanager**. Se configura con un bloque raíz como este:
+
+``` yaml
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093'] # El puerto por defecto de Alertmanager
+```
+
+Reglas de Alerta y de Grabación (`rule_files`)
+
+Para decirle a Prometheus *cuándo* algo va mal (por ejemplo, si el disco de Ubuntu pasa del 90% o la VM de Windows se apaga), necesitas cargar archivos con esas reglas:
+
+``` yaml
+rule_files:
+  - "alert_rules.yml" # Un archivo externo donde escribes tus condiciones de alerta
+```
+
+**`metrics_path` (Dentro de un `job`)**
+
+Por defecto, Prometheus siempre va a buscar las métricas a la ruta `/metrics` (ej: `http://10.0.2.11:9100/metrics`). Si tienes un servicio o un script propio que las publica en otra ruta (como `/stats`), se lo indicas así:
+
+``` yam
+- job_name: 'mi_aplicacion'
+    metrics_path: '/stats'
+    static_configs:
+      - targets: ['10.0.2.15:8080']
+```
+
+**Descubrimiento de Servicios (`file_sd_configs`)**
+
+Escribir las IPs a mano (`static_configs`) está bien para 2 o 3 máquinas. Pero si tienes 20, modificar este archivo y reiniciar Prometheus cada vez es un dolor. Puedes hacer que Prometheus lea las IPs de un archivo JSON o YAML aparte que se actualice automáticamente:
+
+``` yaml
+- job_name: 'nodos_dinamicos'
+    file_sd_configs:
+      - files:
+          - 'targets.json' # Prometheus vigila este archivo; si cambia, añade los hosts sin reiniciar
+```
+:::
 
 ## Crear archivo `docker-compose.yml`
 
@@ -333,9 +438,9 @@ ssh -p 2222 -L 3000:localhost:3000 -L 9090:localhost:9090 sysadmin@localhost
 
 Ahora puedes abrir en tu navegador (en tu PC físico):
 
--   **Prometheus:** `http://localhost:9090`
+- **Prometheus:** `http://localhost:9090`
 
--   **Grafana:** `http://localhost:3000`
+- **Grafana:** `http://localhost:3000`
 :::
 
 # Importación de dashboards en Grafana
@@ -347,9 +452,9 @@ Crear un nuevo origen de datos para conectar grafana a prometheus\
 
 2.  Importar:
 
-    -   Dashboard oficial de Node Exporter → ID **1860**
+    - Dashboard oficial de Node Exporter → ID **1860**
 
-    -   Dashboard oficial de Windows Exporter → ID **14694**
+    - Dashboard oficial de Windows Exporter → ID **14694**
 
 3.  Seleccionar la fuente de datos **Prometheus**.
 
@@ -357,20 +462,50 @@ Crear un nuevo origen de datos para conectar grafana a prometheus\
 
 ### Windows
 
--   CPU usage
+- CPU Usage (Porcentaje de uso total): `100 - (avg by (instance) (rate(windows_cpu_time_total{sistema="windows", mode="idle"}[2m])) * 100)`
 
--   Memory
+- Memory (Porcentaje de memoria RAM en uso): `100 * (1 - (windows_os_physical_memory_free_bytes{sistema="windows"} / windows_cs_physical_memory_bytes{sistema="windows"}))`
 
--   Disk I/O
+- Disk I/O (Operaciones de lectura/escritura por segundo): `rate(windows_logical_disk_read_bytes_total{sistema="windows"}[2m]) + rate(windows_logical_disk_write_bytes_total{sistema="windows"}[2m])`
 
--   Network
+-  Network (Tráfico entrante y saliente)
+
+  - **Descarga (Input):** `rate(windows_net_bytes_received_total{sistema="windows"}[2m])`
+
+  <!-- -->
+
+  - **Subida (Output):** `rate(windows_net_bytes_sent_total{sistema="windows"}[2m])`
 
 ### Ubuntu monitorizado
 
--   CPU
+- CPU Usage (Porcentaje de uso total): `100 - (avg by (instance) (rate(node_cpu_seconds_total{sistema="linux", mode="idle"}[2m])) * 100)`
 
--   Load average
+- Load Average (carga del sistema a 1 minuto): `node_load1{sistema="linux"}`
 
--   Filesystem
+- Memory (Porcentaje de memoria RAM en uso):
 
--   Network
+  En Linux, si restas directamente la memoria libre del total, te dará un porcentaje falsamente alto porque no toma en cuenta la memoria que el sistema usa temporalmente como caché. Esta fórmula calcula el uso **real** disponible: `100 * (1 - ((node_memory_MemFree_bytes{sistema="linux"} + node_memory_Buffers_bytes{sistema="linux"} + node_memory_Cached_bytes{sistema="linux"}) / node_memory_MemTotal_bytes{sistema="linux"}))`
+
+- Disk I/O (Operaciones de lectura/escritura por segundo):
+
+  Para medir la actividad del disco en Linux (IOPS), medimos la tasa de cambio de las operaciones completadas. Al igual que con la red, lo ideal es separar las lecturas de las escrituras en dos gráficas o usar dos queries en el mismo panel:
+
+  - Operaciones de Lectura (Read IOPS): `rate(node_disk_reads_completed_total{sistema="linux"}[2m])`
+
+  - Operaciones de Escritura (Write IOPS):`rate(node_disk_writes_completed_total{sistema="linux"}[2m])`
+
+  - Si tu servidor tiene varios discos o particiones (como `sda`, `sdb`, `nvme0n1`), la gráfica te mostrará la suma de todos o una línea por cada uno. Si solo quieres monitorizar el disco principal (por ejemplo, `sda`), puedes especificarlo dentro de las llaves añadiendo el filtro del dispositivo: `{sistema="linux", device="sda"}`.
+
+-  Filesystem (Porcentaje de espacio en disco usado): Muestra cuánto espacio se ha llenado en la raíz (`/`). Filtramos por el tipo de sistema de archivos (`ext4` o `xfs`) para evitar contar discos virtuales temporales.
+
+- `100 * (1 - (node_filesystem_free_bytes{sistema="linux", mountpoint="/"}[2m] / node_filesystem_size_bytes{sistema="linux", mountpoint="/"}[2m]))`
+
+-  Network (Tráfico entrante y saliente)
+
+  Para Linux es mejor filtrar por tu interfaz de red activa (por ejemplo, `eth0` o `enp0s3`). Si no te la sabes, puedes quitar el filtro `device`.
+
+  - **Descarga (Input):** `rate(node_network_receive_bytes_total{sistema="linux", device="eth0"}[2m])`
+
+  <!-- -->
+
+  - **Subida (Output):** `rate(node_network_transmit_bytes_total{sistema="linux", device="eth0"}[2m])`
