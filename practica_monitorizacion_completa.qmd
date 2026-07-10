@@ -497,13 +497,13 @@ Si hubiéramos instalado grafana y prometheus directamente sobre el SO y no medi
 ### Comparativa rápida
 
 |  |  |  |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | **Tipo de Instalación** | **¿Qué significa localhost para Grafana?** | **¿Cómo se conectaría a Prometheus?** |
 | **Con Docker** | El propio contenedor aislado de Grafana. | `http://prometheus:9090` *(Usa el DNS de Docker)* |
 | **Sin Docker (Nativo)** | La máquina virtual entera (`10.0.2.12`). | `http://localhost:9090` *(Comparten la misma máquina)* |
 :::
 
-## Importar un Dashboard desde una plantilla. 
+## Importar un Dashboard desde una plantilla.
 
 1.  Entrar en Grafana → **Dashboards → Import**
 
@@ -517,49 +517,118 @@ Si hubiéramos instalado grafana y prometheus directamente sobre el SO y no medi
 
 # Verificación de métricas
 
-### Windows
+# **CPU usada**
 
-- CPU Usage (Porcentaje de uso total): `100 - (avg by (instance) (rate(windows_cpu_time_total{sistema="windows", mode="idle"}[2m])) * 100)`
+**Ubuntu Server**
 
-- Memory (Porcentaje de memoria RAM en uso): `100 * (1 - (windows_os_physical_memory_free_bytes{sistema="windows"} / windows_cs_physical_memory_bytes{sistema="windows"}))`
+```         
+100 - (avg by (servidor) (rate(node_cpu_seconds_total{mode="idle", servidor="ubuntu-server-2604"}[1m])) * 100)
+```
 
-- Disk I/O (Operaciones de lectura/escritura por segundo): `rate(windows_logical_disk_read_bytes_total{sistema="windows"}[2m]) + rate(windows_logical_disk_write_bytes_total{sistema="windows"}[2m])`
+**Windows Server**
 
-- Network (Tráfico entrante y saliente)
+```         
+100 - (avg by (servidor) (rate(windows_cpu_time_total{mode="idle", servidor="windows-server-2025"}[1m])) * 100)
+```
 
-- **Descarga (Input):** `rate(windows_net_bytes_received_total{sistema="windows"}[2m])`
+**Unidad en Grafana:**
 
-<!-- -->
+Percent (0-100)
 
-- **Subida (Output):** `rate(windows_net_bytes_sent_total{sistema="windows"}[2m])`
+Windows Exporter documenta windows_cpu_time_total como el tiempo que el procesador pasa en distintos modos, incluido idle.
 
-### Ubuntu monitorizado
+## **RAM usada**
 
-- CPU Usage (Porcentaje de uso total): `100 - (avg by (instance) (rate(node_cpu_seconds_total{sistema="linux", mode="idle"}[2m])) * 100)`
+**Ubuntu Server**
 
-- Load Average (carga del sistema a 1 minuto): `node_load1{sistema="linux"}`
+``` bash
+node_memory_MemTotal_bytes{servidor="ubuntu-server-2604"}-node_memory_MemAvailable_bytes{servidor="ubuntu-server-2604"}
+```
 
-- Memory (Porcentaje de memoria RAM en uso):
+**Windows Server**
 
-  En Linux, si restas directamente la memoria libre del total, te dará un porcentaje falsamente alto porque no toma en cuenta la memoria que el sistema usa temporalmente como caché. Esta fórmula calcula el uso **real** disponible: `100 * (1 - ((node_memory_MemFree_bytes{sistema="linux"} + node_memory_Buffers_bytes{sistema="linux"} + node_memory_Cached_bytes{sistema="linux"}) / node_memory_MemTotal_bytes{sistema="linux"}))`
+```         
+windows_memory_physical_total_bytes{servidor="windows-server-2025"}-windows_memory_physical_free_bytes{servidor="windows-server-2025"}
+```
 
-- Disk I/O (Operaciones de lectura/escritura por segundo):
+**Unidad en Grafana:**
 
-  Para medir la actividad del disco en Linux (IOPS), medimos la tasa de cambio de las operaciones completadas. Al igual que con la red, lo ideal es separar las lecturas de las escrituras en dos gráficas o usar dos queries en el mismo panel:
+bytes(IEC)
 
-  - Operaciones de Lectura (Read IOPS): `rate(node_disk_reads_completed_total{sistema="linux"}[2m])`
+En Linux usamos MemAvailable porque representa mejor la memoria disponible real que MemFree. En Windows Exporter, las métricas actuales documentadas son windows_memory_physical_total_bytes y windows_memory_physical_free_bytes.
 
-  - Operaciones de Escritura (Write IOPS):`rate(node_disk_writes_completed_total{sistema="linux"}[2m])`
+## **Disco — lectura**
 
-  - Si tu servidor tiene varios discos o particiones (como `sda`, `sdb`, `nvme0n1`), la gráfica te mostrará la suma de todos o una línea por cada uno. Si solo quieres monitorizar el disco principal (por ejemplo, `sda`), puedes especificarlo dentro de las llaves añadiendo el filtro del dispositivo: `{sistema="linux", device="sda"}`.
+**Ubuntu Server**
 
-- Filesystem (Porcentaje de espacio en disco usado): Muestra cuánto espacio se ha llenado en la raíz (`/`). Filtramos por el tipo de sistema de archivos (`ext4` o `xfs`) para evitar contar discos virtuales temporales.
+```         
+sum by (servidor) (rate(node_disk_read_bytes_total{servidor="ubuntu-server-2604",device!~"loop.*|ram.*"}[1m]))
+```
 
-- `100 * (1 - (node_filesystem_free_bytes{sistema="linux", mountpoint="/"}[2m] / node_filesystem_size_bytes{sistema="linux", mountpoint="/"}[2m]))`
+**Windows Server**
 
-- Network (Tráfico entrante y saliente)
+```         
+sum by (servidor) (rate(windows_logical_disk_read_bytes_total{servidor="windows-server-2025",volume=~"C:"}[1m]))
+```
 
-Para Linux es mejor filtrar por tu interfaz de red activa (por ejemplo, `eth0` o `enp0s3`). Si no te la sabes, puedes quitar el filtro `device`.
+**Unidad en Grafana:**
 
-- **Descarga (Input):** `rate(node_network_receive_bytes_total{sistema="linux", device="eth0"}[2m])`
-- **Subida (Output):** `rate(node_network_transmit_bytes_total{sistema="linux", device="eth0"}[2m])`
+bytes/sec
+
+## **Disco — escritura**
+
+**Ubuntu Server**
+
+```         
+sum by (servidor) (rate(node_disk_written_bytes_total{servidor="ubuntu-server-2604",device!~"loop.*|ram.*"}[1m]))
+```
+
+**Windows Server**
+
+```         
+sum by (servidor) (rate(windows_logical_disk_write_bytes_total{servidor="windows-server-2025",volume=~"C:"}[1m]))
+```
+
+**Unidad en Grafana:**
+
+bytes/sec
+
+Windows Exporter documenta las métricas de disco lógico, incluyendo lectura, escritura, espacio libre y tamaño de volumen. ([GitHub](https://github.com/prometheus-community/windows_exporter/blob/master/docs/collector.logical_disk.md?utm_source=chatgpt.com))
+
+## **Red — entrada / recibida**
+
+**Ubuntu Server**
+
+```         
+sum by (servidor) (rate(node_network_receive_bytes_total{servidor="ubuntu-server-2604",device!="lo"}[1m]))
+```
+
+**Windows Server**
+
+```         
+sum by (servidor) (rate(windows_net_bytes_received_total{servidor="windows-server-2025"}[1m]))
+```
+
+**Unidad en Grafana:**
+
+bytes/sec
+
+## **Red — salida / enviada**
+
+**Ubuntu Server**
+
+```         
+sum by (servidor) (rate(node_network_transmit_bytes_total{servidor="ubuntu-server-2604",device!="lo"}[1m]))
+```
+
+**Windows Server**
+
+```         
+sum by (servidor) (rate(windows_net_bytes_sent_total{servidor="windows-server-2025"}[1m]))
+```
+
+**Unidad en Grafana:**
+
+bytes/sec
+
+Windows Exporter documenta windows_net_bytes_received_total y windows_net_bytes_sent_total para bytes recibidos y enviados por interfaz.
