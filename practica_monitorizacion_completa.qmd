@@ -445,8 +445,65 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 
 # Importación de dashboards en Grafana
 
-Crear un nuevo origen de datos para conectar grafana a prometheus\
+## Crear un nuevo origen de datos para conectar grafana a prometheus.
+
+\
 ![](images/paste-95.png)
+
+::: extra
+En la casilla de Prometheus server URL podemos poner la ip de la máquina virtual que está hospedando a grafana y prometeus `http://10.0.20.12:9090` o usar el nombre que le hemos dado al contenedor en el archivo de configuración yaml de docker:\
+![](images/paste-97.png)
+
+En este caso no podemos poner `http://localhost:9090` porque estamos dentro del contenedor docker de grafana, y tiene su propia ip privada, independiente de la de la maquina virtual que lo aloja. Vamos a explicarlo con más detalle.\
+\
+Dentro de un contenedor de Docker **estás en una red completamente diferente**.
+
+Para entenderlo a la perfección, imagina que tu Máquina Virtual (`10.0.2.12`) es un **edificio de oficinas**.
+
+### La perspectiva desde fuera (La IP de la VM)
+
+La IP `10.0.2.12` es la dirección postal del edificio (la VM). Si alguien desde tu ordenador real quiere enviar algo a Grafana, lo envía a esa dirección postal y entra por el número de puerta que tú abriste (el puerto `3000`).
+
+### La perspectiva desde dentro (La red de Docker)
+
+Una vez que cruzas la puerta del edificio y entras en el "universo Docker", la cosa cambia. Docker monta **su propia red interna privada** dentro de la máquina virtual.
+
+Dentro de esa red interna:
+
+- El contenedor de Grafana tiene su propia IP interna invisible (por ejemplo, `172.18.0.3`).
+
+- El contenedor de Prometheus tiene otra IP interna invisible (por ejemplo, `172.18.0.2`).
+
+Como Grafana está *dentro* del edificio, si quiere hablar con Prometheus, no tiene que salir a la calle (a la IP `10.0.2.12`) para volver a entrar. Se comunican por los pasillos internos de Docker.
+
+### ¿Por qué no se usan esas IPs internas (`172.x.x.x`)?
+
+Porque Docker es inteligente: cada vez que apagas o enciendes los contenedores con `docker compose`, esas IPs internas pueden cambiar de orden. Hoy Grafana puede ser la `.3` y mañana la `.4`.
+
+Para que no te vuelvas loco persiguiendo IPs que cambian, Docker te permite usar el **nombre del servicio** como si fuera el número de la oficina:
+
+- Grafana simplemente busca a `http://prometheus:9090`.
+
+- El "recepcionista" de Docker intercepta la palabra `prometheus` y lo redirige internamente a la oficina correcta en ese momento.
+
+Por eso, la IP de la VM (`10.0.2.12`) solo sirve para que **tú** entres desde fuera. Una vez dentro de la configuración de Grafana, te olvidas de las IPs y usas los nombres de los contenedores.
+
+Si hubiéramos instalado grafana y prometheus directamente sobre el SO y no mediante contenedores, ambos procesos corren en el **mismo espacio de red** y comparten la misma interfaz de bucle local (*loopback*).
+
+- Cuando Grafana (instalado nativamente) busca algo en `localhost:9090`, pregunta dentro de la propia máquina virtual. Como Prometheus también está instalado nativamente ahí y escuchando en ese puerto, se encuentran de inmediato.
+
+![](images/paste-99.png)
+
+### Comparativa rápida
+
+|  |  |  |
+|----|----|----|
+| **Tipo de Instalación** | **¿Qué significa localhost para Grafana?** | **¿Cómo se conectaría a Prometheus?** |
+| **Con Docker** | El propio contenedor aislado de Grafana. | `http://prometheus:9090` *(Usa el DNS de Docker)* |
+| **Sin Docker (Nativo)** | La máquina virtual entera (`10.0.2.12`). | `http://localhost:9090` *(Comparten la misma máquina)* |
+:::
+
+## Importar un Dashboard desde una plantilla. 
 
 1.  Entrar en Grafana → **Dashboards → Import**
 
@@ -468,13 +525,13 @@ Crear un nuevo origen de datos para conectar grafana a prometheus\
 
 - Disk I/O (Operaciones de lectura/escritura por segundo): `rate(windows_logical_disk_read_bytes_total{sistema="windows"}[2m]) + rate(windows_logical_disk_write_bytes_total{sistema="windows"}[2m])`
 
--  Network (Tráfico entrante y saliente)
+- Network (Tráfico entrante y saliente)
 
-  - **Descarga (Input):** `rate(windows_net_bytes_received_total{sistema="windows"}[2m])`
+- **Descarga (Input):** `rate(windows_net_bytes_received_total{sistema="windows"}[2m])`
 
-  <!-- -->
+<!-- -->
 
-  - **Subida (Output):** `rate(windows_net_bytes_sent_total{sistema="windows"}[2m])`
+- **Subida (Output):** `rate(windows_net_bytes_sent_total{sistema="windows"}[2m])`
 
 ### Ubuntu monitorizado
 
@@ -496,16 +553,13 @@ Crear un nuevo origen de datos para conectar grafana a prometheus\
 
   - Si tu servidor tiene varios discos o particiones (como `sda`, `sdb`, `nvme0n1`), la gráfica te mostrará la suma de todos o una línea por cada uno. Si solo quieres monitorizar el disco principal (por ejemplo, `sda`), puedes especificarlo dentro de las llaves añadiendo el filtro del dispositivo: `{sistema="linux", device="sda"}`.
 
--  Filesystem (Porcentaje de espacio en disco usado): Muestra cuánto espacio se ha llenado en la raíz (`/`). Filtramos por el tipo de sistema de archivos (`ext4` o `xfs`) para evitar contar discos virtuales temporales.
+- Filesystem (Porcentaje de espacio en disco usado): Muestra cuánto espacio se ha llenado en la raíz (`/`). Filtramos por el tipo de sistema de archivos (`ext4` o `xfs`) para evitar contar discos virtuales temporales.
 
 - `100 * (1 - (node_filesystem_free_bytes{sistema="linux", mountpoint="/"}[2m] / node_filesystem_size_bytes{sistema="linux", mountpoint="/"}[2m]))`
 
--  Network (Tráfico entrante y saliente)
+- Network (Tráfico entrante y saliente)
 
-  Para Linux es mejor filtrar por tu interfaz de red activa (por ejemplo, `eth0` o `enp0s3`). Si no te la sabes, puedes quitar el filtro `device`.
+Para Linux es mejor filtrar por tu interfaz de red activa (por ejemplo, `eth0` o `enp0s3`). Si no te la sabes, puedes quitar el filtro `device`.
 
-  - **Descarga (Input):** `rate(node_network_receive_bytes_total{sistema="linux", device="eth0"}[2m])`
-
-  <!-- -->
-
-  - **Subida (Output):** `rate(node_network_transmit_bytes_total{sistema="linux", device="eth0"}[2m])`
+- **Descarga (Input):** `rate(node_network_receive_bytes_total{sistema="linux", device="eth0"}[2m])`
+- **Subida (Output):** `rate(node_network_transmit_bytes_total{sistema="linux", device="eth0"}[2m])`
