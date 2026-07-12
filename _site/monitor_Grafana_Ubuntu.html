@@ -102,6 +102,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
 
 
 <link rel="stylesheet" href="styles.css">
@@ -381,10 +390,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#crear-el-fichero-de-configuración-de-prometheus" id="toc-crear-el-fichero-de-configuración-de-prometheus" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-prometheus"><span class="header-section-number">3.1</span> Crear el fichero de configuración de Prometheus</a></li>
   <li><a href="#crear-el-fichero-de-configuración-de-docker-compose" id="toc-crear-el-fichero-de-configuración-de-docker-compose" class="nav-link" data-scroll-target="#crear-el-fichero-de-configuración-de-docker-compose"><span class="header-section-number">3.2</span> Crear el fichero de configuración de docker compose</a>
   <ul class="collapse">
-  <li><a href="#contenedores-que-estamos-configurando-en-este-archivo" id="toc-contenedores-que-estamos-configurando-en-este-archivo" class="nav-link" data-scroll-target="#contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.1</span> Contenedores que estamos configurando en este archivo:</a></li>
-  <li><a href="#prometheus" id="toc-prometheus" class="nav-link" data-scroll-target="#prometheus"><span class="header-section-number">3.2.2</span> <strong>Prometheus</strong></a></li>
-  <li><a href="#node-exporter" id="toc-node-exporter" class="nav-link" data-scroll-target="#node-exporter"><span class="header-section-number">3.2.3</span> <strong>Node Exporter</strong></a></li>
-  <li><a href="#grafana" id="toc-grafana" class="nav-link" data-scroll-target="#grafana"><span class="header-section-number">3.2.4</span> <strong>Grafana</strong></a></li>
+  <li><a href="#explicación-del-archivo-de-configuración-de-docker-compose" id="toc-explicación-del-archivo-de-configuración-de-docker-compose" class="nav-link" data-scroll-target="#explicación-del-archivo-de-configuración-de-docker-compose"><span class="header-section-number">3.2.1</span> Explicación del archivo de configuración de docker-compose</a></li>
+  <li><a href="#contenedores-que-estamos-configurando-en-este-archivo" id="toc-contenedores-que-estamos-configurando-en-este-archivo" class="nav-link" data-scroll-target="#contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.2</span> Contenedores que estamos configurando en este archivo:</a></li>
+  <li><a href="#prometheus" id="toc-prometheus" class="nav-link" data-scroll-target="#prometheus"><span class="header-section-number">3.2.3</span> <strong>Prometheus</strong></a></li>
+  <li><a href="#node-exporter" id="toc-node-exporter" class="nav-link" data-scroll-target="#node-exporter"><span class="header-section-number">3.2.4</span> <strong>Node Exporter</strong></a></li>
+  <li><a href="#grafana" id="toc-grafana" class="nav-link" data-scroll-target="#grafana"><span class="header-section-number">3.2.5</span> <strong>Grafana</strong></a></li>
   </ul></li>
   </ul></li>
   <li><a href="#levantar-todo-el-stack" id="toc-levantar-todo-el-stack" class="nav-link" data-scroll-target="#levantar-todo-el-stack"><span class="header-section-number">4</span> Levantar todo el stack</a>
@@ -433,6 +443,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#puertos" id="toc-puertos" class="nav-link" data-scroll-target="#puertos"><span class="header-section-number">6.2</span> Puertos</a></li>
   <li><a href="#métricas-node-exporter" id="toc-métricas-node-exporter" class="nav-link" data-scroll-target="#métricas-node-exporter"><span class="header-section-number">6.3</span> Métricas Node Exporter</a></li>
   <li><a href="#comprobamos-prometheus" id="toc-comprobamos-prometheus" class="nav-link" data-scroll-target="#comprobamos-prometheus"><span class="header-section-number">6.4</span> Comprobamos Prometheus:</a></li>
+  <li><a href="#comprobamos-grafana" id="toc-comprobamos-grafana" class="nav-link" data-scroll-target="#comprobamos-grafana"><span class="header-section-number">6.5</span> Comprobamos Grafana</a></li>
   </ul></li>
   <li><a href="#entregables-de-la-práctica" id="toc-entregables-de-la-práctica" class="nav-link" data-scroll-target="#entregables-de-la-práctica"><span class="header-section-number">7</span> Entregables de la práctica</a></li>
   <li><a href="#problemas-frecuentes" id="toc-problemas-frecuentes" class="nav-link" data-scroll-target="#problemas-frecuentes"><span class="header-section-number">8</span> Problemas frecuentes</a>
@@ -692,6 +703,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>job_name: “prometheus”:</strong> Prometheus también se monitoriza a sí mismo. El target <code>"prometheus:9090"</code> funciona porque en <code>Docker Compose</code> el servicio se llama <code>prometheus</code>, y Docker crea una red interna donde los contenedores se ven por nombre.</p>
 <p><strong>job_name: “node” :</strong>Este es el trabajo que recoge métricas del servidor Linux.</p>
 <p><strong>targets: [“node-exporter:9100”]:</strong> Prometheus irá al contenedor llamado <code>node-exporter</code> en el puerto 9100.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Al estar corriendo todos los servicios dentro de docker compose. En Docker, cuando levantas varios contenedores juntos, Docker crea automáticamente una red interna y un servidor DNS propio. Ese DNS permite que el programa encuentre la ip usando nombres como <em>node-exporter</em> o <em>prometheus</em>.</p>
+<p>Cuando no tenemos todos los trabajos en docker, tendremos que usar la ip de la máquina en lugar del nombre del servicio, por ejemplo: <code>10.0.2.11:9100</code> en lugar de <code>node-exporter:9100</code>.</p>
+</div>
+</div>
 <p><strong>Guardar el fichero</strong></p>
 <p>En nano:</p>
 <ul>
@@ -754,6 +779,54 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a><span class="fu">volumes</span><span class="kw">:</span></span>
 <span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prometheus-data</span><span class="kw">:</span></span>
 <span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">grafana-data</span><span class="kw">:</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="explicación-del-archivo-de-configuración-de-docker-compose" class="level3 extra" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="explicación-del-archivo-de-configuración-de-docker-compose"><span class="header-section-number">3.2.1</span> Explicación del archivo de configuración de docker-compose</h3>
+<p><strong>Raíz del archivo</strong></p>
+<ul>
+<li><strong><code>services:</code></strong>: Es la sección principal. Aquí dentro defines cada uno de los contenedores que van a formar tu infraestructura (en tu caso: Prometheus, Node Exporter y Grafana).</li>
+</ul>
+<p><strong>El Servicio de Prometheus (<code>prometheus:</code>)</strong></p>
+<ul>
+<li><p><strong><code>image: prom/prometheus:latest</code></strong>: Descarga la imagen oficial de Prometheus desde Docker Hub. El <code>:latest</code> significa que siempre usará la versión más reciente disponible.</p></li>
+<li><p><strong><code>container_name: prometheus</code></strong>: Le asigna un nombre fijo al contenedor dentro de Docker. Gracias a esto, los otros contenedores de este archivo pueden buscarlo en la red usando la palabra <code>prometheus</code>.</p></li>
+<li><p><strong><code>ports: - "9090:9090"</code></strong>: Abre un “túnel” entre tu ordenador real (Host) y el contenedor. El primer número es el puerto de tu máquina real y el segundo es el del contenedor. Gracias a esto, puedes abrir tu navegador en tu ordenador real e ir a <code>http://localhost:9090</code>.</p></li>
+<li><p><strong><code>volumes:</code></strong>: Mapea (conecta) carpetas de tu ordenador con carpetas de dentro del contenedor.</p>
+<ul>
+<li><p><code>- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro</code>: Coge el archivo de configuración que tienes en tu carpeta local (<code>./prometheus/...</code>) y se lo mete a Prometheus en su ruta interna. El <code>:ro</code> significa <strong>Read-Only</strong> (solo lectura); Prometheus no puede modificar este archivo, solo leerlo.</p></li>
+<li><p><code>- prometheus-data:/prometheus</code>: Guarda los datos e historial de métricas en un volumen gestionado por Docker (lo veremos al final). Si destruyes el contenedor, tus gráficas e histórico no se pierden.</p></li>
+</ul></li>
+<li><p><strong><code>command:</code></strong>: Sobrescribe las órdenes que ejecuta Prometheus al arrancar por defecto.</p>
+<ul>
+<li><p><code>"--config.file=..."</code>: Le dice a Prometheus exactamente dónde está su archivo de configuración.</p></li>
+<li><p><code>"--storage.tsdb.retention.time=15d"</code>: <strong>Muy importante.</strong> Le dice a Prometheus que guarde la base de datos de métricas durante un máximo de 15 días. Lo que sea más viejo de 15 días, se borra automáticamente para no llenarte el disco duro.</p></li>
+</ul></li>
+<li><p><strong><code>restart: unless-stopped</code></strong>: Si el contenedor se cae por un error, o si reinicias tu ordenador real, Docker levantará automáticamente este contenedor de nuevo, a menos que tú lo hayas apagado a mano con un <code>docker compose stop</code>.</p></li>
+</ul>
+<p><strong>El Servicio de Node Exporter (<code>node-exporter:</code>)</strong></p>
+<ul>
+<li><p><strong><code>image: prom/node-exporter:latest</code></strong> y <strong><code>container_name: node-exporter</code></strong>: Descarga la imagen oficial y nombra al contenedor como <code>node-exporter</code> (por eso Prometheus lo puede encontrar por nombre).</p></li>
+<li><p><strong><code>ports: - "9100:9100"</code></strong>: Expone el puerto <code>9100</code> para que puedas ver las métricas en texto plano desde tu navegador si vas a <code>http://localhost:9100/metrics</code>.</p></li>
+<li><p><strong><code>volumes: - /:/host:ro,rslave</code></strong>: <strong>Este volumen es un truco de magia.</strong> Como un contenedor está aislado y no puede ver el hardware de tu ordenador real, con esta línea le “pasas” toda la raíz de tu sistema operativo (<code>/</code>) a una carpeta interna del contenedor llamada <code>/host</code>. El modo <code>:ro,rslave</code> asegura que el contenedor solo pueda leer los datos de tu disco duro sin alterarlos ni romper nada del sistema.</p></li>
+<li><p><strong><code>command: - "--path.rootfs=/host"</code></strong>: Le dice a Node Exporter: <em>“Oye, no mires tus propias carpetas internas para medir el uso de disco y CPU; mira en la carpeta <code>/host</code>, porque ese es el ordenador real que quiero monitorizar”</em>.</p></li>
+</ul>
+<p><strong>El Servicio de Grafana (<code>grafana:</code>)</strong></p>
+<ul>
+<li><p><strong><code>image: grafana/grafana:latest</code></strong> y <strong><code>container_name: grafana</code></strong>: Descarga y nombra el contenedor de Grafana (la herramienta para hacer los paneles bonitos).</p></li>
+<li><p><strong><code>ports: - "3000:3000"</code></strong>: Expone el puerto por defecto de Grafana. Para entrar a su interfaz web, usarás <code>http://localhost:3000</code>.</p></li>
+<li><p><strong><code>environment:</code></strong>: Sirve para inyectar variables de entorno dentro del contenedor (configuraciones iniciales).</p>
+<ul>
+<li><p><code>- GF_SECURITY_ADMIN_USER=admin</code>: Define el usuario administrador por defecto.</p></li>
+<li><p><code>- GF_SECURITY_ADMIN_PASSWORD=Admin123*</code>: Define la contraseña inicial de la cuenta admin (así te saltas el paso de tener que usar la típica contraseña por defecto <code>admin/admin</code>).</p></li>
+</ul></li>
+<li><p><strong><code>volumes: - grafana-data:/var/lib/grafana</code></strong>: Conecta un volumen de Docker a la carpeta interna donde Grafana guarda los usuarios, contraseñas y, lo más importante, <strong>los Dashboards (paneles) que tú diseñes</strong>, para que no se borren al apagar el contenedor.</p></li>
+</ul>
+<p><strong>Bloque de Volúmenes (<code>volumes:</code>)</strong></p>
+<p>Se encuentra al final del archivo, completamente a la izquierda (raíz).</p>
+<ul>
+<li><p><strong><code>volumes:</code></strong>: Aquí declaras formalmente los volúmenes virtuales que has usado arriba (<code>prometheus-data</code> y <code>grafana-data</code>).</p></li>
+<li><p><strong><code>prometheus-data:</code></strong> y <strong><code>grafana-data:</code></strong>: Al dejarlos en blanco (solo con los dos puntos), le dices a Docker: <em>“Crea dos carpetas especiales y seguras en el disco duro de mi ordenador real que yo no voy a tocar a mano; tú te encargas de gestionarlas para que los datos de Prometheus y Grafana sobrevivan siempre”</em>.</p></li>
+</ul>
+</section>
 <div class="nota-importante extra">
 <p>🔐 <strong>Nota importante sobre seguridad en producción</strong></p>
 <p>Hasta ahora hemos usado en <code>docker-compose.yml</code> credenciales como:</p>
@@ -811,11 +884,11 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <p><strong>En producción nunca se deben usar credenciales por defecto ni contraseñas dentro del docker-compose.</strong> <strong>La alternativa correcta es usar variables de entorno externas, preferiblemente en un archivo</strong> <code>.env</code> <strong>que no se sube al repositorio.</strong> <strong>En entornos avanzados se usan gestores de secretos como Azure Key Vault o Docker Swarm Secrets.</strong></p>
 </blockquote>
 </div>
-<section id="contenedores-que-estamos-configurando-en-este-archivo" class="level3" data-number="3.2.1">
-<h3 data-number="3.2.1" class="anchored" data-anchor-id="contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.1</span> Contenedores que estamos configurando en este archivo:</h3>
+<section id="contenedores-que-estamos-configurando-en-este-archivo" class="level3" data-number="3.2.2">
+<h3 data-number="3.2.2" class="anchored" data-anchor-id="contenedores-que-estamos-configurando-en-este-archivo"><span class="header-section-number">3.2.2</span> Contenedores que estamos configurando en este archivo:</h3>
 </section>
-<section id="prometheus" class="level3" data-number="3.2.2">
-<h3 data-number="3.2.2" class="anchored" data-anchor-id="prometheus"><span class="header-section-number">3.2.2</span> <strong>Prometheus</strong></h3>
+<section id="prometheus" class="level3" data-number="3.2.3">
+<h3 data-number="3.2.3" class="anchored" data-anchor-id="prometheus"><span class="header-section-number">3.2.3</span> <strong>Prometheus</strong></h3>
 <ul>
 <li><p>Usa la imagen oficial <code>prom/prometheus</code>.</p></li>
 <li><p>Expone el puerto <strong>9090</strong> para acceder a la interfaz web.</p></li>
@@ -824,8 +897,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <li><p>Retiene datos durante <strong>15 días</strong>.</p></li>
 </ul>
 </section>
-<section id="node-exporter" class="level3" data-number="3.2.3">
-<h3 data-number="3.2.3" class="anchored" data-anchor-id="node-exporter"><span class="header-section-number">3.2.3</span> <strong>Node Exporter</strong></h3>
+<section id="node-exporter" class="level3" data-number="3.2.4">
+<h3 data-number="3.2.4" class="anchored" data-anchor-id="node-exporter"><span class="header-section-number">3.2.4</span> <strong>Node Exporter</strong></h3>
 <ul>
 <li><p>Es el agente de monitorización del servidor</p></li>
 <li><p>Expone el puerto <strong>9100</strong>.</p></li>
@@ -833,8 +906,8 @@ GF_SECURITY_ADMIN_PASSWORD=Admin123*</p>
 <li><p>Docker lo aísla, pero con <code>--path.rootfs=/host</code> puede acceder a la información del host.</p></li>
 </ul>
 </section>
-<section id="grafana" class="level3" data-number="3.2.4">
-<h3 data-number="3.2.4" class="anchored" data-anchor-id="grafana"><span class="header-section-number">3.2.4</span> <strong>Grafana</strong></h3>
+<section id="grafana" class="level3" data-number="3.2.5">
+<h3 data-number="3.2.5" class="anchored" data-anchor-id="grafana"><span class="header-section-number">3.2.5</span> <strong>Grafana</strong></h3>
 <ul>
 <li><p>Usa la imagen oficial <code>grafana/grafana</code>.</p></li>
 <li><p>Expone el puerto <strong>3000</strong>.</p></li>
@@ -1281,10 +1354,12 @@ En todas las métricas daremos una ventana de tiempo para los intervalos de tiem
 </section>
 <section id="comprobamos-prometheus" class="level2" data-number="6.4">
 <h2 data-number="6.4" class="anchored" data-anchor-id="comprobamos-prometheus"><span class="header-section-number">6.4</span> Comprobamos Prometheus:</h2>
-<p>http://{IP_DEL_SERVIDOR}:9090/targets</p>
+<p>En un navegador: <code>http://{IP_DEL_SERVIDOR}:9090/targets</code></p>
 <p><img src="images/paste-78.png" class="img-fluid"></p>
-<p>Comprobamos Grafana:</p>
-<p>http://IP_DEL_SERVIDOR:3000</p>
+</section>
+<section id="comprobamos-grafana" class="level2" data-number="6.5">
+<h2 data-number="6.5" class="anchored" data-anchor-id="comprobamos-grafana"><span class="header-section-number">6.5</span> Comprobamos Grafana</h2>
+<p>En un navegador: <code>http://IP_DEL_SERVIDOR:3000</code></p>
 </section>
 </section>
 <section id="entregables-de-la-práctica" class="level1" data-number="7">

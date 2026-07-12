@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>ubuntu cheat sheet – Apuntes: Administración de Bases de Datos</title>
+<title>Redirección de Puertos – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -113,7 +113,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Anexos</a></li><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Ubuntu Cheat Sheet</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Redirección de Puertos</li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -307,7 +307,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
       <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link active">
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ubuntu Cheat Sheet</span></a>
   </div>
 </li>
@@ -318,15 +318,28 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#qué-es-la-redirección-de-puertos" id="toc-qué-es-la-redirección-de-puertos" class="nav-link active" data-scroll-target="#qué-es-la-redirección-de-puertos"><span class="header-section-number">1</span> ¿Qué es la Redirección de Puertos?</a></li>
+  <li><a href="#cómo-funciona-técnicamente" id="toc-cómo-funciona-técnicamente" class="nav-link" data-scroll-target="#cómo-funciona-técnicamente"><span class="header-section-number">2</span> ¿Cómo funciona técnicamente?</a></li>
+  <li><a href="#tipos-de-puertos-interno-vs.-externo" id="toc-tipos-de-puertos-interno-vs.-externo" class="nav-link" data-scroll-target="#tipos-de-puertos-interno-vs.-externo"><span class="header-section-number">3</span> Tipos de Puertos: Interno vs.&nbsp;Externo</a>
+  <ul>
+  <li><a href="#ejemplo-de-mapeo-asimétrico" id="toc-ejemplo-de-mapeo-asimétrico" class="nav-link" data-scroll-target="#ejemplo-de-mapeo-asimétrico"><span class="header-section-number">3.1</span> Ejemplo de mapeo asimétrico:</a></li>
+  </ul></li>
+  <li><a href="#casos-de-uso-comunes" id="toc-casos-de-uso-comunes" class="nav-link" data-scroll-target="#casos-de-uso-comunes"><span class="header-section-number">4</span> Casos de Uso Comunes</a></li>
+  <li><a href="#consideraciones-de-seguridad" id="toc-consideraciones-de-seguridad" class="nav-link" data-scroll-target="#consideraciones-de-seguridad"><span class="header-section-number">5</span> Consideraciones de Seguridad</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Anexos</a></li><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Ubuntu Cheat Sheet</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">ubuntu cheat sheet</h1>
+<h1 class="title">Redirección de Puertos</h1>
 </div>
 
 
@@ -343,9 +356,64 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </header>
 
 
-<p><img src="images/ubuntu-cheat-sheet[5].png" class="img-fluid"></p>
+<section id="qué-es-la-redirección-de-puertos" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="qué-es-la-redirección-de-puertos"><span class="header-section-number">1</span> ¿Qué es la Redirección de Puertos?</h2>
+<p>La redirección de puertos (o <em>Port Forwarding</em>) es una técnica de red que permite a dispositivos externos (desde Internet o desde otra red) conectarse a un dispositivo o servicio específico dentro de una <strong>red privada local (LAN)</strong>.</p>
+<p>Para entenderlo, hay que recordar cómo funciona un router:</p>
+<ul>
+<li><p><strong>IP Pública:</strong> Es la dirección única que tiene tu router hacia el exterior (Internet). Todo el tráfico que sale de tu casa va con esta IP.</p></li>
+<li><p><strong>IP Privada:</strong> Son las direcciones internas que el router asigna a tus dispositivos (ej. <code>192.168.1.5</code>, <code>10.0.2.15</code>). Estas IPs <strong>no son visibles desde Internet</strong>.</p></li>
+</ul>
+<blockquote class="blockquote">
+<p>💡 <strong>La analogía del hotel:</strong> &gt; Imagina que tu red local es un hotel. El hotel tiene una única dirección postal pública (la <strong>IP Pública</strong>). Si alguien de fuera quiere hablar con un huésped, no puede enviar la carta directamente a la habitación. Tiene que enviarla a la recepción (el <strong>Router</strong>) indicando el número de habitación (el <strong>Puerto</strong>). El recepcionista mira el número y redirige la carta a la habitación correcta. Eso es el Port Forwarding.</p>
+</blockquote>
+</section>
+<section id="cómo-funciona-técnicamente" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="cómo-funciona-técnicamente"><span class="header-section-number">2</span> ¿Cómo funciona técnicamente?</h2>
+<p>Cuando un paquete de datos llega al router desde el exterior, contiene dos datos clave: una <strong>Dirección IP</strong> y un <strong>Puerto</strong>.</p>
+<ol type="1">
+<li><p>El cliente externo envía una petición a la <code>IP_Pública:Puerto_Externo</code>.</p></li>
+<li><p>El router recibe el paquete, consulta su <strong>tabla de redirección de puertos</strong> y dice: <em>“Todo lo que me llegue al puerto X, se lo tengo que mandar a la IP privada Y en el puerto Z”</em>.</p></li>
+<li><p>El router modifica el paquete de datos (cambia la IP de destino por la IP privada) y lo reenvía al dispositivo correcto dentro de la red local.</p></li>
+</ol>
+</section>
+<section id="tipos-de-puertos-interno-vs.-externo" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="tipos-de-puertos-interno-vs.-externo"><span class="header-section-number">3</span> Tipos de Puertos: Interno vs.&nbsp;Externo</h2>
+<p>En una regla de redirección de puertos siempre configuramos estos elementos:</p>
+<ul>
+<li><p><strong>IP de Destino (LAN IP):</strong> La dirección IP privada del servidor o máquina que aloja el servicio (ej. <code>10.0.2.11</code>).</p></li>
+<li><p><strong>Puerto Interno (Private/Internal Port):</strong> El puerto en el que el servicio está escuchando <em>dentro</em> de la máquina de destino (ej. el puerto <code>9090</code> para Prometheus o <code>80</code> para un servidor web).</p></li>
+<li><p><strong>Puerto Externo (Public/External Port):</strong> El puerto que se expondrá hacia el mundo exterior. <strong>No tiene por qué ser el mismo que el interno.</strong></p></li>
+</ul>
+<section id="ejemplo-de-mapeo-asimétrico" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="ejemplo-de-mapeo-asimétrico"><span class="header-section-number">3.1</span> Ejemplo de mapeo asimétrico:</h3>
+<p>Puedes mapear el puerto externo <code>8080</code> al puerto interno <code>9090</code> de tu servidor.</p>
+<ul>
+<li><p>Desde fuera accederán mediante: <code>IP_Pública:8080</code></p></li>
+<li><p>El router lo traducirá internamente a: <code>10.0.2.11:9090</code> donde 10.0.2.11 es la ip privada de la máquina que está sirviendo.</p></li>
+</ul>
+</section>
+</section>
+<section id="casos-de-uso-comunes" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="casos-de-uso-comunes"><span class="header-section-number">4</span> Casos de Uso Comunes</h2>
+<p>La redirección de puertos se utiliza siempre que un elemento externo necesite iniciar la conexión hacia el interior de una red aislada:</p>
+<ul>
+<li><p><strong>Monitorización y Sysadmin:</strong> Acceder a paneles de Grafana (<code>3000</code>), Prometheus (<code>9090</code>) o servidores SSH (<code>22</code>) desde fuera de la red local o de la máquina host.</p></li>
+<li><p><strong>Servidores Web/Bases de Datos:</strong> Exponer un servidor Apache/Nginx (<code>80</code>/<code>443</code>) o una base de datos MySQL (<code>3306</code>) para que sea accesible de forma remota.</p></li>
+<li><p><strong>Gaming:</strong> Alojar servidores de videojuegos (como Minecraft en el puerto <code>25565</code>) para que amigos desde sus casas puedan unirse.</p></li>
+</ul>
+</section>
+<section id="consideraciones-de-seguridad" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="consideraciones-de-seguridad"><span class="header-section-number">5</span> Consideraciones de Seguridad</h2>
+<p>Abrir puertos es, literalmente, abrir ventanas en el muro de tu red. Es fundamental seguir estas buenas prácticas:</p>
+<ul>
+<li><p><strong>Principio de Privilegio Mínimo:</strong> Abre <strong>solo</strong> los puertos estrictamente necesarios. Si un servicio no necesita ser visto desde fuera, no lo redirijas.</p></li>
+<li><p><strong>Cambiar puertos por defecto (Security through obscurity):</strong> Exponer el puerto SSH <code>22</code> al exterior invita a ataques de fuerza bruta automatizados. Es más seguro usar un puerto externo aleatorio (ej. <code>50022</code>) y redirigirlo internamente al <code>22</code>.</p></li>
+<li><p><strong>Usa Firewalls:</strong> Asegúrate de que la máquina de destino tenga el firewall configurado (ej. <code>ufw</code> en Ubuntu o el Firewall de Windows) para filtrar o auditar las conexiones entrantes.</p></li>
+</ul>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
