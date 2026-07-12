@@ -9,9 +9,9 @@ La redirección de puertos (o *Port Forwarding*) es una técnica de red que perm
 
 Para entenderlo, hay que recordar cómo funciona un router:
 
-- **IP Pública:** Es la dirección única que tiene tu router hacia el exterior (Internet). Todo el tráfico que sale de tu casa va con esta IP.
+-   **IP Pública:** Es la dirección única que tiene tu router hacia el exterior (Internet). Todo el tráfico que sale de tu casa va con esta IP.
 
-- **IP Privada:** Son las direcciones internas que el router asigna a tus dispositivos (ej. `192.168.1.5`, `10.0.2.15`). Estas IPs **no son visibles desde Internet**.
+-   **IP Privada:** Son las direcciones internas que el router asigna a tus dispositivos (ej. `192.168.1.5`, `10.0.2.15`). Estas IPs **no son visibles desde Internet**.
 
 > 💡 **La analogía del hotel:** \> Imagina que tu red local es un hotel. El hotel tiene una única dirección postal pública (la **IP Pública**). Si alguien de fuera quiere hablar con un huésped, no puede enviar la carta directamente a la habitación. Tiene que enviarla a la recepción (el **Router**) indicando el número de habitación (el **Puerto**). El recepcionista mira el número y redirige la carta a la habitación correcta. Eso es el Port Forwarding.
 
@@ -29,36 +29,38 @@ Cuando un paquete de datos llega al router desde el exterior, contiene dos datos
 
 En una regla de redirección de puertos siempre configuramos estos elementos:
 
-- **IP de Destino (LAN IP):** La dirección IP privada del servidor o máquina que aloja el servicio (ej. `10.0.2.11`).
+-   **IP de Destino (LAN IP):** La dirección IP privada del servidor o máquina que aloja el servicio (ej. `10.0.2.11`).
 
-- **Puerto Interno (Private/Internal Port):** El puerto en el que el servicio está escuchando *dentro* de la máquina de destino (ej. el puerto `9090` para Prometheus o `80` para un servidor web).
+-   **Puerto Interno (Private/Internal Port):** El puerto en el que el servicio está escuchando *dentro* de la máquina de destino (ej. el puerto `9090` para Prometheus o `80` para un servidor web).
 
-- **Puerto Externo (Public/External Port):** El puerto que se expondrá hacia el mundo exterior. **No tiene por qué ser el mismo que el interno.**
+-   **Puerto Externo (Public/External Port):** El puerto que se expondrá hacia el mundo exterior. **No tiene por qué ser el mismo que el interno.**
 
 ### Ejemplo de mapeo asimétrico:
 
 Puedes mapear el puerto externo `8080` al puerto interno `9090` de tu servidor.
 
-- Desde fuera accederán mediante: `IP_Pública:8080`
+-   Desde fuera accederán mediante: `IP_Pública:8080`
 
-- El router lo traducirá internamente a: `10.0.2.11:9090` donde 10.0.2.11 es la ip privada de la máquina que está sirviendo.
+-   El router lo traducirá internamente a: `10.0.2.11:9090` donde 10.0.2.11 es la ip privada de la máquina que está sirviendo.
 
-##  Casos de Uso Comunes
+![](images/portforwarding.png)
+
+## Casos de Uso Comunes
 
 La redirección de puertos se utiliza siempre que un elemento externo necesite iniciar la conexión hacia el interior de una red aislada:
 
-- **Monitorización y Sysadmin:** Acceder a paneles de Grafana (`3000`), Prometheus (`9090`) o servidores SSH (`22`) desde fuera de la red local o de la máquina host.
+-   **Monitorización y Sysadmin:** Acceder a paneles de Grafana (`3000`), Prometheus (`9090`) o servidores SSH (`22`) desde fuera de la red local o de la máquina host.
 
-- **Servidores Web/Bases de Datos:** Exponer un servidor Apache/Nginx (`80`/`443`) o una base de datos MySQL (`3306`) para que sea accesible de forma remota.
+-   **Servidores Web/Bases de Datos:** Exponer un servidor Apache/Nginx (`80`/`443`) o una base de datos MySQL (`3306`) para que sea accesible de forma remota.
 
-- **Gaming:** Alojar servidores de videojuegos (como Minecraft en el puerto `25565`) para que amigos desde sus casas puedan unirse.
+-   **Gaming:** Alojar servidores de videojuegos (como Minecraft en el puerto `25565`) para que amigos desde sus casas puedan unirse.
 
 ## Consideraciones de Seguridad
 
 Abrir puertos es, literalmente, abrir ventanas en el muro de tu red. Es fundamental seguir estas buenas prácticas:
 
-- **Principio de Privilegio Mínimo:** Abre **solo** los puertos estrictamente necesarios. Si un servicio no necesita ser visto desde fuera, no lo redirijas.
+-   **Principio de Privilegio Mínimo:** Abre **solo** los puertos estrictamente necesarios. Si un servicio no necesita ser visto desde fuera, no lo redirijas.
 
-- **Cambiar puertos por defecto (Security through obscurity):** Exponer el puerto SSH `22` al exterior invita a ataques de fuerza bruta automatizados. Es más seguro usar un puerto externo aleatorio (ej. `50022`) y redirigirlo internamente al `22`.
+-   **Cambiar puertos por defecto (Security through obscurity):** Exponer el puerto SSH `22` al exterior invita a ataques de fuerza bruta automatizados. Es más seguro usar un puerto externo aleatorio (ej. `50022`) y redirigirlo internamente al `22`.
 
-- **Usa Firewalls:** Asegúrate de que la máquina de destino tenga el firewall configurado (ej. `ufw` en Ubuntu o el Firewall de Windows) para filtrar o auditar las conexiones entrantes.
+-   **Usa Firewalls:** Asegúrate de que la máquina de destino tenga el firewall configurado (ej. `ufw` en Ubuntu o el Firewall de Windows) para filtrar o auditar las conexiones entrantes.
