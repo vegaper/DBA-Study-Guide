@@ -1,0 +1,133 @@
+---
+title: "sistemas de archivos"
+format: html
+---
+
+Un sistema de archivos es el método y la estructura de datos que un sistema operativo utiliza para controlar cómo se almacenan y recuperan los datos. Sin un sistema de archivos, la información colocada en un medio de almacenamiento sería un gran cuerpo de datos sin forma y sin manera de decir dónde termina un pedazo de información y comienza el siguiente.
+
+# Sistemas de archivos más habituales:
+
+NTFS (New Technology File System): Es el sistema de archivos predeterminado para las versiones modernas de Windows. Ofrece características como seguridad, compresión y soporte para archivos grandes. exFAT (Extended File Allocation Table): Es un sistema de archivos utilizado principalmente en dispositivos de almacenamiento extraíbles, como memorias USB y tarjetas SD. Es compatible con múltiples sistemas operativos. No permite permisos avanzados ni características de seguridad como NTFS, pero es más eficiente para dispositivos de almacenamiento flash. ext4 (Fourth Extended File System): Es el sistema de archivos predeterminado para muchas distribuciones de Linux. Ofrece mejoras en rendimiento y capacidad en comparación con sus predecesores. Es robusto y tiene journaling (registro de cambios) para proteger la integridad de los datos. Es case sensitive, lo que significa que distingue entre mayúsculas y minúsculas en los nombres de archivos. APFS (Apple File System): Es el sistema de archivos utilizado en dispositivos Apple, como macOS, iOS y iPadOS. Está diseñado para optimizar el rendimiento y la seguridad en los dispositivos de Apple. XFS: Es un sistema de archivos de alto rendimiento utilizado en sistemas Linux y Unix. Es conocido por su capacidad para manejar grandes volúmenes de datos y su escalabilidad.
+
+El rendimiento del sistema de archivos sybyace afecta directamente al rendimiento de la base de datos. Un sistema de archivos eficiente puede mejorar la velocidad de lectura y escritura, mientras que un sistema de archivos ineficiente puede causar cuellos de botella y ralentizar el acceso a los datos. Por lo tanto, es crucial elegir un sistema de archivos adecuado según las necesidades específicas del entorno y la carga de trabajo. Los servidores suelen usar XFS o ext4
+
+# Nomenclatura de Archivos y Carpetas
+
+Una buena nomenclatura evita errores, facilita las migraciones y hace que las copias de seguridad tengan sentido meses después.\
+Buenas practicas:
+
+- Sin espacios ni tildes
+
+- Nombres descriptivos y versionados: el contenido debe entenderse por el título del archivo, ejemplo v1, v2...
+
+- Fechas en formato AAAA-MM-DD: los archivos se ordenan cronológicamente de forma automática.
+
+- Evitar caracteres especiales / \\ : \* ? " \<\> \| pueden causar errores en distintos sistemas operativos.
+
+Buenos ejemplo
+
+- backup_bd_academia_2026-07-12.slq
+
+Malos ejemplos:
+
+- copia final(2) DEFINITIVA.sql: No dice qué contiene, cuándo se hizo, ni si realmente es la versión definitiva
+
+# Jerarquias de almacenamiento
+
+El almacenamiento está organizado en niveles: cada uno más rápido y más caro que el anterior
+
+1.  Cinta/ Nube fría: más lento y barato
+2.  Discos duros HDD: almacenamiento masivo
+3.  SSD/NVMe: alta velocidad
+4.  Memoria RAM: Datos activos
+5.  Caché /Registros: Más rápido y caro.
+
+# Volúmenes Lógicos vs Físicos
+
+**Volumen Físico:** Un dispositivo de almacenamiento real y tangible: un disco duro, concreto, un SSD concreto
+
+**Volumen Lógico (LVM: Logic Volume Manager)**: Una partición virtual que el sistema operativo trata como disco independiente, combinando espacio de uno o varios discos físicos.
+
+Utilidades:
+
+- Amplicar espacio en caliente sin apagar el servidor
+
+- Combinar discos en un único volumen más grande: Por ejemplo podemos combinar dos discos físicos en un solo disco lógico que nos permitirá almacenar un fichero de más tamaño que uno de los volúmenes físicos individuales.
+
+- Crear snapshots para backups consistentes.
+
+# Migraciones de Datos
+
+Una migración es el proceso de mover datos desde un sistema de origen a un sistema de destino: Cambio de servidor, de SGBD, de versión o de infraestructura (por ejemplo, de servidor local a la nube).
+
+- Migración de versión: Actualizar de MySQL 5.7 a MySQL 8.0
+
+- Migración de motor: pasar de MySQL a PostgreSQL
+
+- Migración de infraestructura: de servidor físico local a proveedor cloud por ejemplo
+
+- Migración de esquema: Reestructurar tablas.
+
+## Buenas prácticas en una migración
+
+- Copia de seguridad previa: Siempre del sistema de origen antes de comenzar.
+
+- Probar en entorno de pruebas: Nunca tocar producción directamente sin validar antes.
+
+- Verificar integridad: Contar filas, comparar sumas de control tras la migración.
+
+- Planificar ventana de mantenimiento y rollback: Tener siempre un plan de reversión por si algo sale mal.
+
+::: nota
+Error común: Migrar solo los datos y olvidar índices, claves foráneas o procedimientos almacenados. El resultado es una base de datos más lenta o comproblemas de integridad referencial.
+:::
+
+# Archivado de datos
+
+El archivado consiste en mover datos que ya no se usan activamente, pero que deben conservarse (por motivos legales, históricos de auditoría), a un almacenamiento más lento y barato, separándolos de los datos "vivos".
+
+Diferencia entre copia de seguridad y archivado
+
+| Concepto | Copia de Seguridad | Archivado |
+|------------------------|------------------------|------------------------|
+| objetivo | Recuperar datos ante un fallo | conservar datos históricos poco usados |
+| Se borra el original? | No, sigue activo | Sí, se retira del sistema activo |
+| Frecuencia | Periódica | Puntual, según política de retención. |
+
+# Almacenamiento en Red: NAS y SAN
+
+Cuando una base de datos crece, el disco interno de un servidor ya no es suficiente. aparecen soluciones de almacenamiento en red con características muy distintas.
+
+NAS (Network Attached Storage): Dispositivo conectado a la red local. Acceso a nivel de archivo: Protocolo SMB(Windows), NFS(Linux). Lo que el usuario que se conecta ve es un directorio. Como un ejemplo muy sencillo, sería cuando un ordenador comparte una carpeta con los otros usuarios de la red.
+
+SAN (Storage Area Network): Red dedicada de alto rendimiento. Acceso a nivel de bloque. Protocolos: Fibre Channel, iSCSI. Aquí el servidor que lo usa ve un disco (LUN: Logic Unit Number)
+
+| Característica | NAS | SAN |
+|------------------------|------------------------|------------------------|
+| Nivel de acceso | Archivo | Bloque |
+| Protocolos | SMB, NFS | Fibre Channel, iSCSI |
+| Rendimiento | Medio | Muy Alto |
+| Complejidad-coste | Bajo-medio | Alto |
+| Uso típico | Compartir documentos, backups | Base de datos críticas, entornos empresariales. |
+
+# Acceso paralelo a los Datos
+
+El acceso paralelo consiste en leer o escribir datos en varios discos al mismo tiempo, en lugar de hacerlo secuencialmente en un único disco.
+
+Raid
+
+El sistema RAID en lugar de leer de un único disco el sistema reparte esta lectura entre varios discos simultaneamente, multiplicando la velocidad.
+
+Redundant Array of Independent Disks) Combina varios discos físicos para formar una única unidad lógica, con el objetivo de mejorar el rendimiento, la redundancia (tolerancia a fallos) o ambas cosas a la vez.
+
+RAID0 Stripping
+
+Reparte datos entre discos. Rendimiento muy alto pero sin tolerancia a fallos.
+
+RAID1 Mirroring
+
+Duplica datos en dos discos. Alta tolerancia a fallos, lectura rápida.
+
+RAID5 Stripping + Paridad
+
+Reparte datos y guarda paridad. Tolera el fallo de 1 disco. Necesitamos al menos 3 discos, cuando llega un fichero divide los paquetes entre los tres (o más discos) y a la vez crea una copia de ese paquete en uno de los otros discos.
