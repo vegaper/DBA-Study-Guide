@@ -7,7 +7,15 @@ Un sistema de archivos es el método y la estructura de datos que un sistema ope
 
 # Sistemas de archivos más habituales:
 
-NTFS (New Technology File System): Es el sistema de archivos predeterminado para las versiones modernas de Windows. Ofrece características como seguridad, compresión y soporte para archivos grandes. exFAT (Extended File Allocation Table): Es un sistema de archivos utilizado principalmente en dispositivos de almacenamiento extraíbles, como memorias USB y tarjetas SD. Es compatible con múltiples sistemas operativos. No permite permisos avanzados ni características de seguridad como NTFS, pero es más eficiente para dispositivos de almacenamiento flash. ext4 (Fourth Extended File System): Es el sistema de archivos predeterminado para muchas distribuciones de Linux. Ofrece mejoras en rendimiento y capacidad en comparación con sus predecesores. Es robusto y tiene journaling (registro de cambios) para proteger la integridad de los datos. Es case sensitive, lo que significa que distingue entre mayúsculas y minúsculas en los nombres de archivos. APFS (Apple File System): Es el sistema de archivos utilizado en dispositivos Apple, como macOS, iOS y iPadOS. Está diseñado para optimizar el rendimiento y la seguridad en los dispositivos de Apple. XFS: Es un sistema de archivos de alto rendimiento utilizado en sistemas Linux y Unix. Es conocido por su capacidad para manejar grandes volúmenes de datos y su escalabilidad.
+NTFS (New Technology File System): Es el sistema de archivos predeterminado para las versiones modernas de Windows. Ofrece características como seguridad, compresión y soporte para archivos grandes.
+
+exFAT (Extended File Allocation Table): Es un sistema de archivos utilizado principalmente en dispositivos de almacenamiento extraíbles, como memorias USB y tarjetas SD. Es compatible con múltiples sistemas operativos. No permite permisos avanzados ni características de seguridad como NTFS, pero es más eficiente para dispositivos de almacenamiento flash.
+
+ext4 (Fourth Extended File System): Es el sistema de archivos predeterminado para muchas distribuciones de Linux. Ofrece mejoras en rendimiento y capacidad en comparación con sus predecesores. Es robusto y tiene journaling (registro de cambios) para proteger la integridad de los datos. Es case sensitive, lo que significa que distingue entre mayúsculas y minúsculas en los nombres de archivos.
+
+APFS (Apple File System): Es el sistema de archivos utilizado en dispositivos Apple, como macOS, iOS y iPadOS. Está diseñado para optimizar el rendimiento y la seguridad en los dispositivos de Apple.
+
+XFS: Es un sistema de archivos de alto rendimiento utilizado en sistemas Linux y Unix. Es conocido por su capacidad para manejar grandes volúmenes de datos y su escalabilidad.
 
 El rendimiento del sistema de archivos sybyace afecta directamente al rendimiento de la base de datos. Un sistema de archivos eficiente puede mejorar la velocidad de lectura y escritura, mientras que un sistema de archivos ineficiente puede causar cuellos de botella y ralentizar el acceso a los datos. Por lo tanto, es crucial elegir un sistema de archivos adecuado según las necesidades específicas del entorno y la carga de trabajo. Los servidores suelen usar XFS o ext4
 
@@ -24,11 +32,11 @@ Buenas practicas:
 
 - Evitar caracteres especiales / \\ : \* ? " \<\> \| pueden causar errores en distintos sistemas operativos.
 
-Buenos ejemplo
+Buen ejemplo:
 
 - backup_bd_academia_2026-07-12.slq
 
-Malos ejemplos:
+Mal ejemplo:
 
 - copia final(2) DEFINITIVA.sql: No dice qué contiene, cuándo se hizo, ni si realmente es la versión definitiva
 
@@ -114,20 +122,358 @@ SAN (Storage Area Network): Red dedicada de alto rendimiento. Acceso a nivel de 
 
 El acceso paralelo consiste en leer o escribir datos en varios discos al mismo tiempo, en lugar de hacerlo secuencialmente en un único disco.
 
-Raid
+## Introducción a la Tecnología RAID
 
-El sistema RAID en lugar de leer de un único disco el sistema reparte esta lectura entre varios discos simultaneamente, multiplicando la velocidad.
+Sistemas de Almacenamiento RAID: Guía de Referencia Este documento amplía y detalla los conceptos fundamentales de los sistemas RAID (Redundant Array of Independent Disks), explicando su funcionamiento, ventajas, inconvenientes y la distribución visual de los datos en cada nivel mediante diagramas estructurales. La tecnología RAID combina múltiples unidades de disco físico en una o más unidades lógicas para mejorar el rendimiento, la tolerancia a fallos o ambos parámetros de manera simultánea.
 
-Redundant Array of Independent Disks) Combina varios discos físicos para formar una única unidad lógica, con el objetivo de mejorar el rendimiento, la redundancia (tolerancia a fallos) o ambas cosas a la vez.
+Conceptos Clave del Almacenamiento RAID
 
-RAID0 Stripping
+● Stripping (Fraccionamiento/Seccionamiento): Técnica que divide los datos en bloques pequeños y los distribuye de manera equitativa entre múltiples discos de forma paralela. Mejora enormemente la velocidad de lectura y escritura.
 
-Reparte datos entre discos. Rendimiento muy alto pero sin tolerancia a fallos.
+● Mirroring (Espejado/Duplicación): Consiste en escribir simultáneamente los mismos datos en dos o más discos físicos. Ofrece una tolerancia a fallos excepcional, ya que si un disco falla, la información permanece intacta en el otro.
 
-RAID1 Mirroring
+● Paridad: Método de cálculo matemático (comúnmente mediante operaciones lógicas XOR) que permite reconstruir los datos perdidos de un disco dañado a partir de la información de los discos restantes y de la propia paridad.
 
-Duplica datos en dos discos. Alta tolerancia a fallos, lectura rápida.
+## Niveles de RAID y Distribución de Información
 
-RAID5 Stripping + Paridad
+A continuación se detallan los tipos de RAID más comunes y se ilust.ra gráficamente cómo se almacena un archivo teórico dividido en varios bloques (A1, A2, A3, etc.).
 
-Reparte datos y guarda paridad. Tolera el fallo de 1 disco. Necesitamos al menos 3 discos, cuando llega un fichero divide los paquetes entre los tres (o más discos) y a la vez crea una copia de ese paquete en uno de los otros discos.
+### RAID 0 (Stripping)
+
+El sistema divide la información y la escribe alternadamente en todos los discos. No ofrece ninguna redundancia ni tolerancia a fallos; si un solo disco falla, se pierde la totalidad de los datos.
+
+- Mínimo de discos: 2
+
+- Capacidad útil: Suma de la capacidad de todos los discos (N).
+
+- Ventaja: Máximo rendimiento de lectura y escritura al procesar datos en paralelo. Disco 1 Disco 2
+
+| Disco 1 | Disco 2 |
+|:-------:|:-------:|
+| **A1**  | **A2**  |
+| **A3**  | **A4**  |
+| **A5**  | **A6**  |
+
+### RAID 1 (Mirroring)
+
+Duplica de forma exacta cada bloque de datos escrito. Si un disco deja de funcionar, el sistema sigue operativo de forma transparente usando el disco espejo.
+
+- **Mínimo de discos:** 2.
+- **Tolerancia a fallos:** Alta (puede fallar 1 disco de la pareja).
+- **Almacenamiento útil:** $1 \times C$ (la capacidad de un único disco). Aprovechamiento del **50%** en una configuración típica de dos discos.
+- **Rendimiento:** Lectura rápida (puede leer bloques distintos de ambos discos en paralelo), pero la escritura está limitada a la velocidad del disco más lento debido a que debe duplicar el proceso.
+
+| Disco 1 (Principal) | Disco 2 (Espejo) |
+|:-------------------:|:----------------:|
+|       **A1**        |      **A1**      |
+|       **A2**        |      **A2**      |
+|       **A3**        |      **A3**      |
+|       **A4**        |      **A4**      |
+|       **A5**        |      **A5**      |
+|       **A6**        |      **A6**      |
+
+### RAID 5 (Fraccionamiento con Paridad Distribuida)
+
+Divide los datos a nivel de bloques y distribuye la información de paridad de forma rotativa entre todos los discos físicos del conjunto. Si un disco falla, sus bloques se reconstruyen en tiempo real calculando la paridad de los discos restantes.
+
+- **Mínimo de discos:** 3.
+- **Tolerancia a fallos:** Admite el fallo de **1 disco**.
+- **Almacenamiento útil:** $(N - 1) \times C$. Es decir, si tenemos 4 discos de 1 TB, dispondremos de 3 TB útiles (el equivalente a un disco se "pierde" para almacenar la paridad distribuida).
+- **Funcionamiento de escritura:** Cuando llega un archivo, la controladora divide los paquetes de datos entre los discos y calcula y escribe la paridad en el disco restante de forma cíclica.
+
+|      Disco 1      |      Disco 2      |      Disco 3      |
+|:-----------------:|:-----------------:|:-----------------:|
+|      **A1**       |      **A2**       | *Paridad (A1-A2)* |
+|      **A3**       | *Paridad (A3-A4)* |      **A4**       |
+| *Paridad (A5-A6)* |      **A5**       |      **A6**       |
+
+### RAID 10 (Espejo de Seccionamiento o RAID 1+0)
+
+Combina los beneficios del rendimiento de RAID 0 y la seguridad de RAID 1. Consiste en crear subgrupos en espejo (RAID 1) y, posteriormente, distribuir los datos sobre esos espejos mediante seccionamiento (RAID 0).
+
+- **Mínimo de discos:** 4 (siempre en números pares).
+- **Tolerancia a fallos:** Muy alta. Puede tolerar el fallo de hasta 2 discos simultáneamente, siempre y cuando **no pertenezcan a la misma pareja en espejo**.
+- **Almacenamiento útil:** $\frac{N}{2} \times C$ (el **50%** de la capacidad total).
+- **Rendimiento:** Excelente tanto en lectura como en escritura, ideal para bases de datos y sistemas de alto rendimiento.
+
+```         
+[ Volumen Lógico RAID 10 ]
+                             | (RAID 0 - Stripping)
+                +------------+------------+
+                |                         |
+      [ Subgrupo Espejo A ]     [ Subgrupo Espejo B ]
+         (RAID 1 - Mirror)         (RAID 1 - Mirror)
+          +-----------+             +-----------+
+          |           |             |           |
+       Disco 1     Disco 2       Disco 3     Disco 4
+```
+
+| Disco 1 (Espejo A) | Disco 2 (Espejo A) | Disco 3 (Espejo B) | Disco 4 (Espejo B) |
+|:----------------:|:----------------:|:----------------:|:----------------:|
+|       **A1**       |       **A1**       |       **A2**       |       **A2**       |
+|       **A3**       |       **A3**       |       **A4**       |       **A4**       |
+|       **A5**       |       **A5**       |       **A6**       |       **A6**       |
+
+### Tabla Comparativa Resumen
+
+| Nivel RAID | Discos Mínimos | Tolerancia a Fallos | Eficiencia de Almacenamiento | Rendimiento Lectura | Rendimiento Escritura |
+|:-----------|:----------:|:----------:|:----------:|:-----------|:-----------|
+| **RAID 0** | 2 | 0 discos | 100% ($N$) | Excelente | Excelente |
+| **RAID 1** | 2 | 1 disco | 50% $\left(\frac{1}{2}\right)$ | Muy Bueno | Normal |
+| **RAID 5** | 3 | 1 disco | $\frac{N-1}{N}$ | Muy Bueno | Lento (por cálculo de paridad) |
+| **RAID 10** | 4 | Hasta 1 por espejo | 50% $\left(\frac{N}{2}\right)$ | Excelente | Excelente |
+
+::: nota-importante
+> ⚠️ **Limitación por tamaño de disco (La regla del más pequeño):**
+>
+> Al configurar cualquier array RAID utilizando discos de capacidades diferentes, el sistema se ve limitado por la unidad de menor tamaño. La controladora RAID particionará y utilizará de cada disco únicamente una cantidad de almacenamiento equivalente a la capacidad del disco más pequeño del grupo. El espacio sobrante de los discos más grandes quedará completamente inutilizado y "perdido". Por ejemplo, si configuras un RAID 1 (espejo) con un disco de 1 TB y otro de 2 TB, el sistema solo utilizará 1 TB de cada uno, desperdiciando por completo el Terabyte extra del segundo disco. Por ello, la regla de oro en el despliegue de sistemas RAID es utilizar siempre discos de idéntica capacidad y, a ser posible, del mismo modelo y fabricante.
+:::
+
+Porque importa RAID en bases de datos
+
+Continuidad del servicio: Si un disco físico falla, los datos no se pierden y se puede seguir dando servicio mientras se sustituye.
+
+Velocidad bajo carga: Con RAID10, se gana velocidad de lectura/escritura
+
+::: practica
+**Práctica guiada: simulación de un NAS con Windows Server 2025 y RAID 5**
+
+En esta práctica se configurará una máquina virtual con **Windows Server 2025** para que funcione como un servidor NAS dentro de la red del aula.
+
+El servidor tendrá varios discos virtuales agrupados mediante un sistema de **paridad equivalente conceptualmente a RAID 5**. Sobre ese almacenamiento se crearán carpetas compartidas mediante el protocolo **SMB**, usuarios, grupos y permisos de acceso.
+
+SMB es el protocolo utilizado habitualmente por Windows para permitir que otros equipos accedan por red a archivos y carpetas compartidas.
+
+**2. Aclaración importante: el sistema operativo no se instalará en el RAID 5**
+
+La máquina virtual utilizará:
+
+-  Un disco 	independiente para Windows Server 2025.
+
+-  Tres discos 	adicionales para construir el almacenamiento con paridad. 	
+
+- El volumen 	con paridad se utilizará exclusivamente para almacenar y compartir 	datos.
+
+**¿Por qué se hace así?**
+
+Windows no puede crear un espacio de almacenamiento por software antes de que el sistema operativo esté instalado. El sistema debe arrancar primero desde un disco convencional y, posteriormente, agrupar los discos de datos.
+
+Además, Microsoft recomienda actualmente utilizar **Espacios de almacenamiento** en lugar de discos dinámicos para las nuevas configuraciones con tolerancia a fallos. Los discos dinámicos, aunque todavía permiten crear volúmenes RAID 5 en Windows Server 2025, están obsoletos y no se recomiendan para nuevas implementaciones. ([[Microsoft Learn]{.underline}](https://learn.microsoft.com/en-us/windows/win32/fileio/basic-and-dynamic-disks?utm_source=chatgpt.com))
+
+Por tanto, la estructura será:
+:::
+
+::: practica
+En un equipo físico, el sistema operativo podría instalarse sobre un RAID creado por una controladora hardware. Sin embargo, VirtualBox no presenta directamente una controladora RAID física al sistema invitado. Para esta simulación utilizaremos discos virtuales independientes y Espacios de almacenamiento de Windows Server.
+
+**3. Objetivos de la práctica**
+
+Al finalizar, el alumnado deberá ser capaz de:
+
+1.   	Crear y 	configurar una máquina virtual con varios discos.
+
+2.   	Instalar 	Windows Server 2025.
+
+3.   	Configurar 	la red del servidor.
+
+4.   	Comprender 	la diferencia entre disco del sistema y discos de datos.
+
+5.   	Crear un 	grupo de almacenamiento.
+
+6.   	Crear un 	volumen con paridad similar a RAID 5.
+
+7.   	Instalar el 	rol de servidor de archivos.
+
+8.   	Crear 	usuarios y grupos.
+
+9.   	Crear 	carpetas compartidas mediante SMB.
+
+10.  	Configurar 	permisos de recurso compartido y permisos NTFS.
+
+11.  	Acceder al 	NAS desde otro equipo.
+
+12.  	Comprobar el 	funcionamiento del almacenamiento ante el fallo simulado de un 	disco.
+
+13.  	Sustituir el 	disco averiado y reparar el grupo de almacenamiento.
+
+**Escenario de la práctica**
+
+Una pequeña empresa necesita disponer de un almacenamiento centralizado para que sus empleados puedan guardar documentos.
+
+Se crearán los siguientes departamentos:
+
+- Administración 	
+
+- Profesores 	
+
+- Alumnos
+
+Cada departamento tendrá una carpeta propia.
+
+Además, existirá una carpeta pública accesible por todos los usuarios.
+
+La estructura será:
+
+N:\\NAS
+
+│
+
+├── Administración
+
+├── Profesores
+
+├── Alumnos
+
+└── Publico
+
+Los usuarios accederán desde otro equipo utilizando una ruta como:
+
+\\\\NAS-SRVXX[xx]{.underline}\\Publico (donde [xx]{.underline} corresponde a un número)
+
+o:
+
+\\\\192.168.1.50\\Publico
+
+La dirección IP es solamente un ejemplo y deberá adaptarse a la red del aula.
+
+**5. Recursos necesarios**
+
+Servidor: \
+SO: Windows Server 2025 Standard Evaluation
+
+RAM: 4GB
+
+Procesadores: 2 min
+
+Disco del Sistema: 50 GB
+
+Discos para el RAID: 3 discos de 20GB
+
+Adaptador de red: Adaptador puente
+
+Nombre del Servidor: NAS-SRVXX01
+
+**Máquina cliente**
+
+Puede utilizarse:
+
+-  Windows 11.	
+
+- Windows 10. 	
+
+- Otra máquina 	Windows Server. 	
+
+- El propio 	equipo anfitrión, siempre que pueda comunicarse con la máquina 	virtual.
+
+\
+**Parte 1. Crear la máquina virtual**
+
+En virtual Box usamos la imagen de Windows server para crear una máquina virtual en ADAPTADOR PUENTE
+
+![](paste-qVYfPAFxOhtXBgHQU3Tzn)
+
+Como siempre cambiamos el orden de arranque en las opciones del sistema\
+![](paste-R2ErZHiRpGl8wG_hbwyWd)
+
+Seleccionamos la opción de Standard Evaluation (experiencia de escritorio) para tener una interfaz gráfica.
+
+![](paste-58388qx1qdsCfjjo7VDIH)
+
+Nombre de usuario: Administrador
+
+Contraseña: Admin123\*
+
+Una vez finalizada la instalación te pide que introduzcas Ctrl+Alt+Supr para desbloquear, pero como estamos en una máquina virtual, si hacemos esto, afectará a la máquina host, no a la VM, así que usaremos en su lugar la interfaz de VirtualBox: Entrada \> Teclado\> Insertar Ctrl-Alt-Del\
+![](paste-yFK8-vDcTPYE61ITt-1kD)
+
+Vamos a instalar los complementos de invitado:\
+![](paste-k1Y7jdiX-G_SlWjgDNLdY)
+
+Una vez que hemos insertado la imagen podemos acceder a ella desde el explorador de archivos de la VM y ejecutar la instalación:\
+![](paste-ZFJsQY7P33v7QoiZXi0HD)
+
+No reiniciamos inmediatamente porque también le vamos a cambiar el nombre a la maquina virtual:\
+![](paste-Hw_v_mIU-AkXrXkOPTREL)\
+
+![Nuevo nombre: NAS-SRVXX01](paste-OiuB-tnoyfIzCCrMYXdsa)
+
+Reiniciar el equipo.
+
+Para tener todas las ventajas del guest additions, en Virtual Box nos vamos a Dispositivos Portapapeles compartido y activamos Bidireccional, y luego hacemos lo mismo con Arrastrar y Soltar.\
+![](paste-TeXeUVXZgf9QIdDISFVC-)
+
+Vamos a fijar la IP de la máquina virtual para que no cambie cada vez que reiniciemos: en la VM: Configuración\> Red e Internet \> Ethernet \> Asignación de IP \> Editar
+
+![](paste-k1x8xe2opKZmZ7RSGUGoB)
+:::
+
+Seleccionamos Manual e introducimos los datos de nuestra red (usamos la misma ip que nos asignó dhcp para garantizar que no está ya en uso).\
+También se puede hacer lo mismo de otras formas:\
+
+Panel de control
+
+→ Redes e Internet
+
+→ Centro de redes y recursos compartidos
+
+→ Cambiar configuración del adaptador
+
+1.   	Pulsa con el 	botón derecho sobre el adaptador Ethernet.
+
+2.   	Selecciona 	**Propiedades**.
+
+3.   	Abre 	**Protocolo de Internet versión 4 — TCP/IPv4**.
+
+4.   	Configura 	una dirección adecuada para la red.
+
+Comprobamos que se ha configurado todo correctamente usando ipconfig en la consola de comandos:\
+![](paste-bstC39DkmCC3CnOptLxCl)\
+Comprobamos conectividad haciendo ping a nuestro host:\
+![](paste-4UfbeZXN4WsKBci-ftFKK)
+
+## Parte 2: Añadir los discos para el almacenamiento. 
+
+Apaga completamente la máquina virtual.
+
+No debe quedar en estado guardado.
+
+En VirtualBox: Configuración \> Almacenamiento\> Selecciona el controlador SATA \>Añadir disco duro
+
+![](paste-EioYcA-LIflKzl5ejooSp)
+
+Crea un disco con estas características:
+
+Nombre: NAS-DISCO1.vdi
+
+Tipo: VDI
+
+Reservado dinámicamente
+
+Tamaño: 20 GB
+
+![Una vez creados los puedes añadir al servidor Windows:\
+![](paste-XgAbbwVwhJ0foFojy7hbE)](paste-EZtAyfcP7Nt9rnuy0KzmN)
+
+Arranca Windows Server y abre PowerShell como administrador.
+
+Ejecuta: Get-Disk
+
+![](paste-m_LTK4ERQeNTJt0HFZI6Z)
+
+## Parte 3: Crear el almacenamiento con paridad
+
+Windows Server permite agrupar discos físicos mediante **Espacios de almacenamiento**. A partir de un grupo se pueden crear uno o varios discos virtuales con diferentes configuraciones de resiliencia.
+
+La opción **Paridad** distribuye los datos y la información de paridad entre los discos. Con paridad simple, el espacio puede soportar el fallo de un disco sin perder los datos.
+
+###  **Abrir Servicios de archivos y almacenamiento**
+
+En el Administrador del servidor, entra en:
+
+Servicios de archivos y almacenamiento \> Grupos de almacenamiento
+
+Aparecerá el grupo denominado:
+
+Grupo primordial
+
+Dentro deben aparecer los tres discos de 20 GB disponibles.
