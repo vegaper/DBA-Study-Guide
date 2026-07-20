@@ -86,7 +86,7 @@ Una migración es el proceso de mover datos desde un sistema de origen a un sist
 
 - Planificar ventana de mantenimiento y rollback: Tener siempre un plan de reversión por si algo sale mal.
 
-::: nota
+::: .nota
 Error común: Migrar solo los datos y olvidar índices, claves foráneas o procedimientos almacenados. El resultado es una base de datos más lenta o comproblemas de integridad referencial.
 :::
 
@@ -248,11 +248,11 @@ SMB es el protocolo utilizado habitualmente por Windows para permitir que otros 
 
 La máquina virtual utilizará:
 
--  Un disco 	independiente para Windows Server 2025.
+- Un disco independiente para Windows Server 2025.
 
--  Tres discos 	adicionales para construir el almacenamiento con paridad. 	
+- Tres discos adicionales para construir el almacenamiento con paridad.
 
-- El volumen 	con paridad se utilizará exclusivamente para almacenar y compartir 	datos.
+- El volumen con paridad se utilizará exclusivamente para almacenar y compartir datos.
 
 **¿Por qué se hace así?**
 
@@ -261,40 +261,29 @@ Windows no puede crear un espacio de almacenamiento por software antes de que el
 Además, Microsoft recomienda actualmente utilizar **Espacios de almacenamiento** en lugar de discos dinámicos para las nuevas configuraciones con tolerancia a fallos. Los discos dinámicos, aunque todavía permiten crear volúmenes RAID 5 en Windows Server 2025, están obsoletos y no se recomiendan para nuevas implementaciones. ([[Microsoft Learn]{.underline}](https://learn.microsoft.com/en-us/windows/win32/fileio/basic-and-dynamic-disks?utm_source=chatgpt.com))
 
 Por tanto, la estructura será:
-:::
+
 
 ::: practica
 En un equipo físico, el sistema operativo podría instalarse sobre un RAID creado por una controladora hardware. Sin embargo, VirtualBox no presenta directamente una controladora RAID física al sistema invitado. Para esta simulación utilizaremos discos virtuales independientes y Espacios de almacenamiento de Windows Server.
 
-**3. Objetivos de la práctica**
+**Objetivos de la práctica**
 
 Al finalizar, el alumnado deberá ser capaz de:
 
-1.   	Crear y 	configurar una máquina virtual con varios discos.
-
-2.   	Instalar 	Windows Server 2025.
-
-3.   	Configurar 	la red del servidor.
-
-4.   	Comprender 	la diferencia entre disco del sistema y discos de datos.
-
-5.   	Crear un 	grupo de almacenamiento.
-
-6.   	Crear un 	volumen con paridad similar a RAID 5.
-
-7.   	Instalar el 	rol de servidor de archivos.
-
-8.   	Crear 	usuarios y grupos.
-
-9.   	Crear 	carpetas compartidas mediante SMB.
-
-10.  	Configurar 	permisos de recurso compartido y permisos NTFS.
-
-11.  	Acceder al 	NAS desde otro equipo.
-
-12.  	Comprobar el 	funcionamiento del almacenamiento ante el fallo simulado de un 	disco.
-
-13.  	Sustituir el 	disco averiado y reparar el grupo de almacenamiento.
+1. Crear y     configurar una máquina virtual con varios discos.
+2. Instalar    Windows Server 2025.    
+3. Configurar  la red del servidor.    
+4. Comprender  la diferencia entre disco del sistema y discos de datos.
+5. Crear un    grupo de almacenamiento.    
+6. Crear un    volumen con paridad similar a RAID 5.   
+7. Instalar el     rol de servidor de archivos.   
+8. Crear   usuarios y grupos.
+9. Crear   carpetas compartidas mediante SMB.
+10. Configurar  permisos de recurso compartido y permisos NTFS.
+11. Acceder al  NAS desde otro equipo.
+12. Comprobar el    funcionamiento del almacenamiento ante el fallo simulado de un  disco.
+13. Sustituir el    disco averiado y reparar el grupo de almacenamiento.
+    
 
 **Escenario de la práctica**
 
@@ -302,9 +291,9 @@ Una pequeña empresa necesita disponer de un almacenamiento centralizado para qu
 
 Se crearán los siguientes departamentos:
 
-- Administración 	
+- Administración
 
-- Profesores 	
+- Profesores
 
 - Alumnos
 
@@ -336,9 +325,9 @@ o:
 
 La dirección IP es solamente un ejemplo y deberá adaptarse a la red del aula.
 
-**5. Recursos necesarios**
+**Recursos necesarios**
 
-Servidor: \
+Servidor:\
 SO: Windows Server 2025 Standard Evaluation
 
 RAM: 4GB
@@ -357,15 +346,14 @@ Nombre del Servidor: NAS-SRVXX01
 
 Puede utilizarse:
 
--  Windows 11.	
+- Windows 11.
 
-- Windows 10. 	
+- Windows 10.
 
-- Otra máquina 	Windows Server. 	
+- Otra máquina Windows Server.
 
-- El propio 	equipo anfitrión, siempre que pueda comunicarse con la máquina 	virtual.
+- El propio equipo anfitrión, siempre que pueda comunicarse con la máquina virtual.
 
-\
 **Parte 1. Crear la máquina virtual**
 
 En virtual Box usamos la imagen de Windows server para crear una máquina virtual en ADAPTADOR PUENTE
@@ -405,7 +393,7 @@ Para tener todas las ventajas del guest additions, en Virtual Box nos vamos a Di
 Vamos a fijar la IP de la máquina virtual para que no cambie cada vez que reiniciemos: en la VM: Configuración\> Red e Internet \> Ethernet \> Asignación de IP \> Editar
 
 ![](paste-k1x8xe2opKZmZ7RSGUGoB)
-:::
+
 
 Seleccionamos Manual e introducimos los datos de nuestra red (usamos la misma ip que nos asignó dhcp para garantizar que no está ya en uso).\
 También se puede hacer lo mismo de otras formas:\
@@ -418,20 +406,17 @@ Panel de control
 
 → Cambiar configuración del adaptador
 
-1.   	Pulsa con el 	botón derecho sobre el adaptador Ethernet.
-
-2.   	Selecciona 	**Propiedades**.
-
-3.   	Abre 	**Protocolo de Internet versión 4 — TCP/IPv4**.
-
-4.   	Configura 	una dirección adecuada para la red.
+1. Pulsa con el    botón derecho sobre el adaptador Ethernet.
+2. Selecciona  **Propiedades**.
+3. Abre    **Protocolo de Internet versión 4 — TCP/IPv4**.   
+4. Configura   una dirección adecuada para la red.
 
 Comprobamos que se ha configurado todo correctamente usando ipconfig en la consola de comandos:\
 ![](paste-bstC39DkmCC3CnOptLxCl)\
 Comprobamos conectividad haciendo ping a nuestro host:\
 ![](paste-4UfbeZXN4WsKBci-ftFKK)
 
-## Parte 2: Añadir los discos para el almacenamiento. 
+## Parte 2: Añadir los discos para el almacenamiento.
 
 Apaga completamente la máquina virtual.
 
@@ -466,7 +451,7 @@ Windows Server permite agrupar discos físicos mediante **Espacios de almacenami
 
 La opción **Paridad** distribuye los datos y la información de paridad entre los discos. Con paridad simple, el espacio puede soportar el fallo de un disco sin perder los datos.
 
-###  **Abrir Servicios de archivos y almacenamiento**
+### **Abrir Servicios de archivos y almacenamiento**
 
 En el Administrador del servidor, entra en:
 
@@ -477,3 +462,5 @@ Aparecerá el grupo denominado:
 Grupo primordial
 
 Dentro deben aparecer los tres discos de 20 GB disponibles.
+
+:::
