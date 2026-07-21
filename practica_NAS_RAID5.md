@@ -433,7 +433,7 @@ Comprueba el resultado en la shell: `Get-Volume -DriveLetter N`
 
 ## **Crear usuarios y grupos locales**
 
-Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01.
+Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01, al contrario que los grupos y usuarios habituales de los entornos corporativos que son a nivel DNS
 
 Abre: Win + R \> `lusrmgr.msc`\
 ![](images\paste-I5WI33yQhoYfIYB8s0sXT.png)
@@ -464,13 +464,13 @@ Abre: Win + R \> `lusrmgr.msc`\
 
 Crea, como mínimo:
 
-![](images\paste-e-STJ-v2axCkvwoLzR9kz.png)
-
 - director01
 - profesor01
 - profesor02
 - alumno01
 - alumno02
+
+![](paste-iK1PvF-g0Z27Sc_VXG9O-)
 
 En una práctica de laboratorio puede desmarcarse *El usuario debe cambiar la contraseña en el siguiente inicio de sesión,* y puede marcarse: *La contraseña nunca expira*
 
@@ -522,13 +522,21 @@ Crea:
 
 # **Configurar los niveles de permisos**
 
-Cuando un usuario accede por red intervienen dos controles diferentes.
+En Windows existen dos niveles principales de permisos cuando trabajas con almacenamiento en red:
 
-**Permisos de Seguridad o NTFS**
+1.  **Permisos NTFS (o de sistema de archivos local):** Se aplican *siempre*, tanto si entras al archivo sentado directamente en el servidor como si accedes a través de la red.
 
-Se configuran en Propiedades de la carpeta
+2.  **Permisos de Compartición (SMB):** **Solo entran en juego cuando un usuario accede a la carpeta a través de la red** mediante una ruta tipo `\\servidor\carpeta`.
 
-→ Seguridad
+Ejemplo práctico:
+
+- Si te sientas en el servidor localmente y abres la carpeta, los permisos SMB **no se aplican** (solo actúan los permisos NTFS).
+
+- Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (`\\servidor\recurso`), **se aplican ambos permisos** (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.
+
+## **Permisos de Seguridad o NTFS** 
+
+Se configuran en Propiedades de la carpeta → Seguridad
 
 Se aplican:
 
@@ -538,19 +546,13 @@ Se aplican:
 
 - A carpetas, subcarpetas y archivos.
 
-**Permisos de Compartir**
+## **Permisos de Compartir**
 
-Se configuran en Propiedades de la carpeta
+Se configuran en Propiedades de la carpeta → Compartir → Uso compartido avanzado → Permisos
 
-→ Compartir
+Solo se aplican cuando se accede mediante la red SMB (Server Message Block). Es un protocolo de red de capa de aplicación que se utiliza principalmente en sistemas Windows para compartir archivos, impresoras y carpetas entre diferentes equipos conectados a una misma red local LAN
 
-→ Uso compartido avanzado
-
-→ Permisos
-
-Solo se aplican cuando se accede mediante la red SMB.
-
-**Permiso efectivo**
+## **Permiso efectivo**
 
 Cuando se accede por red se aplican ambos niveles. El usuario obtiene **la combinación más restrictiva**.
 
@@ -691,45 +693,49 @@ Desde un cliente comprueba: `Test-NetConnection 10.0.20.46 -Port 445`
 
 Resultado esperado: TcpTestSucceeded : True. Si devuelve False, revisa:
 
-Firewall de Windows Defender → Configuración avanzada → Reglas de entrada → Uso compartido de archivos e impresoras (SMB-In)
+*Firewall de Windows Defender* → *Configuración avanzada* → *Reglas de entrada* → *Uso compartido de archivos e impresoras (SMB-In)*
 
 ## **Resolución del nombre del servidor**
 
-Los servidores DNS:
-
-8.8.8.8
-
-1.1.1.1
-
-resuelven nombres públicos de Internet, pero no conocen nombres locales como:
-
-SRV-NAS01
+Los servidores DNS como 8.8.8.8 o 1.1.1.1 resuelven nombres públicos de Internet, pero no conocen nombres locales como SRV-NAS01
 
 Por tanto, hay dos alternativas.
 
-**Alternativa sencilla: utilizar la dirección IP**
+**Utilizar la dirección IP:** \\\\10.0.20.46\\PROFESORES
 
-\\\\192.168.50.107\\PROFESORES
+**Alternativa por nombre:** Añadir en el equipo cliente una entrada en: C:\\Windows\\System32\\drivers\\etc\\hosts
 
-**Alternativa por nombre**
+Ejemplo: 10.0.20.46 SRV-NAS01
 
-Añadir en el equipo cliente una entrada en:
-
-C:\\Windows\\System32\\drivers\\etc\\hosts
-
-Ejemplo:
-
-192.168.50.107 SRV-NAS01
-
-Después podrá utilizarse:
-
-\\\\SRV-NAS01\\PROFESORES
+Después podrá utilizarse: \\\\SRV-NAS01\\PROFESORES
 
 Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o el nombre.
 
-**20. Probar el acceso desde un equipo cliente**
+# **Probar el acceso desde un equipo cliente**
 
-**20.1 Profesor**
+## Comprobación conectividad:
+
+En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen. \
+![](paste-fC3SLCQ3Xkqr6R3zULevk)
+
+## Crear una conexión de red
+
+Vamos al explorador de archivos y sobre *Este Equipo* seleccionamos el buger menu *Ver más* (los tres puntos) \
+![](paste-mRKiyzmc45nlHbJ-_JjgN)
+
+**Agregar una ubicación de red**
+
+## ![](paste-7ZVBJoHEckCYMziDtBc8T) ****![](paste-kd0KsW0RgAxFhZlkrJDu0)
+
+![](paste-MtTSFjaAvqQMd8KWqh5ve)
+
+![](paste-Trn420jMUwpqWorKln4tg)
+
+Tendremos acceso a las distintas carpetas de la máquina servidor a la que nos queremos conectar dependiendo del usuario que estemos usando (alumno, profesor etc) (recuerda que tiene que ser usuario y contraseña creados en la máquina a la que nos estamos conectando, no los que hemos configurado en nuestro servidor!)
+
+![](paste-LtLZKj4ERomvvE7_g9Koi)
+
+## **20.1 Profesor**
 
 Desde CMD:
 
