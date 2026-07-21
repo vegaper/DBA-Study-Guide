@@ -1,4 +1,7 @@
-**Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025**
+---
+title: "Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025"
+format: html
+---
 
 En un equipo físico, el sistema operativo podría instalarse sobre un RAID creado por una controladora hardware. Sin embargo, VirtualBox no presenta directamente una controladora RAID física al sistema invitado. Para esta simulación utilizaremos discos virtuales independientes y Espacios de almacenamiento de Windows Server.
 
@@ -30,7 +33,7 @@ Al finalizar la práctica, serás capaz de:
 
 # Parte 1. Configuración de la máquina virtual.
 
-Cada alumno creará un servidor independiente.
+Cada alumno creará un servidor windows a través de VirtualBox en adaptador puente.
 
 La variable xx representa el número asignado al alumno.
 
@@ -118,6 +121,8 @@ Después de crear todos los discos nos quedará algo parecido a esto:
 
 ## **Configuración especial de NVMe en VirtualBox (patch)**
 
+Oracle documenta este patch como solución provisional para huéspedes Windows que no detectan correctamente los discos conectados a la controladora NVMe. Habrá que realizar estos pasos hasta que Virtual Box solucione el problema en una versión posterior.
+
 Antes de iniciar la máquina virutal, (con la máquina virtual completamente apagada —no guardada ni pausada—) abre CMD en el equipo anfitrión como administrador:
 
 ```         
@@ -145,15 +150,13 @@ Deben aparecer las dos propiedades configuradas con valor 0.
 \
 ![](paste-zvheMw8GQmFXm06uK9WpF)
 
-Oracle documenta estos dos parámetros como solución provisional para huéspedes Windows que no detectan correctamente los discos conectados a la controladora NVMe. El ticket se abrió para una versión anterior y Windows 11, por lo que no constituye una certificación formal de Windows Server 2025 sobre VirtualBox 7.2.10; no obstante, en el entorno que hemos probado fue precisamente lo que permitió que Windows Server 2025 detectara e instalara correctamente sobre NVMe.
-
 ## **Propuesta de direccionamiento**
 
 Para evitar conflictos con la puerta de enlace y con otros equipos, puede utilizarse esta fórmula:
 
 Dirección IP = 10.0.20.{asignada_por_dhcp}
 
-Nombre: SRV-NAS07
+Nombre: SRV-NAS01
 
 Máscara: 255.255.255.0
 
@@ -161,7 +164,9 @@ Puerta de enlace: 10.0.20.1
 
 Los discos VDI pueden ser de **reservado dinámicamente**. Windows seguirá viendo su capacidad virtual completa, aunque el archivo VDI crezca según se utilice.
 
-## Como nos queda al final: ![](paste-PT91951uSYu2OwLfYKCEC)
+## Como nos queda al final:
+
+## ![](paste-PT91951uSYu2OwLfYKCEC)
 
 # Parte 2: **Instalación de Windows Server 2025**
 
@@ -204,7 +209,7 @@ Finalmente se cargará el panle de Administrador del servidor:\
 
 ## Instalar complementos del invitado
 
-Seguir las instrucciones en otras prácticas de virtualización.
+Seguir las instrucciones de instalación en otras prácticas de virtualización.
 
 # **Configuración inicial del servidor**
 
@@ -319,17 +324,13 @@ Primordial
 
 ![](paste-uiEovgwv_RefHNT5Itk_7)
 
-En la sección **Grupos de almacenamiento**, abre:
+En la sección **Grupos de almacenamiento**\>Tareas:
 
-Tareas
+→ Nuevo grupo de almacenamiento:
 
-→ Nuevo grupo de almacenamiento
+- Nombre: GRUPO-NAS
 
-Configura:
-
-Nombre: GRUPO-NAS
-
-Descripción: Discos destinados al almacenamiento del servidor NAS
+- Descripción: Discos destinados al almacenamiento del servidor NAS
 
 Selecciona exclusivamente los tres discos de 20 GB.\
 ![](paste-xJzbUwa-za94rasYbibeq)
@@ -342,7 +343,7 @@ Finaliza el asistente.
 
 **Comprobación (en PowerShell) :**
 
-Get-StoragePool \| Format-Table FriendlyName,HealthStatus,OperationalStatus,Size,AllocatedSize
+`Get-StoragePool | Format-Table FriendlyName,HealthStatus,OperationalStatus,Size,AllocatedSize`
 
 Debe aparecer:
 
@@ -358,11 +359,9 @@ Microsoft establece este orden de trabajo: primero se agrupan los discos físico
 
 Selecciona GRUPO-NAS.
 
-En la sección **Discos virtuales**:
+En la sección **Discos virtuales**: Tareas\> Nuevo disco virtual
 
-Tareas
-
-→ Nuevo disco virtual
+![](paste-uCOpeR5pFsJOTo7wxhwnb)
 
 Configura:
 
@@ -390,29 +389,26 @@ La configuración de paridad:
 
 - Es más adecuada para almacenamiento secuencial, archivos y copias que para cargas con muchas escrituras pequeñas.
 
+Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando se cierre este asistente*
+
 ![](paste-M6dKManox5pOiS9vR3KQ1)
 
-**Comprobación (en PowerShell)**
+### **Comprobación (en PowerShell)**
 
-Get-VirtualDisk \|
+`Get-VirtualDisk |Format-Table FriendlyName,ResiliencySettingName,ProvisioningType,HealthStatus,Size,FootprintOnPool`
 
-Format-Table FriendlyName,ResiliencySettingName,ProvisioningType,HealthStatus,Size,FootprintOnPool
+- FriendlyName : DISCO-VIRTUAL-NAS
 
-Resultado esperado:
+- ResiliencySettingName : Parity
 
-FriendlyName : DISCO-VIRTUAL-NAS
+- ProvisioningType : Fixed
 
-ResiliencySettingName : Parity
+- HealthStatus : Healthy\
+  ![](paste-ld5H8jqBou5CSG-kTHmAo)
 
-ProvisioningType : Fixed
+### **Crear el volumen**
 
-HealthStatus : Healthy
-
-**10. Crear el volumen**
-
-Al terminar el disco virtual, deja marcada la opción:
-
-Crear un volumen cuando se cierre este asistente
+![](paste-yef636ocPvekRFqXt3B9-)
 
 Configura:
 
@@ -426,49 +422,75 @@ Configura:
 | **Etiqueta**             | DATOS-NAS         |
 | **Formato rápido**       | Activado          |
 
+![](paste-b35oE_UYoX0gbV6xTSiEH)
+
 Utilizaremos NTFS porque esta práctica está centrada en permisos, herencia, listas de control de acceso y recursos compartidos SMB.
 
-Comprueba el resultado:
+![](paste-4PnY2_EVlUPOjIod9PdMw)\
+Comprueba el resultado en la shell: `Get-Volume -DriveLetter N`
 
-Get-Volume -DriveLetter N
+![](paste-WyiXjZ_0DQa6zv6ZLTz7N)
 
-**11. Crear usuarios y grupos locales**
+## **Crear usuarios y grupos locales**
 
-Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS07 solo tendrán derechos en SRV-NAS07.
+Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01.
 
-Abre: Winn + R \> lusrmgr.msc
+Abre: Win + R \> `lusrmgr.msc`\
+![](paste-I5WI33yQhoYfIYB8s0sXT)
 
-**11.1 Grupos locales**
+`Win + R > lusrmgr.msc` es un comando que abre la herramienta **Usuarios y grupos locales** en Windows. Esta herramienta te permite administrar usuarios y grupos en tu computadora, lo cual es útil para:
 
-Crea estos grupos:
+- **Crear nuevos usuarios:** Puedes agregar nuevos usuarios a tu computadora y asignarles permisos específicos.
 
-NAS_DIRECCION
+- **Administrar usuarios existentes:** Puedes cambiar las contraseñas de los usuarios, habilitar o deshabilitar cuentas, y modificar sus pertenencias a grupos.
 
-NAS_PROFESORES
+- **Crear nuevos grupos:** Puedes crear grupos para organizar a los usuarios y asignarles permisos colectivos.
 
-NAS_ALUMNOS
+- **Administrar grupos existentes:** Puedes agregar o quitar usuarios de los grupos y modificar sus permisos.
 
-**11.2 Usuarios locales**
+**Cómo usar `Win + R > lusrmgr.msc`:**
+
+1.  Presiona la tecla **Windows** + **R** para abrir el cuadro de diálogo Ejecutar.
+
+2.  Escribe `lusrmgr.msc` y presiona **Enter**.
+
+3.  Se abrirá la herramienta **Usuarios y grupos locales**.
+
+**Nota:** Esta herramienta solo está disponible en las ediciones Pro y Enterprise de Windows. No está disponible en las ediciones Home.
+
+**Usuarios locales**
+
+![](paste-By5QYG7l5oXw9mMNzmJpT)
 
 Crea, como mínimo:
 
-- director01\
-- profefor01\
-- profesor02\
-- alumno01\
+![](paste-e-STJ-v2axCkvwoLzR9kz)
+
+- director01
+- profesor01
+- profesor02
+- alumno01
 - alumno02
 
-En una práctica de laboratorio puede desmarcarse:
+En una práctica de laboratorio puede desmarcarse *El usuario debe cambiar la contraseña en el siguiente inicio de sesión,* y puede marcarse: *La contraseña nunca expira*
 
-El usuario debe cambiar la contraseña en el siguiente inicio de sesión
+![](paste-n5TMeiWVfuDYisCYfh1pU)
 
-Y puede marcarse:
+Esto se hace únicamente para evitar interrupciones durante la práctica. No es una recomendación para un entorno real o en producción 
 
-La contraseña nunca expira
+**Grupos locales**
 
-Esto se hace únicamente para evitar interrupciones durante la práctica. No es una recomendación para un entorno real o en producción
+![](paste-5_gBU3YbB9ejKQPjYSsXt)
 
-**11.3 Pertenencia a grupos**
+Crea estos grupos y añádeles los usuarios que has creados antes
+
+- NAS_DIRECCION
+
+- NAS_PROFESORES
+
+- NAS_ALUMNOS
+
+**Pertenencia a grupos**
 
 Configura:
 
@@ -480,31 +502,31 @@ Configura:
 | **alumno01**   | NAS_ALUMNOS    |
 | **alumno02**   | NAS_ALUMNOS    |
 
+![](paste-2TMUHbL1Yjov-iaFGsrL4)
+
 No asignaremos permisos directamente a los usuarios. Los permisos se asignarán a los grupos.
 
-**12. Crear la estructura de carpetas**
+## **Crear la estructura de carpetas**
 
 Crea:
 
-N:\\NAS
+- N:\\NAS
 
-N:\\NAS\\DIRECCION
+- N:\\NAS\\DIRECCION
 
-N:\\NAS\\PROFESORES
+- N:\\NAS\\PROFESORES
 
-N:\\NAS\\ALUMNOS
+- N:\\NAS\\ALUMNOS
 
-N:\\NAS\\COMUN
+- N:\\NAS\\COMUN
 
-**13. Comprender los dos niveles de permisos**
+# **Configurar los niveles de permisos**
 
 Cuando un usuario accede por red intervienen dos controles diferentes.
 
 **Permisos de Seguridad o NTFS**
 
-Se configuran en:
-
-Propiedades de la carpeta
+Se configuran en Propiedades de la carpeta
 
 → Seguridad
 
@@ -518,9 +540,7 @@ Se aplican:
 
 **Permisos de Compartir**
 
-Se configuran en:
-
-Propiedades de la carpeta
+Se configuran en Propiedades de la carpeta
 
 → Compartir
 
@@ -532,7 +552,7 @@ Solo se aplican cuando se accede mediante la red SMB.
 
 **Permiso efectivo**
 
-Cuando se accede por red se aplican ambos niveles. El usuario obtiene la combinación más restrictiva.
+Cuando se accede por red se aplican ambos niveles. El usuario obtiene **la combinación más restrictiva**.
 
 | Compartir         | NTFS          | Resultado por red |
 |:------------------|:--------------|:------------------|
@@ -543,37 +563,25 @@ Cuando se accede por red se aplican ambos niveles. El usuario obtiene la combina
 
 Por este motivo hay que revisar siempre las dos pestañas.
 
-**14. Configurar la herencia correctamente**
+## **Configurar la herencia correctamente**
 
-**14.1 Preparar la carpeta raíz**
+### **Preparar la carpeta raíz**
 
 Abre las propiedades de: N:\\NAS
 
-Accede a:
+Accede a: Seguridad → Opciones avanzadas → Deshabilitar herencia
 
-Seguridad
-
-→ Opciones avanzadas
-
-Selecciona: Deshabilitar herencia
+![](paste-bjwUHm9lm4rD5jFxy3QnP)
 
 Windows mostrará dos opciones:
 
-**Convertir los permisos heredados en permisos explícitos**
+- **Convertir los permisos heredados en permisos explícitos:** Copia los permisos actuales y deja de heredarlos. Es la opción más segura para esta práctica porque mantiene inicialmente el acceso administrativo.
 
-Copia los permisos actuales y deja de heredarlos.
-
-Es la opción más segura para esta práctica porque mantiene inicialmente el acceso administrativo.
-
-**Quitar todos los permisos heredados**
-
-Elimina directamente los permisos heredados.
-
-Puede provocar que se pierda el acceso a la carpeta si no se añaden inmediatamente permisos correctos.
+- **Quitar todos los permisos heredados:** Elimina directamente los permisos heredados. Puede provocar que se pierda el acceso a la carpeta si no se añaden inmediatamente permisos correctos.
 
 Selecciona:
 
-Convertir los permisos heredados en permisos explícitos
+`Convertir los permisos heredados en permisos explícitos`
 
 En N:\\NAS, deja únicamente:
 
@@ -584,79 +592,58 @@ En N:\\NAS, deja únicamente:
 
 Elimina de esta carpeta raíz las entradas generales que puedan aparecer, como:
 
-Usuarios
+- Usuarios
 
-Usuarios autenticados
+- Usuarios autenticados
 
-CREATOR OWNER
+- CREATOR OWNER
 
-Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administradores.
+![](paste-7o7jGR46NCDC9Oad362yc)
 
-La herencia hace que las subcarpetas y archivos reciban automáticamente las entradas heredables del directorio padre. Windows permite deshabilitarla conservando las entradas como explícitas o eliminando únicamente las heredadas.
+Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administradores. La herencia hace que las subcarpetas y archivos reciban automáticamente las entradas heredables del directorio padre. Windows permite deshabilitarla conservando las entradas como explícitas o eliminando únicamente las heredadas.
 
-**15. Configurar los permisos NTFS**
+## **Configurar los permisos NTFS**
 
-En cada subcarpeta entra en:
+1.  En cada subcarpeta entra en: Propiedades → Seguridad → Editar → Agregar
 
-Propiedades
+2.  Pulsa **Ubicaciones** y selecciona el servidor local: *SRV-NAS01*
 
-→ Seguridad
+![](paste-UYLeZ2pzRP2b9QZSh4D88)
 
-→ Editar
+3.  **Carpeta DIRECCION** Agrega: SRV-NAS01\\NAS_DIRECCION
 
-→ Agregar
+![](paste-aiATV-Ora-sxEwKbB-yda)
 
-Pulsa **Ubicaciones** y selecciona el servidor local:
+Concede: Modificar
 
-SRV-NAS07
+![](paste--ueet7x0rE116gQOdXvKm)
 
-**15.1 Carpeta DIRECCION**
+Debe aplicarse a Esta carpeta, subcarpetas y archivos, esta es la configuración por defecto, pero si quieres comprobarlo puedes verlo en *Seguridad* \> *Opciones avanzadas*\
+![](paste-kTpxlGXOCXxv5KcM4U90L)
 
-Agrega:
+4.  **Carpeta PROFESORES**
 
-SRV-NAS07\\NAS_DIRECCION
+Agrega: *SRV-NAS01\\NAS_PROFESORES*
 
-Concede:
+Concede: *Modificar*
 
-Modificar
+5.  **Carpeta ALUMNOS**
 
-Debe aplicarse a:
+Agrega: SRV-NAS01\\NAS_ALUMNOS
 
-Esta carpeta, subcarpetas y archivos
-
-**15.2 Carpeta PROFESORES**
-
-Agrega:
-
-SRV-NAS07\\NAS_PROFESORES
-
-Concede:
-
-Modificar
-
-**15.3 Carpeta ALUMNOS**
-
-Agrega:
-
-SRV-NAS07\\NAS_ALUMNOS
-
-Concede:
-
-Modificar
+Concede: Modificar
 
 **15.4 Carpeta COMUN**
 
 Agrega:
 
-SRV-NAS07\\NAS_DIRECCION
+*SRV-NAS01\\NAS_DIRECCION*
 
-SRV-NAS07\\NAS_PROFESORES
+*SRV-NAS01\\NAS_PROFESORES*
 
-SRV-NAS07\\NAS_ALUMNOS
+*SRV-NAS01\\NAS_ALUMNOS*
 
-Concede a los tres grupos:
-
-Modificar
+Concede a los tres grupos: *Modificar*
 
 **Resultado final de Seguridad**
 
@@ -671,103 +658,42 @@ Modificar
 
 No utilices Denegar. En esta práctica basta con no conceder acceso a los grupos no autorizados. Los permisos explícitos de denegación complican el cálculo de permisos efectivos y pueden afectar a usuarios que pertenezcan a varios grupos.
 
-**16. Crear los recursos compartidos**
+## **Crear los recursos compartidos**
 
-En cada carpeta:
+En cada carpeta: Propiedades → Compartir → Uso compartido avanzado\>Marca: Compartir esta carpeta
 
-Propiedades
+![](paste-3Ez15rH92qO9u3lTz7vmY)
 
-→ Compartir
+### **Comprobar los recursos y permisos**
 
-→ Uso compartido avanzado
+**Recursos compartidos:** Get-SmbShare \| Format-Table Name, Path, Description\
+![](paste-IgaC-5V_kl3qCTCIz0m3n)
 
-Marca:
+**Permisos de un recurso:** Get-SmbShareAccess -Name PROFESORES
 
-Compartir esta carpeta
-
-**16.1 Recurso DIRECCION**
-
-Nombre del recurso:
-
-DIRECCION
-
-En **Permisos**:
-
-1.  Elimina Todos.
-
-2.  Agrega Administradores con Control total.
-
-3.  Agrega NAS_DIRECCION con Cambiar y Leer.
-
-**16.2 Recurso PROFESORES**
-
-Nombre: PROFESORES
-
-Administradores: Control total
-
-NAS_PROFESORES: Cambiar y Leer
-
-**16.3 Recurso ALUMNOS**
-
-Nombre: ALUMNOS
-
-Administradores: Control total
-
-NAS_ALUMNOS: Cambiar y Leer
-
-**16.4 Recurso COMUN**
-
-Nombre: COMUN
-
-Administradores: Control total
-
-NAS_DIRECCION: Cambiar y Leer
-
-NAS_PROFESORES: Cambiar y Leer
-
-NAS_ALUMNOS: Cambiar y Leer
-
-Windows Server permite asignar permisos de lectura, cambio o control total directamente al crear un recurso SMB.
-
-**17. Comprobar los recursos y permisos**
-
-**Recursos compartidos**
-
-Get-SmbShare \| Format-Table Name, Path, Description
-
-**Permisos de un recurso**
-
-Get-SmbShareAccess -Name PROFESORES
+![](paste-HIkMtXWtne6t4F1vc4ohu)
 
 **Permisos NTFS**
 
 icacls N:\\NAS\\PROFESORES
 
+![](paste-3IXiDAy_2ZqyFdyPM_Gig)
+
 Debe aparecer el grupo NAS_PROFESORES con permiso de modificación.
 
-**18. Firewall SMB**
+## **Firewall SMB**
 
 Windows Server 2025 utiliza reglas más restrictivas al crear recursos compartidos y abre únicamente los puertos necesarios para SMB moderno. El acceso normal utiliza TCP 445.
 
-Desde un cliente comprueba:
+Desde un cliente comprueba: `Test-NetConnection 10.0.20.46 -Port 445`
 
-Test-NetConnection 192.168.50.107 -Port 445
+![](paste-vhEZow1EmvMCImVYmDdMn)
 
-Resultado esperado:
+Resultado esperado: TcpTestSucceeded : True. Si devuelve False, revisa:
 
-TcpTestSucceeded : True
+Firewall de Windows Defender → Configuración avanzada → Reglas de entrada → Uso compartido de archivos e impresoras (SMB-In)
 
-Si devuelve False, revisa:
-
-Firewall de Windows Defender
-
-→ Configuración avanzada
-
-→ Reglas de entrada
-
-→ Uso compartido de archivos e impresoras (SMB-In)
-
-**19. Resolución del nombre del servidor**
+## **Resolución del nombre del servidor**
 
 Los servidores DNS:
 
@@ -777,7 +703,7 @@ Los servidores DNS:
 
 resuelven nombres públicos de Internet, pero no conocen nombres locales como:
 
-SRV-NAS07
+SRV-NAS01
 
 Por tanto, hay dos alternativas.
 
@@ -793,11 +719,11 @@ C:\\Windows\\System32\\drivers\\etc\\hosts
 
 Ejemplo:
 
-192.168.50.107 SRV-NAS07
+192.168.50.107 SRV-NAS01
 
 Después podrá utilizarse:
 
-\\\\SRV-NAS07\\PROFESORES
+\\\\SRV-NAS01\\PROFESORES
 
 Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o el nombre.
 
@@ -807,7 +733,7 @@ Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o
 
 Desde CMD:
 
-net use Z: \\\\192.168.50.107\\PROFESORES /user:SRV-NAS07\\profesor01 \*
+net use Z: \\\\192.168.50.107\\PROFESORES /user:SRV-NAS01\\profesor01 \*
 
 El asterisco solicita la contraseña sin mostrarla.
 
@@ -841,11 +767,11 @@ Cierra también todas las ventanas del Explorador abiertas contra el NAS.
 
 Conecta como alumno:
 
-net use Z: \\\\192.168.50.107\\ALUMNOS /user:SRV-NAS07\\alumno01 \*
+net use Z: \\\\192.168.50.107\\ALUMNOS /user:SRV-NAS01\\alumno01 \*
 
 **20.3 Dirección**
 
-net use Z: \\\\192.168.50.107\\DIRECCION /user:SRV-NAS07\\director01 \*
+net use Z: \\\\192.168.50.107\\DIRECCION /user:SRV-NAS01\\director01 \*
 
 **21. Cambio de usuario SMB**
 
