@@ -39,26 +39,26 @@ La variable xx representa el número asignado al alumno.
 
 Password para la práctica: Pass123!
 
-| Elemento | Valor de ejemplo |   |
-|:-----------------------|:-----------------------|------------------------|
-| **Nombre de la máquina virtual** | WS25 UEFI |  |
-| **Nombre del servidor** | SRV-NASxx |  |
-| **Sistema operativo** | Windows Server 2025 con Experiencia de escritorio |  |
-| **Virtualizador** | VirtualBox 7.2.10 |  |
-| **Red** | Adaptador puente |  |
-| **Red IPv4** | 10.0.20.{asignada_por_dhcp}/24 |  |
-| **Puerta de enlace** | 10.0.20.1 |  |
-| **DNS preferido** | 8.8.8.8 |  |
-| **DNS alternativo** | 1.1.1.1 |  |
-| **Memoria RAM** | 4/8 GB | 4/8 GB |
-| **Procesadores** | 2/4 |  |
-| **Chipset** | ICH9 |  |
-| **Caracteristicas** | UEFI |  |
-| **Red** | Adaptador puente |  |
-| **Disco del sistema** | 60 GB NVMe |  |
-| **Disco adicional 1** | 20 GB NVMe |  |
-| **Disco adicional 2** | 20 GB NVMe |  |
-| **Disco adicional 3** | 20 GB NVMe |  |
+| Elemento | Valor de ejemplo |
+|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Nombre de la máquina virtual** | WS25 UEFI |
+| **Nombre del servidor** | SRV-NASxx |
+| **Sistema operativo** | Windows Server 2025 con Experiencia de escritorio |
+| **Virtualizador** | VirtualBox 7.2.10 |
+| **Red** | Adaptador puente |
+| **Red IPv4** | 10.0.20.{asignada_por_dhcp}/24 |
+| **Puerta de enlace** | 10.0.20.1 |
+| **DNS preferido** | 8.8.8.8 |
+| **DNS alternativo** | 1.1.1.1 |
+| **Memoria RAM** | 4/8 GB |
+| **Procesadores** | 2/4 |
+| **Chipset** | ICH9 |
+| **Caracteristicas** | UEFI |
+| **Red** | Adaptador puente |
+| **Disco del sistema** | 60 GB NVMe |
+| **Disco adicional 1** | 20 GB NVMe |
+| **Disco adicional 2** | 20 GB NVMe |
+| **Disco adicional 3** | 20 GB NVMe |
 
 Empezamos la creación de VM como siempre, pero hay que hacer algunos cambios antes de instalar:
 
