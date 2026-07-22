@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Práctica guiada: Monitorización con Zabbix usando Docker Compose – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a957552743cf229cecd72dbee48e5bde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./zabbix.html">Monitorización con Zabbix</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#objetivo-de-la-práctica" id="toc-objetivo-de-la-práctica" class="nav-link active" data-scroll-target="#objetivo-de-la-práctica"><span class="header-section-number">1</span> Objetivo de la práctica</a></li>
+  <li><a href="#infraestructura-de-la-práctica" id="toc-infraestructura-de-la-práctica" class="nav-link" data-scroll-target="#infraestructura-de-la-práctica"><span class="header-section-number">2</span> Infraestructura de la práctica</a></li>
+  <li><a href="#esquema-de-funcionamiento" id="toc-esquema-de-funcionamiento" class="nav-link" data-scroll-target="#esquema-de-funcionamiento"><span class="header-section-number">3</span> Esquema de funcionamiento</a></li>
+  <li><a href="#parte-1-preparar-la-máquina-zbx-docker" id="toc-parte-1-preparar-la-máquina-zbx-docker" class="nav-link" data-scroll-target="#parte-1-preparar-la-máquina-zbx-docker"><span class="header-section-number">4</span> Parte 1 — Preparar la máquina ZBX-DOCKER</a></li>
+  <li><a href="#cambiar-el-nombre-del-equipo." id="toc-cambiar-el-nombre-del-equipo." class="nav-link" data-scroll-target="#cambiar-el-nombre-del-equipo."><span class="header-section-number">5</span> Cambiar el nombre del equipo.</a>
+  <ul>
+  <li><a href="#comprobar-la-ip-y-conectividad" id="toc-comprobar-la-ip-y-conectividad" class="nav-link" data-scroll-target="#comprobar-la-ip-y-conectividad"><span class="header-section-number">5.1</span> Comprobar la IP y conectividad</a></li>
+  </ul></li>
+  <li><a href="#parte-2-instalar-docker-y-docker-compose" id="toc-parte-2-instalar-docker-y-docker-compose" class="nav-link" data-scroll-target="#parte-2-instalar-docker-y-docker-compose"><span class="header-section-number">6</span> Parte 2 — Instalar Docker y Docker Compose</a>
+  <ul>
+  <li><a href="#actualizar-paquetes" id="toc-actualizar-paquetes" class="nav-link" data-scroll-target="#actualizar-paquetes"><span class="header-section-number">6.1</span> Actualizar paquetes</a></li>
+  <li><a href="#instalar-paquetes-necesarios" id="toc-instalar-paquetes-necesarios" class="nav-link" data-scroll-target="#instalar-paquetes-necesarios"><span class="header-section-number">6.2</span> Instalar paquetes necesarios</a></li>
+  <li><a href="#añadir-la-clave-oficial-de-docker" id="toc-añadir-la-clave-oficial-de-docker" class="nav-link" data-scroll-target="#añadir-la-clave-oficial-de-docker"><span class="header-section-number">6.3</span> Añadir la clave oficial de Docker</a></li>
+  <li><a href="#añadir-el-repositorio-de-docker" id="toc-añadir-el-repositorio-de-docker" class="nav-link" data-scroll-target="#añadir-el-repositorio-de-docker"><span class="header-section-number">6.4</span> Añadir el repositorio de Docker</a></li>
+  <li><a href="#instalar-docker-engine-y-docker-compose" id="toc-instalar-docker-engine-y-docker-compose" class="nav-link" data-scroll-target="#instalar-docker-engine-y-docker-compose"><span class="header-section-number">6.5</span> Instalar Docker Engine y Docker Compose</a></li>
+  <li><a href="#comprobar-docker" id="toc-comprobar-docker" class="nav-link" data-scroll-target="#comprobar-docker"><span class="header-section-number">6.6</span> Comprobar Docker</a></li>
+  <li><a href="#permitir-usar-docker-sin-sudo" id="toc-permitir-usar-docker-sin-sudo" class="nav-link" data-scroll-target="#permitir-usar-docker-sin-sudo"><span class="header-section-number">6.7</span> Permitir usar Docker sin sudo</a></li>
+  </ul></li>
+  <li><a href="#parte-3-crear-el-proyecto-docker-compose-de-zabbix" id="toc-parte-3-crear-el-proyecto-docker-compose-de-zabbix" class="nav-link" data-scroll-target="#parte-3-crear-el-proyecto-docker-compose-de-zabbix"><span class="header-section-number">7</span> Parte 3 — Crear el proyecto Docker Compose de Zabbix</a>
+  <ul>
+  <li><a href="#crear-una-carpeta-de-trabajo" id="toc-crear-una-carpeta-de-trabajo" class="nav-link" data-scroll-target="#crear-una-carpeta-de-trabajo"><span class="header-section-number">7.1</span> Crear una carpeta de trabajo</a></li>
+  <li><a href="#crear-el-archivo-.env" id="toc-crear-el-archivo-.env" class="nav-link" data-scroll-target="#crear-el-archivo-.env"><span class="header-section-number">7.2</span> Crear el archivo .env</a></li>
+  <li><a href="#crear-el-archivo-docker-compose.yml" id="toc-crear-el-archivo-docker-compose.yml" class="nav-link" data-scroll-target="#crear-el-archivo-docker-compose.yml"><span class="header-section-number">7.3</span> Crear el archivo docker-compose.yml</a></li>
+  </ul></li>
+  <li><a href="#parte-4-entender-el-archivo-docker-compose" id="toc-parte-4-entender-el-archivo-docker-compose" class="nav-link" data-scroll-target="#parte-4-entender-el-archivo-docker-compose"><span class="header-section-number">8</span> Parte 4 — Entender el archivo Docker Compose</a>
+  <ul>
+  <li><a href="#servicio-postgres-server" id="toc-servicio-postgres-server" class="nav-link" data-scroll-target="#servicio-postgres-server"><span class="header-section-number">8.1</span> Servicio postgres-server</a></li>
+  <li><a href="#servicio-zabbix-server" id="toc-servicio-zabbix-server" class="nav-link" data-scroll-target="#servicio-zabbix-server"><span class="header-section-number">8.2</span> Servicio zabbix-server</a></li>
+  <li><a href="#servicio-zabbix-web" id="toc-servicio-zabbix-web" class="nav-link" data-scroll-target="#servicio-zabbix-web"><span class="header-section-number">8.3</span> Servicio zabbix-web</a></li>
+  <li><a href="#red-interna-zabbix-net" id="toc-red-interna-zabbix-net" class="nav-link" data-scroll-target="#red-interna-zabbix-net"><span class="header-section-number">8.4</span> Red interna zabbix-net</a></li>
+  <li><a href="#volumen-zabbix-postgres-data" id="toc-volumen-zabbix-postgres-data" class="nav-link" data-scroll-target="#volumen-zabbix-postgres-data"><span class="header-section-number">8.5</span> Volumen zabbix-postgres-data</a></li>
+  </ul></li>
+  <li><a href="#parte-5-arrancar-zabbix" id="toc-parte-5-arrancar-zabbix" class="nav-link" data-scroll-target="#parte-5-arrancar-zabbix"><span class="header-section-number">9</span> Parte 5 — Arrancar Zabbix</a>
+  <ul>
+  <li><a href="#ver-contenedores-activos" id="toc-ver-contenedores-activos" class="nav-link" data-scroll-target="#ver-contenedores-activos"><span class="header-section-number">9.1</span> Ver contenedores activos</a></li>
+  <li><a href="#ver-los-logs-de-inicialización" id="toc-ver-los-logs-de-inicialización" class="nav-link" data-scroll-target="#ver-los-logs-de-inicialización"><span class="header-section-number">9.2</span> Ver los logs de inicialización</a></li>
+  </ul></li>
+  <li><a href="#parte-6-acceder-a-zabbix-desde-navegador" id="toc-parte-6-acceder-a-zabbix-desde-navegador" class="nav-link" data-scroll-target="#parte-6-acceder-a-zabbix-desde-navegador"><span class="header-section-number">10</span> Parte 6 — Acceder a Zabbix desde navegador</a>
+  <ul>
+  <li><a href="#credenciales-iniciales" id="toc-credenciales-iniciales" class="nav-link" data-scroll-target="#credenciales-iniciales"><span class="header-section-number">10.1</span> Credenciales iniciales</a></li>
+  <li><a href="#cambiar-idioma" id="toc-cambiar-idioma" class="nav-link" data-scroll-target="#cambiar-idioma"><span class="header-section-number">10.2</span> Cambiar idioma</a></li>
+  <li><a href="#cambiar-la-contraseña-inicial" id="toc-cambiar-la-contraseña-inicial" class="nav-link" data-scroll-target="#cambiar-la-contraseña-inicial"><span class="header-section-number">10.3</span> Cambiar la contraseña inicial</a></li>
+  </ul></li>
+  <li><a href="#parte-7-comprobar-puertos-desde-zbx-docker" id="toc-parte-7-comprobar-puertos-desde-zbx-docker" class="nav-link" data-scroll-target="#parte-7-comprobar-puertos-desde-zbx-docker"><span class="header-section-number">11</span> Parte 7 — Comprobar puertos desde ZBX-DOCKER</a></li>
+  <li><a href="#parte-8-preparar-la-máquina-linux-monitorizada" id="toc-parte-8-preparar-la-máquina-linux-monitorizada" class="nav-link" data-scroll-target="#parte-8-preparar-la-máquina-linux-monitorizada"><span class="header-section-number">12</span> Parte 8 — Preparar la máquina Linux monitorizada</a>
+  <ul>
+  <li><a href="#ajustar-nombre-de-host-y-actualizar" id="toc-ajustar-nombre-de-host-y-actualizar" class="nav-link" data-scroll-target="#ajustar-nombre-de-host-y-actualizar"><span class="header-section-number">12.1</span> Ajustar nombre de host y actualizar</a></li>
+  <li><a href="#instalar-mariadb-y-herramientas-de-prueba" id="toc-instalar-mariadb-y-herramientas-de-prueba" class="nav-link" data-scroll-target="#instalar-mariadb-y-herramientas-de-prueba"><span class="header-section-number">12.2</span> Instalar MariaDB y herramientas de prueba</a></li>
+  <li><a href="#instalar-zabbix-agent-2-en-linux" id="toc-instalar-zabbix-agent-2-en-linux" class="nav-link" data-scroll-target="#instalar-zabbix-agent-2-en-linux"><span class="header-section-number">12.3</span> Instalar Zabbix Agent 2 en Linux</a></li>
+  <li><a href="#configurar-el-agente-linux" id="toc-configurar-el-agente-linux" class="nav-link" data-scroll-target="#configurar-el-agente-linux"><span class="header-section-number">12.4</span> Configurar el agente Linux</a></li>
+  <li><a href="#abrir-firewall-de-red-en-lnx-db" id="toc-abrir-firewall-de-red-en-lnx-db" class="nav-link" data-scroll-target="#abrir-firewall-de-red-en-lnx-db"><span class="header-section-number">12.5</span> Abrir firewall de red en LNX-DB</a></li>
+  </ul></li>
+  <li><a href="#parte-9-añadir-lnx-db-en-la-interfaz-de-zabbix" id="toc-parte-9-añadir-lnx-db-en-la-interfaz-de-zabbix" class="nav-link" data-scroll-target="#parte-9-añadir-lnx-db-en-la-interfaz-de-zabbix"><span class="header-section-number">13</span> Parte 9 — Añadir LNX-DB en la interfaz de Zabbix</a></li>
+  <li><a href="#parte-10-preparar-la-máquina-windows-monitorizada" id="toc-parte-10-preparar-la-máquina-windows-monitorizada" class="nav-link" data-scroll-target="#parte-10-preparar-la-máquina-windows-monitorizada"><span class="header-section-number">14</span> Parte 10 — Preparar la máquina Windows monitorizada</a>
+  <ul>
+  <li><a href="#descargar-zabbix-agent-2" id="toc-descargar-zabbix-agent-2" class="nav-link" data-scroll-target="#descargar-zabbix-agent-2"><span class="header-section-number">14.1</span> Descargar Zabbix Agent 2</a></li>
+  <li><a href="#instalar-el-agente-en-el-sistema" id="toc-instalar-el-agente-en-el-sistema" class="nav-link" data-scroll-target="#instalar-el-agente-en-el-sistema"><span class="header-section-number">14.2</span> Instalar el agente en el sistema</a></li>
+  <li><a href="#comprobar-el-servicio-en-windows" id="toc-comprobar-el-servicio-en-windows" class="nav-link" data-scroll-target="#comprobar-el-servicio-en-windows"><span class="header-section-number">14.3</span> Comprobar el servicio en Windows</a></li>
+  <li><a href="#abrir-firewall-de-windows-defender" id="toc-abrir-firewall-de-windows-defender" class="nav-link" data-scroll-target="#abrir-firewall-de-windows-defender"><span class="header-section-number">14.4</span> Abrir firewall de Windows Defender</a></li>
+  </ul></li>
+  <li><a href="#parte-11-añadir-win-cli-en-zabbix" id="toc-parte-11-añadir-win-cli-en-zabbix" class="nav-link" data-scroll-target="#parte-11-añadir-win-cli-en-zabbix"><span class="header-section-number">15</span> Parte 11 — Añadir WIN-CLI en Zabbix</a></li>
+  <li><a href="#parte-12-comprobar-comunicación-desde-el-servidor-zabbix" id="toc-parte-12-comprobar-comunicación-desde-el-servidor-zabbix" class="nav-link" data-scroll-target="#parte-12-comprobar-comunicación-desde-el-servidor-zabbix"><span class="header-section-number">16</span> Parte 12 — Comprobar comunicación desde el servidor Zabbix</a></li>
+  <li><a href="#parte-13-crear-una-comprobación-del-servicio-mariadb" id="toc-parte-13-crear-una-comprobación-del-servicio-mariadb" class="nav-link" data-scroll-target="#parte-13-crear-una-comprobación-del-servicio-mariadb"><span class="header-section-number">17</span> Parte 13 — Crear una comprobación del servicio MariaDB</a>
+  <ul>
+  <li><a href="#crear-el-ítem-en-zabbix" id="toc-crear-el-ítem-en-zabbix" class="nav-link" data-scroll-target="#crear-el-ítem-en-zabbix"><span class="header-section-number">17.1</span> Crear el ítem en Zabbix</a></li>
+  </ul></li>
+  <li><a href="#parte-14-crear-una-alerta-para-mariadb-trigger" id="toc-parte-14-crear-una-alerta-para-mariadb-trigger" class="nav-link" data-scroll-target="#parte-14-crear-una-alerta-para-mariadb-trigger"><span class="header-section-number">18</span> Parte 14 — Crear una alerta para MariaDB (Trigger)</a></li>
+  <li><a href="#parte-15-provocar-una-incidencia-controlada" id="toc-parte-15-provocar-una-incidencia-controlada" class="nav-link" data-scroll-target="#parte-15-provocar-una-incidencia-controlada"><span class="header-section-number">19</span> Parte 15 — Provocar una incidencia controlada</a>
+  <ul>
+  <li><a href="#forzar-la-caída-de-la-base-de-datos" id="toc-forzar-la-caída-de-la-base-de-datos" class="nav-link" data-scroll-target="#forzar-la-caída-de-la-base-de-datos"><span class="header-section-number">19.1</span> Forzar la caída de la base de datos</a></li>
+  <li><a href="#recuperar-el-servicio" id="toc-recuperar-el-servicio" class="nav-link" data-scroll-target="#recuperar-el-servicio"><span class="header-section-number">19.2</span> Recuperar el servicio</a></li>
+  </ul></li>
+  <li><a href="#parte-16-generar-carga-de-cpu-en-linux" id="toc-parte-16-generar-carga-de-cpu-en-linux" class="nav-link" data-scroll-target="#parte-16-generar-carga-de-cpu-en-linux"><span class="header-section-number">20</span> Parte 16 — Generar carga de CPU en Linux</a></li>
+  <li><a href="#parte-17-generar-consumo-de-disco-duro-real" id="toc-parte-17-generar-consumo-de-disco-duro-real" class="nav-link" data-scroll-target="#parte-17-generar-consumo-de-disco-duro-real"><span class="header-section-number">21</span> Parte 17 — Generar consumo de disco duro real</a></li>
+  <li><a href="#parte-18-crear-un-dashboard-básico" id="toc-parte-18-crear-un-dashboard-básico" class="nav-link" data-scroll-target="#parte-18-crear-un-dashboard-básico"><span class="header-section-number">22</span> Parte 18 — Crear un dashboard básico</a></li>
+  <li><a href="#parte-19-comandos-útiles-de-docker-compose" id="toc-parte-19-comandos-útiles-de-docker-compose" class="nav-link" data-scroll-target="#parte-19-comandos-útiles-de-docker-compose"><span class="header-section-number">23</span> Parte 19 — Comandos útiles de Docker Compose</a></li>
+  <li><a href="#parte-20-solución-de-problemas-comunes-troubleshooting" id="toc-parte-20-solución-de-problemas-comunes-troubleshooting" class="nav-link" data-scroll-target="#parte-20-solución-de-problemas-comunes-troubleshooting"><span class="header-section-number">24</span> Parte 20 — Solución de problemas comunes (Troubleshooting)</a>
+  <ul>
+  <li><a href="#t1-no-carga-la-interfaz-web-de-zabbix-en-el-puerto-8080" id="toc-t1-no-carga-la-interfaz-web-de-zabbix-en-el-puerto-8080" class="nav-link" data-scroll-target="#t1-no-carga-la-interfaz-web-de-zabbix-en-el-puerto-8080"><span class="header-section-number">24.1</span> T1: No carga la interfaz web de Zabbix en el puerto 8080</a></li>
+  <li><a href="#t2-abre-la-web-pero-indica-que-no-puede-conectar-con-el-servidor-central-zabbix" id="toc-t2-abre-la-web-pero-indica-que-no-puede-conectar-con-el-servidor-central-zabbix" class="nav-link" data-scroll-target="#t2-abre-la-web-pero-indica-que-no-puede-conectar-con-el-servidor-central-zabbix"><span class="header-section-number">24.2</span> T2: Abre la web pero indica que no puede conectar con el Servidor Central Zabbix</a></li>
+  <li><a href="#t3-el-servidor-zabbix-no-puede-conectar-con-la-base-de-datos-postgresql" id="toc-t3-el-servidor-zabbix-no-puede-conectar-con-la-base-de-datos-postgresql" class="nav-link" data-scroll-target="#t3-el-servidor-zabbix-no-puede-conectar-con-la-base-de-datos-postgresql"><span class="header-section-number">24.3</span> T3: El Servidor Zabbix no puede conectar con la Base de Datos PostgreSQL</a></li>
+  <li><a href="#t4-la-máquina-de-pruebas-lnx-db-se-queda-sin-registrar-datos-en-la-web" id="toc-t4-la-máquina-de-pruebas-lnx-db-se-queda-sin-registrar-datos-en-la-web" class="nav-link" data-scroll-target="#t4-la-máquina-de-pruebas-lnx-db-se-queda-sin-registrar-datos-en-la-web"><span class="header-section-number">24.4</span> T4: La máquina de pruebas LNX-DB se queda sin registrar datos en la web</a></li>
+  </ul></li>
+  <li><a href="#resultado-final-esperado" id="toc-resultado-final-esperado" class="nav-link" data-scroll-target="#resultado-final-esperado"><span class="header-section-number">25</span> Resultado final esperado</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./intro.html">Bloque 1: Redes e Infraestructura</a></li><li class="breadcrumb-item"><a href="./procesos.html">Procesos, Servicios, Tareas y Procesos en Segundo Plano</a></li><li class="breadcrumb-item"><a href="./windows_monitoring.html">Monitorización de Sistemas</a></li><li class="breadcrumb-item"><a href="./zabbix.html">Monitorización con Zabbix</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Práctica guiada: Monitorización con Zabbix usando Docker Compose</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="objetivo-de-la-práctica" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Objetivo de la práctica</h1>
+<p>El objetivo es montar una plataforma Zabbix funcional usando contenedores y después monitorizar dos máquinas:</p>
+<ul>
+<li><strong>ZBX-DOCKER</strong> -&gt; Servidor Zabbix en Docker</li>
+<li><strong>LNX-DB</strong> -&gt; Ubuntu Server monitorizado</li>
+<li><strong>WIN-CLI</strong> -&gt; Windows monitorizado</li>
+</ul>
+<p>Al finalizar, el alumno deberá ser capaz de:</p>
+<ul>
+<li>Instalar Docker y Docker Compose en Ubuntu Server.</li>
+<li>Desplegar Zabbix con contenedores.</li>
+<li>Entender qué contenedor hace cada función.</li>
+<li>Acceder a Zabbix desde navegador.</li>
+<li>Añadir un host Linux y un host Windows.</li>
+<li>Monitorizar CPU, RAM, disco y red.</li>
+<li>Crear una comprobación para un servicio de base de datos.</li>
+<li>Crear una alerta cuando el servicio deje de responder.</li>
+<li>Interpretar problemas y métricas desde Zabbix.</li>
+</ul>
+<hr>
+</section>
+<section id="infraestructura-de-la-práctica" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Infraestructura de la práctica</h1>
+<p>Usaremos tres máquinas virtuales configuradas en modo <strong>Adaptador Puente</strong>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 69%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Máquina</th>
+<th style="text-align: left;">Sistema operativo</th>
+<th style="text-align: left;">Función</th>
+<th style="text-align: left;">IP propuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>ZBX-DOCKER</strong></td>
+<td style="text-align: left;">Ubuntu Server 26.04</td>
+<td style="text-align: left;">Docker + Zabbix + PostgreSQL + Web</td>
+<td style="text-align: left;">192.168.31.13</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>LNX-DB</strong></td>
+<td style="text-align: left;">Ubuntu Server 26.04</td>
+<td style="text-align: left;">Servidor Linux monitorizado + MariaDB</td>
+<td style="text-align: left;">10.0.20.60</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>WIN-CLI</strong></td>
+<td style="text-align: left;">Windows 10/11</td>
+<td style="text-align: left;">Equipo Windows monitorizado</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">WIN-HOST</td>
+<td style="text-align: left;">Windows 11</td>
+<td style="text-align: left;">Host</td>
+<td style="text-align: left;"><p>Wireless LAN adapter Wi-Fi:</p>
+<p>Connection-specific DNS Suffix . : IPv4 Address. . . . . . . . . . . : 192.168.31.147 Subnet Mask . . . . . . . . . . . : 255.255.255.0 Default Gateway . . . . . . . . . : 192.168.31.1</p></td>
+</tr>
+</tbody>
+</table>
+<p>En <strong>ZBX-DOCKER</strong> tendremos estos contenedores:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 49%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Contenedor</th>
+<th style="text-align: left;">Imagen</th>
+<th style="text-align: left;">Función</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>postgres-server</strong></td>
+<td style="text-align: left;">postgres:16-alpine</td>
+<td style="text-align: left;">Base de datos de Zabbix</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>zabbix-server</strong></td>
+<td style="text-align: left;">zabbix/zabbix-server-pgsql:alpine-7.0-latest</td>
+<td style="text-align: left;">Motor principal de Zabbix</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>zabbix-web</strong></td>
+<td style="text-align: left;">zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest</td>
+<td style="text-align: left;">Interfaz web con Nginx</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Nota:</strong> Zabbix ofrece imágenes oficiales separadas por componente: servidor, frontend web, proxy, agentes, etc. Las imágenes de Zabbix Server tienen variantes para PostgreSQL y MySQL, entre otras.</p>
+</blockquote>
+<hr>
+</section>
+<section id="esquema-de-funcionamiento" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Esquema de funcionamiento</h1>
+<pre class="text"><code>                    Navegador del host
+                            |
+                            | http://192.168.31.13:8080
+                            v
+                      zabbix-web
+                         Nginx
+                            |  
+                            v
+                    zabbix-server
+                            | http://192.168.31.13
+                            v
+                    postgres-server
+                    
+                  Máquinas monitorizadas
+        ---------------------------------------------------
+        LNX-DB                         WIN-CLI
+        Ubuntu Server                  Windows 10/11
+        Zabbix Agent 2                 Zabbix Agent 2
+        MariaDB                        Servicios Windows</code></pre>
+<p>1. El alumno entra por navegador del host a Zabbix web server</p>
+<p>2. Zabbix Server recoge datos de los agentes.</p>
+<p>3. PostgreSQL guarda configuración, métricas, eventos y problemas.</p>
+<p>4. Zabbix Web muestra todo gráficamente.</p>
+<hr>
+</section>
+<section id="parte-1-preparar-la-máquina-zbx-docker" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Parte 1 — Preparar la máquina ZBX-DOCKER</h1>
+<p>Esta parte se realiza en la máquina:</p>
+<p>* <strong>Host:</strong> ZBX-DOCKER</p>
+<p>* <strong>IP:</strong> 192.168.31.13</p>
+<p>* <strong>Sistema:</strong> Ubuntu Server 26.04</p>
+<p>Instalamos Ubuntu Server en adaptador puetne y fijamos la ip</p>
+<p><img src="paste-ypqV0KmJp7XvJbQXvOyd6.png" class="img-fluid"></p>
+<p><img src="paste-Czc-xzXa-e3FeqhsaX_RQ.png" class="img-fluid"></p>
+</section>
+<section id="cambiar-el-nombre-del-equipo." class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Cambiar el nombre del equipo.</h1>
+<p>Si no hemos configurado el nombre correcto durante la instalación como se muestra en el paso anterior, podemos cambiarlo una vez creado:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> hostnamectl set-hostname zbx-docker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Comprobamos:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hostname</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Resultado esperado:</em> <code>zbx-docker</code></p>
+<blockquote class="blockquote">
+<p><strong>Consejo pedagógico:</strong> El nombre del equipo no es obligatorio, pero ayuda a saber dónde estamos trabajando. En una práctica con varias máquinas, esto evita el clásico “lo he instalado en la VM que no era”.</p>
+</blockquote>
+<section id="comprobar-la-ip-y-conectividad" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="comprobar-la-ip-y-conectividad"><span class="header-section-number">5.1</span> Comprobar la IP y conectividad</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Comprobar conectividad con las otras máquinas haciendo ping desde el host a la ip del servidor.</p>
+<hr>
+</section>
+</section>
+<section id="parte-2-instalar-docker-y-docker-compose" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Parte 2 — Instalar Docker y Docker Compose</h1>
+<blockquote class="blockquote">
+<p><strong>Nota técnica:</strong> Docker recomienda instalar Docker Engine en Ubuntu configurando previamente su repositorio apt, y Docker Compose se instala actualmente como plugin con el paquete docker-compose-plugin.</p>
+</blockquote>
+<section id="actualizar-paquetes" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="actualizar-paquetes"><span class="header-section-number">6.1</span> Actualizar paquetes</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade <span class="at">-y</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comando</th>
+<th style="text-align: left;">Explicación</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">apt update</td>
+<td style="text-align: left;">Actualiza la lista de paquetes disponibles.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">apt upgrade -y</td>
+<td style="text-align: left;">Instala las actualizaciones pendientes.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="instalar-paquetes-necesarios" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="instalar-paquetes-necesarios"><span class="header-section-number">6.2</span> Instalar paquetes necesarios</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> ca-certificates curl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Paquete</th>
+<th style="text-align: left;">Función</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ca-certificates</td>
+<td style="text-align: left;">Permite validar certificados HTTPS.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">curl</td>
+<td style="text-align: left;">Permite descargar datos desde una URL.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="añadir-la-clave-oficial-de-docker" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="añadir-la-clave-oficial-de-docker"><span class="header-section-number">6.3</span> Añadir la clave oficial de Docker</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> install <span class="at">-m</span> 0755 <span class="at">-d</span> /etc/apt/keyrings</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> curl <span class="at">-fsSL</span> https://download.docker.com/linux/ubuntu/gpg <span class="at">-o</span> /etc/apt/keyrings/docker.asc</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chmod a+r /etc/apt/keyrings/docker.asc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="añadir-el-repositorio-de-docker" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="añadir-el-repositorio-de-docker"><span class="header-section-number">6.4</span> Añadir el repositorio de Docker</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="st">"deb [arch=</span><span class="va">$(</span><span class="ex">dpkg</span> <span class="at">--print-architecture</span><span class="va">)</span><span class="st"> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu </span><span class="dt">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="va">$(</span><span class="bu">.</span> /etc/os-release <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">"</span><span class="va">${UBUNTU_CODENAME</span><span class="op">:-</span><span class="va">$VERSION_CODENAME}</span><span class="st">"</span><span class="va">)</span><span class="st"> stable"</span> <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> tee /etc/apt/sources.list.d/docker.list <span class="op">&gt;</span> /dev/null</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="instalar-docker-engine-y-docker-compose" class="level2" data-number="6.5">
+<h2 data-number="6.5" class="anchored" data-anchor-id="instalar-docker-engine-y-docker-compose"><span class="header-section-number">6.5</span> Instalar Docker Engine y Docker Compose</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 67%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Paquete</th>
+<th style="text-align: left;">Función</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">docker-ce</td>
+<td style="text-align: left;">Motor principal de Docker.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">docker-ce-cli</td>
+<td style="text-align: left;">Comandos de Docker.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">containerd.io</td>
+<td style="text-align: left;">Servicio interno para ejecutar contenedores.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">docker-buildx-plugin</td>
+<td style="text-align: left;">Plugin para construcción avanzada de imágenes.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">docker-compose-plugin</td>
+<td style="text-align: left;">Permite usar docker compose.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="comprobar-docker" class="level2" data-number="6.6">
+<h2 data-number="6.6" class="anchored" data-anchor-id="comprobar-docker"><span class="header-section-number">6.6</span> Comprobar Docker</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> <span class="at">--version</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose version</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Probamos Docker levantando un contenedor de prueba:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> docker run hello-world</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Resultado esperado:</em> <code>Hello from Docker!</code></p>
+</section>
+<section id="permitir-usar-docker-sin-sudo" class="level2" data-number="6.7">
+<h2 data-number="6.7" class="anchored" data-anchor-id="permitir-usar-docker-sin-sudo"><span class="header-section-number">6.7</span> Permitir usar Docker sin sudo</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> usermod <span class="at">-aG</span> docker <span class="va">$USER</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">newgrp</span> docker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Comprobamos:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Si no da error de permisos, Docker está listo.</p>
+<hr>
+</section>
+</section>
+<section id="parte-3-crear-el-proyecto-docker-compose-de-zabbix" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Parte 3 — Crear el proyecto Docker Compose de Zabbix</h1>
+<section id="crear-una-carpeta-de-trabajo" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="crear-una-carpeta-de-trabajo"><span class="header-section-number">7.1</span> Crear una carpeta de trabajo</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> ~/zabbix-docker</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/zabbix-docker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="crear-el-archivo-.env" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="crear-el-archivo-.env"><span class="header-section-number">7.2</span> Crear el archivo .env</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> .env</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Pegar este contenido:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="dt">POSTGRES_USER</span><span class="ot">=</span><span class="st">zabbix</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">POSTGRES_PASSWORD</span><span class="ot">=</span><span class="st">ZabbixDB_2026!</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="dt">POSTGRES_DB</span><span class="ot">=</span><span class="st">zabbix</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">Función</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">POSTGRES_USER</td>
+<td style="text-align: left;">Usuario de la base de datos.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">POSTGRES_PASSWORD</td>
+<td style="text-align: left;">Contraseña de la base de datos.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">POSTGRES_DB</td>
+<td style="text-align: left;">Nombre de la base de datos.</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Importante:</strong> En un entorno real no usaríamos una contraseña tan visible en una práctica entregable, pero aquí interesa que el alumno vea claramente la relación entre servicios.</p>
+</blockquote>
+</section>
+<section id="crear-el-archivo-docker-compose.yml" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="crear-el-archivo-docker-compose.yml"><span class="header-section-number">7.3</span> Crear el archivo docker-compose.yml</h2>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nano</span> docker-compose.yml</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Pegar este contenido:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">services</span><span class="kw">:</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">postgres-server</span><span class="kw">:</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> postgres:16-alpine</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> postgres-server</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_USER</span><span class="kw">:</span><span class="at"> ${POSTGRES_USER}</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_PASSWORD</span><span class="kw">:</span><span class="at"> ${POSTGRES_PASSWORD}</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_DB</span><span class="kw">:</span><span class="at"> ${POSTGRES_DB}</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> zabbix-postgres-data:/var/lib/postgresql/data</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">networks</span><span class="kw">:</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> zabbix-net</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">healthcheck</span><span class="kw">:</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">test</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"CMD-SHELL"</span><span class="kw">,</span><span class="at"> </span><span class="st">"pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"</span><span class="kw">]</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">interval</span><span class="kw">:</span><span class="at"> 10s</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">timeout</span><span class="kw">:</span><span class="at"> 5s</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">retries</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">zabbix-server</span><span class="kw">:</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> zabbix/zabbix-server-pgsql:alpine-7.0-latest</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> zabbix-server</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">DB_SERVER_HOST</span><span class="kw">:</span><span class="at"> postgres-server</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_USER</span><span class="kw">:</span><span class="at"> ${POSTGRES_USER}</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_PASSWORD</span><span class="kw">:</span><span class="at"> ${POSTGRES_PASSWORD}</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_DB</span><span class="kw">:</span><span class="at"> ${POSTGRES_DB}</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"10051:10051"</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">depends_on</span><span class="kw">:</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">postgres-server</span><span class="kw">:</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">condition</span><span class="kw">:</span><span class="at"> service_healthy</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">networks</span><span class="kw">:</span></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> zabbix-net</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">zabbix-web</span><span class="kw">:</span></span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> zabbix-web</span></span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">ZBX_SERVER_HOST</span><span class="kw">:</span><span class="at"> zabbix-server</span></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">DB_SERVER_HOST</span><span class="kw">:</span><span class="at"> postgres-server</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_USER</span><span class="kw">:</span><span class="at"> ${POSTGRES_USER}</span></span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_PASSWORD</span><span class="kw">:</span><span class="at"> ${POSTGRES_PASSWORD}</span></span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">POSTGRES_DB</span><span class="kw">:</span><span class="at"> ${POSTGRES_DB}</span></span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">PHP_TZ</span><span class="kw">:</span><span class="at"> Europe/Madrid</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">"8080:8080"</span></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">depends_on</span><span class="kw">:</span></span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> zabbix-server</span></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">networks</span><span class="kw">:</span></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> zabbix-net</span></span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a><span class="fu">networks</span><span class="kw">:</span></span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">zabbix-net</span><span class="kw">:</span></span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">driver</span><span class="kw">:</span><span class="at"> bridge</span></span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">zabbix-postgres-data</span><span class="kw">:</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="parte-4-entender-el-archivo-docker-compose" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Parte 4 — Entender el archivo Docker Compose</h1>
+<section id="servicio-postgres-server" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="servicio-postgres-server"><span class="header-section-number">8.1</span> Servicio postgres-server</h2>
+<p>Este contenedor será la base de datos de Zabbix. Zabbix necesita una base de datos para guardar: hosts, usuarios, plantillas, métricas, eventos, problemas, alertas y dashboards. La diferencia con una instalación tradicional es que aquí PostgreSQL no se instala directamente en Ubuntu, sino dentro de un contenedor.</p>
+</section>
+<section id="servicio-zabbix-server" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="servicio-zabbix-server"><span class="header-section-number">8.2</span> Servicio zabbix-server</h2>
+<p>Este es el motor principal de Zabbix. Se encarga de consultar agentes, recibir datos, evaluar alertas, procesar eventos y guardar información en PostgreSQL. Publicamos el puerto <strong>10051</strong> para que los agentes puedan comunicarse de forma remota con el servidor central.</p>
+</section>
+<section id="servicio-zabbix-web" class="level2" data-number="8.3">
+<h2 data-number="8.3" class="anchored" data-anchor-id="servicio-zabbix-web"><span class="header-section-number">8.3</span> Servicio zabbix-web</h2>
+<p>Este contenedor ofrece la interfaz web. Publicamos el puerto <strong>8080</strong>. Por eso entraremos desde el navegador a <code>[http://192.168.31.13:8080](http://192.168.31.13:8080)</code>. No usamos el puerto 80 directamente para evitar conflictos con otros servicios web del sistema.</p>
+</section>
+<section id="red-interna-zabbix-net" class="level2" data-number="8.4">
+<h2 data-number="8.4" class="anchored" data-anchor-id="red-interna-zabbix-net"><span class="header-section-number">8.4</span> Red interna zabbix-net</h2>
+<p>Docker crea una red privada bridge para que los contenedores se comuniquen entre ellos por el nombre del servicio. De esta forma, <code>zabbix-web</code> localiza al backend apuntando al host <code>zabbix-server</code> sin que el alumno necesite saber las IPs internas virtuales de Docker.</p>
+</section>
+<section id="volumen-zabbix-postgres-data" class="level2" data-number="8.5">
+<h2 data-number="8.5" class="anchored" data-anchor-id="volumen-zabbix-postgres-data"><span class="header-section-number">8.5</span> Volumen zabbix-postgres-data</h2>
+<p>El volumen guarda los datos de PostgreSQL de forma persistente. Si el contenedor se destruye o se actualiza, la información permanece intacta en el volumen. Si el volumen se borra explícitamente, se pierde toda la base de datos de Zabbix. <em>Docker sin volumen es como escribir los apuntes en la arena de la playa. Muy bonito hasta que llega la ola.</em></p>
+<hr>
+</section>
+</section>
+<section id="parte-5-arrancar-zabbix" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Parte 5 — Arrancar Zabbix</h1>
+<p>Desde la carpeta del proyecto ejecute:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/zabbix-docker</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="ver-contenedores-activos" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="ver-contenedores-activos"><span class="header-section-number">9.1</span> Ver contenedores activos</h2>
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose ps</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Resultado esperado:</em> <code>postgres-server</code>, <code>zabbix-server</code> y <code>zabbix-web</code> en estado <code>running</code>.</p>
+</section>
+<section id="ver-los-logs-de-inicialización" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="ver-los-logs-de-inicialización"><span class="header-section-number">9.2</span> Ver los logs de inicialización</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose logs <span class="at">-f</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<blockquote class="blockquote">
+<p><strong>Nota:</strong> La primera vez puede tardar un poco porque Zabbix tiene que preparar y estructurar sus tablas iniciales en la base de datos. Para salir de la vista de logs pulse <code>CTRL + C</code>.</p>
+</blockquote>
+<hr>
+</section>
+</section>
+<section id="parte-6-acceder-a-zabbix-desde-navegador" class="level1" data-number="10">
+<h1 data-number="10"><span class="header-section-number">10</span> Parte 6 — Acceder a Zabbix desde navegador</h1>
+<p>Desde el equipo anfitrión, abra un navegador web y acceda a: <code>[http://192.168.31.13:8080](http://192.168.31.13:8080)</code></p>
+<section id="credenciales-iniciales" class="level2" data-number="10.1">
+<h2 data-number="10.1" class="anchored" data-anchor-id="credenciales-iniciales"><span class="header-section-number">10.1</span> Credenciales iniciales</h2>
+<ul>
+<li><strong>Usuario:</strong> Admin</li>
+<li><strong>Contraseña:</strong> zabbix</li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Nota de seguridad:</strong> La documentación oficial de Zabbix estipula estas credenciales de acceso por defecto para todas sus instalaciones y recomienda cambiarla tras el primer inicio de sesión.</p>
+</blockquote>
+</section>
+<section id="cambiar-idioma" class="level2" data-number="10.2">
+<h2 data-number="10.2" class="anchored" data-anchor-id="cambiar-idioma"><span class="header-section-number">10.2</span> Cambiar idioma</h2>
+<p>Dentro del panel de control de Zabbix: 1. Vaya a <strong>User settings</strong> -&gt; <strong>Profile</strong> -&gt; <strong>Language</strong>. 2. Seleccione <strong>Spanish (es_ES)</strong> y guarde los cambios.</p>
+</section>
+<section id="cambiar-la-contraseña-inicial" class="level2" data-number="10.3">
+<h2 data-number="10.3" class="anchored" data-anchor-id="cambiar-la-contraseña-inicial"><span class="header-section-number">10.3</span> Cambiar la contraseña inicial</h2>
+<ol type="1">
+<li>Vaya a <strong>User settings</strong> -&gt; <strong>Profile</strong> -&gt; <strong>Change password</strong>.</li>
+<li>Para clase usaremos una clave genérica unificada: <code>Zabbix_Alumno_2026!</code></li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="parte-7-comprobar-puertos-desde-zbx-docker" class="level1" data-number="11">
+<h1 data-number="11"><span class="header-section-number">11</span> Parte 7 — Comprobar puertos desde ZBX-DOCKER</h1>
+<p>En la máquina Ubuntu donde está Docker, verifique que los puertos estén escuchando en el sistema de red:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="at">-tulpen</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">'8080|10051'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Si el cortafuegos de Ubuntu (<code>UFW</code>) está activo, habilite las conexiones entrantes:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow 8080/tcp</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow 10051/tcp</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw reload</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="parte-8-preparar-la-máquina-linux-monitorizada" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Parte 8 — Preparar la máquina Linux monitorizada</h1>
+<p>Esta parte se realiza íntegramente en la máquina: * <strong>Host:</strong> LNX-DB * <strong>IP Real Estática:</strong> 10.0.20.60 * <strong>Sistema:</strong> Ubuntu Server 26.04</p>
+<section id="ajustar-nombre-de-host-y-actualizar" class="level2" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="ajustar-nombre-de-host-y-actualizar"><span class="header-section-number">12.1</span> Ajustar nombre de host y actualizar</h2>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> hostnamectl set-hostname lnx-db</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update <span class="kw">&amp;&amp;</span> <span class="fu">sudo</span> apt upgrade <span class="at">-y</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="instalar-mariadb-y-herramientas-de-prueba" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="instalar-mariadb-y-herramientas-de-prueba"><span class="header-section-number">12.2</span> Instalar MariaDB y herramientas de prueba</h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> mariadb-server stress-ng netcat-openbsd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Habilitamos el servicio del motor de base de datos de pruebas:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable <span class="at">--now</span> mariadb</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> status mariadb <span class="at">--no-pager</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="instalar-zabbix-agent-2-en-linux" class="level2" data-number="12.3">
+<h2 data-number="12.3" class="anchored" data-anchor-id="instalar-zabbix-agent-2-en-linux"><span class="header-section-number">12.3</span> Instalar Zabbix Agent 2 en Linux</h2>
+<p>Descargamos y registramos el repositorio oficial de empaquetado de Zabbix:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.0+ubuntu26.04_all.deb</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dpkg <span class="at">-i</span> zabbix-release_latest_7.0+ubuntu26.04_all.deb</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> zabbix-agent2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="configurar-el-agente-linux" class="level2" data-number="12.4">
+<h2 data-number="12.4" class="anchored" data-anchor-id="configurar-el-agente-linux"><span class="header-section-number">12.4</span> Configurar el agente Linux</h2>
+<p>Modificamos el archivo de configuración del agente:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> nano /etc/zabbix/zabbix_agent2.conf</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Busque y edite con cuidado las siguientes líneas asegurándose de poner la IP correcta del servidor central de Zabbix y el nombre del equipo correspondiente:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Server</span><span class="ot">=</span><span class="st">192.168.31.13</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="dt">ServerActive</span><span class="ot">=</span><span class="st">192.168.31.13</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="dt">Hostname</span><span class="ot">=</span><span class="st">lnx-db</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Reinicie y aplique los cambios en el inicio del sistema operativo:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl restart zabbix-agent2</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable zabbix-agent2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="abrir-firewall-de-red-en-lnx-db" class="level2" data-number="12.5">
+<h2 data-number="12.5" class="anchored" data-anchor-id="abrir-firewall-de-red-en-lnx-db"><span class="header-section-number">12.5</span> Abrir firewall de red en LNX-DB</h2>
+<p>Si UFW está habilitado, abra el puerto <strong>10050</strong> para permitir que el servidor central de Zabbix consulte las métricas:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow 10050/tcp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+</section>
+<section id="parte-9-añadir-lnx-db-en-la-interfaz-de-zabbix" class="level1" data-number="13">
+<h1 data-number="13"><span class="header-section-number">13</span> Parte 9 — Añadir LNX-DB en la interfaz de Zabbix</h1>
+<p>Desde el entorno web de Zabbix, vaya a: <strong>Data collection</strong> -&gt; <strong>Hosts</strong> -&gt; <strong>Create host</strong></p>
+<p>Configure rigurosamente los siguientes parámetros:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Campo</th>
+<th style="text-align: left;">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Host name</strong></td>
+<td style="text-align: left;">lnx-db</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Visible name</strong></td>
+<td style="text-align: left;">Servidor Linux DB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Host group</strong></td>
+<td style="text-align: left;">Linux servers</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Interface</strong></td>
+<td style="text-align: left;">Seleccione <em>Agent</em></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>IP address</strong></td>
+<td style="text-align: left;">10.0.20.60</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Port</strong></td>
+<td style="text-align: left;">10050</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Template</strong></td>
+<td style="text-align: left;">Linux by Zabbix agent</td>
+</tr>
+</tbody>
+</table>
+<p>Haga clic en <strong>Add</strong>. Espere 1 o 2 minutos hasta que la etiqueta de estado “ZBX” se ponga de color verde. Después, dirígete a <strong>Monitoring</strong> -&gt; <strong>Latest data</strong>, filtre por el host <code>lnx-db</code> y valide que están entrando de forma constante todas las métricas operativas del sistema.</p>
+<hr>
+</section>
+<section id="parte-10-preparar-la-máquina-windows-monitorizada" class="level1" data-number="14">
+<h1 data-number="14"><span class="header-section-number">14</span> Parte 10 — Preparar la máquina Windows monitorizada</h1>
+<p>Esta parte se realiza en: * <strong>Host:</strong> WIN-CLI * <strong>IP:</strong> 10.0.20.242 * <strong>Sistema:</strong> Windows 10/11</p>
+<section id="descargar-zabbix-agent-2" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="descargar-zabbix-agent-2"><span class="header-section-number">14.1</span> Descargar Zabbix Agent 2</h2>
+<ol type="1">
+<li>Desde Windows, acceda a la página oficial de descargas de agentes de Zabbix.</li>
+<li>Descargue el instalador <code>.msi</code> seleccionando: <strong>7.0 LTS</strong>, <strong>Windows</strong>, componente <strong>Agent 2</strong>, cifrado <strong>OpenSSL</strong>, arquitectura <strong>amd64</strong>.</li>
+</ol>
+</section>
+<section id="instalar-el-agente-en-el-sistema" class="level2" data-number="14.2">
+<h2 data-number="14.2" class="anchored" data-anchor-id="instalar-el-agente-en-el-sistema"><span class="header-section-number">14.2</span> Instalar el agente en el sistema</h2>
+<p>Ejecute el instalador MSI como administrador e introduzca los datos del laboratorio: * <strong>Host name:</strong> win-cli * <strong>Zabbix server IP/DNS:</strong> 192.168.31.13 * <strong>Server or Proxy for active checks:</strong> 192.168.31.13 * <strong>Listen port:</strong> 10050</p>
+</section>
+<section id="comprobar-el-servicio-en-windows" class="level2" data-number="14.3">
+<h2 data-number="14.3" class="anchored" data-anchor-id="comprobar-el-servicio-en-windows"><span class="header-section-number">14.3</span> Comprobar el servicio en Windows</h2>
+<p>Abra una consola de <strong>PowerShell</strong> como administrador y ejecute:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Get-Service</span> <span class="st">"*Zabbix*"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Resultado esperado:</em> Estado <code>Running</code>.</p>
+</section>
+<section id="abrir-firewall-de-windows-defender" class="level2" data-number="14.4">
+<h2 data-number="14.4" class="anchored" data-anchor-id="abrir-firewall-de-windows-defender"><span class="header-section-number">14.4</span> Abrir firewall de Windows Defender</h2>
+<p>En la consola de PowerShell como administrador, cree la regla para permitir el tráfico entrante de monitorización:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>New-NetFirewallRule `</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>DisplayName <span class="st">"Zabbix Agent 2"</span> `</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>Direction Inbound `</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>Protocol TCP `</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>LocalPort <span class="dv">10050</span> `</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>Action Allow `</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">-</span>RemoteAddress <span class="dv">192.168</span><span class="op">.</span><span class="dv">31.13</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="parte-11-añadir-win-cli-en-zabbix" class="level1" data-number="15">
+<h1 data-number="15"><span class="header-section-number">15</span> Parte 11 — Añadir WIN-CLI en Zabbix</h1>
+<p>Desde la interfaz web de Zabbix, proceda a dar de alta la máquina cliente: <strong>Data collection</strong> -&gt; <strong>Hosts</strong> -&gt; <strong>Create host</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Campo</th>
+<th style="text-align: left;">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Host name</strong></td>
+<td style="text-align: left;">win-cli</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Visible name</strong></td>
+<td style="text-align: left;">Cliente Windows</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Host group</strong></td>
+<td style="text-align: left;">Windows servers</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Interface</strong></td>
+<td style="text-align: left;">Agent</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>IP address</strong></td>
+<td style="text-align: left;">10.0.20.242</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Port</strong></td>
+<td style="text-align: left;">10050</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Template</strong></td>
+<td style="text-align: left;">Windows by Zabbix agent</td>
+</tr>
+</tbody>
+</table>
+<p>Haga clic en <strong>Add</strong>. Posteriormente verifique la entrada de contadores en el apartado de <strong>Latest data</strong>.</p>
+</section>
+<section id="parte-12-comprobar-comunicación-desde-el-servidor-zabbix" class="level1" data-number="16">
+<h1 data-number="16"><span class="header-section-number">16</span> Parte 12 — Comprobar comunicación desde el servidor Zabbix</h1>
+<p>Como el servidor Zabbix está dentro de un contenedor aislado, la forma más clara de comprobar la conectividad de red es inyectarse directamente en él.</p>
+<p>En la terminal de <strong>ZBX-DOCKER</strong>, ejecute:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> exec <span class="at">-it</span> zabbix-server sh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Dentro de la shell interna del contenedor, haga un ping de prueba hacia el host Linux:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ping</span> <span class="at">-c</span> 3 10.0.20.60</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="bu">exit</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>De igual modo, verifique los puertos abiertos de los agentes desde la máquina base Ubuntu de <strong>ZBX-DOCKER</strong>:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nc</span> <span class="at">-zv</span> 10.0.20.60 10050</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="ex">nc</span> <span class="at">-zv</span> 10.0.20.242 10050</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>Resultado esperado:</em> <code>succeeded</code>.</p>
+</section>
+<section id="parte-13-crear-una-comprobación-del-servicio-mariadb" class="level1" data-number="17">
+<h1 data-number="17"><span class="header-section-number">17</span> Parte 13 — Crear una comprobación del servicio MariaDB</h1>
+<p>El objetivo de esta sección es monitorizar el estado de salud del puerto remoto del motor de base de datos (<code>3306/tcp</code>) para que Zabbix envíe un aviso si el servicio se cae.</p>
+<section id="crear-el-ítem-en-zabbix" class="level2" data-number="17.1">
+<h2 data-number="17.1" class="anchored" data-anchor-id="crear-el-ítem-en-zabbix"><span class="header-section-number">17.1</span> Crear el ítem en Zabbix</h2>
+<p>Vaya a: <strong>Data collection</strong> -&gt; <strong>Hosts</strong> -&gt; Seleccione la línea de <code>lnx-db</code> -&gt; Haga clic en <strong>Items</strong> -&gt; <strong>Create item</strong>.</p>
+<p>Configure los siguientes valores: * <strong>Name:</strong> Comprobación puerto MariaDB 3306 * <strong>Type:</strong> Simple check * <strong>Key:</strong> net.tcp.service[tcp,,3306] * <strong>Type of information:</strong> Numeric unsigned * <strong>Update interval:</strong> 1m</p>
+<p>Guarde el registro. Este ítem realiza una petición de red TCP devolviendo de forma periódica: * <strong><code>1</code></strong>: El puerto está abierto y responde de forma correcta. * <strong><code>0</code></strong>: El puerto está cerrado o inaccesible.</p>
+<hr>
+</section>
+</section>
+<section id="parte-14-crear-una-alerta-para-mariadb-trigger" class="level1" data-number="18">
+<h1 data-number="18"><span class="header-section-number">18</span> Parte 14 — Crear una alerta para MariaDB (Trigger)</h1>
+<p>Para automatizar la detección del fallo cuando la métrica caiga a cero: Vaya a: <strong>Data collection</strong> -&gt; <strong>Hosts</strong> -&gt; Haga clic en <strong>Triggers</strong> en la línea de <code>lnx-db</code> -&gt; <strong>Create trigger</strong></p>
+<ul>
+<li><strong>Name:</strong> MariaDB no responde en {HOST.NAME}</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Expression:</strong> last(/lnx-db/net.tcp.service[tcp,,3306])=0</li>
+</ul>
+<p>Guarde el disparador. Si el último valor recibido de la comprobación del puerto 3306 es estrictamente 0, Zabbix generará un problema visual visible en la consola general.</p>
+<hr>
+</section>
+<section id="parte-15-provocar-una-incidencia-controlada" class="level1" data-number="19">
+<h1 data-number="19"><span class="header-section-number">19</span> Parte 15 — Provocar una incidencia controlada</h1>
+<section id="forzar-la-caída-de-la-base-de-datos" class="level2" data-number="19.1">
+<h2 data-number="19.1" class="anchored" data-anchor-id="forzar-la-caída-de-la-base-de-datos"><span class="header-section-number">19.1</span> Forzar la caída de la base de datos</h2>
+<p>Conéctate por terminal a <strong>LNX-DB</strong> e interrumpa de forma controlada el servicio de MariaDB:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl stop mariadb</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Espera un lapso de entre 1 y 2 minutos. Compruebe la sección de <strong>Monitoring</strong> -&gt; <strong>Problems</strong> en la web de Zabbix. Deberá aparecer una alerta crítica activa de color rojo.</p>
+</section>
+<section id="recuperar-el-servicio" class="level2" data-number="19.2">
+<h2 data-number="19.2" class="anchored" data-anchor-id="recuperar-el-servicio"><span class="header-section-number">19.2</span> Recuperar el servicio</h2>
+<p>Levante de nuevo el servicio en <strong>LNX-DB</strong>:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start mariadb</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Observe el panel de control web y verifique cómo el problema se resuelve de forma automática en cuanto se ejecuta la siguiente comprobación recurrente.</p>
+<hr>
+</section>
+</section>
+<section id="parte-16-generar-carga-de-cpu-en-linux" class="level1" data-number="20">
+<h1 data-number="20"><span class="header-section-number">20</span> Parte 16 — Generar carga de CPU en Linux</h1>
+<p>Validaremos los gráficos inyectando estrés al sistema. En la terminal de <strong>LNX-DB</strong>, ejecute:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ex">stress-ng</span> <span class="at">--cpu</span> 2 <span class="at">--timeout</span> 120s</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Vaya de forma inmediata en la web a <strong>Monitoring</strong> -&gt; <strong>Latest data</strong>, busque las métricas de procesador de <code>lnx-db</code> y compruebe el pico de utilización generado por la herramienta.</p>
+<hr>
+</section>
+<section id="parte-17-generar-consumo-de-disco-duro-real" class="level1" data-number="21">
+<h1 data-number="21"><span class="header-section-number">21</span> Parte 17 — Generar consumo de disco duro real</h1>
+<blockquote class="blockquote">
+<p><strong>Nota pedagógica fundamental:</strong> En Ubuntu Server, el directorio virtual <code>/tmp</code> está montado sobre un sistema de archivos temporal de tipo <code>tmpfs</code> residente directo en la memoria RAM. Para simular un llenado real en las métricas de disco de almacenamiento físico de la partición raíz (<code>/</code>), <strong>la prueba debe realizarse de forma obligatoria dentro de su directorio personal o carpeta home (<code>~/</code>)</strong>.</p>
+</blockquote>
+<p>En la consola de <strong>LNX-DB</strong>, reserve un archivo ficticio de 2 Gigabytes de tamaño en su disco persistente:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">fallocate</span> <span class="at">-l</span> 2G ~/prueba_zabbix.img</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Verifique la alteración local de las particiones de almacenamiento con:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Compruebe en la interfaz web de Zabbix cómo las gráficas de almacenamiento del host detectan el incremento de espacio ocupado en la partición de almacenamiento raíz de la VM.</p>
+<p>Una vez completada la comprobación, elimine el archivo para limpiar el entorno del laboratorio:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> ~/prueba_zabbix.img</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">df</span> <span class="at">-h</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<hr>
+</section>
+<section id="parte-18-crear-un-dashboard-básico" class="level1" data-number="22">
+<h1 data-number="22"><span class="header-section-number">22</span> Parte 18 — Crear un dashboard básico</h1>
+<p>Vaya a: <strong>Dashboards</strong> -&gt; <strong>Create dashboard</strong> * <strong>Name:</strong> Monitorización aula - Zabbix Docker</p>
+<p>Añada componentes visuales (<em>Widgets</em>) para tener un centro de control básico: * <strong>Problems</strong>: Muestra las incidencias operativas activas de la red. * <strong>Host availability</strong>: Muestra de un vistazo si las máquinas del aula están vivas o caídas. * <strong>Graph</strong>: Rendimiento de CPU en tiempo real de <code>lnx-db</code>. * <strong>Graph</strong>: Histórico de consumo de RAM de <code>win-cli</code>. * <strong>Graph</strong>: Espacio utilizado en disco duro persistente de <code>lnx-db</code>.</p>
+<hr>
+</section>
+<section id="parte-19-comandos-útiles-de-docker-compose" class="level1" data-number="23">
+<h1 data-number="23"><span class="header-section-number">23</span> Parte 19 — Comandos útiles de Docker Compose</h1>
+<p>Estas tareas de administración operativa se deben realizar posicionados en la ruta raíz del proyecto (<code>cd ~/zabbix-docker</code>):</p>
+<ul>
+<li><strong>Ver el estado y salud actual de los contenedores:</strong> <code>bash     docker compose ps</code></li>
+<li><strong>Ver logs continuos en tiempo real:</strong> <code>bash     docker compose logs -f</code></li>
+<li><strong>Ver logs de un único contenedor específico:</strong> <code>bash     docker compose logs -f zabbix-server</code></li>
+<li><strong>Reiniciar todos los servicios de la plataforma:</strong> <code>bash     docker compose restart</code></li>
+<li><strong>Detener los contenedores sin borrar su estado:</strong> <code>bash     docker compose stop</code></li>
+<li><strong>Destruir los contenedores y redes virtuales del proyecto:</strong> <code>bash     docker compose down</code></li>
+<li><strong>Borrar de forma absoluta los contenedores, redes y la base de datos completa:</strong> <code>bash     docker compose down -v</code> &gt; <strong>¡Peligro!</strong> El parámetro <code>-v</code> elimina de forma irreversible el volumen de almacenamiento de PostgreSQL. Si se ejecuta, los alumnos perderán de golpe todas las configuraciones, hosts y dashboards creados en la práctica.</li>
+</ul>
+<hr>
+</section>
+<section id="parte-20-solución-de-problemas-comunes-troubleshooting" class="level1" data-number="24">
+<h1 data-number="24"><span class="header-section-number">24</span> Parte 20 — Solución de problemas comunes (Troubleshooting)</h1>
+<section id="t1-no-carga-la-interfaz-web-de-zabbix-en-el-puerto-8080" class="level2" data-number="24.1">
+<h2 data-number="24.1" class="anchored" data-anchor-id="t1-no-carga-la-interfaz-web-de-zabbix-en-el-puerto-8080"><span class="header-section-number">24.1</span> T1: No carga la interfaz web de Zabbix en el puerto 8080</h2>
+<ul>
+<li>Asegúrese de que el contenedor web esté activo ejecutando <code>docker compose ps</code>.</li>
+<li>Revise las trazas del servidor HTTP interno con <code>docker compose logs zabbix-web</code>.</li>
+<li>Compruebe que el puerto responda localmente en el anfitrión con <code>ss -tulpen | grep 8080</code>.</li>
+</ul>
+</section>
+<section id="t2-abre-la-web-pero-indica-que-no-puede-conectar-con-el-servidor-central-zabbix" class="level2" data-number="24.2">
+<h2 data-number="24.2" class="anchored" data-anchor-id="t2-abre-la-web-pero-indica-que-no-puede-conectar-con-el-servidor-central-zabbix"><span class="header-section-number">24.2</span> T2: Abre la web pero indica que no puede conectar con el Servidor Central Zabbix</h2>
+<ul>
+<li>El motor del core se ha detenido. Revise los motivos del fallo con <code>docker compose logs zabbix-server</code>.</li>
+<li>Asegúrese de que no se hayan modificado los puertos de enlace del manifiesto yaml.</li>
+</ul>
+</section>
+<section id="t3-el-servidor-zabbix-no-puede-conectar-con-la-base-de-datos-postgresql" class="level2" data-number="24.3">
+<h2 data-number="24.3" class="anchored" data-anchor-id="t3-el-servidor-zabbix-no-puede-conectar-con-la-base-de-datos-postgresql"><span class="header-section-number">24.3</span> T3: El Servidor Zabbix no puede conectar con la Base de Datos PostgreSQL</h2>
+<ul>
+<li>Examine los motivos del rechazo de la base de datos con <code>docker compose logs postgres-server</code>.</li>
+<li>Valide que las credenciales declaradas coincidan de forma exacta. Imprima sus variables con <code>cat .env</code> y compruebe que los campos <code>POSTGRES_USER</code>, <code>POSTGRES_PASSWORD</code> y <code>POSTGRES_DB</code> tengan los mismos valores tipográficos en todas las secciones del manifiesto <code>docker-compose.yml</code>.</li>
+</ul>
+</section>
+<section id="t4-la-máquina-de-pruebas-lnx-db-se-queda-sin-registrar-datos-en-la-web" class="level2" data-number="24.4">
+<h2 data-number="24.4" class="anchored" data-anchor-id="t4-la-máquina-de-pruebas-lnx-db-se-queda-sin-registrar-datos-en-la-web"><span class="header-section-number">24.4</span> T4: La máquina de pruebas LNX-DB se queda sin registrar datos en la web</h2>
+<ul>
+<li>Compruebe que el servicio del agente de monitorización esté activo: <code>systemctl status zabbix-agent2</code>.</li>
+<li>Extraiga y verifique los parámetros del archivo de configuración ejecutando: <code>bash     grep -E "^Server=|^ServerActive=|^Hostname=" /etc/zabbix/zabbix_agent2.conf</code></li>
+<li>Verifique que apunte de forma estricta a la IP de la máquina de Docker (<code>192.168.31.13</code>) y que el nombre de host coincida letra por letra en la interfaz web de administración.</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="resultado-final-esperado" class="level1" data-number="25">
+<h1 data-number="25"><span class="header-section-number">25</span> Resultado final esperado</h1>
+<p>Al concluir satisfactoriamente el laboratorio, la infraestructura lógica de red se conformará siguiendo esta topología:</p>
+<pre class="text"><code>Ubuntu Server (ZBX-DOCKER) [192.168.31.13]
+│
+├── [Contenedor] PostgreSQL Server (Persistencia de base de datos)
+├── [Contenedor] Zabbix Server Engine (Gestiona puerto 10051)
+└── [Contenedor] Zabbix Web Frontend + Nginx (Gestiona puerto 8080)
+      │
+      ├── Enlace Pasivo/Activo (Puerto 10050) ---&gt; Ubuntu Server (LNX-DB) [10.0.20.60] (MariaDB)
+      └── Enlace Pasivo/Activo (Puerto 10050) ---&gt; Windows Client (WIN-CLI) [10.0.20.242]</code></pre>
+<hr>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

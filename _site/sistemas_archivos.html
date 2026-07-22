@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>ubuntu cheat sheet – Apuntes: Administración de Bases de Datos</title>
+<title>sistemas de archivos – Apuntes: Administración de Bases de Datos</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -77,6 +77,35 @@ gtag('js', new Date());
 gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -113,7 +142,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Anexos</a></li><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Ubuntu Cheat Sheet</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Bloque 2: Organización y Gestión de la información</a></li><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Sistemas de archivos</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -296,7 +325,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
       <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Sistemas de archivos</span></a>
   </div>
 </li>
@@ -348,7 +377,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
       <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link active">
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Ubuntu Cheat Sheet</span></a>
   </div>
 </li>
@@ -359,15 +388,42 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#sistemas-de-archivos-más-habituales" id="toc-sistemas-de-archivos-más-habituales" class="nav-link active" data-scroll-target="#sistemas-de-archivos-más-habituales"><span class="header-section-number">1</span> Sistemas de archivos más habituales:</a></li>
+  <li><a href="#nomenclatura-de-archivos-y-carpetas" id="toc-nomenclatura-de-archivos-y-carpetas" class="nav-link" data-scroll-target="#nomenclatura-de-archivos-y-carpetas"><span class="header-section-number">2</span> Nomenclatura de Archivos y Carpetas</a></li>
+  <li><a href="#jerarquias-de-almacenamiento" id="toc-jerarquias-de-almacenamiento" class="nav-link" data-scroll-target="#jerarquias-de-almacenamiento"><span class="header-section-number">3</span> Jerarquias de almacenamiento</a></li>
+  <li><a href="#volúmenes-lógicos-vs-físicos" id="toc-volúmenes-lógicos-vs-físicos" class="nav-link" data-scroll-target="#volúmenes-lógicos-vs-físicos"><span class="header-section-number">4</span> Volúmenes Lógicos vs Físicos</a></li>
+  <li><a href="#migraciones-de-datos" id="toc-migraciones-de-datos" class="nav-link" data-scroll-target="#migraciones-de-datos"><span class="header-section-number">5</span> Migraciones de Datos</a>
+  <ul>
+  <li><a href="#buenas-prácticas-en-una-migración" id="toc-buenas-prácticas-en-una-migración" class="nav-link" data-scroll-target="#buenas-prácticas-en-una-migración"><span class="header-section-number">5.1</span> Buenas prácticas en una migración</a></li>
+  </ul></li>
+  <li><a href="#archivado-de-datos" id="toc-archivado-de-datos" class="nav-link" data-scroll-target="#archivado-de-datos"><span class="header-section-number">6</span> Archivado de datos</a></li>
+  <li><a href="#almacenamiento-en-red-nas-y-san" id="toc-almacenamiento-en-red-nas-y-san" class="nav-link" data-scroll-target="#almacenamiento-en-red-nas-y-san"><span class="header-section-number">7</span> Almacenamiento en Red: NAS y SAN</a></li>
+  <li><a href="#acceso-paralelo-a-los-datos" id="toc-acceso-paralelo-a-los-datos" class="nav-link" data-scroll-target="#acceso-paralelo-a-los-datos"><span class="header-section-number">8</span> Acceso paralelo a los Datos</a>
+  <ul>
+  <li><a href="#introducción-a-la-tecnología-raid" id="toc-introducción-a-la-tecnología-raid" class="nav-link" data-scroll-target="#introducción-a-la-tecnología-raid"><span class="header-section-number">8.1</span> Introducción a la Tecnología RAID</a></li>
+  <li><a href="#niveles-de-raid-y-distribución-de-información" id="toc-niveles-de-raid-y-distribución-de-información" class="nav-link" data-scroll-target="#niveles-de-raid-y-distribución-de-información"><span class="header-section-number">8.2</span> Niveles de RAID y Distribución de Información</a>
+  <ul class="collapse">
+  <li><a href="#raid-0-stripping" id="toc-raid-0-stripping" class="nav-link" data-scroll-target="#raid-0-stripping"><span class="header-section-number">8.2.1</span> RAID 0 (Stripping)</a></li>
+  <li><a href="#raid-1-mirroring" id="toc-raid-1-mirroring" class="nav-link" data-scroll-target="#raid-1-mirroring"><span class="header-section-number">8.2.2</span> RAID 1 (Mirroring)</a></li>
+  <li><a href="#raid-5-fraccionamiento-con-paridad-distribuida" id="toc-raid-5-fraccionamiento-con-paridad-distribuida" class="nav-link" data-scroll-target="#raid-5-fraccionamiento-con-paridad-distribuida"><span class="header-section-number">8.2.3</span> RAID 5 (Fraccionamiento con Paridad Distribuida)</a></li>
+  <li><a href="#raid-10-espejo-de-seccionamiento-o-raid-10" id="toc-raid-10-espejo-de-seccionamiento-o-raid-10" class="nav-link" data-scroll-target="#raid-10-espejo-de-seccionamiento-o-raid-10"><span class="header-section-number">8.2.4</span> RAID 10 (Espejo de Seccionamiento o RAID 1+0)</a></li>
+  <li><a href="#tabla-comparativa-resumen" id="toc-tabla-comparativa-resumen" class="nav-link" data-scroll-target="#tabla-comparativa-resumen"><span class="header-section-number">8.2.5</span> Tabla Comparativa Resumen</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Anexos</a></li><li class="breadcrumb-item"><a href="./ubuntu_cheat_sheet.html">Ubuntu Cheat Sheet</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Bloque 2: Organización y Gestión de la información</a></li><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Sistemas de archivos</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">ubuntu cheat sheet</h1>
+<h1 class="title">sistemas de archivos</h1>
 </div>
 
 
@@ -384,9 +440,412 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </header>
 
 
-<p><img src="images/ubuntu-cheat-sheet[5].png" class="img-fluid"></p>
+<p>Un sistema de archivos es el método y la estructura de datos que un sistema operativo utiliza para controlar cómo se almacenan y recuperan los datos. Sin un sistema de archivos, la información colocada en un medio de almacenamiento sería un gran cuerpo de datos sin forma y sin manera de decir dónde termina un pedazo de información y comienza el siguiente.</p>
+<section id="sistemas-de-archivos-más-habituales" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Sistemas de archivos más habituales:</h1>
+<p>NTFS (New Technology File System): Es el sistema de archivos predeterminado para las versiones modernas de Windows. Ofrece características como seguridad, compresión y soporte para archivos grandes.</p>
+<p>exFAT (Extended File Allocation Table): Es un sistema de archivos utilizado principalmente en dispositivos de almacenamiento extraíbles, como memorias USB y tarjetas SD. Es compatible con múltiples sistemas operativos. No permite permisos avanzados ni características de seguridad como NTFS, pero es más eficiente para dispositivos de almacenamiento flash.</p>
+<p>ext4 (Fourth Extended File System): Es el sistema de archivos predeterminado para muchas distribuciones de Linux. Ofrece mejoras en rendimiento y capacidad en comparación con sus predecesores. Es robusto y tiene journaling (registro de cambios) para proteger la integridad de los datos. Es case sensitive, lo que significa que distingue entre mayúsculas y minúsculas en los nombres de archivos.</p>
+<p>APFS (Apple File System): Es el sistema de archivos utilizado en dispositivos Apple, como macOS, iOS y iPadOS. Está diseñado para optimizar el rendimiento y la seguridad en los dispositivos de Apple.</p>
+<p>XFS: Es un sistema de archivos de alto rendimiento utilizado en sistemas Linux y Unix. Es conocido por su capacidad para manejar grandes volúmenes de datos y su escalabilidad.</p>
+<p>El rendimiento del sistema de archivos sybyace afecta directamente al rendimiento de la base de datos. Un sistema de archivos eficiente puede mejorar la velocidad de lectura y escritura, mientras que un sistema de archivos ineficiente puede causar cuellos de botella y ralentizar el acceso a los datos. Por lo tanto, es crucial elegir un sistema de archivos adecuado según las necesidades específicas del entorno y la carga de trabajo. Los servidores suelen usar XFS o ext4</p>
+</section>
+<section id="nomenclatura-de-archivos-y-carpetas" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Nomenclatura de Archivos y Carpetas</h1>
+<p>Una buena nomenclatura evita errores, facilita las migraciones y hace que las copias de seguridad tengan sentido meses después.<br>
+Buenas practicas:</p>
+<ul>
+<li><p>Sin espacios ni tildes</p></li>
+<li><p>Nombres descriptivos y versionados: el contenido debe entenderse por el título del archivo, ejemplo v1, v2…</p></li>
+<li><p>Fechas en formato AAAA-MM-DD: los archivos se ordenan cronológicamente de forma automática.</p></li>
+<li><p>Evitar caracteres especiales / \ : * ? ” &lt;&gt; | pueden causar errores en distintos sistemas operativos.</p></li>
+</ul>
+<p>Buen ejemplo:</p>
+<ul>
+<li>backup_bd_academia_2026-07-12.slq</li>
+</ul>
+<p>Mal ejemplo:</p>
+<ul>
+<li>copia final(2) DEFINITIVA.sql: No dice qué contiene, cuándo se hizo, ni si realmente es la versión definitiva</li>
+</ul>
+</section>
+<section id="jerarquias-de-almacenamiento" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Jerarquias de almacenamiento</h1>
+<p>El almacenamiento está organizado en niveles: cada uno más rápido y más caro que el anterior</p>
+<ol type="1">
+<li>Cinta/ Nube fría: más lento y barato</li>
+<li>Discos duros HDD: almacenamiento masivo</li>
+<li>SSD/NVMe: alta velocidad</li>
+<li>Memoria RAM: Datos activos</li>
+<li>Caché /Registros: Más rápido y caro.</li>
+</ol>
+</section>
+<section id="volúmenes-lógicos-vs-físicos" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Volúmenes Lógicos vs Físicos</h1>
+<p><strong>Volumen Físico:</strong> Un dispositivo de almacenamiento real y tangible: un disco duro, concreto, un SSD concreto</p>
+<p><strong>Volumen Lógico (LVM: Logic Volume Manager)</strong>: Una partición virtual que el sistema operativo trata como disco independiente, combinando espacio de uno o varios discos físicos.</p>
+<p>Utilidades:</p>
+<ul>
+<li><p>Amplicar espacio en caliente sin apagar el servidor</p></li>
+<li><p>Combinar discos en un único volumen más grande: Por ejemplo podemos combinar dos discos físicos en un solo disco lógico que nos permitirá almacenar un fichero de más tamaño que uno de los volúmenes físicos individuales.</p></li>
+<li><p>Crear snapshots para backups consistentes.</p></li>
+</ul>
+</section>
+<section id="migraciones-de-datos" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Migraciones de Datos</h1>
+<p>Una migración es el proceso de mover datos desde un sistema de origen a un sistema de destino: Cambio de servidor, de SGBD, de versión o de infraestructura (por ejemplo, de servidor local a la nube).</p>
+<ul>
+<li><p>Migración de versión: Actualizar de MySQL 5.7 a MySQL 8.0</p></li>
+<li><p>Migración de motor: pasar de MySQL a PostgreSQL</p></li>
+<li><p>Migración de infraestructura: de servidor físico local a proveedor cloud por ejemplo</p></li>
+<li><p>Migración de esquema: Reestructurar tablas.</p></li>
+</ul>
+<section id="buenas-prácticas-en-una-migración" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="buenas-prácticas-en-una-migración"><span class="header-section-number">5.1</span> Buenas prácticas en una migración</h2>
+<ul>
+<li><p>Copia de seguridad previa: Siempre del sistema de origen antes de comenzar.</p></li>
+<li><p>Probar en entorno de pruebas: Nunca tocar producción directamente sin validar antes.</p></li>
+<li><p>Verificar integridad: Contar filas, comparar sumas de control tras la migración.</p></li>
+<li><p>Planificar ventana de mantenimiento y rollback: Tener siempre un plan de reversión por si algo sale mal.</p></li>
+</ul>
+<div class=".nota">
+<p>Error común: Migrar solo los datos y olvidar índices, claves foráneas o procedimientos almacenados. El resultado es una base de datos más lenta o comproblemas de integridad referencial.</p>
+</div>
+</section>
+</section>
+<section id="archivado-de-datos" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Archivado de datos</h1>
+<p>El archivado consiste en mover datos que ya no se usan activamente, pero que deben conservarse (por motivos legales, históricos de auditoría), a un almacenamiento más lento y barato, separándolos de los datos “vivos”.</p>
+<p>Diferencia entre copia de seguridad y archivado</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concepto</th>
+<th>Copia de Seguridad</th>
+<th>Archivado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>objetivo</td>
+<td>Recuperar datos ante un fallo</td>
+<td>conservar datos históricos poco usados</td>
+</tr>
+<tr class="even">
+<td>Se borra el original?</td>
+<td>No, sigue activo</td>
+<td>Sí, se retira del sistema activo</td>
+</tr>
+<tr class="odd">
+<td>Frecuencia</td>
+<td>Periódica</td>
+<td>Puntual, según política de retención.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="almacenamiento-en-red-nas-y-san" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Almacenamiento en Red: NAS y SAN</h1>
+<p>Cuando una base de datos crece, el disco interno de un servidor ya no es suficiente. aparecen soluciones de almacenamiento en red con características muy distintas.</p>
+<p>NAS (Network Attached Storage): Dispositivo conectado a la red local. Acceso a nivel de archivo: Protocolo SMB(Windows), NFS(Linux). Lo que el usuario que se conecta ve es un directorio. Como un ejemplo muy sencillo, sería cuando un ordenador comparte una carpeta con los otros usuarios de la red.</p>
+<p>SAN (Storage Area Network): Red dedicada de alto rendimiento. Acceso a nivel de bloque. Protocolos: Fibre Channel, iSCSI. Aquí el servidor que lo usa ve un disco (LUN: Logic Unit Number)</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Característica</th>
+<th>NAS</th>
+<th>SAN</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Nivel de acceso</td>
+<td>Archivo</td>
+<td>Bloque</td>
+</tr>
+<tr class="even">
+<td>Protocolos</td>
+<td>SMB, NFS</td>
+<td>Fibre Channel, iSCSI</td>
+</tr>
+<tr class="odd">
+<td>Rendimiento</td>
+<td>Medio</td>
+<td>Muy Alto</td>
+</tr>
+<tr class="even">
+<td>Complejidad-coste</td>
+<td>Bajo-medio</td>
+<td>Alto</td>
+</tr>
+<tr class="odd">
+<td>Uso típico</td>
+<td>Compartir documentos, backups</td>
+<td>Base de datos críticas, entornos empresariales.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="acceso-paralelo-a-los-datos" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Acceso paralelo a los Datos</h1>
+<p>El acceso paralelo consiste en leer o escribir datos en varios discos al mismo tiempo, en lugar de hacerlo secuencialmente en un único disco.</p>
+<section id="introducción-a-la-tecnología-raid" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="introducción-a-la-tecnología-raid"><span class="header-section-number">8.1</span> Introducción a la Tecnología RAID</h2>
+<p>Sistemas de Almacenamiento RAID: Guía de Referencia Este documento amplía y detalla los conceptos fundamentales de los sistemas RAID (Redundant Array of Independent Disks), explicando su funcionamiento, ventajas, inconvenientes y la distribución visual de los datos en cada nivel mediante diagramas estructurales. La tecnología RAID combina múltiples unidades de disco físico en una o más unidades lógicas para mejorar el rendimiento, la tolerancia a fallos o ambos parámetros de manera simultánea.</p>
+<p>Conceptos Clave del Almacenamiento RAID</p>
+<p>● Stripping (Fraccionamiento/Seccionamiento): Técnica que divide los datos en bloques pequeños y los distribuye de manera equitativa entre múltiples discos de forma paralela. Mejora enormemente la velocidad de lectura y escritura.</p>
+<p>● Mirroring (Espejado/Duplicación): Consiste en escribir simultáneamente los mismos datos en dos o más discos físicos. Ofrece una tolerancia a fallos excepcional, ya que si un disco falla, la información permanece intacta en el otro.</p>
+<p>● Paridad: Método de cálculo matemático (comúnmente mediante operaciones lógicas XOR) que permite reconstruir los datos perdidos de un disco dañado a partir de la información de los discos restantes y de la propia paridad.</p>
+</section>
+<section id="niveles-de-raid-y-distribución-de-información" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="niveles-de-raid-y-distribución-de-información"><span class="header-section-number">8.2</span> Niveles de RAID y Distribución de Información</h2>
+<p>A continuación se detallan los tipos de RAID más comunes y se ilust.ra gráficamente cómo se almacena un archivo teórico dividido en varios bloques (A1, A2, A3, etc.).</p>
+<section id="raid-0-stripping" class="level3" data-number="8.2.1">
+<h3 data-number="8.2.1" class="anchored" data-anchor-id="raid-0-stripping"><span class="header-section-number">8.2.1</span> RAID 0 (Stripping)</h3>
+<p>El sistema divide la información y la escribe alternadamente en todos los discos. No ofrece ninguna redundancia ni tolerancia a fallos; si un solo disco falla, se pierde la totalidad de los datos.</p>
+<ul>
+<li><p>Mínimo de discos: 2</p></li>
+<li><p>Capacidad útil: Suma de la capacidad de todos los discos (N).</p></li>
+<li><p>Ventaja: Máximo rendimiento de lectura y escritura al procesar datos en paralelo. Disco 1 Disco 2</p></li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Disco 1</th>
+<th style="text-align: center;">Disco 2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><strong>A1</strong></td>
+<td style="text-align: center;"><strong>A2</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A3</strong></td>
+<td style="text-align: center;"><strong>A4</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><strong>A5</strong></td>
+<td style="text-align: center;"><strong>A6</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raid-1-mirroring" class="level3" data-number="8.2.2">
+<h3 data-number="8.2.2" class="anchored" data-anchor-id="raid-1-mirroring"><span class="header-section-number">8.2.2</span> RAID 1 (Mirroring)</h3>
+<p>Duplica de forma exacta cada bloque de datos escrito. Si un disco deja de funcionar, el sistema sigue operativo de forma transparente usando el disco espejo.</p>
+<ul>
+<li><strong>Mínimo de discos:</strong> 2.</li>
+<li><strong>Tolerancia a fallos:</strong> Alta (puede fallar 1 disco de la pareja).</li>
+<li><strong>Almacenamiento útil:</strong> <span class="math inline">\(1 \times C\)</span> (la capacidad de un único disco). Aprovechamiento del <strong>50%</strong> en una configuración típica de dos discos.</li>
+<li><strong>Rendimiento:</strong> Lectura rápida (puede leer bloques distintos de ambos discos en paralelo), pero la escritura está limitada a la velocidad del disco más lento debido a que debe duplicar el proceso.</li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Disco 1 (Principal)</th>
+<th style="text-align: center;">Disco 2 (Espejo)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><strong>A1</strong></td>
+<td style="text-align: center;"><strong>A1</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A2</strong></td>
+<td style="text-align: center;"><strong>A2</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><strong>A3</strong></td>
+<td style="text-align: center;"><strong>A3</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A4</strong></td>
+<td style="text-align: center;"><strong>A4</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><strong>A5</strong></td>
+<td style="text-align: center;"><strong>A5</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A6</strong></td>
+<td style="text-align: center;"><strong>A6</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raid-5-fraccionamiento-con-paridad-distribuida" class="level3" data-number="8.2.3">
+<h3 data-number="8.2.3" class="anchored" data-anchor-id="raid-5-fraccionamiento-con-paridad-distribuida"><span class="header-section-number">8.2.3</span> RAID 5 (Fraccionamiento con Paridad Distribuida)</h3>
+<p>Divide los datos a nivel de bloques y distribuye la información de paridad de forma rotativa entre todos los discos físicos del conjunto. Si un disco falla, sus bloques se reconstruyen en tiempo real calculando la paridad de los discos restantes.</p>
+<ul>
+<li><strong>Mínimo de discos:</strong> 3.</li>
+<li><strong>Tolerancia a fallos:</strong> Admite el fallo de <strong>1 disco</strong>.</li>
+<li><strong>Almacenamiento útil:</strong> <span class="math inline">\((N - 1) \times C\)</span>. Es decir, si tenemos 4 discos de 1 TB, dispondremos de 3 TB útiles (el equivalente a un disco se “pierde” para almacenar la paridad distribuida).</li>
+<li><strong>Funcionamiento de escritura:</strong> Cuando llega un archivo, la controladora divide los paquetes de datos entre los discos y calcula y escribe la paridad en el disco restante de forma cíclica.</li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Disco 1</th>
+<th style="text-align: center;">Disco 2</th>
+<th style="text-align: center;">Disco 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><strong>A1</strong></td>
+<td style="text-align: center;"><strong>A2</strong></td>
+<td style="text-align: center;"><em>Paridad (A1-A2)</em></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A3</strong></td>
+<td style="text-align: center;"><em>Paridad (A3-A4)</em></td>
+<td style="text-align: center;"><strong>A4</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><em>Paridad (A5-A6)</em></td>
+<td style="text-align: center;"><strong>A5</strong></td>
+<td style="text-align: center;"><strong>A6</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raid-10-espejo-de-seccionamiento-o-raid-10" class="level3" data-number="8.2.4">
+<h3 data-number="8.2.4" class="anchored" data-anchor-id="raid-10-espejo-de-seccionamiento-o-raid-10"><span class="header-section-number">8.2.4</span> RAID 10 (Espejo de Seccionamiento o RAID 1+0)</h3>
+<p>Combina los beneficios del rendimiento de RAID 0 y la seguridad de RAID 1. Consiste en crear subgrupos en espejo (RAID 1) y, posteriormente, distribuir los datos sobre esos espejos mediante seccionamiento (RAID 0).</p>
+<ul>
+<li><strong>Mínimo de discos:</strong> 4 (siempre en números pares).</li>
+<li><strong>Tolerancia a fallos:</strong> Muy alta. Puede tolerar el fallo de hasta 2 discos simultáneamente, siempre y cuando <strong>no pertenezcan a la misma pareja en espejo</strong>.</li>
+<li><strong>Almacenamiento útil:</strong> <span class="math inline">\(\frac{N}{2} \times C\)</span> (el <strong>50%</strong> de la capacidad total).</li>
+<li><strong>Rendimiento:</strong> Excelente tanto en lectura como en escritura, ideal para bases de datos y sistemas de alto rendimiento.</li>
+</ul>
+<pre><code>[ Volumen Lógico RAID 10 ]
+                             | (RAID 0 - Stripping)
+                +------------+------------+
+                |                         |
+      [ Subgrupo Espejo A ]     [ Subgrupo Espejo B ]
+         (RAID 1 - Mirror)         (RAID 1 - Mirror)
+          +-----------+             +-----------+
+          |           |             |           |
+       Disco 1     Disco 2       Disco 3     Disco 4</code></pre>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Disco 1 (Espejo A)</th>
+<th style="text-align: center;">Disco 2 (Espejo A)</th>
+<th style="text-align: center;">Disco 3 (Espejo B)</th>
+<th style="text-align: center;">Disco 4 (Espejo B)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;"><strong>A1</strong></td>
+<td style="text-align: center;"><strong>A1</strong></td>
+<td style="text-align: center;"><strong>A2</strong></td>
+<td style="text-align: center;"><strong>A2</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;"><strong>A3</strong></td>
+<td style="text-align: center;"><strong>A3</strong></td>
+<td style="text-align: center;"><strong>A4</strong></td>
+<td style="text-align: center;"><strong>A4</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;"><strong>A5</strong></td>
+<td style="text-align: center;"><strong>A5</strong></td>
+<td style="text-align: center;"><strong>A6</strong></td>
+<td style="text-align: center;"><strong>A6</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="tabla-comparativa-resumen" class="level3" data-number="8.2.5">
+<h3 data-number="8.2.5" class="anchored" data-anchor-id="tabla-comparativa-resumen"><span class="header-section-number">8.2.5</span> Tabla Comparativa Resumen</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Nivel RAID</th>
+<th style="text-align: center;">Discos Mínimos</th>
+<th style="text-align: center;">Tolerancia a Fallos</th>
+<th style="text-align: center;">Eficiencia de Almacenamiento</th>
+<th style="text-align: left;">Rendimiento Lectura</th>
+<th style="text-align: left;">Rendimiento Escritura</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>RAID 0</strong></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0 discos</td>
+<td style="text-align: center;">100% (<span class="math inline">\(N\)</span>)</td>
+<td style="text-align: left;">Excelente</td>
+<td style="text-align: left;">Excelente</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>RAID 1</strong></td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1 disco</td>
+<td style="text-align: center;">50% <span class="math inline">\(\left(\frac{1}{2}\right)\)</span></td>
+<td style="text-align: left;">Muy Bueno</td>
+<td style="text-align: left;">Normal</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>RAID 5</strong></td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1 disco</td>
+<td style="text-align: center;"><span class="math inline">\(\frac{N-1}{N}\)</span></td>
+<td style="text-align: left;">Muy Bueno</td>
+<td style="text-align: left;">Lento (por cálculo de paridad)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>RAID 10</strong></td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">Hasta 1 por espejo</td>
+<td style="text-align: center;">50% <span class="math inline">\(\left(\frac{N}{2}\right)\)</span></td>
+<td style="text-align: left;">Excelente</td>
+<td style="text-align: left;">Excelente</td>
+</tr>
+</tbody>
+</table>
+<div class="nota-importante">
+<blockquote class="blockquote">
+<p>⚠️ <strong>Limitación por tamaño de disco (La regla del más pequeño):</strong></p>
+<p>Al configurar cualquier array RAID utilizando discos de capacidades diferentes, el sistema se ve limitado por la unidad de menor tamaño. La controladora RAID particionará y utilizará de cada disco únicamente una cantidad de almacenamiento equivalente a la capacidad del disco más pequeño del grupo. El espacio sobrante de los discos más grandes quedará completamente inutilizado y “perdido”. Por ejemplo, si configuras un RAID 1 (espejo) con un disco de 1 TB y otro de 2 TB, el sistema solo utilizará 1 TB de cada uno, desperdiciando por completo el Terabyte extra del segundo disco. Por ello, la regla de oro en el despliegue de sistemas RAID es utilizar siempre discos de idéntica capacidad y, a ser posible, del mismo modelo y fabricante.</p>
+</blockquote>
+</div>
+<p>Porque importa RAID en bases de datos</p>
+<p>Continuidad del servicio: Si un disco físico falla, los datos no se pierden y se puede seguir dando servicio mientras se sustituye.</p>
+<p>Velocidad bajo carga: Con RAID10, se gana velocidad de lectura/escritura</p>
 
 
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

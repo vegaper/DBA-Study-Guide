@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025 – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a957552743cf229cecd72dbee48e5bde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Bloque 2: Organización y Gestión de la información</a></li><li class="breadcrumb-item"><a href="./practica_NAS_RAID5.html">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#objetivos-de-la-práctica" id="toc-objetivos-de-la-práctica" class="nav-link active" data-scroll-target="#objetivos-de-la-práctica"><span class="header-section-number">1</span> <strong>Objetivos de la práctica</strong></a></li>
+  <li><a href="#parte-1.-configuración-de-la-máquina-virtual." id="toc-parte-1.-configuración-de-la-máquina-virtual." class="nav-link" data-scroll-target="#parte-1.-configuración-de-la-máquina-virtual."><span class="header-section-number">2</span> Parte 1. Configuración de la máquina virtual.</a>
+  <ul>
+  <li><a href="#habilitar-uefi" id="toc-habilitar-uefi" class="nav-link" data-scroll-target="#habilitar-uefi"><span class="header-section-number">2.1</span> Habilitar UEFI</a></li>
+  <li><a href="#organización-de-las-controladoras" id="toc-organización-de-las-controladoras" class="nav-link" data-scroll-target="#organización-de-las-controladoras"><span class="header-section-number">2.2</span> <strong>Organización de las controladoras</strong></a></li>
+  <li><a href="#configuración-especial-de-nvme-en-virtualbox-patch" id="toc-configuración-especial-de-nvme-en-virtualbox-patch" class="nav-link" data-scroll-target="#configuración-especial-de-nvme-en-virtualbox-patch"><span class="header-section-number">2.3</span> <strong>Configuración especial de NVMe en VirtualBox (patch)</strong></a></li>
+  <li><a href="#propuesta-de-direccionamiento" id="toc-propuesta-de-direccionamiento" class="nav-link" data-scroll-target="#propuesta-de-direccionamiento"><span class="header-section-number">2.4</span> <strong>Propuesta de direccionamiento</strong></a></li>
+  <li><a href="#como-nos-queda-al-final" id="toc-como-nos-queda-al-final" class="nav-link" data-scroll-target="#como-nos-queda-al-final"><span class="header-section-number">2.5</span> Como nos queda al final:</a></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"><span class="header-section-number">2.6</span> <img src="images\paste-PT91951uSYu2OwLfYKCEC.png" class="img-fluid"></a></li>
+  </ul></li>
+  <li><a href="#parte-2-instalación-de-windows-server-2025" id="toc-parte-2-instalación-de-windows-server-2025" class="nav-link" data-scroll-target="#parte-2-instalación-de-windows-server-2025"><span class="header-section-number">3</span> Parte 2: <strong>Instalación de Windows Server 2025</strong></a>
+  <ul>
+  <li><a href="#instalar-complementos-del-invitado" id="toc-instalar-complementos-del-invitado" class="nav-link" data-scroll-target="#instalar-complementos-del-invitado"><span class="header-section-number">3.1</span> Instalar complementos del invitado</a></li>
+  </ul></li>
+  <li><a href="#configuración-inicial-del-servidor" id="toc-configuración-inicial-del-servidor" class="nav-link" data-scroll-target="#configuración-inicial-del-servidor"><span class="header-section-number">4</span> <strong>Configuración inicial del servidor</strong></a>
+  <ul>
+  <li><a href="#cambiar-el-nombre-del-equipo" id="toc-cambiar-el-nombre-del-equipo" class="nav-link" data-scroll-target="#cambiar-el-nombre-del-equipo"><span class="header-section-number">4.1</span> <strong>Cambiar el nombre del equipo</strong></a></li>
+  <li><a href="#configurar-la-red" id="toc-configurar-la-red" class="nav-link" data-scroll-target="#configurar-la-red"><span class="header-section-number">4.2</span> <strong>Configurar la red</strong></a></li>
+  <li><a href="#establecer-el-perfil-de-red-como-privado" id="toc-establecer-el-perfil-de-red-como-privado" class="nav-link" data-scroll-target="#establecer-el-perfil-de-red-como-privado"><span class="header-section-number">4.3</span> <strong>Establecer el perfil de red como privado</strong></a></li>
+  <li><a href="#comprobación-de-los-discos" id="toc-comprobación-de-los-discos" class="nav-link" data-scroll-target="#comprobación-de-los-discos"><span class="header-section-number">4.4</span> <strong>Comprobación de los discos</strong></a></li>
+  <li><a href="#comprueba-ahora-storage-spaces" id="toc-comprueba-ahora-storage-spaces" class="nav-link" data-scroll-target="#comprueba-ahora-storage-spaces"><span class="header-section-number">4.5</span> Comprueba ahora Storage Spaces:</a></li>
+  <li><a href="#crear-el-grupo-de-almacenamiento" id="toc-crear-el-grupo-de-almacenamiento" class="nav-link" data-scroll-target="#crear-el-grupo-de-almacenamiento"><span class="header-section-number">4.6</span> <strong>Crear el grupo de almacenamiento</strong></a></li>
+  <li><a href="#crear-el-disco-virtual-con-paridad-equivalente-a-raid-5" id="toc-crear-el-disco-virtual-con-paridad-equivalente-a-raid-5" class="nav-link" data-scroll-target="#crear-el-disco-virtual-con-paridad-equivalente-a-raid-5"><span class="header-section-number">4.7</span> <strong>Crear el disco virtual con paridad (equivalente a RAID 5)</strong></a>
+  <ul class="collapse">
+  <li><a href="#comprobación-en-powershell" id="toc-comprobación-en-powershell" class="nav-link" data-scroll-target="#comprobación-en-powershell"><span class="header-section-number">4.7.1</span> <strong>Comprobación (en PowerShell)</strong></a></li>
+  <li><a href="#crear-el-volumen" id="toc-crear-el-volumen" class="nav-link" data-scroll-target="#crear-el-volumen"><span class="header-section-number">4.7.2</span> <strong>Crear el volumen</strong></a></li>
+  </ul></li>
+  <li><a href="#crear-usuarios-y-grupos-locales" id="toc-crear-usuarios-y-grupos-locales" class="nav-link" data-scroll-target="#crear-usuarios-y-grupos-locales"><span class="header-section-number">4.8</span> <strong>Crear usuarios y grupos locales</strong></a></li>
+  <li><a href="#crear-la-estructura-de-carpetas" id="toc-crear-la-estructura-de-carpetas" class="nav-link" data-scroll-target="#crear-la-estructura-de-carpetas"><span class="header-section-number">4.9</span> <strong>Crear la estructura de carpetas</strong></a></li>
+  </ul></li>
+  <li><a href="#configurar-los-niveles-de-permisos" id="toc-configurar-los-niveles-de-permisos" class="nav-link" data-scroll-target="#configurar-los-niveles-de-permisos"><span class="header-section-number">5</span> <strong>Configurar los niveles de permisos</strong></a>
+  <ul>
+  <li><a href="#permisos-de-seguridad-o-ntfs" id="toc-permisos-de-seguridad-o-ntfs" class="nav-link" data-scroll-target="#permisos-de-seguridad-o-ntfs"><span class="header-section-number">5.1</span> <strong>Permisos de Seguridad o NTFS</strong></a></li>
+  <li><a href="#permisos-de-compartir" id="toc-permisos-de-compartir" class="nav-link" data-scroll-target="#permisos-de-compartir"><span class="header-section-number">5.2</span> <strong>Permisos de Compartir</strong></a></li>
+  <li><a href="#permiso-efectivo" id="toc-permiso-efectivo" class="nav-link" data-scroll-target="#permiso-efectivo"><span class="header-section-number">5.3</span> <strong>Permiso efectivo</strong></a></li>
+  <li><a href="#configurar-la-herencia-correctamente" id="toc-configurar-la-herencia-correctamente" class="nav-link" data-scroll-target="#configurar-la-herencia-correctamente"><span class="header-section-number">5.4</span> <strong>Configurar la herencia correctamente</strong></a>
+  <ul class="collapse">
+  <li><a href="#preparar-la-carpeta-raíz" id="toc-preparar-la-carpeta-raíz" class="nav-link" data-scroll-target="#preparar-la-carpeta-raíz"><span class="header-section-number">5.4.1</span> <strong>Preparar la carpeta raíz</strong></a></li>
+  </ul></li>
+  <li><a href="#configurar-los-permisos-ntfs" id="toc-configurar-los-permisos-ntfs" class="nav-link" data-scroll-target="#configurar-los-permisos-ntfs"><span class="header-section-number">5.5</span> <strong>Configurar los permisos NTFS</strong></a></li>
+  <li><a href="#crear-los-recursos-compartidos" id="toc-crear-los-recursos-compartidos" class="nav-link" data-scroll-target="#crear-los-recursos-compartidos"><span class="header-section-number">5.6</span> <strong>Crear los recursos compartidos</strong></a>
+  <ul class="collapse">
+  <li><a href="#comprobar-los-recursos-y-permisos" id="toc-comprobar-los-recursos-y-permisos" class="nav-link" data-scroll-target="#comprobar-los-recursos-y-permisos"><span class="header-section-number">5.6.1</span> <strong>Comprobar los recursos y permisos</strong></a></li>
+  </ul></li>
+  <li><a href="#comprobación-firewall-smb" id="toc-comprobación-firewall-smb" class="nav-link" data-scroll-target="#comprobación-firewall-smb"><span class="header-section-number">5.7</span> <strong>Comprobación firewall SMB</strong></a></li>
+  <li><a href="#resolución-del-nombre-del-servidor" id="toc-resolución-del-nombre-del-servidor" class="nav-link" data-scroll-target="#resolución-del-nombre-del-servidor"><span class="header-section-number">5.8</span> <strong>Resolución del nombre del servidor</strong></a></li>
+  </ul></li>
+  <li><a href="#probar-el-acceso-desde-un-equipo-cliente" id="toc-probar-el-acceso-desde-un-equipo-cliente" class="nav-link" data-scroll-target="#probar-el-acceso-desde-un-equipo-cliente"><span class="header-section-number">6</span> <strong>Probar el acceso desde un equipo cliente</strong></a>
+  <ul>
+  <li><a href="#comprobación-conectividad" id="toc-comprobación-conectividad" class="nav-link" data-scroll-target="#comprobación-conectividad"><span class="header-section-number">6.1</span> Comprobación conectividad:</a></li>
+  <li><a href="#crear-una-conexión-de-red" id="toc-crear-una-conexión-de-red" class="nav-link" data-scroll-target="#crear-una-conexión-de-red"><span class="header-section-number">6.2</span> Crear una conexión de red</a></li>
+  <li><a href="#section-1" id="toc-section-1" class="nav-link" data-scroll-target="#section-1"><span class="header-section-number">6.3</span> <img src="images\paste-7ZVBJoHEckCYMziDtBc8T.png" class="img-fluid"> ****<img src="images\paste-kd0KsW0RgAxFhZlkrJDu0.png" class="img-fluid"></a></li>
+  <li><a href="#profesor" id="toc-profesor" class="nav-link" data-scroll-target="#profesor"><span class="header-section-number">6.4</span> <strong>20.1 Profesor</strong></a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./sistemas_archivos.html">Bloque 2: Organización y Gestión de la información</a></li><li class="breadcrumb-item"><a href="./practica_NAS_RAID5.html">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>En un equipo físico, el sistema operativo podría instalarse sobre un RAID creado por una controladora hardware. Sin embargo, VirtualBox no presenta directamente una controladora RAID física al sistema invitado. Para esta simulación utilizaremos discos virtuales independientes y Espacios de almacenamiento de Windows Server.</p>
+<section id="objetivos-de-la-práctica" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> <strong>Objetivos de la práctica</strong></h1>
+<p>Al finalizar la práctica, serás capaz de:</p>
+<ul>
+<li><p>Instalar Windows Server 2025 sobre un disco NVMe virtual.</p></li>
+<li><p>Configurar una dirección IPv4 estática.</p></li>
+<li><p>Crear usuarios y grupos locales.</p></li>
+<li><p>Crear un grupo de almacenamiento con tres discos.</p></li>
+<li><p>Crear un disco virtual con paridad.</p></li>
+<li><p>Crear y formatear un volumen NTFS.</p></li>
+<li><p>Publicar recursos compartidos mediante SMB.</p></li>
+<li><p>Diferenciar permisos de <strong>Compartir</strong> y permisos de <strong>Seguridad/NTFS</strong>.</p></li>
+<li><p>Configurar correctamente la herencia.</p></li>
+<li><p>Comprobar el acceso con distintos usuarios.</p></li>
+<li><p>Comprender por qué Windows no permite utilizar varios usuarios simultáneamente contra el mismo servidor SMB.</p></li>
+</ul>
+</section>
+<section id="parte-1.-configuración-de-la-máquina-virtual." class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Parte 1. Configuración de la máquina virtual.</h1>
+<p>Cada alumno creará un servidor windows a través de VirtualBox en adaptador puente.</p>
+<p>La variable xx representa el número asignado al alumno.</p>
+<p>Password para la práctica: Pass123!</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Elemento</th>
+<th style="text-align: left;">Valor de ejemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Nombre de la máquina virtual</strong></td>
+<td style="text-align: left;">WS25 UEFI</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Nombre del servidor</strong></td>
+<td style="text-align: left;">SRV-NASxx</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Sistema operativo</strong></td>
+<td style="text-align: left;">Windows Server 2025 con Experiencia de escritorio</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Virtualizador</strong></td>
+<td style="text-align: left;">VirtualBox 7.2.10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Red</strong></td>
+<td style="text-align: left;">Adaptador puente</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Red IPv4</strong></td>
+<td style="text-align: left;">10.0.20.{asignada_por_dhcp}/24</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Puerta de enlace</strong></td>
+<td style="text-align: left;">10.0.20.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>DNS preferido</strong></td>
+<td style="text-align: left;">8.8.8.8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>DNS alternativo</strong></td>
+<td style="text-align: left;">1.1.1.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Memoria RAM</strong></td>
+<td style="text-align: left;">4/8 GB</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Procesadores</strong></td>
+<td style="text-align: left;">2/4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Chipset</strong></td>
+<td style="text-align: left;">ICH9</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Caracteristicas</strong></td>
+<td style="text-align: left;">UEFI</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Red</strong></td>
+<td style="text-align: left;">Adaptador puente</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Disco del sistema</strong></td>
+<td style="text-align: left;">60 GB NVMe</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Disco adicional 1</strong></td>
+<td style="text-align: left;">20 GB NVMe</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Disco adicional 2</strong></td>
+<td style="text-align: left;">20 GB NVMe</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Disco adicional 3</strong></td>
+<td style="text-align: left;">20 GB NVMe</td>
+</tr>
+</tbody>
+</table>
+<p>Empezamos la creación de VM como siempre, pero hay que hacer algunos cambios antes de instalar:</p>
+<p>Cambiar chipset:<br>
+<img src="images\paste-sbQ7cxDkc-3P7qUIFah7b.png" class="img-fluid"></p>
+<section id="habilitar-uefi" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="habilitar-uefi"><span class="header-section-number">2.1</span> Habilitar UEFI</h2>
+<p><img src="images\paste-V9GU5r3aX3lmyyt8VQ4RH.png" class="img-fluid"></p>
+</section>
+<section id="organización-de-las-controladoras" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="organización-de-las-controladoras"><span class="header-section-number">2.2</span> <strong>Organización de las controladoras</strong></h2>
+<p>La configuración quedará así:</p>
+<p>Controladora NVMe</p>
+<p>├── <strong>Disco del sistema: 60 GB</strong></p>
+<p>├── Disco de datos 1: 20 GB</p>
+<p>├── Disco de datos 2: 20 GB</p>
+<p>└── Disco de datos 3: 20 GB</p>
+<p>Unidad óptica (CD/DVD)</p>
+<p>└── ISO de Windows Server 2025</p>
+<p>Los cuatro discos deben estar conectados a la controladora <strong>NVMe</strong>.</p>
+<div class="nota-importante">
+<p>No conectaremos los tres discos de datos a SATA porque, en las pruebas realizadas en este entorno, VirtualBox proporcionaba identificadores repetidos y Storage Spaces no distinguía correctamente los discos.</p>
+</div>
+<p>Para crear los discos en NVMe, abrimos Almacenamiento y por defecto habrá creado una unidad de disco duro de controlador SATA:<br>
+<img src="images\paste-Vq0oViFs0Ectnv7bgq3TB.png" class="img-fluid"></p>
+<p>La eliminamos clicando sobre <em>remove attachment</em>, pero conservamos la unidad óptica.</p>
+<p>Damos a añadir controladores:<br>
+<img src="images\paste-ymB6l5PUYhsg7eRaBN0Nv.png" class="img-fluid"></p>
+<p>y seleccionamos NMVe<br>
+<img src="images\paste-58jnUvfc2g5hV7b9cjjlU.png" class="img-fluid"></p>
+<p>Entonces enlazamos la unidad de disco duro en el controlador NVMe, dándole a <strong><em>add attachment</em></strong>.<br>
+<img src="images\paste-gHn8VbeIB3s0gXzV27nii.png" class="img-fluid"></p>
+<p>Ahí damos a crear para crear un disco duro que sustituya al que hemos quitado. Le daremos los 60 GB para el disco duro del SO.</p>
+<p><img src="images\paste-TH1tWd0a2ZRcWc1Us_LDk.png" class="img-fluid"></p>
+<p>Creamos tres discos más de 20 GB y los añadimos al controlador NVMe</p>
+<p><img src="images\paste-LVwN-m87-Ped-XMfnYHHp.png" class="img-fluid"></p>
+<p>Después de crear todos los discos nos quedará algo parecido a esto:</p>
+<p><img src="images\paste-NY1o3T_3m3673bLMDkRMr.png" class="img-fluid"></p>
+</section>
+<section id="configuración-especial-de-nvme-en-virtualbox-patch" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="configuración-especial-de-nvme-en-virtualbox-patch"><span class="header-section-number">2.3</span> <strong>Configuración especial de NVMe en VirtualBox (patch)</strong></h2>
+<p>Oracle documenta este patch como solución provisional para huéspedes Windows que no detectan correctamente los discos conectados a la controladora NVMe. Habrá que realizar estos pasos hasta que Virtual Box solucione el problema en una versión posterior.</p>
+<p>Antes de iniciar la máquina virutal, (con la máquina virtual completamente apagada —no guardada ni pausada—) abre CMD en el equipo anfitrión como administrador:</p>
+<pre><code>cd "C:\Program Files\Oracle\VirtualBox"</code></pre>
+<p>Ejecuta los siguientes comandos sustituyendo el nombre de tu máquina virtual:</p>
+<pre><code>VBoxManage setextradata "WS25 UEFI" "VBoxInternal/Devices/nvme/0/Config/MsiXSupported" 0</code></pre>
+<pre><code>VBoxManage setextradata "WS25 UEFI" "VBoxInternal/Devices/nvme/0/Config/CtrlMemBufSize" 0</code></pre>
+<p>Para comprobar que se han aplicado:</p>
+<pre><code>VBoxManage getextradata "WS25 UEFI" enumerate</code></pre>
+<p>Deben aparecer las dos propiedades configuradas con valor 0.</p>
+<p><br>
+<img src="images\paste-zvheMw8GQmFXm06uK9WpF.png" class="img-fluid"></p>
+</section>
+<section id="propuesta-de-direccionamiento" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="propuesta-de-direccionamiento"><span class="header-section-number">2.4</span> <strong>Propuesta de direccionamiento</strong></h2>
+<p>Para evitar conflictos con la puerta de enlace y con otros equipos, puede utilizarse esta fórmula:</p>
+<p>Dirección IP = 10.0.20.{asignada_por_dhcp}</p>
+<p>Nombre: SRV-NAS01</p>
+<p>Máscara: 255.255.255.0</p>
+<p>Puerta de enlace: 10.0.20.1</p>
+<p>Los discos VDI pueden ser de <strong>reservado dinámicamente</strong>. Windows seguirá viendo su capacidad virtual completa, aunque el archivo VDI crezca según se utilice.</p>
+</section>
+<section id="como-nos-queda-al-final" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="como-nos-queda-al-final"><span class="header-section-number">2.5</span> Como nos queda al final:</h2>
+</section>
+<section id="section" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="section"><span class="header-section-number">2.6</span> <img src="images\paste-PT91951uSYu2OwLfYKCEC.png" class="img-fluid"></h2>
+</section>
+</section>
+<section id="parte-2-instalación-de-windows-server-2025" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Parte 2: <strong>Instalación de Windows Server 2025</strong></h1>
+<p>Inicia la máquina virtual desde la ISO.</p>
+<p>Selecciona: Windows Server 2025 Standard Evaluation (Experiencia de escritorio)</p>
+<p><img src="images\paste-V9XLT9_CdZtXyXHnySmeG.png" class="img-fluid"></p>
+<p>Cuando el instalador solicite el destino, deben aparecer cuatro discos:</p>
+<ul>
+<li><p>Uno de aproximadamente 60 GB.</p></li>
+<li><p>Tres de aproximadamente 20 GB.</p></li>
+</ul>
+<p>Selecciona únicamente el disco de 60 GB para instalar Windows Server.<br>
+<img src="images\paste-tp33XEItF-tz2dyZoyHPg.png" class="img-fluid"></p>
+<p>No crees particiones ni volúmenes en los tres discos de 20 GB.</p>
+<p>El instalador creará automáticamente las particiones necesarias en el disco del sistema.</p>
+<p><strong>Resultado esperado</strong></p>
+<p>Después de instalar Windows:</p>
+<ul>
+<li><p>El disco de 60 GB contendrá Windows Server.</p></li>
+<li><p>Los tres discos de 20 GB permanecerán vacíos.</p></li>
+<li><p>Los discos de datos no deberán inicializarse desde Administración de discos.</p></li>
+</ul>
+<p>Microsoft indica que los discos destinados a Storage Spaces deben estar vacíos, sin formato y sin volúmenes. También indica que el sistema operativo no puede alojarse dentro del espacio de almacenamiento; por eso el disco del sistema queda separado del grupo.</p>
+<p>Una vez instalado el sistema, cada vez que queramos abrirlo nos pedirá introducir Ctrl+Alt+Del, pero al ser una máquina virtual esta combinación de comandos se aplicará a la máquina host, no a la VM, así que podemos utilizar la interfaz de Virtual Box para introducirlos:<br>
+<img src="images\paste-C0Zy3xHGGdc_a-nZ79VlF.png" class="img-fluid"></p>
+<p>Finalmente se cargará el panle de Administrador del servidor:<br>
+<img src="images\paste-KifpcX22ZbA5hNWfmo8v6.png" class="img-fluid"></p>
+<section id="instalar-complementos-del-invitado" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="instalar-complementos-del-invitado"><span class="header-section-number">3.1</span> Instalar complementos del invitado</h2>
+<p>Seguir las instrucciones de instalación en otras prácticas de virtualización.</p>
+</section>
+</section>
+<section id="configuración-inicial-del-servidor" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> <strong>Configuración inicial del servidor</strong></h1>
+<section id="cambiar-el-nombre-del-equipo" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="cambiar-el-nombre-del-equipo"><span class="header-section-number">4.1</span> <strong>Cambiar el nombre del equipo</strong></h2>
+<p>Desde PowerShell como administrador:</p>
+<pre><code>Rename-Computer -NewName "SRV-NASxx" -Restart</code></pre>
+<p>Sustituye xx por el número correspondiente que se te ha asignado en clase (para evitar colisión con otros usuarios).</p>
+<p>Después del reinicio comprobamos usando el comando <code>hostname</code></p>
+<p><img src="images\paste-w9-Sq98p5LHAH7wsW_xZL.png" class="img-fluid"></p>
+</section>
+<section id="configurar-la-red" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="configurar-la-red"><span class="header-section-number">4.2</span> <strong>Configurar la red</strong></h2>
+<p>en la shell usa ipconfig para ver qué dirección IP te ha asignado el DHCP, esa será la misma que configuraremos fija.<br>
+<img src="images\paste-YDVUjX7coA1AsYLflTii2.png" class="img-fluid"></p>
+<p>Panel de control</p>
+<p>→ Redes e Internet</p>
+<p>→ Centro de redes y recursos compartidos</p>
+<p>→ Cambiar configuración del adaptador</p>
+<p><img src="images\paste-RiYSQMtgLxLrEfazvQzmc.png" class="img-fluid"></p>
+<p>Abre las propiedades de Ethernet y configura IPv4.<br>
+<img src="images\paste-jzMXRcuPh2s3eIk3PaIN1.png" class="img-fluid"></p>
+<p>Comprueba la configuración: <code>Get-NetIPConfiguration</code> y haz un ping a 1.1.1.1 para comprobar que tenemos salida a internet.</p>
+<p><img src="images\paste-LZdKBranAf2bSNEsrrr8D.png" class="img-fluid"><br>
+</p>
+<p><code>Get-DnsClientServerAddress -AddressFamily IPv4</code></p>
+<p><img src="images\paste-BjjEdss9K99h2mNWEa1Nm.png" class="img-fluid"></p>
+<p>Comprueba la conectividad con el host: <code>Test-Connection 10.0.20.7 -Count 2</code><br>
+<img src="images\paste-rWHOO-qJx80QbOdv9EI8N.png" class="img-fluid"></p>
+<p>Los Resultados</p>
+<ul>
+<li><p><strong><code>Source</code> (Fuente)</strong>: <code>SRV-NAS01</code>. Este es el nombre de la máquina virtual desde la que estás ejecutando el comando. Es la que envía la prueba.</p></li>
+<li><p><strong><code>Destination</code> (Destino)</strong>: <code>10.0.20.7</code>. Es la IP a la que estás haciendo el ping (tu máquina host).</p></li>
+<li><p><strong><code>IPV4Address</code> / <code>IPV6Address</code></strong>: Estas columnas están vacías en tu imagen. Esto es normal cuando haces ping directamente a una dirección IP (como <code>10.0.20.7</code>), ya que el comando no necesita resolver un nombre de host (como <code>google.com</code>) para encontrar la IP.</p></li>
+<li><p><strong><code>Bytes</code></strong>: <code>32</code>. Este es el tamaño del paquete de datos de prueba que se envió. 32 bytes es el estándar para estas pruebas.</p></li>
+<li><p><strong><code>Time(ms)</code> (Tiempo en milisegundos)</strong>: <code>0</code>. Esta es la métrica más importante aquí. Muestra cuánto tiempo (en milisegundos) tardó el paquete en ir desde la VM hasta el host y volver.</p>
+<ul>
+<li><strong>¿Por qué <code>0</code> ms?</strong> Esto indica una conexión extremadamente rápida y directa. Dado que estás haciendo ping desde una máquina virtual (VM) a su propia máquina anfitriona (host), el tráfico no sale a la red física real; todo sucede dentro de la memoria y la red virtual del software de virtualización (VirtualBox). Es esencialmente instantáneo, por lo que PowerShell lo redondea a 0 ms.</li>
+</ul></li>
+</ul>
+<p>Comprobación DNS: <code>Resolve-DnsName www.microsoft.com</code><br>
+<img src="images\paste-bO-l-pQa5CI7FoLYWwH-1.png" class="img-fluid"></p>
+</section>
+<section id="establecer-el-perfil-de-red-como-privado" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="establecer-el-perfil-de-red-como-privado"><span class="header-section-number">4.3</span> <strong>Establecer el perfil de red como privado</strong></h2>
+<p>Consulta el nombre del adaptador: <code>Get-NetConnectionProfile</code></p>
+<p>Si se llama Ethernet: <code>Set-NetConnectionProfile -InterfaceAlias "Ethernet" -NetworkCategory Private</code></p>
+<p><img src="images\paste-USKsHx4mQlyVihIv-pMbf.png" class="img-fluid"></p>
+<p>Una red privada permite configurar el descubrimiento de equipos y el uso compartido de archivos en una LAN de confianza.</p>
+</section>
+<section id="comprobación-de-los-discos" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="comprobación-de-los-discos"><span class="header-section-number">4.4</span> <strong>Comprobación de los discos</strong></h2>
+<p>Abre PowerShell como administrador:</p>
+<p><code>Get-Disk | Format-Table Number,FriendlyName,SerialNumber,PartitionStyle,Size</code><br>
+<img src="images\paste-F-zUzEsG8xdHqdSnjgZPM.png" class="img-fluid"></p>
+<p>Resultado esperado:</p>
+<ul>
+<li><p>Disco del sistema: GPT (Tabla de particiones GUID). Es un <strong>estilo de partición</strong> de disco moderno. Es el “mapa” que le dice al sistema operativo cómo está dividido el disco físico en secciones lógicas (particiones, como la unidad C:, D:, etc.). Lo ves porque estás usando UEFI en tu máquina virtual de VirtualBox</p></li>
+<li><p>Tres discos adicionales: RAW. <strong>No es un estilo de partición ni un sistema de archivos</strong>. Significa que el disco físico virtual está ahí, conectado a la máquina, pero está <strong>completamente vacío</strong>. No tiene mapa de particiones (ni GPT ni MBR) y, por lo tanto, no tiene ningún sistema de archivos (como NTFS o FAT32).</p></li>
+</ul>
+</section>
+<section id="comprueba-ahora-storage-spaces" class="level2" data-number="4.5">
+<h2 data-number="4.5" class="anchored" data-anchor-id="comprueba-ahora-storage-spaces"><span class="header-section-number">4.5</span> Comprueba ahora Storage Spaces:</h2>
+<p><code>Get-PhysicalDisk | Format-Table FriendlyName, SerialNumber, CanPool, OperationalStatus, HealthStatus, Size</code></p>
+<p><img src="images\paste-gq1P7TsP7ZggLYmcvsn3B.png" class="img-fluid"></p>
+<p>Es normal que todos tengan el mismo FriendlyName, lo importante es que tengan números de serie o identificadores diferentes y que los tres discos adicionales muestren:</p>
+<p>CanPool = True</p>
+</section>
+<section id="crear-el-grupo-de-almacenamiento" class="level2" data-number="4.6">
+<h2 data-number="4.6" class="anchored" data-anchor-id="crear-el-grupo-de-almacenamiento"><span class="header-section-number">4.6</span> <strong>Crear el grupo de almacenamiento</strong></h2>
+<p>Abre:</p>
+<p>Administrador del servidor</p>
+<p>→ Servicios de archivos y almacenamiento</p>
+<p>→ Volúmenes</p>
+<p>→ Grupos de almacenamiento</p>
+<p>Selecciona el grupo:</p>
+<p>Primordial</p>
+<p><img src="images\paste-uiEovgwv_RefHNT5Itk_7.png" class="img-fluid"></p>
+<p>En la sección <strong>Grupos de almacenamiento</strong>&gt;Tareas:</p>
+<p>→ Nuevo grupo de almacenamiento:</p>
+<ul>
+<li><p>Nombre: GRUPO-NAS</p></li>
+<li><p>Descripción: Discos destinados al almacenamiento del servidor NAS</p></li>
+</ul>
+<p>Selecciona exclusivamente los tres discos de 20 GB.<br>
+<img src="images\paste-xJzbUwa-za94rasYbibeq.png" class="img-fluid"></p>
+<p>En la columna de asignación selecciona: Automático</p>
+<p><strong>No</strong> selecciones ningún disco como <strong>reserva activa o Hot Spare</strong>. Con solo tres discos, los tres son necesarios para crear el espacio de paridad.</p>
+<p>Finaliza el asistente.</p>
+<p><strong>Comprobación (en PowerShell) :</strong></p>
+<p><code>Get-StoragePool | Format-Table FriendlyName,HealthStatus,OperationalStatus,Size,AllocatedSize</code></p>
+<p>Debe aparecer:</p>
+<ul>
+<li><p>Primordial</p></li>
+<li><p>GRUPO-NAS</p></li>
+</ul>
+<p><img src="images\paste-u3Wy3-BEvjWaY2kmT46uI.png" class="img-fluid"></p>
+<p>Microsoft establece este orden de trabajo: primero se agrupan los discos físicos, después se crea un disco virtual desde el grupo y, finalmente, se crea un volumen sobre el disco virtual.</p>
+</section>
+<section id="crear-el-disco-virtual-con-paridad-equivalente-a-raid-5" class="level2" data-number="4.7">
+<h2 data-number="4.7" class="anchored" data-anchor-id="crear-el-disco-virtual-con-paridad-equivalente-a-raid-5"><span class="header-section-number">4.7</span> <strong>Crear el disco virtual con paridad (equivalente a RAID 5)</strong></h2>
+<p>Selecciona GRUPO-NAS.</p>
+<p>En la sección <strong>Discos virtuales</strong>: Tareas&gt; Nuevo disco virtual</p>
+<p><img src="images\paste-uCOpeR5pFsJOTo7wxhwnb.png" class="img-fluid"></p>
+<p>Configura:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Opción</th>
+<th style="text-align: left;">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Nombre</strong></td>
+<td style="text-align: left;">DISCO-VIRTUAL-NAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Diseño de almacenamiento</strong></td>
+<td style="text-align: left;">Paridad</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Tipo de aprovisionamiento</strong></td>
+<td style="text-align: left;">Fijo</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Tamaño</strong></td>
+<td style="text-align: left;">Tamaño máximo</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images\paste-R_Aqh_fuBnYQPh7XixAUj.png" class="img-fluid"></p>
+<p>Con tres discos de 20 GB, la capacidad bruta es de 60 GB decimales. La capacidad útil será inferior al equivalente de dos discos porque Windows reserva espacio para metadatos, caché y organización interna. No debe esperarse una cifra exacta de 40 GB.</p>
+<p><img src="images\paste-8-vHRX3UFRGy5E7nkq9GT.png" class="img-fluid"><br>
+La configuración de paridad:</p>
+<ul>
+<li><p>Distribuye los datos entre los tres discos.</p></li>
+<li><p>Almacena información de paridad.</p></li>
+<li><p>Puede soportar el fallo de uno de los tres discos.</p></li>
+<li><p>Ofrece menos capacidad útil que la suma bruta de los discos.</p></li>
+<li><p>Es más adecuada para almacenamiento secuencial, archivos y copias que para cargas con muchas escrituras pequeñas.</p></li>
+</ul>
+<p>Al terminar el disco virtual, deja marcada la opción: <em>Crear un volumen cuando se cierre este asistente</em></p>
+<p><img src="images\paste-M6dKManox5pOiS9vR3KQ1.png" class="img-fluid"></p>
+<section id="comprobación-en-powershell" class="level3" data-number="4.7.1">
+<h3 data-number="4.7.1" class="anchored" data-anchor-id="comprobación-en-powershell"><span class="header-section-number">4.7.1</span> <strong>Comprobación (en PowerShell)</strong></h3>
+<p><code>Get-VirtualDisk |Format-Table FriendlyName,ResiliencySettingName,ProvisioningType,HealthStatus,Size,FootprintOnPool</code></p>
+<ul>
+<li><p>FriendlyName : DISCO-VIRTUAL-NAS</p></li>
+<li><p>ResiliencySettingName : Parity</p></li>
+<li><p>ProvisioningType : Fixed</p></li>
+<li><p>HealthStatus : Healthy<br>
+<img src="images\paste-ld5H8jqBou5CSG-kTHmAo.png" class="img-fluid"></p></li>
+</ul>
+</section>
+<section id="crear-el-volumen" class="level3" data-number="4.7.2">
+<h3 data-number="4.7.2" class="anchored" data-anchor-id="crear-el-volumen"><span class="header-section-number">4.7.2</span> <strong>Crear el volumen</strong></h3>
+<p><img src="images\paste-yef636ocPvekRFqXt3B9-.png" class="img-fluid"></p>
+<p>Configura:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Opción</th>
+<th style="text-align: left;">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Disco</strong></td>
+<td style="text-align: left;">DISCO-VIRTUAL-NAS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Tamaño</strong></td>
+<td style="text-align: left;">Máximo</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Letra</strong></td>
+<td style="text-align: left;">N:</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Sistema de archivos</strong></td>
+<td style="text-align: left;">NTFS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Unidad de asignación</strong></td>
+<td style="text-align: left;">Predeterminada</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Etiqueta</strong></td>
+<td style="text-align: left;">DATOS-NAS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Formato rápido</strong></td>
+<td style="text-align: left;">Activado</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images\paste-b35oE_UYoX0gbV6xTSiEH.png" class="img-fluid"></p>
+<p>Utilizaremos NTFS porque esta práctica está centrada en permisos, herencia, listas de control de acceso y recursos compartidos SMB.</p>
+<p><img src="images\paste-4PnY2_EVlUPOjIod9PdMw.png" class="img-fluid"><br>
+Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
+<p><img src="images\paste-WyiXjZ_0DQa6zv6ZLTz7N.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="crear-usuarios-y-grupos-locales" class="level2" data-number="4.8">
+<h2 data-number="4.8" class="anchored" data-anchor-id="crear-usuarios-y-grupos-locales"><span class="header-section-number">4.8</span> <strong>Crear usuarios y grupos locales</strong></h2>
+<p>Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01, al contrario que los grupos y usuarios habituales de los entornos corporativos que son a nivel DNS</p>
+<p>Abre: Win + R &gt; <code>lusrmgr.msc</code><br>
+<img src="images\paste-I5WI33yQhoYfIYB8s0sXT.png" class="img-fluid"></p>
+<p><code>Win + R &gt; lusrmgr.msc</code> es un comando que abre la herramienta <strong>Usuarios y grupos locales</strong> en Windows. Esta herramienta te permite administrar usuarios y grupos en tu computadora, lo cual es útil para:</p>
+<ul>
+<li><p><strong>Crear nuevos usuarios:</strong> Puedes agregar nuevos usuarios a tu computadora y asignarles permisos específicos.</p></li>
+<li><p><strong>Administrar usuarios existentes:</strong> Puedes cambiar las contraseñas de los usuarios, habilitar o deshabilitar cuentas, y modificar sus pertenencias a grupos.</p></li>
+<li><p><strong>Crear nuevos grupos:</strong> Puedes crear grupos para organizar a los usuarios y asignarles permisos colectivos.</p></li>
+<li><p><strong>Administrar grupos existentes:</strong> Puedes agregar o quitar usuarios de los grupos y modificar sus permisos.</p></li>
+</ul>
+<p><strong>Cómo usar <code>Win + R &gt; lusrmgr.msc</code>:</strong></p>
+<ol type="1">
+<li><p>Presiona la tecla <strong>Windows</strong> + <strong>R</strong> para abrir el cuadro de diálogo Ejecutar.</p></li>
+<li><p>Escribe <code>lusrmgr.msc</code> y presiona <strong>Enter</strong>.</p></li>
+<li><p>Se abrirá la herramienta <strong>Usuarios y grupos locales</strong>.</p></li>
+</ol>
+<p><strong>Nota:</strong> Esta herramienta solo está disponible en las ediciones Pro y Enterprise de Windows. No está disponible en las ediciones Home.</p>
+<p><strong>Usuarios locales</strong></p>
+<p><img src="images\paste-By5QYG7l5oXw9mMNzmJpT.png" class="img-fluid"></p>
+<p>Crea, como mínimo:</p>
+<ul>
+<li>director01</li>
+<li>profesor01</li>
+<li>profesor02</li>
+<li>alumno01</li>
+<li>alumno02</li>
+</ul>
+<p><img src="images\paste-iK1PvF-g0Z27Sc_VXG9O-.png" class="img-fluid"></p>
+<p>En una práctica de laboratorio puede desmarcarse <em>El usuario debe cambiar la contraseña en el siguiente inicio de sesión,</em> y puede marcarse: <em>La contraseña nunca expira</em></p>
+<p><img src="images\paste-n5TMeiWVfuDYisCYfh1pU.png" class="img-fluid"></p>
+<p>Esto se hace únicamente para evitar interrupciones durante la práctica. No es una recomendación para un entorno real o en producción&nbsp;</p>
+<p><strong>Grupos locales</strong></p>
+<p><img src="images\paste-5_gBU3YbB9ejKQPjYSsXt.png" class="img-fluid"></p>
+<p>Crea estos grupos y añádeles los usuarios que has creados antes</p>
+<ul>
+<li><p>NAS_DIRECCION</p></li>
+<li><p>NAS_PROFESORES</p></li>
+<li><p>NAS_ALUMNOS</p></li>
+</ul>
+<p><strong>Pertenencia a grupos</strong></p>
+<p>Configura:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Usuario</th>
+<th style="text-align: left;">Grupo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>director01</strong></td>
+<td style="text-align: left;">NAS_DIRECCION</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>profesor01</strong></td>
+<td style="text-align: left;">NAS_PROFESORES</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>profesor02</strong></td>
+<td style="text-align: left;">NAS_PROFESORES</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>alumno01</strong></td>
+<td style="text-align: left;">NAS_ALUMNOS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>alumno02</strong></td>
+<td style="text-align: left;">NAS_ALUMNOS</td>
+</tr>
+</tbody>
+</table>
+<p><img src="images\paste-2TMUHbL1Yjov-iaFGsrL4.png" class="img-fluid"></p>
+<p>No asignaremos permisos directamente a los usuarios. Los permisos se asignarán a los grupos.</p>
+</section>
+<section id="crear-la-estructura-de-carpetas" class="level2" data-number="4.9">
+<h2 data-number="4.9" class="anchored" data-anchor-id="crear-la-estructura-de-carpetas"><span class="header-section-number">4.9</span> <strong>Crear la estructura de carpetas</strong></h2>
+<p>Crea:</p>
+<ul>
+<li><p>N:\NAS</p></li>
+<li><p>N:\NAS\DIRECCION</p></li>
+<li><p>N:\NAS\PROFESORES</p></li>
+<li><p>N:\NAS\ALUMNOS</p></li>
+<li><p>N:\NAS\COMUN</p></li>
+</ul>
+</section>
+</section>
+<section id="configurar-los-niveles-de-permisos" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> <strong>Configurar los niveles de permisos</strong></h1>
+<p>En Windows existen dos niveles principales de permisos cuando trabajas con almacenamiento en red:</p>
+<ol type="1">
+<li><p><strong>Permisos NTFS (o de sistema de archivos local):</strong> Se aplican <em>siempre</em>, tanto si entras al archivo sentado directamente en el servidor como si accedes a través de la red.</p></li>
+<li><p><strong>Permisos de Compartición (SMB):</strong> <strong>Solo entran en juego cuando un usuario accede a la carpeta a través de la red</strong> mediante una ruta tipo <code>\\servidor\carpeta</code>.</p></li>
+</ol>
+<p>Ejemplo práctico:</p>
+<ul>
+<li><p>Si te sientas en el servidor localmente y abres la carpeta, los permisos SMB <strong>no se aplican</strong> (solo actúan los permisos NTFS).</p></li>
+<li><p>Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (<code>\\servidor\recurso</code>), <strong>se aplican ambos permisos</strong> (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.</p></li>
+</ul>
+<section id="permisos-de-seguridad-o-ntfs" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="permisos-de-seguridad-o-ntfs"><span class="header-section-number">5.1</span> <strong>Permisos de Seguridad o NTFS</strong></h2>
+<p>Se configuran en Propiedades de la carpeta → Seguridad</p>
+<p>Se aplican:</p>
+<ul>
+<li><p>Cuando se accede localmente.</p></li>
+<li><p>Cuando se accede por red.</p></li>
+<li><p>A carpetas, subcarpetas y archivos.</p></li>
+</ul>
+</section>
+<section id="permisos-de-compartir" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="permisos-de-compartir"><span class="header-section-number">5.2</span> <strong>Permisos de Compartir</strong></h2>
+<p>Se configuran en Propiedades de la carpeta → Compartir → Uso compartido avanzado → Permisos</p>
+<p>Solo se aplican cuando se accede mediante la red SMB (Server Message Block). Es un protocolo de red de capa de aplicación que se utiliza principalmente en sistemas Windows para compartir archivos, impresoras y carpetas entre diferentes equipos conectados a una misma red local LAN</p>
+</section>
+<section id="permiso-efectivo" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="permiso-efectivo"><span class="header-section-number">5.3</span> <strong>Permiso efectivo</strong></h2>
+<p>Cuando se accede por red se aplican ambos niveles. El usuario obtiene <strong>la combinación más restrictiva</strong>.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Compartir</th>
+<th style="text-align: left;">NTFS</th>
+<th style="text-align: left;">Resultado por red</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Control total</strong></td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Leer</strong></td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Solo lectura</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Cambiar</strong></td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Cambiar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Cambiar</strong></td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Modificar/Cambiar</td>
+</tr>
+</tbody>
+</table>
+<p>Por este motivo hay que revisar siempre las dos pestañas.</p>
+</section>
+<section id="configurar-la-herencia-correctamente" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="configurar-la-herencia-correctamente"><span class="header-section-number">5.4</span> <strong>Configurar la herencia correctamente</strong></h2>
+<section id="preparar-la-carpeta-raíz" class="level3" data-number="5.4.1">
+<h3 data-number="5.4.1" class="anchored" data-anchor-id="preparar-la-carpeta-raíz"><span class="header-section-number">5.4.1</span> <strong>Preparar la carpeta raíz</strong></h3>
+<p>Abre las propiedades de: N:\NAS</p>
+<p>Accede a: Seguridad → Opciones avanzadas → Deshabilitar herencia</p>
+<p><img src="images\paste-bjwUHm9lm4rD5jFxy3QnP.png" class="img-fluid"></p>
+<p>Windows mostrará dos opciones:</p>
+<ul>
+<li><p><strong>Convertir los permisos heredados en permisos explícitos:</strong> Copia los permisos actuales y deja de heredarlos. Es la opción más segura para esta práctica porque mantiene inicialmente el acceso administrativo.</p></li>
+<li><p><strong>Quitar todos los permisos heredados:</strong> Elimina directamente los permisos heredados. Puede provocar que se pierda el acceso a la carpeta si no se añaden inmediatamente permisos correctos.</p></li>
+</ul>
+<p>Selecciona:</p>
+<p><code>Convertir los permisos heredados en permisos explícitos</code></p>
+<p>En N:\NAS, deja únicamente:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 20%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Principal</th>
+<th style="text-align: left;">Permiso</th>
+<th style="text-align: left;">Se aplica a</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>SYSTEM</strong></td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Esta carpeta, subcarpetas y archivos</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Administradores</strong></td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Esta carpeta, subcarpetas y archivos</td>
+</tr>
+</tbody>
+</table>
+<p>Elimina de esta carpeta raíz las entradas generales que puedan aparecer, como:</p>
+<ul>
+<li><p>Usuarios</p></li>
+<li><p>Usuarios autenticados</p></li>
+<li><p>CREATOR OWNER</p></li>
+</ul>
+<p><img src="images\paste-7o7jGR46NCDC9Oad362yc.png" class="img-fluid"></p>
+<p>Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administradores. La herencia hace que las subcarpetas y archivos reciban automáticamente las entradas heredables del directorio padre. Windows permite deshabilitarla conservando las entradas como explícitas o eliminando únicamente las heredadas.</p>
+</section>
+</section>
+<section id="configurar-los-permisos-ntfs" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="configurar-los-permisos-ntfs"><span class="header-section-number">5.5</span> <strong>Configurar los permisos NTFS</strong></h2>
+<ol type="1">
+<li><p>En cada subcarpeta entra en: <em>Propiedades → Seguridad → Editar → Agregar</em></p></li>
+<li><p>Pulsa <strong>Ubicaciones</strong> y selecciona el servidor local: <em>SRV-NAS01</em></p></li>
+</ol>
+<p><img src="images\paste-UYLeZ2pzRP2b9QZSh4D88.png" class="img-fluid"></p>
+<ol start="3" type="1">
+<li><strong>Carpeta DIRECCION</strong> Agrega: SRV-NAS01\NAS_DIRECCION</li>
+</ol>
+<p><img src="images\paste-aiATV-Ora-sxEwKbB-yda.png" class="img-fluid"></p>
+<p>Concede: Modificar</p>
+<p><img src="images\paste--ueet7x0rE116gQOdXvKm.png" class="img-fluid"></p>
+<p>Debe aplicarse a <em>Esta carpeta, subcarpetas y archivos</em>, esta es la configuración por defecto, pero si quieres comprobarlo puedes verlo en <em>Seguridad</em> &gt; <em>Opciones avanzadas</em><br>
+<img src="images\paste-kTpxlGXOCXxv5KcM4U90L.png" class="img-fluid"></p>
+<ol start="4" type="1">
+<li><strong>Carpeta PROFESORES</strong></li>
+</ol>
+<ul>
+<li><p>Agrega: <em>SRV-NAS01\NAS_PROFESORES</em></p></li>
+<li><p>Concede: <em>Modificar</em></p></li>
+</ul>
+<ol start="5" type="1">
+<li><strong>Carpeta ALUMNOS</strong></li>
+</ol>
+<ul>
+<li><p>Agrega: SRV-NAS01\NAS_ALUMNOS</p></li>
+<li><p>Concede: Modificar</p></li>
+</ul>
+<ol start="6" type="1">
+<li><strong>Carpeta COMUN</strong></li>
+</ol>
+<ul>
+<li><p>Agrega:</p></li>
+<li><p><em>SRV-NAS01\NAS_DIRECCION</em></p></li>
+<li><p><em>SRV-NAS01\NAS_PROFESORES</em></p></li>
+<li><p><em>SRV-NAS01\NAS_ALUMNOS</em></p></li>
+<li><p>Concede a los tres grupos: <em>Modificar</em></p></li>
+</ul>
+<p><strong>Resultado final de Seguridad</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Carpeta</th>
+<th style="text-align: left;">Grupo autorizado</th>
+<th style="text-align: left;">Permiso NTFS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>DIRECCION</strong></td>
+<td style="text-align: left;">NAS_DIRECCION</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>PROFESORES</strong></td>
+<td style="text-align: left;">NAS_PROFESORES</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>ALUMNOS</strong></td>
+<td style="text-align: left;">NAS_ALUMNOS</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>COMUN</strong></td>
+<td style="text-align: left;">Los tres grupos</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Todas</strong></td>
+<td style="text-align: left;">Administradores</td>
+<td style="text-align: left;">Control total</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Todas</strong></td>
+<td style="text-align: left;">SYSTEM</td>
+<td style="text-align: left;">Control total</td>
+</tr>
+</tbody>
+</table>
+<p>No utilices Denegar. En esta práctica basta con no conceder acceso a los grupos no autorizados. Los permisos explícitos de denegación complican el cálculo de permisos efectivos y pueden afectar a usuarios que pertenezcan a varios grupos.</p>
+</section>
+<section id="crear-los-recursos-compartidos" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="crear-los-recursos-compartidos"><span class="header-section-number">5.6</span> <strong>Crear los recursos compartidos</strong></h2>
+<p>En cada carpeta: <em>Propiedades</em> → <em>Compartir</em> → <em>Uso compartido avanzado</em>&gt;Marca: <em>Compartir esta carpeta</em></p>
+<p><img src="images\paste-3Ez15rH92qO9u3lTz7vmY.png" class="img-fluid"></p>
+<section id="comprobar-los-recursos-y-permisos" class="level3" data-number="5.6.1">
+<h3 data-number="5.6.1" class="anchored" data-anchor-id="comprobar-los-recursos-y-permisos"><span class="header-section-number">5.6.1</span> <strong>Comprobar los recursos y permisos</strong></h3>
+<p><strong>Recursos compartidos:</strong> <code>Get-SmbShare | Format-Table Name, Path, Description</code><br>
+<img src="images\paste-IgaC-5V_kl3qCTCIz0m3n.png" class="img-fluid"></p>
+<p><strong>Permisos de un recurso:</strong> <code>Get-SmbShareAccess -Name PROFESORES</code></p>
+<p><img src="images\paste-HIkMtXWtne6t4F1vc4ohu.png" class="img-fluid"></p>
+<p><strong>Permisos NTFS:</strong> <code>icacls N:\NAS\PROFESORES</code></p>
+<p><img src="images\paste-3IXiDAy_2ZqyFdyPM_Gig.png" class="img-fluid"></p>
+<p>Debe aparecer el grupo NAS_PROFESORES con permiso de modificación.</p>
+</section>
+</section>
+<section id="comprobación-firewall-smb" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="comprobación-firewall-smb"><span class="header-section-number">5.7</span> <strong>Comprobación firewall SMB</strong></h2>
+<p>Windows Server 2025 utiliza reglas más restrictivas al crear recursos compartidos y abre únicamente los puertos necesarios para SMB moderno. El acceso normal utiliza TCP 445.</p>
+<p>Desde un cliente comprueba: <code>Test-NetConnection 10.0.20.46 -Port 445</code></p>
+<p><img src="images\paste-vhEZow1EmvMCImVYmDdMn.png" class="img-fluid"></p>
+<p>Resultado esperado: TcpTestSucceeded : True. Si devuelve False, revisa:</p>
+<p><em>Firewall de Windows Defender</em> → <em>Configuración avanzada</em> → <em>Reglas de entrada</em> → <em>Uso compartido de archivos e impresoras (SMB-In)</em></p>
+</section>
+<section id="resolución-del-nombre-del-servidor" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="resolución-del-nombre-del-servidor"><span class="header-section-number">5.8</span> <strong>Resolución del nombre del servidor</strong></h2>
+<p>Los servidores DNS como 8.8.8.8 o 1.1.1.1 resuelven nombres públicos de Internet, pero no conocen nombres locales como SRV-NAS01</p>
+<p>Por tanto, hay dos alternativas.</p>
+<ol type="1">
+<li><p><strong>Utilizar la dirección IP:</strong> \\10.0.20.46\PROFESORES</p></li>
+<li><p><strong>Alternativa por nombre:</strong> Añadir en el equipo cliente una entrada en: C:\Windows\System32\drivers\etc\hosts</p></li>
+</ol>
+<p>Ejemplo: 10.0.20.46 SRV-NAS01</p>
+<p>Después podrá utilizarse: \\SRV-NAS01\PROFESORES</p>
+<p>Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o el nombre.</p>
+</section>
+</section>
+<section id="probar-el-acceso-desde-un-equipo-cliente" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> <strong>Probar el acceso desde un equipo cliente</strong></h1>
+<section id="comprobación-conectividad" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="comprobación-conectividad"><span class="header-section-number">6.1</span> Comprobación conectividad:</h2>
+<p>En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen.<br>
+<img src="images\paste-fC3SLCQ3Xkqr6R3zULevk.png" class="img-fluid"></p>
+</section>
+<section id="crear-una-conexión-de-red" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="crear-una-conexión-de-red"><span class="header-section-number">6.2</span> Crear una conexión de red</h2>
+<p>Vamos al explorador de archivos y sobre <em>Este Equipo</em> seleccionamos el buger menu <em>Ver más</em> (los tres puntos)<br>
+<img src="images\paste-mRKiyzmc45nlHbJ-_JjgN.png" class="img-fluid"></p>
+<p><strong>Agregar una ubicación de red</strong></p>
+</section>
+<section id="section-1" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="section-1"><span class="header-section-number">6.3</span> <img src="images\paste-7ZVBJoHEckCYMziDtBc8T.png" class="img-fluid"> ****<img src="images\paste-kd0KsW0RgAxFhZlkrJDu0.png" class="img-fluid"></h2>
+<p><img src="images\paste-MtTSFjaAvqQMd8KWqh5ve.png" class="img-fluid"></p>
+<p><img src="images\paste-Trn420jMUwpqWorKln4tg.png" class="img-fluid"></p>
+<p>Tendremos acceso a las distintas carpetas de la máquina servidor a la que nos queremos conectar dependiendo del usuario que estemos usando (alumno, profesor etc) (recuerda que tiene que ser usuario y contraseña creados en la máquina a la que nos estamos conectando, no los que hemos configurado en nuestro servidor!)</p>
+<p><img src="images\paste-LtLZKj4ERomvvE7_g9Ko.png" class="img-fluid"></p>
+</section>
+<section id="profesor" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="profesor"><span class="header-section-number">6.4</span> <strong>20.1 Profesor</strong></h2>
+<p>Desde CMD:</p>
+<p>net use Z: \\192.168.50.107\PROFESORES /user:SRV-NAS01\profesor01 *</p>
+<p>El asterisco solicita la contraseña sin mostrarla.</p>
+<p>El usuario deberá poder:</p>
+<ul>
+<li><p>Acceder a PROFESORES.</p></li>
+<li><p>Crear carpetas.</p></li>
+<li><p>Crear archivos.</p></li>
+<li><p>Modificar archivos.</p></li>
+<li><p>Eliminar archivos.</p></li>
+<li><p>Acceder a COMUN.</p></li>
+</ul>
+<p>No deberá poder acceder a:</p>
+<p>DIRECCION</p>
+<p>ALUMNOS</p>
+<p><strong>20.2 Alumno</strong></p>
+<p>Primero elimina la conexión anterior:</p>
+<p>net use * /delete /y</p>
+<p>Cierra también todas las ventanas del Explorador abiertas contra el NAS.</p>
+<p>Conecta como alumno:</p>
+<p>net use Z: \\192.168.50.107\ALUMNOS /user:SRV-NAS01\alumno01 *</p>
+<p><strong>20.3 Dirección</strong></p>
+<p>net use Z: \\192.168.50.107\DIRECCION /user:SRV-NAS01\director01 *</p>
+<p><strong>21. Cambio de usuario SMB</strong></p>
+<p>Windows no permite normalmente mantener, dentro de la misma sesión de Windows, conexiones contra el mismo servidor utilizando usuarios diferentes. Este comportamiento es intencionado.</p>
+<p>Para cambiar de usuario:</p>
+<ol type="1">
+<li><p>Cierra todas las ventanas del Explorador abiertas contra el NAS.</p></li>
+<li><p>Ejecuta:</p></li>
+</ol>
+<p>net use * /delete /y</p>
+<ol start="3" type="1">
+<li>Comprueba:</li>
+</ol>
+<p>Get-SmbConnection</p>
+<ol start="4" type="1">
+<li>Si existen credenciales guardadas:</li>
+</ol>
+<p>cmdkey /list</p>
+<p>Elimina la correspondiente al servidor o a su IP:</p>
+<p>cmdkey /delete:192.168.50.107</p>
+<ol start="5" type="1">
+<li>Conecta con el usuario nuevo.</li>
+</ol>
+<p>Si todavía se conserva una sesión, la opción más fiable para una práctica es:</p>
+<p>Cerrar sesión en el equipo cliente</p>
+<p>→ Volver a iniciar sesión</p>
+<p>→ Conectar con el siguiente usuario</p>
+<p>No deben probarse simultáneamente dos usuarios diferentes contra el mismo nombre o dirección del NAS. Cada prueba debe realizarse de forma independiente.</p>
+<p><strong>22. Matriz final de comprobación</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Usuario</th>
+<th style="text-align: left;">DIRECCION</th>
+<th style="text-align: left;">PROFESORES</th>
+<th style="text-align: left;">ALUMNOS</th>
+<th style="text-align: left;">COMUN</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>director01</strong></td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>profesor01</strong></td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>profesor02</strong></td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>alumno01</strong></td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>alumno02</strong></td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Denegado</td>
+<td style="text-align: left;">Modificar</td>
+<td style="text-align: left;">Modificar</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Administrador</strong></td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Control total</td>
+<td style="text-align: left;">Control total</td>
+</tr>
+</tbody>
+</table>
+<p>La palabra <strong>Denegado</strong> en esta tabla significa que no se le ha concedido acceso. No significa que hayamos creado una entrada explícita de tipo Denegar.</p>
+<p><strong>23. Resultado final esperado</strong></p>
+<p>La infraestructura deberá quedar así:</p>
+<p>Con este diseño quedan claramente separados:</p>
+<ul>
+<li><p>El disco del sistema.</p></li>
+<li><p>Los discos físicos de almacenamiento.</p></li>
+<li><p>El grupo de almacenamiento.</p></li>
+<li><p>El disco virtual de paridad.</p></li>
+<li><p>El volumen NTFS.</p></li>
+<li><p>Los permisos NTFS.</p></li>
+<li><p>Los permisos SMB.</p></li>
+<li><p>La pertenencia de usuarios a grupos.</p></li>
+<li><p>La herencia de permisos.</p></li>
+<li><p>La autenticación desde los clientes.</p></li>
+</ul>
+<p><strong>24. Simulación del fallo y sustitución de un disco del espacio de paridad</strong></p>
+<p>En esta parte comprobaremos que el espacio de paridad continúa funcionando cuando se pierde uno de sus tres discos físicos y aprenderemos a sustituirlo por uno nuevo.</p>
+<p><strong>Importante:</strong> no se debe desconectar el disco NVMe de 60 GB que contiene Windows Server. Se desconectará únicamente uno de los tres discos de 20 GB pertenecientes a GRUPO-NAS.</p>
+<p>En este laboratorio no vamos a corromper manualmente el archivo VDI. Simularemos una avería desconectando uno de los discos de datos de la controladora NVMe. De esta forma, Windows Server interpretará que ha perdido la comunicación con uno de los discos.</p>
+<p>Un espacio de paridad con tres discos puede soportar el fallo de <strong>un único disco</strong>. Mientras permanezca degradado no debe desconectarse un segundo disco, porque el espacio podría quedar inaccesible y producirse una pérdida de datos. Microsoft describe los estados Degraded e Incomplete como situaciones en las que se ha reducido la resistencia, aunque los datos todavía pueden continuar accesibles.</p>
+<p><strong>24.1 Identificar claramente los discos virtuales</strong></p>
+<p>Para facilitar esta prueba, los archivos VDI deberían tener nombres diferentes:</p>
+<p>SRV-NASxx-SO.vdi 60 GB</p>
+<p>SRV-NASxx-DATOS1.vdi 20 GB</p>
+<p>SRV-NASxx-DATOS2.vdi 20 GB</p>
+<p>SRV-NASxx-DATOS3.vdi 20 GB</p>
+<p>Esto evita desconectar accidentalmente el disco del sistema operativo.</p>
+<p>Desde PowerShell, comprueba los discos pertenecientes al grupo:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p>Anota o captura el resultado. Aunque todos puedan tener el mismo nombre:</p>
+<p>ORCL-VBOX-NVME-VER12</p>
+<p>sus valores SerialNumber y UniqueId deben ser distintos.</p>
+<p><strong>24.2 Preparar datos para comprobar su integridad</strong></p>
+<p>Antes de provocar el fallo, crea un archivo de prueba de 100 MB:</p>
+<p>fsutil file createnew N:\NAS\COMUN\PRUEBA-PARIDAD.bin 104857600</p>
+<p>Crea también un archivo de texto:</p>
+<p>“Archivo creado antes de simular el fallo del disco.” |</p>
+<p>Set-Content “N:\NAS\COMUN\ANTES-DEL-FALLO.txt”</p>
+<p>Calcula el hash SHA-256 del archivo binario:</p>
+<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p>Guarda el resultado. El hash nos permitirá comprobar que el archivo no cambia después del fallo y la reparación.</p>
+<p><strong>Ejemplo:</strong></p>
+<p>Algorithm : SHA256</p>
+<p>Hash : 8A7C…</p>
+<p>Path : N:\NAS\COMUN\PRUEBA-PARIDAD.bin</p>
+<p>También conviene comprobar desde un equipo cliente que el recurso es accesible:</p>
+<p>\\192.168.50.xxx\COMUN</p>
+<p><strong>24.3 Comprobar el estado inicial</strong></p>
+<p>Antes de desconectar ningún disco, ejecuta:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</p>
+<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
+<p>Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus</p>
+<p>Get-Volume -DriveLetter N |</p>
+<p>Format-Table DriveLetter,FileSystemLabel,FileSystem,HealthStatus,OperationalStatus,SizeRemaining,Size</p>
+<p>Resultado esperado:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Elemento</th>
+<th style="text-align: left;">Estado esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>GRUPO-NAS</strong></td>
+<td style="text-align: left;">Healthy / OK</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>DISCO-VIRTUAL-NAS</strong></td>
+<td style="text-align: left;">Healthy / OK</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Volumen D:</strong></td>
+<td style="text-align: left;">Healthy / OK</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Tres discos físicos</strong></td>
+<td style="text-align: left;">Healthy / OK</td>
+</tr>
+</tbody>
+</table>
+<p><strong>24.4 Simular la avería de un disco</strong></p>
+<p>Apaga correctamente Windows Server:</p>
+<p>Stop-Computer</p>
+<p>Espera hasta que VirtualBox muestre la máquina como completamente apagada.</p>
+<p>En el equipo anfitrión:</p>
+<p><strong>VirtualBox</strong></p>
+<p>→ Seleccionar <strong>WS25 UEFI</strong></p>
+<p>→ Configuración</p>
+<p>→ Almacenamiento</p>
+<p>→ Controladora NVMe</p>
+<p>Selecciona uno de los discos de datos, por ejemplo:</p>
+<p>SRV-NASxx-DATOS2.vdi</p>
+<p>Pulsa <strong>Quitar el dispositivo seleccionado de la controladora</strong>.</p>
+<p>No selecciones:</p>
+<p>SRV-NASxx-SO.vdi</p>
+<p>Cuando VirtualBox pregunte qué hacer con el disco:</p>
+<ul>
+<li><p>Desconéctalo de la máquina virtual.</p></li>
+<li><p>Conserva el archivo VDI.</p></li>
+<li><p>No lo elimines todavía del disco del anfitrión.</p></li>
+</ul>
+<p>La controladora NVMe deberá quedar temporalmente así:</p>
+<p>Controladora NVMe</p>
+<p>├── SRV-NASxx-SO.vdi</p>
+<p>├── SRV-NASxx-DATOS1.vdi</p>
+<p>└── SRV-NASxx-DATOS3.vdi</p>
+<p>Inicia nuevamente la máquina virtual.</p>
+<p><strong>24.5 Comprobar el estado degradado</strong></p>
+<p>Abre PowerShell como administrador y ejecuta:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p>El disco desconectado puede mostrar estados semejantes a:</p>
+<p>OperationalStatus : Lost Communication</p>
+<p>HealthStatus : Warning</p>
+<p>La descripción exacta puede variar, pero uno de los discos debe aparecer como ausente, sin comunicación o no saludable.</p>
+<p>Comprueba el grupo:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,IsReadOnly</p>
+<p>Comprueba el disco virtual:</p>
+<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
+<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,DetachedReason</p>
+<p>Los estados más habituales serán:</p>
+<p>HealthStatus : Warning</p>
+<p>OperationalStatus : Degraded</p>
+<p>o:</p>
+<p>OperationalStatus : Incomplete</p>
+<p>Esto no significa necesariamente que los datos se hayan perdido. Significa que el espacio ha perdido su tolerancia a fallos y necesita que se sustituya el disco. En un servidor independiente, Microsoft indica que, después de conectar el reemplazo, debe utilizarse Repair-VirtualDisk para restaurar la resistencia.</p>
+<p><strong>24.6 Comprobar que los datos continúan disponibles</strong></p>
+<p>Comprueba que el volumen sigue montado:</p>
+<p>Get-Volume -DriveLetter N</p>
+<p>Comprueba que el archivo existe:</p>
+<p>Test-Path “N:\NAS\COMUN\PRUEBA-PARIDAD.bin”</p>
+<p>Resultado esperado: True</p>
+<p>Vuelve a calcular su hash:</p>
+<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p>El hash debe coincidir exactamente con el obtenido antes de desconectar el disco.</p>
+<p>Crea un archivo mientras el espacio está degradado:</p>
+<p>“El espacio de paridad continúa funcionando con un disco ausente.” |</p>
+<p>Set-Content “N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt”</p>
+<p>Desde el equipo cliente:</p>
+<ol type="1">
+<li><p>Accede al recurso COMUN.</p></li>
+<li><p>Abre ANTES-DEL-FALLO.txt.</p></li>
+<li><p>Comprueba que aparece CREADO-DURANTE-EL-FALLO.txt.</p></li>
+<li><p>Crea un archivo nuevo desde la red.</p></li>
+<li><p>Modifica y elimina ese archivo.</p></li>
+</ol>
+<p>Utiliza el mismo usuario SMB con el que ya estabas conectado. No cambies de usuario durante esta comprobación para evitar que Windows reutilice credenciales anteriores.</p>
+<p><strong>Resultado esperado</strong></p>
+<p>Aunque haya desaparecido uno de los discos:</p>
+<ul>
+<li><p>El volumen D: continúa accesible.</p></li>
+<li><p>Los archivos existentes se pueden leer.</p></li>
+<li><p>Se pueden crear y modificar archivos.</p></li>
+<li><p>Los recursos SMB siguen disponibles.</p></li>
+<li><p>El estado del almacenamiento aparece como degradado.</p></li>
+<li><p>Ya no existe protección frente al fallo de otro disco.</p></li>
+</ul>
+<p><strong>25. Sustitución del disco averiado</strong></p>
+<p><strong>25.1 Crear el disco de reemplazo</strong></p>
+<p>Apaga nuevamente la máquina virtual:</p>
+<p>Stop-Computer</p>
+<p>En VirtualBox crea un nuevo disco:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Propiedad</th>
+<th style="text-align: left;">Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Tipo</strong></td>
+<td style="text-align: left;">VDI</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Asignación</strong></td>
+<td style="text-align: left;">Reservado dinámicamente</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Tamaño</strong></td>
+<td style="text-align: left;">20 GB</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Nombre</strong></td>
+<td style="text-align: left;">SRV-NASxx-REEMPLAZO.vdi</td>
+</tr>
+</tbody>
+</table>
+<p>Conecta el disco nuevo a la misma controladora NVMe, utilizando el puerto que ha quedado libre:</p>
+<p>Controladora NVMe</p>
+<p>├── SRV-NASxx-SO.vdi</p>
+<p>├── SRV-NASxx-DATOS1.vdi</p>
+<p>├── SRV-NASxx-DATOS3.vdi</p>
+<p>└── SRV-NASxx-REEMPLAZO.vdi</p>
+<p>Los ajustes especiales de NVMe aplicados mediante VBoxManage permanecen asociados a la máquina virtual. No es necesario repetirlos mientras no se elimine y vuelva a crear la controladora NVMe.</p>
+<p>Inicia Windows Server.</p>
+<p><strong>25.2 Comprobar el disco nuevo</strong></p>
+<p>Ejecuta:</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,FriendlyName,SerialNumber,UniqueId,CanPool,OperationalStatus,HealthStatus,Size</p>
+<p>El disco nuevo debe mostrar:</p>
+<p>CanPool : True</p>
+<p>OperationalStatus : OK</p>
+<p>HealthStatus : Healthy</p>
+<p>También puedes mostrar exclusivamente los discos disponibles:</p>
+<p>Get-PhysicalDisk -CanPool $true</p>
+<p>Debería aparecer un único disco de aproximadamente 20 GB.</p>
+<p>No inicialices el disco desde Administración de discos, no crees particiones y no lo formatees.</p>
+<p>Si aparece CanPool=False, consulta el motivo:</p>
+<p>Get-PhysicalDisk |</p>
+<p>Select-Object FriendlyName,SerialNumber,UniqueId,CanPool,CannotPoolReason</p>
+<p><strong>25.3 Agregar el disco de reemplazo al grupo</strong></p>
+<p>Abre:</p>
+<p>Administrador del servidor</p>
+<p>→ Servicios de archivos y almacenamiento</p>
+<p>→ Volúmenes</p>
+<p>→ Grupos de almacenamiento</p>
+<p>Selecciona:</p>
+<p>GRUPO-NAS</p>
+<p>En la sección <strong>Discos físicos</strong>:</p>
+<p>TAREAS</p>
+<p>→ Agregar disco físico</p>
+<p>Selecciona:</p>
+<p>SRV-NASxx-REEMPLAZO.vdi</p>
+<p>En <strong>Asignación</strong>, selecciona:</p>
+<p>Automático</p>
+<p>No lo configures como reserva activa.</p>
+<p>Pulsa <strong>Aceptar</strong>.</p>
+<p>Microsoft permite agregar el nuevo disco desde el Administrador del servidor o mediante Add-PhysicalDisk. El disco debe encontrarse en el grupo primordial y mostrar CanPool=True.</p>
+<p><strong>Alternativa mediante PowerShell</strong></p>
+<p>$Pool = Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
+<p>$NuevoDisco = Get-PhysicalDisk -CanPool $true</p>
+<p>Add-PhysicalDisk `</p>
+<p>-StoragePool $Pool `</p>
+<p>-PhysicalDisks $NuevoDisco `</p>
+<p>-Usage AutoSelect</p>
+<p>Comprueba el resultado:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p>En este momento aparecerán:</p>
+<ul>
+<li><p>Dos discos originales saludables.</p></li>
+<li><p>El nuevo disco saludable.</p></li>
+<li><p>La referencia al disco ausente o averiado.</p></li>
+</ul>
+<p><strong>25.4 Identificar el disco averiado</strong></p>
+<p>Ejecuta:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,VirtualDiskFootprint</p>
+<p>Localiza el disco cuyo estado no sea correcto y copia su UniqueId.</p>
+<p>Ejemplo conceptual:</p>
+<p>UniqueId : ID-DEL-DISCO-AVERIADO</p>
+<p>OperationalStatus : Lost Communication</p>
+<p>HealthStatus : Warning</p>
+<p>Usage : Retired</p>
+<p>El disco puede haber sido marcado automáticamente como Retired.</p>
+<p>Si todavía aparece como Auto-Select, retíralo lógicamente utilizando su identificador:</p>
+<p>Set-PhysicalDisk `</p>
+<p>-UniqueId “ID-DEL-DISCO-AVERIADO” `</p>
+<p>-Usage Retired</p>
+<p>No copies literalmente ID-DEL-DISCO-AVERIADO: debe sustituirse por el UniqueId real mostrado en el servidor.</p>
+<p>La marca Retired indica que Storage Spaces debe dejar de utilizar ese disco y mover o reconstruir sus datos sobre otros discos disponibles.</p>
+<p><strong>25.5 Reparar el disco virtual</strong></p>
+<p>Inicia la reparación:</p>
+<p>Repair-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS”</p>
+<p>Comprueba el trabajo:</p>
+<p>Get-StorageJob</p>
+<p>Mientras se está reparando puede aparecer información similar a:</p>
+<p>Name : Repair</p>
+<p>JobState : Running</p>
+<p>PercentComplete : 42</p>
+<p>Repite el comando hasta que finalice:</p>
+<p>Get-StorageJob</p>
+<p>Como los discos utilizados en la práctica son pequeños, es posible que la reparación finalice tan rápidamente que Get-StorageJob no llegue a mostrar ningún trabajo activo.</p>
+<p>Durante la reparación, el disco virtual puede mostrar:</p>
+<p>OperationalStatus : In Service</p>
+<p>HealthStatus : Warning</p>
+<p>Microsoft recomienda reparar el disco virtual, esperar a que termine el trabajo y comprobar después que el almacenamiento vuelva a un estado saludable.</p>
+<p><strong>25.6 Comprobar que la reparación ha terminado</strong></p>
+<p>Ejecuta:</p>
+<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
+<p>Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus,Size</p>
+<p>Resultado esperado:</p>
+<p>OperationalStatus : OK</p>
+<p>HealthStatus : Healthy</p>
+<p>Comprueba el grupo:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</p>
+<p>Comprueba el volumen:</p>
+<p>Get-Volume -DriveLetter N |</p>
+<p>Format-Table DriveLetter,FileSystemLabel,HealthStatus,OperationalStatus,SizeRemaining,Size</p>
+<p>Resultado esperado:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Elemento</th>
+<th style="text-align: left;">Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Grupo GRUPO-NAS</strong></td>
+<td style="text-align: left;">Healthy</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Disco virtual</strong></td>
+<td style="text-align: left;">Healthy</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Volumen D:</strong></td>
+<td style="text-align: left;">Healthy</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Disco de reemplazo</strong></td>
+<td style="text-align: left;">Healthy</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Disco antiguo</strong></td>
+<td style="text-align: left;">Retired o sin comunicación</td>
+</tr>
+</tbody>
+</table>
+<p><strong>25.7 Verificar que el disco antiguo ya no contiene datos</strong></p>
+<p>Ejecuta:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Select-Object DeviceId,SerialNumber,UniqueId,Usage,OperationalStatus,HealthStatus,VirtualDiskFootprint</p>
+<p>El disco averiado debería mostrar:</p>
+<p>Usage : Retired</p>
+<p>VirtualDiskFootprint : 0</p>
+<p>VirtualDiskFootprint=0 significa que el disco virtual ya no depende del disco retirado. Microsoft recomienda comprobar este valor antes de eliminar definitivamente el disco del grupo.</p>
+<p><strong>25.8 Eliminar la referencia al disco averiado</strong></p>
+<p>Recupera el objeto correspondiente mediante su UniqueId:</p>
+<p>$Pool = Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
+<p>$DiscoAveriado = Get-PhysicalDisk `</p>
+<p>-UniqueId “ID-DEL-DISCO-AVERIADO”</p>
+<p>Elimínalo del grupo:</p>
+<p>Remove-PhysicalDisk `</p>
+<p>-StoragePool $Pool `</p>
+<p>-PhysicalDisks $DiscoAveriado</p>
+<p>Confirma la operación cuando PowerShell lo solicite.</p>
+<p>Remove-PhysicalDisk elimina el disco físico indicado de la configuración del grupo. Antes de utilizarlo debe existir capacidad suficiente para mantener la resistencia del disco virtual.</p>
+<p>No ejecutes:</p>
+<p>Remove-VirtualDisk</p>
+<p>Ese comando eliminaría DISCO-VIRTUAL-NAS, el volumen y los datos almacenados.</p>
+<p><strong>25.9 Comprobación definitiva</strong></p>
+<p>Ejecuta:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
+<p>Get-PhysicalDisk |</p>
+<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p>Deben quedar exactamente tres discos saludables dentro de GRUPO-NAS:</p>
+<ul>
+<li><p>Dos discos originales.</p></li>
+<li><p>Un disco de reemplazo.</p></li>
+</ul>
+<p>Comprueba todos los niveles:</p>
+<p>Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
+<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS”</p>
+<p>Get-Volume -DriveLetter N</p>
+<p>Vuelve a calcular el hash:</p>
+<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p>Debe coincidir con los dos hashes anteriores.</p>
+<p>Comprueba también:</p>
+<p>Get-Content “N:\NAS\COMUN\ANTES-DEL-FALLO.txt”</p>
+<p>Get-Content “N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt”</p>
+<p>Finalmente, desde el cliente vuelve a probar los recursos:</p>
+<p>\\192.168.50.xxx\DIRECCION</p>
+<p>\\192.168.50.xxx\PROFESORES</p>
+<p>\\192.168.50.xxx\ALUMNOS</p>
+<p>\\192.168.50.xxx\COMUN</p>
+<p>Los usuarios deben conservar exactamente los mismos permisos que antes del fallo.</p>
+<p><strong>26. Eliminar definitivamente el antiguo VDI</strong></p>
+<p>Cuando se haya comprobado que:</p>
+<ul>
+<li><p>GRUPO-NAS está saludable.</p></li>
+<li><p>DISCO-VIRTUAL-NAS está saludable.</p></li>
+<li><p>El volumen N: funciona.</p></li>
+<li><p>Los hashes coinciden.</p></li>
+<li><p>Los recursos SMB son accesibles.</p></li>
+<li><p>El disco antiguo ya no aparece dentro del grupo.</p></li>
+</ul>
+<p>Puede eliminarse el VDI averiado desde el anfitrión:</p>
+<p>VirtualBox</p>
+<p>→ Herramientas</p>
+<p>→ Medios</p>
+<p>→ Discos duros</p>
+<p>Selecciona el antiguo disco desconectado y elimínalo.</p>
+<p>No elimines ninguno de los tres discos que actualmente aparecen como saludables dentro de GRUPO-NAS.</p>
+<p><strong>27. Resumen de estados esperados</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Momento</th>
+<th style="text-align: left;">Grupo</th>
+<th style="text-align: left;">Disco virtual</th>
+<th style="text-align: left;">Volumen N:</th>
+<th style="text-align: left;">Recursos SMB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>Antes del fallo</strong></td>
+<td style="text-align: left;">Healthy</td>
+<td style="text-align: left;">Healthy</td>
+<td style="text-align: left;">Disponible</td>
+<td style="text-align: left;">Disponibles</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Con un disco ausente</strong></td>
+<td style="text-align: left;">Warning</td>
+<td style="text-align: left;">Degraded o Incomplete</td>
+<td style="text-align: left;">Disponible</td>
+<td style="text-align: left;">Disponibles</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>Durante la reparación</strong></td>
+<td style="text-align: left;">Warning/In Service</td>
+<td style="text-align: left;">In Service</td>
+<td style="text-align: left;">Disponible</td>
+<td style="text-align: left;">Disponibles</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>Después de reparar</strong></td>
+<td style="text-align: left;">Healthy</td>
+<td style="text-align: left;">Healthy</td>
+<td style="text-align: left;">Disponible</td>
+<td style="text-align: left;">Disponibles</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusión de la prueba</strong></p>
+<p>La práctica demuestra que:</p>
+<ul>
+<li><p>La paridad distribuye datos e información de recuperación entre los discos.</p></li>
+<li><p>El fallo de un disco no provoca inmediatamente la pérdida del volumen.</p></li>
+<li><p>El servidor puede continuar ofreciendo los recursos SMB.</p></li>
+<li><p>Durante el estado degradado no existe protección frente a un segundo fallo.</p></li>
+<li><p>El disco debe sustituirse lo antes posible.</p></li>
+<li><p>Agregar el disco nuevo no es suficiente: hay que reparar el disco virtual.</p></li>
+<li><p>El disco averiado solo debe eliminarse del grupo después de que la reparación termine y su VirtualDiskFootprint sea 0.</p></li>
+<li><p>La paridad mejora la disponibilidad, pero <strong>no sustituye a una copia de seguridad</strong>.</p></li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
