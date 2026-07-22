@@ -9,27 +9,27 @@ En un equipo físico, el sistema operativo podría instalarse sobre un RAID crea
 
 Al finalizar la práctica, serás capaz de:
 
-- Instalar Windows Server 2025 sobre un disco NVMe virtual.
+-   Instalar Windows Server 2025 sobre un disco NVMe virtual.
 
-- Configurar una dirección IPv4 estática.
+-   Configurar una dirección IPv4 estática.
 
-- Crear usuarios y grupos locales.
+-   Crear usuarios y grupos locales.
 
-- Crear un grupo de almacenamiento con tres discos.
+-   Crear un grupo de almacenamiento con tres discos.
 
-- Crear un disco virtual con paridad.
+-   Crear un disco virtual con paridad.
 
-- Crear y formatear un volumen NTFS.
+-   Crear y formatear un volumen NTFS.
 
-- Publicar recursos compartidos mediante SMB.
+-   Publicar recursos compartidos mediante SMB.
 
-- Diferenciar permisos de **Compartir** y permisos de **Seguridad/NTFS**.
+-   Diferenciar permisos de **Compartir** y permisos de **Seguridad/NTFS**.
 
-- Configurar correctamente la herencia.
+-   Configurar correctamente la herencia.
 
-- Comprobar el acceso con distintos usuarios.
+-   Comprobar el acceso con distintos usuarios.
 
-- Comprender por qué Windows no permite utilizar varios usuarios simultáneamente contra el mismo servidor SMB.
+-   Comprender por qué Windows no permite utilizar varios usuarios simultáneamente contra el mismo servidor SMB.
 
 # Parte 1. Configuración de la máquina virtual.
 
@@ -178,9 +178,9 @@ Selecciona: Windows Server 2025 Standard Evaluation (Experiencia de escritorio)
 
 Cuando el instalador solicite el destino, deben aparecer cuatro discos:
 
-- Uno de aproximadamente 60 GB.
+-   Uno de aproximadamente 60 GB.
 
-- Tres de aproximadamente 20 GB.
+-   Tres de aproximadamente 20 GB.
 
 Selecciona únicamente el disco de 60 GB para instalar Windows Server.\
 ![](images\paste-tp33XEItF-tz2dyZoyHPg.png)
@@ -193,11 +193,11 @@ El instalador creará automáticamente las particiones necesarias en el disco de
 
 Después de instalar Windows:
 
-- El disco de 60 GB contendrá Windows Server.
+-   El disco de 60 GB contendrá Windows Server.
 
-- Los tres discos de 20 GB permanecerán vacíos.
+-   Los tres discos de 20 GB permanecerán vacíos.
 
-- Los discos de datos no deberán inicializarse desde Administración de discos.
+-   Los discos de datos no deberán inicializarse desde Administración de discos.
 
 Microsoft indica que los discos destinados a Storage Spaces deben estar vacíos, sin formato y sin volúmenes. También indica que el sistema operativo no puede alojarse dentro del espacio de almacenamiento; por eso el disco del sistema queda separado del grupo.
 
@@ -258,17 +258,17 @@ Comprueba la conectividad con el host: `Test-Connection 10.0.20.7 -Count 2`\
 
 Los Resultados
 
-- **`Source` (Fuente)**: `SRV-NAS01`. Este es el nombre de la máquina virtual desde la que estás ejecutando el comando. Es la que envía la prueba.
+-   **`Source` (Fuente)**: `SRV-NAS01`. Este es el nombre de la máquina virtual desde la que estás ejecutando el comando. Es la que envía la prueba.
 
-- **`Destination` (Destino)**: `10.0.20.7`. Es la IP a la que estás haciendo el ping (tu máquina host).
+-   **`Destination` (Destino)**: `10.0.20.7`. Es la IP a la que estás haciendo el ping (tu máquina host).
 
-- **`IPV4Address` / `IPV6Address`**: Estas columnas están vacías en tu imagen. Esto es normal cuando haces ping directamente a una dirección IP (como `10.0.20.7`), ya que el comando no necesita resolver un nombre de host (como `google.com`) para encontrar la IP.
+-   **`IPV4Address` / `IPV6Address`**: Estas columnas están vacías en tu imagen. Esto es normal cuando haces ping directamente a una dirección IP (como `10.0.20.7`), ya que el comando no necesita resolver un nombre de host (como `google.com`) para encontrar la IP.
 
-- **`Bytes`**: `32`. Este es el tamaño del paquete de datos de prueba que se envió. 32 bytes es el estándar para estas pruebas.
+-   **`Bytes`**: `32`. Este es el tamaño del paquete de datos de prueba que se envió. 32 bytes es el estándar para estas pruebas.
 
-- **`Time(ms)` (Tiempo en milisegundos)**: `0`. Esta es la métrica más importante aquí. Muestra cuánto tiempo (en milisegundos) tardó el paquete en ir desde la VM hasta el host y volver.
+-   **`Time(ms)` (Tiempo en milisegundos)**: `0`. Esta es la métrica más importante aquí. Muestra cuánto tiempo (en milisegundos) tardó el paquete en ir desde la VM hasta el host y volver.
 
-  - **¿Por qué `0` ms?** Esto indica una conexión extremadamente rápida y directa. Dado que estás haciendo ping desde una máquina virtual (VM) a su propia máquina anfitriona (host), el tráfico no sale a la red física real; todo sucede dentro de la memoria y la red virtual del software de virtualización (VirtualBox). Es esencialmente instantáneo, por lo que PowerShell lo redondea a 0 ms.
+    -   **¿Por qué `0` ms?** Esto indica una conexión extremadamente rápida y directa. Dado que estás haciendo ping desde una máquina virtual (VM) a su propia máquina anfitriona (host), el tráfico no sale a la red física real; todo sucede dentro de la memoria y la red virtual del software de virtualización (VirtualBox). Es esencialmente instantáneo, por lo que PowerShell lo redondea a 0 ms.
 
 Comprobación DNS: `Resolve-DnsName www.microsoft.com`\
 ![](images\paste-bO-l-pQa5CI7FoLYWwH-1.png)
@@ -292,9 +292,9 @@ Abre PowerShell como administrador:
 
 Resultado esperado:
 
-- Disco del sistema: GPT (Tabla de particiones GUID). Es un **estilo de partición** de disco moderno. Es el "mapa" que le dice al sistema operativo cómo está dividido el disco físico en secciones lógicas (particiones, como la unidad C:, D:, etc.). Lo ves porque estás usando UEFI en tu máquina virtual de VirtualBox
+-   Disco del sistema: GPT (Tabla de particiones GUID). Es un **estilo de partición** de disco moderno. Es el "mapa" que le dice al sistema operativo cómo está dividido el disco físico en secciones lógicas (particiones, como la unidad C:, D:, etc.). Lo ves porque estás usando UEFI en tu máquina virtual de VirtualBox
 
-- Tres discos adicionales: RAW. **No es un estilo de partición ni un sistema de archivos**. Significa que el disco físico virtual está ahí, conectado a la máquina, pero está **completamente vacío**. No tiene mapa de particiones (ni GPT ni MBR) y, por lo tanto, no tiene ningún sistema de archivos (como NTFS o FAT32).
+-   Tres discos adicionales: RAW. **No es un estilo de partición ni un sistema de archivos**. Significa que el disco físico virtual está ahí, conectado a la máquina, pero está **completamente vacío**. No tiene mapa de particiones (ni GPT ni MBR) y, por lo tanto, no tiene ningún sistema de archivos (como NTFS o FAT32).
 
 ## Comprueba ahora Storage Spaces:
 
@@ -328,9 +328,9 @@ En la sección **Grupos de almacenamiento**\>Tareas:
 
 → Nuevo grupo de almacenamiento:
 
-- Nombre: GRUPO-NAS
+-   Nombre: GRUPO-NAS
 
-- Descripción: Discos destinados al almacenamiento del servidor NAS
+-   Descripción: Discos destinados al almacenamiento del servidor NAS
 
 Selecciona exclusivamente los tres discos de 20 GB.\
 ![](images\paste-xJzbUwa-za94rasYbibeq.png)
@@ -347,9 +347,9 @@ Finaliza el asistente.
 
 Debe aparecer:
 
-- Primordial
+-   Primordial
 
-- GRUPO-NAS
+-   GRUPO-NAS
 
 ![](images\paste-u3Wy3-BEvjWaY2kmT46uI.png)
 
@@ -379,15 +379,15 @@ Con tres discos de 20 GB, la capacidad bruta es de 60 GB decimales. La capacidad
 ![](images\paste-8-vHRX3UFRGy5E7nkq9GT.png)\
 La configuración de paridad:
 
-- Distribuye los datos entre los tres discos.
+-   Distribuye los datos entre los tres discos.
 
-- Almacena información de paridad.
+-   Almacena información de paridad.
 
-- Puede soportar el fallo de uno de los tres discos.
+-   Puede soportar el fallo de uno de los tres discos.
 
-- Ofrece menos capacidad útil que la suma bruta de los discos.
+-   Ofrece menos capacidad útil que la suma bruta de los discos.
 
-- Es más adecuada para almacenamiento secuencial, archivos y copias que para cargas con muchas escrituras pequeñas.
+-   Es más adecuada para almacenamiento secuencial, archivos y copias que para cargas con muchas escrituras pequeñas.
 
 Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando se cierre este asistente*
 
@@ -397,14 +397,14 @@ Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando 
 
 `Get-VirtualDisk |Format-Table FriendlyName,ResiliencySettingName,ProvisioningType,HealthStatus,Size,FootprintOnPool`
 
-- FriendlyName : DISCO-VIRTUAL-NAS
+-   FriendlyName : DISCO-VIRTUAL-NAS
 
-- ResiliencySettingName : Parity
+-   ResiliencySettingName : Parity
 
-- ProvisioningType : Fixed
+-   ProvisioningType : Fixed
 
-- HealthStatus : Healthy\
-  ![](images\paste-ld5H8jqBou5CSG-kTHmAo.png)
+-   HealthStatus : Healthy\
+    ![](images\paste-ld5H8jqBou5CSG-kTHmAo.png)
 
 ### **Crear el volumen**
 
@@ -440,13 +440,13 @@ Abre: Win + R \> `lusrmgr.msc`\
 
 `Win + R > lusrmgr.msc` es un comando que abre la herramienta **Usuarios y grupos locales** en Windows. Esta herramienta te permite administrar usuarios y grupos en tu computadora, lo cual es útil para:
 
-- **Crear nuevos usuarios:** Puedes agregar nuevos usuarios a tu computadora y asignarles permisos específicos.
+-   **Crear nuevos usuarios:** Puedes agregar nuevos usuarios a tu computadora y asignarles permisos específicos.
 
-- **Administrar usuarios existentes:** Puedes cambiar las contraseñas de los usuarios, habilitar o deshabilitar cuentas, y modificar sus pertenencias a grupos.
+-   **Administrar usuarios existentes:** Puedes cambiar las contraseñas de los usuarios, habilitar o deshabilitar cuentas, y modificar sus pertenencias a grupos.
 
-- **Crear nuevos grupos:** Puedes crear grupos para organizar a los usuarios y asignarles permisos colectivos.
+-   **Crear nuevos grupos:** Puedes crear grupos para organizar a los usuarios y asignarles permisos colectivos.
 
-- **Administrar grupos existentes:** Puedes agregar o quitar usuarios de los grupos y modificar sus permisos.
+-   **Administrar grupos existentes:** Puedes agregar o quitar usuarios de los grupos y modificar sus permisos.
 
 **Cómo usar `Win + R > lusrmgr.msc`:**
 
@@ -464,11 +464,11 @@ Abre: Win + R \> `lusrmgr.msc`\
 
 Crea, como mínimo:
 
-- director01
-- profesor01
-- profesor02
-- alumno01
-- alumno02
+-   director01
+-   profesor01
+-   profesor02
+-   alumno01
+-   alumno02
 
 ![](images\paste-iK1PvF-g0Z27Sc_VXG9O-.png)
 
@@ -484,11 +484,11 @@ Esto se hace únicamente para evitar interrupciones durante la práctica. No es 
 
 Crea estos grupos y añádeles los usuarios que has creados antes
 
-- NAS_DIRECCION
+-   NAS_DIRECCION
 
-- NAS_PROFESORES
+-   NAS_PROFESORES
 
-- NAS_ALUMNOS
+-   NAS_ALUMNOS
 
 **Pertenencia a grupos**
 
@@ -510,15 +510,15 @@ No asignaremos permisos directamente a los usuarios. Los permisos se asignarán 
 
 Crea:
 
-- N:\\NAS
+-   N:\\NAS
 
-- N:\\NAS\\DIRECCION
+-   N:\\NAS\\DIRECCION
 
-- N:\\NAS\\PROFESORES
+-   N:\\NAS\\PROFESORES
 
-- N:\\NAS\\ALUMNOS
+-   N:\\NAS\\ALUMNOS
 
-- N:\\NAS\\COMUN
+-   N:\\NAS\\COMUN
 
 # **Configurar los niveles de permisos**
 
@@ -530,9 +530,9 @@ En Windows existen dos niveles principales de permisos cuando trabajas con almac
 
 Ejemplo práctico:
 
-- Si te sientas en el servidor localmente y abres la carpeta, los permisos SMB **no se aplican** (solo actúan los permisos NTFS).
+-   Si te sientas en el servidor localmente y abres la carpeta, los permisos SMB **no se aplican** (solo actúan los permisos NTFS).
 
-- Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (`\\servidor\recurso`), **se aplican ambos permisos** (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.
+-   Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (`\\servidor\recurso`), **se aplican ambos permisos** (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.
 
 ## **Permisos de Seguridad o NTFS**
 
@@ -540,11 +540,11 @@ Se configuran en Propiedades de la carpeta → Seguridad
 
 Se aplican:
 
-- Cuando se accede localmente.
+-   Cuando se accede localmente.
 
-- Cuando se accede por red.
+-   Cuando se accede por red.
 
-- A carpetas, subcarpetas y archivos.
+-   A carpetas, subcarpetas y archivos.
 
 ## **Permisos de Compartir**
 
@@ -577,9 +577,9 @@ Accede a: Seguridad → Opciones avanzadas → Deshabilitar herencia
 
 Windows mostrará dos opciones:
 
-- **Convertir los permisos heredados en permisos explícitos:** Copia los permisos actuales y deja de heredarlos. Es la opción más segura para esta práctica porque mantiene inicialmente el acceso administrativo.
+-   **Convertir los permisos heredados en permisos explícitos:** Copia los permisos actuales y deja de heredarlos. Es la opción más segura para esta práctica porque mantiene inicialmente el acceso administrativo.
 
-- **Quitar todos los permisos heredados:** Elimina directamente los permisos heredados. Puede provocar que se pierda el acceso a la carpeta si no se añaden inmediatamente permisos correctos.
+-   **Quitar todos los permisos heredados:** Elimina directamente los permisos heredados. Puede provocar que se pierda el acceso a la carpeta si no se añaden inmediatamente permisos correctos.
 
 Selecciona:
 
@@ -594,11 +594,11 @@ En N:\\NAS, deja únicamente:
 
 Elimina de esta carpeta raíz las entradas generales que puedan aparecer, como:
 
-- Usuarios
+-   Usuarios
 
-- Usuarios autenticados
+-   Usuarios autenticados
 
-- CREATOR OWNER
+-   CREATOR OWNER
 
 ![](images\paste-7o7jGR46NCDC9Oad362yc.png)
 
@@ -625,27 +625,27 @@ Debe aplicarse a *Esta carpeta, subcarpetas y archivos*, esta es la configuraci�
 
 4.  **Carpeta PROFESORES**
 
-- Agrega: *SRV-NAS01\\NAS_PROFESORES*
+-   Agrega: *SRV-NAS01\\NAS_PROFESORES*
 
-- Concede: *Modificar*
+-   Concede: *Modificar*
 
 5.  **Carpeta ALUMNOS**
 
-- Agrega: SRV-NAS01\\NAS_ALUMNOS
+-   Agrega: SRV-NAS01\\NAS_ALUMNOS
 
-- Concede: Modificar
+-   Concede: Modificar
 
 6.  **Carpeta COMUN**
 
-- Agrega:
+-   Agrega:
 
-- *SRV-NAS01\\NAS_DIRECCION*
+-   *SRV-NAS01\\NAS_DIRECCION*
 
-- *SRV-NAS01\\NAS_PROFESORES*
+-   *SRV-NAS01\\NAS_PROFESORES*
 
-- *SRV-NAS01\\NAS_ALUMNOS*
+-   *SRV-NAS01\\NAS_ALUMNOS*
 
-- Concede a los tres grupos: *Modificar*
+-   Concede a los tres grupos: *Modificar*
 
 **Resultado final de Seguridad**
 
@@ -743,17 +743,17 @@ El asterisco solicita la contraseña sin mostrarla.
 
 El usuario deberá poder:
 
-- Acceder a PROFESORES.
+-   Acceder a PROFESORES.
 
-- Crear carpetas.
+-   Crear carpetas.
 
-- Crear archivos.
+-   Crear archivos.
 
-- Modificar archivos.
+-   Modificar archivos.
 
-- Eliminar archivos.
+-   Eliminar archivos.
 
-- Acceder a COMUN.
+-   Acceder a COMUN.
 
 No deberá poder acceder a:
 
@@ -830,29 +830,27 @@ La palabra **Denegado** en esta tabla significa que no se le ha concedido acceso
 
 La infraestructura deberá quedar así:
 
-
-
 Con este diseño quedan claramente separados:
 
-- El disco del sistema.
+-   El disco del sistema.
 
-- Los discos físicos de almacenamiento.
+-   Los discos físicos de almacenamiento.
 
-- El grupo de almacenamiento.
+-   El grupo de almacenamiento.
 
-- El disco virtual de paridad.
+-   El disco virtual de paridad.
 
-- El volumen NTFS.
+-   El volumen NTFS.
 
-- Los permisos NTFS.
+-   Los permisos NTFS.
 
-- Los permisos SMB.
+-   Los permisos SMB.
 
-- La pertenencia de usuarios a grupos.
+-   La pertenencia de usuarios a grupos.
 
-- La herencia de permisos.
+-   La herencia de permisos.
 
-- La autenticación desde los clientes.
+-   La autenticación desde los clientes.
 
 **24. Simulación del fallo y sustitución de un disco del espacio de paridad**
 
@@ -979,11 +977,11 @@ SRV-NASxx-SO.vdi
 
 Cuando VirtualBox pregunte qué hacer con el disco:
 
-- Desconéctalo de la máquina virtual.
+-   Desconéctalo de la máquina virtual.
 
-- Conserva el archivo VDI.
+-   Conserva el archivo VDI.
 
-- No lo elimines todavía del disco del anfitrión.
+-   No lo elimines todavía del disco del anfitrión.
 
 La controladora NVMe deberá quedar temporalmente así:
 
@@ -1081,17 +1079,17 @@ Utiliza el mismo usuario SMB con el que ya estabas conectado. No cambies de usua
 
 Aunque haya desaparecido uno de los discos:
 
-- El volumen D: continúa accesible.
+-   El volumen D: continúa accesible.
 
-- Los archivos existentes se pueden leer.
+-   Los archivos existentes se pueden leer.
 
-- Se pueden crear y modificar archivos.
+-   Se pueden crear y modificar archivos.
 
-- Los recursos SMB siguen disponibles.
+-   Los recursos SMB siguen disponibles.
 
-- El estado del almacenamiento aparece como degradado.
+-   El estado del almacenamiento aparece como degradado.
 
-- Ya no existe protección frente al fallo de otro disco.
+-   Ya no existe protección frente al fallo de otro disco.
 
 **25. Sustitución del disco averiado**
 
@@ -1216,11 +1214,11 @@ Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage
 
 En este momento aparecerán:
 
-- Dos discos originales saludables.
+-   Dos discos originales saludables.
 
-- El nuevo disco saludable.
+-   El nuevo disco saludable.
 
-- La referencia al disco ausente o averiado.
+-   La referencia al disco ausente o averiado.
 
 **25.4 Identificar el disco averiado**
 
@@ -1384,9 +1382,9 @@ Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage
 
 Deben quedar exactamente tres discos saludables dentro de GRUPO-NAS:
 
-- Dos discos originales.
+-   Dos discos originales.
 
-- Un disco de reemplazo.
+-   Un disco de reemplazo.
 
 Comprueba todos los niveles:
 
@@ -1424,17 +1422,17 @@ Los usuarios deben conservar exactamente los mismos permisos que antes del fallo
 
 Cuando se haya comprobado que:
 
-- GRUPO-NAS está saludable.
+-   GRUPO-NAS está saludable.
 
-- DISCO-VIRTUAL-NAS está saludable.
+-   DISCO-VIRTUAL-NAS está saludable.
 
-- El volumen N: funciona.
+-   El volumen N: funciona.
 
-- Los hashes coinciden.
+-   Los hashes coinciden.
 
-- Los recursos SMB son accesibles.
+-   Los recursos SMB son accesibles.
 
-- El disco antiguo ya no aparece dentro del grupo.
+-   El disco antiguo ya no aparece dentro del grupo.
 
 Puede eliminarse el VDI averiado desde el anfitrión:
 
@@ -1463,18 +1461,18 @@ No elimines ninguno de los tres discos que actualmente aparecen como saludables 
 
 La práctica demuestra que:
 
-- La paridad distribuye datos e información de recuperación entre los discos.
+-   La paridad distribuye datos e información de recuperación entre los discos.
 
-- El fallo de un disco no provoca inmediatamente la pérdida del volumen.
+-   El fallo de un disco no provoca inmediatamente la pérdida del volumen.
 
-- El servidor puede continuar ofreciendo los recursos SMB.
+-   El servidor puede continuar ofreciendo los recursos SMB.
 
-- Durante el estado degradado no existe protección frente a un segundo fallo.
+-   Durante el estado degradado no existe protección frente a un segundo fallo.
 
-- El disco debe sustituirse lo antes posible.
+-   El disco debe sustituirse lo antes posible.
 
-- Agregar el disco nuevo no es suficiente: hay que reparar el disco virtual.
+-   Agregar el disco nuevo no es suficiente: hay que reparar el disco virtual.
 
-- El disco averiado solo debe eliminarse del grupo después de que la reparación termine y su VirtualDiskFootprint sea 0.
+-   El disco averiado solo debe eliminarse del grupo después de que la reparación termine y su VirtualDiskFootprint sea 0.
 
-- La paridad mejora la disponibilidad, pero **no sustituye a una copia de seguridad**.
+-   La paridad mejora la disponibilidad, pero **no sustituye a una copia de seguridad**.

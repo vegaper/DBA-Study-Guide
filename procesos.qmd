@@ -10,10 +10,10 @@ resources:
 
 **Un proceso es un programa en ejecución**. Un proceso incluye:
 
-- El código del programa.
-- La memoria que usa (variables, datos, pila, heap).
-- Sus recursos asignados (CPU, archivos abiertos, puertos, etc.).
-- Su estado (ejecutándose, esperando, detenido).
+-   El código del programa.
+-   La memoria que usa (variables, datos, pila, heap).
+-   Sus recursos asignados (CPU, archivos abiertos, puertos, etc.).
+-   Su estado (ejecutándose, esperando, detenido).
 
 Cada proceso tiene un **PID** (Process ID) único.
 
@@ -29,9 +29,9 @@ El sistema operativo los gestiona mediante un planificador que reparte CPU.
 
 **Un servicio es un proceso especial que se ejecuta en segundo plano para ofrecer funciones al sistema o a otros programas**.
 
-- Se inician automáticamente al arrancar el sistema (o bajo demanda).
-- No requieren interacción del usuario.
-- Suelen ser críticos para el funcionamiento del sistema.
+-   Se inician automáticamente al arrancar el sistema (o bajo demanda).
+-   No requieren interacción del usuario.
+-   Suelen ser críticos para el funcionamiento del sistema.
 
 **Ejemplos**: Servicio de impresión, Windows Update, Servicio de base de datos (MySQL, PostgreSQL), Servicio de red (DHCP, DNS).
 
@@ -61,10 +61,10 @@ Un proceso sigue ejecutándose aunque cierres la terminal (si está nohup o diso
 
 Son los pilares invisibles del SO. Los servicios son procesos especiales que:
 
-- Se inician antes de que el usuario inicie sesión
-- no tienen interfaz gráfica visible
-- Se administran mediante la Consola de Servicios `services.msc`
-- Realizan funciones críticas del sistema
+-   Se inician antes de que el usuario inicie sesión
+-   no tienen interfaz gráfica visible
+-   Se administran mediante la Consola de Servicios `services.msc`
+-   Realizan funciones críticas del sistema
 
 **Todos los servicios son procesos en segundo plano, pero no todos los procesos en segundo plano son servicios.**
 
@@ -97,20 +97,20 @@ Son los pilares invisibles del SO. Los servicios son procesos especiales que:
 
 ## Tipos de situaciones de rendimiento
 
-- **Uso alto normal**: Ej. Una copia de seguridad programada consumiendo disco de forma esperada.
-- **Uso alto anómalo**: Ej. Un proceso bloqueado consumiendo CPU indefinidamente sin motivo
-- **Saturación**: El recurso no solo se usa mucho, sino que ya no responde con fluidez
-- **Cuello de botella**: Recurso que limita el rendimiento global del sistema completo.
+-   **Uso alto normal**: Ej. Una copia de seguridad programada consumiendo disco de forma esperada.
+-   **Uso alto anómalo**: Ej. Un proceso bloqueado consumiendo CPU indefinidamente sin motivo
+-   **Saturación**: El recurso no solo se usa mucho, sino que ya no responde con fluidez
+-   **Cuello de botella**: Recurso que limita el rendimiento global del sistema completo.
 
 ## Modelos predictivos y análisis de tendencias
 
 Un modelo predictivo en administración de sistemas consiste en observar datos históricos, detectar patrones y anticiparse a problemas. El objetivo es pasar de una administración reactiva a una administración preventiva. Por ejemplo saber cuánto crece el alamacenamiento a diario y preveer cuándo necesitaremos más.
 
-- **Linea base** (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.
-- **Umbral**: valor a partir del cual se genera aviso.
-- **Tendencia**: evolución de una métrica en el tiempo.
-- **Estacionalidad**: patrón que se repite a lo largo de determinados periodos de tiempo.
-- **Capacidad**: recursos disponibles para absorber la demanda actual y futura.
+-   **Linea base** (baseline): comportamiento normal del sistema. Sin ella no sabemos si un valor es alto o bajo.
+-   **Umbral**: valor a partir del cual se genera aviso.
+-   **Tendencia**: evolución de una métrica en el tiempo.
+-   **Estacionalidad**: patrón que se repite a lo largo de determinados periodos de tiempo.
+-   **Capacidad**: recursos disponibles para absorber la demanda actual y futura.
 
 Data collector Sets, Get-Counter, logman, WPR/WPA para tendencias y accounting.
 
@@ -120,10 +120,10 @@ Un entorno de preproducción intenta parecerse lo máximo posible a producción,
 
 Ejemplos de cambios que deben probarse en preproducción:
 
-- SO: Instalación, actualización del kernel, parches de seguridad.
-- Bases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.
-- Red y almacenamiento: Cambio de configuración de red, migración de almacenamiento.
-- Aplicaciones: cambio de versión, modificación de políticas de seguridad.
+-   SO: Instalación, actualización del kernel, parches de seguridad.
+-   Bases de datos: instalación o actualización de SGBD, cambio de parámetros de memoria.
+-   Red y almacenamiento: Cambio de configuración de red, migración de almacenamiento.
+-   Aplicaciones: cambio de versión, modificación de políticas de seguridad.
 
 Estructura del plan de pruebas:
 
@@ -155,25 +155,25 @@ flowchart LR
 
 5.  🛠️ **Herramientas:** - **Para carga:** Scripts SQL automatizados lanzados desde terminal.
 
-    - **Para monitorización de OS:** `top` (CPU), `free -h` (RAM) y `vmstat`.
-    - **Para SGBD:** Panel de administración del clúster y logs de ejecución de consultas.
+    -   **Para monitorización de OS:** `top` (CPU), `free -h` (RAM) y `vmstat`.
+    -   **Para SGBD:** Panel de administración del clúster y logs de ejecución de consultas.
 
 6.  📊 **Métricas a observar:** - Tiempo total de ejecución de la consulta (`duration`).
 
-    - Picos de consumo de RAM por el proceso de la base de datos (GB).
-    - Uso de memoria Swap en el sistema operativo (MB/GB).
-    - Número de fallos o bloqueos por falta de memoria (Errores OOM - *Out of Memory*).
+    -   Picos de consumo de RAM por el proceso de la base de datos (GB).
+    -   Uso de memoria Swap en el sistema operativo (MB/GB).
+    -   Número de fallos o bloqueos por falta de memoria (Errores OOM - *Out of Memory*).
 
 7.  📝 **Escenarios:** - **Escenario 1 (Línea base):** Lanzar un set de 5 consultas pesadas (que incluyan múltiples `JOIN` y `GROUP BY`) con la configuración original y anotar tiempos.
 
-    - **Escenario 2 (Carga normal):** Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.
-    - **Escenario 3 (Prueba de estrés):** Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.
+    -   **Escenario 2 (Carga normal):** Aplicar el aumento de memoria, reiniciar el servicio y lanzar el mismo set de 5 consultas. Comparar métricas.
+    -   **Escenario 3 (Prueba de estrés):** Lanzar 25 consultas de forma concurrente con la nueva configuración para asegurar que el motor gestiona bien las colas y el servidor no colapsa.
 
 8.  ✅ **Criterios de Aceptación:** El cambio se considerará válido para pasar a producción si:
 
-    - El tiempo de ejecución de las consultas se reduce en al menos un 15%.
-    - El sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.
-    - El uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.
+    -   El tiempo de ejecución de las consultas se reduce en al menos un 15%.
+    -   El sistema operativo mantiene al menos un 10% de RAM libre en el pico máximo de estrés.
+    -   El uso de memoria Swap se mantiene en 0 o no incrementa respecto a la línea base.
 
 9.  🔙 **Reversión (Rollback):** En caso de fallo o inestabilidad, se ejecutará un script preconfigurado que:
 

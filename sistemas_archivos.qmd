@@ -24,21 +24,21 @@ El rendimiento del sistema de archivos sybyace afecta directamente al rendimient
 Una buena nomenclatura evita errores, facilita las migraciones y hace que las copias de seguridad tengan sentido meses después.\
 Buenas practicas:
 
-- Sin espacios ni tildes
+-   Sin espacios ni tildes
 
-- Nombres descriptivos y versionados: el contenido debe entenderse por el título del archivo, ejemplo v1, v2...
+-   Nombres descriptivos y versionados: el contenido debe entenderse por el título del archivo, ejemplo v1, v2...
 
-- Fechas en formato AAAA-MM-DD: los archivos se ordenan cronológicamente de forma automática.
+-   Fechas en formato AAAA-MM-DD: los archivos se ordenan cronológicamente de forma automática.
 
-- Evitar caracteres especiales / \\ : \* ? " \<\> \| pueden causar errores en distintos sistemas operativos.
+-   Evitar caracteres especiales / \\ : \* ? " \<\> \| pueden causar errores en distintos sistemas operativos.
 
 Buen ejemplo:
 
-- backup_bd_academia_2026-07-12.slq
+-   backup_bd_academia_2026-07-12.slq
 
 Mal ejemplo:
 
-- copia final(2) DEFINITIVA.sql: No dice qué contiene, cuándo se hizo, ni si realmente es la versión definitiva
+-   copia final(2) DEFINITIVA.sql: No dice qué contiene, cuándo se hizo, ni si realmente es la versión definitiva
 
 # Jerarquias de almacenamiento
 
@@ -58,35 +58,35 @@ El almacenamiento está organizado en niveles: cada uno más rápido y más caro
 
 Utilidades:
 
-- Amplicar espacio en caliente sin apagar el servidor
+-   Amplicar espacio en caliente sin apagar el servidor
 
-- Combinar discos en un único volumen más grande: Por ejemplo podemos combinar dos discos físicos en un solo disco lógico que nos permitirá almacenar un fichero de más tamaño que uno de los volúmenes físicos individuales.
+-   Combinar discos en un único volumen más grande: Por ejemplo podemos combinar dos discos físicos en un solo disco lógico que nos permitirá almacenar un fichero de más tamaño que uno de los volúmenes físicos individuales.
 
-- Crear snapshots para backups consistentes.
+-   Crear snapshots para backups consistentes.
 
 # Migraciones de Datos
 
 Una migración es el proceso de mover datos desde un sistema de origen a un sistema de destino: Cambio de servidor, de SGBD, de versión o de infraestructura (por ejemplo, de servidor local a la nube).
 
-- Migración de versión: Actualizar de MySQL 5.7 a MySQL 8.0
+-   Migración de versión: Actualizar de MySQL 5.7 a MySQL 8.0
 
-- Migración de motor: pasar de MySQL a PostgreSQL
+-   Migración de motor: pasar de MySQL a PostgreSQL
 
-- Migración de infraestructura: de servidor físico local a proveedor cloud por ejemplo
+-   Migración de infraestructura: de servidor físico local a proveedor cloud por ejemplo
 
-- Migración de esquema: Reestructurar tablas.
+-   Migración de esquema: Reestructurar tablas.
 
 ## Buenas prácticas en una migración
 
-- Copia de seguridad previa: Siempre del sistema de origen antes de comenzar.
+-   Copia de seguridad previa: Siempre del sistema de origen antes de comenzar.
 
-- Probar en entorno de pruebas: Nunca tocar producción directamente sin validar antes.
+-   Probar en entorno de pruebas: Nunca tocar producción directamente sin validar antes.
 
-- Verificar integridad: Contar filas, comparar sumas de control tras la migración.
+-   Verificar integridad: Contar filas, comparar sumas de control tras la migración.
 
-- Planificar ventana de mantenimiento y rollback: Tener siempre un plan de reversión por si algo sale mal.
+-   Planificar ventana de mantenimiento y rollback: Tener siempre un plan de reversión por si algo sale mal.
 
-::: .nota
+::: nota
 Error común: Migrar solo los datos y olvidar índices, claves foráneas o procedimientos almacenados. El resultado es una base de datos más lenta o comproblemas de integridad referencial.
 :::
 
@@ -142,11 +142,11 @@ A continuación se detallan los tipos de RAID más comunes y se ilust.ra gráfic
 
 El sistema divide la información y la escribe alternadamente en todos los discos. No ofrece ninguna redundancia ni tolerancia a fallos; si un solo disco falla, se pierde la totalidad de los datos.
 
-- Mínimo de discos: 2
+-   Mínimo de discos: 2
 
-- Capacidad útil: Suma de la capacidad de todos los discos (N).
+-   Capacidad útil: Suma de la capacidad de todos los discos (N).
 
-- Ventaja: Máximo rendimiento de lectura y escritura al procesar datos en paralelo. Disco 1 Disco 2
+-   Ventaja: Máximo rendimiento de lectura y escritura al procesar datos en paralelo. Disco 1 Disco 2
 
 | Disco 1 | Disco 2 |
 |:-------:|:-------:|
@@ -158,10 +158,10 @@ El sistema divide la información y la escribe alternadamente en todos los disco
 
 Duplica de forma exacta cada bloque de datos escrito. Si un disco deja de funcionar, el sistema sigue operativo de forma transparente usando el disco espejo.
 
-- **Mínimo de discos:** 2.
-- **Tolerancia a fallos:** Alta (puede fallar 1 disco de la pareja).
-- **Almacenamiento útil:** $1 \times C$ (la capacidad de un único disco). Aprovechamiento del **50%** en una configuración típica de dos discos.
-- **Rendimiento:** Lectura rápida (puede leer bloques distintos de ambos discos en paralelo), pero la escritura está limitada a la velocidad del disco más lento debido a que debe duplicar el proceso.
+-   **Mínimo de discos:** 2.
+-   **Tolerancia a fallos:** Alta (puede fallar 1 disco de la pareja).
+-   **Almacenamiento útil:** $1 \times C$ (la capacidad de un único disco). Aprovechamiento del **50%** en una configuración típica de dos discos.
+-   **Rendimiento:** Lectura rápida (puede leer bloques distintos de ambos discos en paralelo), pero la escritura está limitada a la velocidad del disco más lento debido a que debe duplicar el proceso.
 
 | Disco 1 (Principal) | Disco 2 (Espejo) |
 |:-------------------:|:----------------:|
@@ -176,10 +176,10 @@ Duplica de forma exacta cada bloque de datos escrito. Si un disco deja de funcio
 
 Divide los datos a nivel de bloques y distribuye la información de paridad de forma rotativa entre todos los discos físicos del conjunto. Si un disco falla, sus bloques se reconstruyen en tiempo real calculando la paridad de los discos restantes.
 
-- **Mínimo de discos:** 3.
-- **Tolerancia a fallos:** Admite el fallo de **1 disco**.
-- **Almacenamiento útil:** $(N - 1) \times C$. Es decir, si tenemos 4 discos de 1 TB, dispondremos de 3 TB útiles (el equivalente a un disco se "pierde" para almacenar la paridad distribuida).
-- **Funcionamiento de escritura:** Cuando llega un archivo, la controladora divide los paquetes de datos entre los discos y calcula y escribe la paridad en el disco restante de forma cíclica.
+-   **Mínimo de discos:** 3.
+-   **Tolerancia a fallos:** Admite el fallo de **1 disco**.
+-   **Almacenamiento útil:** $(N - 1) \times C$. Es decir, si tenemos 4 discos de 1 TB, dispondremos de 3 TB útiles (el equivalente a un disco se "pierde" para almacenar la paridad distribuida).
+-   **Funcionamiento de escritura:** Cuando llega un archivo, la controladora divide los paquetes de datos entre los discos y calcula y escribe la paridad en el disco restante de forma cíclica.
 
 |      Disco 1      |      Disco 2      |      Disco 3      |
 |:-----------------:|:-----------------:|:-----------------:|
@@ -191,10 +191,10 @@ Divide los datos a nivel de bloques y distribuye la información de paridad de f
 
 Combina los beneficios del rendimiento de RAID 0 y la seguridad de RAID 1. Consiste en crear subgrupos en espejo (RAID 1) y, posteriormente, distribuir los datos sobre esos espejos mediante seccionamiento (RAID 0).
 
-- **Mínimo de discos:** 4 (siempre en números pares).
-- **Tolerancia a fallos:** Muy alta. Puede tolerar el fallo de hasta 2 discos simultáneamente, siempre y cuando **no pertenezcan a la misma pareja en espejo**.
-- **Almacenamiento útil:** $\frac{N}{2} \times C$ (el **50%** de la capacidad total).
-- **Rendimiento:** Excelente tanto en lectura como en escritura, ideal para bases de datos y sistemas de alto rendimiento.
+-   **Mínimo de discos:** 4 (siempre en números pares).
+-   **Tolerancia a fallos:** Muy alta. Puede tolerar el fallo de hasta 2 discos simultáneamente, siempre y cuando **no pertenezcan a la misma pareja en espejo**.
+-   **Almacenamiento útil:** $\frac{N}{2} \times C$ (el **50%** de la capacidad total).
+-   **Rendimiento:** Excelente tanto en lectura como en escritura, ideal para bases de datos y sistemas de alto rendimiento.
 
 ```         
 [ Volumen Lógico RAID 10 ]
@@ -234,4 +234,3 @@ Porque importa RAID en bases de datos
 Continuidad del servicio: Si un disco físico falla, los datos no se pierden y se puede seguir dando servicio mientras se sustituye.
 
 Velocidad bajo carga: Con RAID10, se gana velocidad de lectura/escritura
-

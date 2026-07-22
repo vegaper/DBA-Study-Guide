@@ -53,7 +53,7 @@ Es muy útil para diagnóstico, soporte técnico y análisis del estado del equi
 #### Qué ofrece
 
 | Categoría | Elementos que incluye |
-|:---------------------|:-------------------------------------------------|
+|:----------------------|:------------------------------------------------|
 | **Resumen del sistema** | Versión de Windows, Fabricante del equipo, Modelo, BIOS, Procesador, RAM instalada. |
 | **Recursos de hardware** | IRQ, DMA, Conflictos y recursos compartidos, Memoria asignada, Controladores cargados. |
 | **Componentes** | Almacenamiento, Red, Pantalla, Sonido, Dispositivos USB, Periféricos. |
@@ -336,7 +336,7 @@ Resmon desglosa cada recurso con métricas profundas, como:
 
 ::: tabla-pequena
 | Sección | Qué muestra / métricas | Para qué sirve |
-|------------------|-------------------------------|-----------------------|
+|-------------------|-------------------------------|-----------------------|
 | **CPU** | Procesos activos, servicios asociados, hilos por proceso, tiempo de CPU, gráficos en tiempo real | Detectar procesos que saturan el procesador y analizar carga de trabajo. |
 | **Memoria** | Memoria en uso, memoria reservada, memoria compartida, hard faults, uso por proceso | Analizar consumo de RAM con más detalle que el Administrador de tareas. |
 | **Disco** | Lectura/escritura por proceso, archivos abiertos, latencia, cuellos de botella | Identificar procesos que bloquean el sistema por I/O. |
@@ -350,7 +350,7 @@ Resmon desglosa cada recurso con métricas profundas, como:
 
 ::: tabla-pequena
 | Tipo de memoria | Qué significa | ¿Se puede usar inmediatamente? | Ejemplo |
-|-----------------|---------------------|-----------------|-----------------|
+|------------------|--------------------|------------------|------------------|
 | **En uso** | Memoria que están usando activamente procesos, servicios y el sistema. | ❌ No | Programas abiertos ocupando RAM. |
 | **Modificada** | Datos cambiados que aún no se han guardado en disco; deben escribirse antes de liberarse. | ⚠️ No, hasta que se escriba en disco | Datos pendientes de guardar. |
 | **En espera** | Caché de datos usados recientemente; puede liberarse al instante si otro proceso necesita RAM. | ✔️ Sí | Memoria "reciclable" que acelera el sistema. |
@@ -575,7 +575,7 @@ Como DBA, tu objetivo principal es garantizar que el motor de la base de datos t
 
 ::: tabla-pequena
 | Síntoma del Servidor BD | Recurso Sospechoso | ¿Qué herramienta utilizo? | ¿Qué busco exactamente? |
-|:----------------|:----------------|:----------------|:--------------------|
+|:-----------------|:-----------------|:-----------------|:-------------------|
 | **Consultas muy lentas de repente, pero la BD responde.** | **Disco (I/O)** | Monitor de Recursos (Resmon) / Perfmon | En *Resmon*, reviso la pestaña Disco para ver la latencia (ms) y la "Cola de disco". Si la latencia es alta, el disco no da abasto para leer las tablas. |
 | **El servidor web dice "Timeout" al conectar a la BD.** | **Red** / **Servicio** | Administrador de Tareas / Visor de Eventos | En *Task Manager*, reviso si el servicio del SGBD está "Detenido". En el *Visor de Eventos (Aplicación)*, busco si la BD registró un "Error" al agotar el pool de conexiones o un bloqueo de puertos. |
 | **El servidor está "congelado" o va a tirones.** | **CPU** | Administrador de Tareas (Detalles) / Get-Process | Busco procesos que consuman cerca del 100% de CPU. Si es el SGBD, suele indicar una consulta mal optimizada (sin índices). Si es otro proceso (ej. un antivirus), está robando ciclos a la BD. |

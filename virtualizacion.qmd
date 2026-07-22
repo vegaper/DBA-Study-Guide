@@ -2,11 +2,11 @@
 
 Los servicios en la nube se organizan en tres grandes modelos según el nivel de control que tiene el usuario y el nivel de gestión que ofrece el proveedor. De menor a mayor abstracción:
 
-- IaaS -- Infraestructura como servicio.
+-   IaaS -- Infraestructura como servicio.
 
-- PaaS -- Plataforma como servicio.
+-   PaaS -- Plataforma como servicio.
 
-- SaaS -- Software como servicio.
+-   SaaS -- Software como servicio.
 
 A medida que avanzamos hacia SaaS, el proveedor gestiona más cosas y el usuario se preocupa de menos.
 
@@ -81,19 +81,19 @@ Un servidor físico → varias máquinas virtuales → múltiples servicios Resu
 
 ### Tipos de hipervisores
 
-- **Tipo 1 (bare metal)** Se instalan directamente sobre el hardware. Ej.: VMware ESXi, Hyper-V Server, Proxmox. *Más eficientes.*
+-   **Tipo 1 (bare metal)** Se instalan directamente sobre el hardware. Ej.: VMware ESXi, Hyper-V Server, Proxmox. *Más eficientes.*
 
-- **Tipo 2 (sobre SO)** Se instalan como una aplicación dentro del SO. Ejemplos:
+-   **Tipo 2 (sobre SO)** Se instalan como una aplicación dentro del SO. Ejemplos:
 
-  - **VirtualBox** → El más usado en general. Gratuito, fácil, multiplataforma.
+    -   **VirtualBox** → El más usado en general. Gratuito, fácil, multiplataforma.
 
-  - **VMware Workstation** → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.
+    -   **VMware Workstation** → Muy popular en entornos profesionales. Player es gratis, Pro es de pago.
 
-  - **Hyper‑V** → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.
+    -   **Hyper‑V** → Integrado en Windows Pro/Enterprise. Menos usado por estudiantes.
 
-  - **Parallels** → Muy usado en Mac, especialmente con Apple Silicon.
+    -   **Parallels** → Muy usado en Mac, especialmente con Apple Silicon.
 
-  - **QEMU/KVM** → Popular en Linux y servidores, más técnico. *Menos eficientes.*
+    -   **QEMU/KVM** → Popular en Linux y servidores, más técnico. *Menos eficientes.*
 
 ### Contenedores
 
@@ -103,11 +103,11 @@ Más ligeros que las VM. Comparten el kernel del SO anfitrión. Ejemplos: Docker
 
 Una máquina virtual recibe recursos del servidor físico:
 
-- RAM
+-   RAM
 
-- Almacenamiento
+-   Almacenamiento
 
-- CPU (vCPU)
+-   CPU (vCPU)
 
 Para un DBA es importante saber cuántas vCPU tiene la máquina, ya que afecta directamente al rendimiento del motor de base de datos.
 
@@ -125,39 +125,39 @@ Los dispositivos solo pueden comunicarse con otros dentro de la misma VLAN. Para
 
 **Beneficios principales:**
 
-- **Seguridad:** Aísla grupos de dispositivos. Ejemplo:
+-   **Seguridad:** Aísla grupos de dispositivos. Ejemplo:
 
-  - VLAN 10: Administración
+    -   VLAN 10: Administración
 
-  - VLAN 20: Invitados
+    -   VLAN 20: Invitados
 
-  - VLAN 30: Cámaras IP
+    -   VLAN 30: Cámaras IP
 
-  - *(Los invitados no pueden ver los equipos de administración).*
+    -   *(Los invitados no pueden ver los equipos de administración).*
 
-- **Rendimiento:**
+-   **Rendimiento:**
 
-  - Reduce el tráfico innecesario (broadcast).
+    -   Reduce el tráfico innecesario (broadcast).
 
-  - Cada VLAN tiene su propio dominio de broadcast.
+    -   Cada VLAN tiene su propio dominio de broadcast.
 
-- **Organización:**
+-   **Organización:**
 
-  - Agrupa dispositivos por función, no por ubicación física.
+    -   Agrupa dispositivos por función, no por ubicación física.
 
-  - Puedes tener PCs en diferentes plantas pero en la misma VLAN.
+    -   Puedes tener PCs en diferentes plantas pero en la misma VLAN.
 
-- **Ahorro:**
+-   **Ahorro:**
 
-  - No necesitas más switches físicos para separar redes.
+    -   No necesitas más switches físicos para separar redes.
 
 Ejemplo: Imagina un switch con 8 puertos:
 
-- Puertos 1--4 → VLAN 10 (Oficina)
+-   Puertos 1--4 → VLAN 10 (Oficina)
 
-- Puertos 5--6 → VLAN 20 (Invitados)
+-   Puertos 5--6 → VLAN 20 (Invitados)
 
-- Puertos 7--8 → VLAN 30 (Cámaras)
+-   Puertos 7--8 → VLAN 30 (Cámaras)
 
 Aunque todos estén en el mismo switch, cada grupo está aislado.
 
@@ -171,21 +171,21 @@ Cuando creas una máquina virtual en VirtualBox (o en la mayoría de hipervisore
 
 Esta red no es la misma que la red del ordenador anfitrión. La máquina virtual no puede comunicarse directamente con:
 
-- otras máquinas virtuales,
+-   otras máquinas virtuales,
 
-- otros equipos de la red física,
+-   otros equipos de la red física,
 
-- ni siquiera con el propio host.
+-   ni siquiera con el propio host.
 
 ¿Por qué se hace así? Porque el modo NAT está pensado para:
 
-- garantizar aislamiento,
+-   garantizar aislamiento,
 
-- permitir que la VM tenga acceso a Internet sin exponerla a la red real,
+-   permitir que la VM tenga acceso a Internet sin exponerla a la red real,
 
-- evitar conflictos de direcciones IP,
+-   evitar conflictos de direcciones IP,
 
-- simplificar la configuración para usuarios principiantes.
+-   simplificar la configuración para usuarios principiantes.
 
 En este modo, la VM "sale a Internet" como si fuera el propio host, pero no es accesible desde fuera.
 
@@ -215,11 +215,11 @@ En este modo, la VM "sale a Internet" como si fuera el propio host, pero no es a
             └──────────────────────────────┘
 ```
 
-- Esa red no se comunica con la red del host.
+-   Esa red no se comunica con la red del host.
 
-- Solo permite que la VM acceda a Internet a través del host.
+-   Solo permite que la VM acceda a Internet a través del host.
 
-- No permite conexiones entrantes hacia la VM.
+-   No permite conexiones entrantes hacia la VM.
 
 ![](images/NAT.png)
 
@@ -231,11 +231,11 @@ La VM obtiene una IP de la misma red que el host (por ejemplo, 192.168.1.x).
 
 Puede comunicarse con:
 
-- el host,
+-   el host,
 
-- otros equipos de la red,
+-   otros equipos de la red,
 
-- otras VMs en modo puente.
+-   otras VMs en modo puente.
 
 Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
@@ -260,15 +260,15 @@ Es accesible desde fuera (por ejemplo, para hacer ping o compartir carpetas).
 
 Este modo crea una red privada solo entre el host y la VM. No tiene acceso a Internet, pero sí permite comunicación directa entre ambos.
 
-- La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
+-   La VM obtiene una IP de una red privada creada por VirtualBox (por ejemplo, 192.168.56.x).
 
-- El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red.
+-   El adaptador virtual de red que crea VirtualBox pone al anfitrión en esa red.
 
-- Puede comunicarse solo con el host y con otras VM en su misma red.
+-   Puede comunicarse solo con el host y con otras VM en su misma red.
 
-- No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
+-   No tiene acceso a la red física ni a Internet (a menos que se combine con NAT).
 
-- Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.
+-   Aquí sí hay opción de habilitar DHCP para que asigne las ips de las máquinas vms.
 
 ``` text
                          ┌──────────────────────────────────────┐
@@ -309,13 +309,13 @@ En este modo, VirtualBox genera una red interna (por ejemplo, 10.0.2.0/24 o 10.0
 
 A diferencia del NAT normal:
 
-- Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).
+-   Las VMs sí pueden comunicarse entre ellas (ping, compartir servicios, etc.).
 
-- Las VMs no pueden comunicarse con el host.
+-   Las VMs no pueden comunicarse con el host.
 
-- Las VMs no son accesibles desde la red física.
+-   Las VMs no son accesibles desde la red física.
 
-- Todas comparten la misma salida a Internet a través del router virtual.
+-   Todas comparten la misma salida a Internet a través del router virtual.
 
 Este modo es útil cuando necesitas que varias máquinas virtuales trabajen juntas (por ejemplo, un servidor y un cliente) sin exponerlas a la red real.
 
@@ -355,19 +355,19 @@ A diferencia de Red NAT, en la Red Interna no existe un router virtual que propo
 
 Cuando una tarjeta de red en Windows está configurada para obtener una IP automáticamente (DHCP), el sistema hace lo siguiente:
 
-- Envía una petición DHCP para pedir una dirección IP.
+-   Envía una petición DHCP para pedir una dirección IP.
 
-- Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida.
+-   Si nadie responde (porque no hay router, no hay servidor DHCP o estás en una red interna sin servicios), Windows no puede obtener una IP válida.
 
-- Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango: 169.254.0.0 -- 169.254.255.255.
+-   Entonces se asigna a sí mismo una dirección APIPA (Automatic Private IP Addressing), del rango: 169.254.0.0 -- 169.254.255.255.
 
 Cuando entras en Ethernet → Cambiar opciones del adaptador, ves algo como: `169.254.5.246`. Estas direcciones solo sirven para comunicación local muy limitada, y en VirtualBox normalmente no sirven para nada, porque:
 
-- no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA).
+-   no permiten comunicación entre VMs (a menos que todas caigan por casualidad en el mismo rango APIPA).
 
-- no permiten comunicación con el host.
+-   no permiten comunicación con el host.
 
-- no permiten salir a Internet.
+-   no permiten salir a Internet.
 
 Por eso, para configurarla correctamente, entramos en Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) y asignamos manualmente la IP, la máscara de red y dejamos vacía la puerta de enlace predeterminada, ya que no vamos a salir a Internet.
 
@@ -375,15 +375,15 @@ Este modo es ideal para laboratorios cerrados, entornos de pruebas, simulaciones
 
 **Resumen:**
 
-- Las VMs se ven entre ellas si están en la misma red interna.
+-   Las VMs se ven entre ellas si están en la misma red interna.
 
-- No pueden comunicarse con el host.
+-   No pueden comunicarse con el host.
 
-- No tienen acceso a Internet.
+-   No tienen acceso a Internet.
 
-- No hay DHCP salvo que lo configures tú.
+-   No hay DHCP salvo que lo configures tú.
 
-- Es la red más aislada de todas.
+-   Es la red más aislada de todas.
 
 ``` text
                      ┌───────────────────────────────┐
@@ -485,11 +485,11 @@ La virtualización suele venir activada por defecto, pero si no es así, debes h
 
 Puedes verificarlo desde Windows:
 
-- Pulsa **Ctrl + Shift + Esc** → pestaña **Rendimiento** → **CPU** Busca el campo **Virtualización**. Si aparece *Habilitada*, no necesitas hacer nada.
+-   Pulsa **Ctrl + Shift + Esc** → pestaña **Rendimiento** → **CPU** Busca el campo **Virtualización**. Si aparece *Habilitada*, no necesitas hacer nada.
 
 O bien:
 
-- Ejecuta `msinfo32` Revisa el campo **Virtualización habilitada en firmware**.
+-   Ejecuta `msinfo32` Revisa el campo **Virtualización habilitada en firmware**.
 
 ### Entrar en la BIOS/UEFI
 
@@ -501,25 +501,25 @@ O bien:
 
 Una vez dentro de la BIOS/UEFI:
 
-- Entra en menús como **Advanced**, **Advanced BIOS Features**, **Security**, **CPU Configuration** o **System Configuration**.
+-   Entra en menús como **Advanced**, **Advanced BIOS Features**, **Security**, **CPU Configuration** o **System Configuration**.
 
-- Busca opciones como:
+-   Busca opciones como:
 
-  - *Intel Virtualization Technology*
+    -   *Intel Virtualization Technology*
 
-  - *Intel VT‑x*
+    -   *Intel VT‑x*
 
-  - *Intel VT‑d*
+    -   *Intel VT‑d*
 
-  - *Virtualization Support*
+    -   *Virtualization Support*
 
-- Cambia el valor a **Enabled**.
+-   Cambia el valor a **Enabled**.
 
 ### Guardar cambios y reiniciar
 
-- Selecciona **Save & Exit** o pulsa **F10**.
+-   Selecciona **Save & Exit** o pulsa **F10**.
 
-- Confirma los cambios.
+-   Confirma los cambios.
 
 ### Activar funciones opcionales de Windows (si las necesitas)
 
@@ -529,11 +529,11 @@ Algunos programas requieren componentes adicionales:
 
 2.  Marca según necesidad:
 
-    - **Hyper‑V** (solo Windows Pro/Enterprise)
+    -   **Hyper‑V** (solo Windows Pro/Enterprise)
 
-    - **Plataforma de máquina virtual** (para WSL2)
+    -   **Plataforma de máquina virtual** (para WSL2)
 
-    - **Plataforma del hipervisor de Windows**
+    -   **Plataforma del hipervisor de Windows**
 
 ## Instalar el programa de virtualización (Hipervisor)
 
@@ -541,19 +541,19 @@ Usaremos **Oracle VirtualBox**, disponible en: <https://www.virtualbox.org/wiki/
 
 Descarga el paquete correspondiente a tu sistema operativo:
 
-- Windows hosts
+-   Windows hosts
 
-- macOS (Intel o Apple Silicon)
+-   macOS (Intel o Apple Silicon)
 
-- Linux distributions
+-   Linux distributions
 
-- Solaris hosts
+-   Solaris hosts
 
-- También descarga el **VirtualBox Extension Pack**, que añade funciones adicionales.
+-   También descarga el **VirtualBox Extension Pack**, que añade funciones adicionales.
 
-- Instala primero **VirtualBox**.
+-   Instala primero **VirtualBox**.
 
-- Después instala el **Extension Pack**.
+-   Después instala el **Extension Pack**.
 
 ## Descargar la ISO de Windows 10
 
@@ -581,13 +581,13 @@ Para obtener la imagen ISO oficial:
 
 3.  Configura la máquina virtual:
 
-    - **Nombre:** Windows 10
+    -   **Nombre:** Windows 10
 
-    - **RAM:** 4 GB
+    -   **RAM:** 4 GB
 
-    - **CPU:** 2 núcleos
+    -   **CPU:** 2 núcleos
 
-    - **Almacenamiento:** 50 GB
+    -   **Almacenamiento:** 50 GB
 
 4.  Cambia el **orden de arranque** a:
 
@@ -609,15 +609,15 @@ Para activar la licencia de Windows 10 en google buscamos MAS 1.8. y descargamos
 
 Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un paso casi obligatorio si se desea:
 
-- Carpetas compartidas
+-   Carpetas compartidas
 
-- Copiar y pegar entre host y VM
+-   Copiar y pegar entre host y VM
 
-- Pantalla completa
+-   Pantalla completa
 
-- Mejor rendimiento gráfico
+-   Mejor rendimiento gráfico
 
-- Drag & drop
+-   Drag & drop
 
 ### Instalación en una máquina virtual con Windows
 
@@ -625,7 +625,7 @@ Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un 
 
 2.  Seleccionar **Insertar imagen de CD de los complementos de invitado**.\
 
-    ![](paste-k1Y7jdiX-G_SlWjgDNLdY)
+    ![](images/paste-k1Y7jdiX-G_SlWjgDNLdY.png)
 
 3.  Abrir el explorador de archivos de la VM
 
@@ -636,33 +636,33 @@ Instalar **Guest Additions** en una máquina virtual dentro de VirtualBox es un 
 6.  Reiniciar
 
 7.  Activar portapapeles compartido y arrastrar y soltar: Para tener todas las ventajas del guest additions, en Virtual Box nos vamos a Dispositivos Portapapeles compartido y activamos Bidireccional, y luego hacemos lo mismo con Arrastrar y Soltar.\
-    ![](paste-TeXeUVXZgf9QIdDISFVC-)
+    ![](images/paste-TeXeUVXZgf9QIdDISFVC-.png)
 
 ### Instalación de Guest Additions en Linux Ubuntu
 
 1.  Insertar la imagen de Guest Additions desde VirtualBox:
 
-    - Menú **Dispositivos**
+    -   Menú **Dispositivos**
 
-    - **Insertar imagen de CD de los complementos de invitado**
+    -   **Insertar imagen de CD de los complementos de invitado**
 
 2.  Abrir el explorador de archivos.
 
-    - Normalmente aparece una ventana preguntando si se desea ejecutar el instalador.
+    -   Normalmente aparece una ventana preguntando si se desea ejecutar el instalador.
 
-    - Si no aparece, montar el CD manualmente:
+    -   Si no aparece, montar el CD manualmente:
 
-      ``` bash
-      sudo mount /dev/cdrom /mnt
-      ```
+        ``` bash
+        sudo mount /dev/cdrom /mnt
+        ```
 
 3.  En **Este equipo**, aparecerá un CD virtual.
 
-    - Los ejecutables en Linux terminan en `.sh` en lugar de `.exe`.
+    -   Los ejecutables en Linux terminan en `.sh` en lugar de `.exe`.
 
 4.  Hacer clic derecho en `autorun.sh` y seleccionar **Ejecutar como programa**.
 
-    - Si no se permite la ejecución, el sistema avisará que es necesario instalar `bzip2.tar`.
+    -   Si no se permite la ejecución, el sistema avisará que es necesario instalar `bzip2.tar`.
 
 4.1. Abrir la terminal y actualizar el repositorio para evitar errores de compilación:
 
