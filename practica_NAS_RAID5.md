@@ -534,7 +534,7 @@ Ejemplo práctico:
 
 - Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (`\\servidor\recurso`), **se aplican ambos permisos** (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.
 
-## **Permisos de Seguridad o NTFS** 
+## **Permisos de Seguridad o NTFS**
 
 Se configuran en Propiedades de la carpeta → Seguridad
 
@@ -606,7 +606,7 @@ Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administrad
 
 ## **Configurar los permisos NTFS**
 
-1.  En cada subcarpeta entra en: Propiedades → Seguridad → Editar → Agregar
+1.  En cada subcarpeta entra en: *Propiedades → Seguridad → Editar → Agregar*
 
 2.  Pulsa **Ubicaciones** y selecciona el servidor local: *SRV-NAS01*
 
@@ -620,32 +620,32 @@ Concede: Modificar
 
 ![](images\paste--ueet7x0rE116gQOdXvKm.png)
 
-Debe aplicarse a Esta carpeta, subcarpetas y archivos, esta es la configuración por defecto, pero si quieres comprobarlo puedes verlo en *Seguridad* \> *Opciones avanzadas*\
+Debe aplicarse a *Esta carpeta, subcarpetas y archivos*, esta es la configuración por defecto, pero si quieres comprobarlo puedes verlo en *Seguridad* \> *Opciones avanzadas*\
 ![](images\paste-kTpxlGXOCXxv5KcM4U90L.png)
 
 4.  **Carpeta PROFESORES**
 
-Agrega: *SRV-NAS01\\NAS_PROFESORES*
+- Agrega: *SRV-NAS01\\NAS_PROFESORES*
 
-Concede: *Modificar*
+- Concede: *Modificar*
 
 5.  **Carpeta ALUMNOS**
 
-Agrega: SRV-NAS01\\NAS_ALUMNOS
+- Agrega: SRV-NAS01\\NAS_ALUMNOS
 
-Concede: Modificar
+- Concede: Modificar
 
-**15.4 Carpeta COMUN**
+6.   **Carpeta COMUN**
 
-Agrega:
+- Agrega:
 
-*SRV-NAS01\\NAS_DIRECCION*
+- *SRV-NAS01\\NAS_DIRECCION*
 
-*SRV-NAS01\\NAS_PROFESORES*
+- *SRV-NAS01\\NAS_PROFESORES*
 
-*SRV-NAS01\\NAS_ALUMNOS*
+- *SRV-NAS01\\NAS_ALUMNOS*
 
-Concede a los tres grupos: *Modificar*
+- Concede a los tres grupos: *Modificar*
 
 **Resultado final de Seguridad**
 
@@ -662,22 +662,20 @@ No utilices Denegar. En esta práctica basta con no conceder acceso a los grupos
 
 ## **Crear los recursos compartidos**
 
-En cada carpeta: Propiedades → Compartir → Uso compartido avanzado\>Marca: Compartir esta carpeta
+En cada carpeta: *Propiedades* → *Compartir* → *Uso compartido avanzado*\>Marca: *Compartir esta carpeta*
 
 ![](images\paste-3Ez15rH92qO9u3lTz7vmY.png)
 
 ### **Comprobar los recursos y permisos**
 
-**Recursos compartidos:** Get-SmbShare \| Format-Table Name, Path, Description\
+**Recursos compartidos:** `Get-SmbShare | Format-Table Name, Path, Description`\
 ![](images\paste-IgaC-5V_kl3qCTCIz0m3n.png)
 
-**Permisos de un recurso:** Get-SmbShareAccess -Name PROFESORES
+**Permisos de un recurso:** `Get-SmbShareAccess -Name PROFESORES`
 
 ![](images\paste-HIkMtXWtne6t4F1vc4ohu.png)
 
-**Permisos NTFS**
-
-icacls N:\\NAS\\PROFESORES
+**Permisos NTFS:** `icacls N:\NAS\PROFESORES`
 
 ![](images\paste-3IXiDAy_2ZqyFdyPM_Gig.png)
 
@@ -715,17 +713,17 @@ Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o
 
 ## Comprobación conectividad:
 
-En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen. \
+En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen.\
 ![](paste-fC3SLCQ3Xkqr6R3zULevk)
 
 ## Crear una conexión de red
 
-Vamos al explorador de archivos y sobre *Este Equipo* seleccionamos el buger menu *Ver más* (los tres puntos) \
+Vamos al explorador de archivos y sobre *Este Equipo* seleccionamos el buger menu *Ver más* (los tres puntos)\
 ![](paste-mRKiyzmc45nlHbJ-_JjgN)
 
 **Agregar una ubicación de red**
 
-## ![](paste-7ZVBJoHEckCYMziDtBc8T) ****![](paste-kd0KsW0RgAxFhZlkrJDu0)
+## ![](paste-7ZVBJoHEckCYMziDtBc8T) \*\*\*\*![](paste-kd0KsW0RgAxFhZlkrJDu0)
 
 ![](paste-MtTSFjaAvqQMd8KWqh5ve)
 
