@@ -635,7 +635,7 @@ Debe aplicarse a *Esta carpeta, subcarpetas y archivos*, esta es la configuraci�
 
 - Concede: Modificar
 
-6.   **Carpeta COMUN**
+6.  **Carpeta COMUN**
 
 - Agrega:
 
@@ -681,7 +681,7 @@ En cada carpeta: *Propiedades* → *Compartir* → *Uso compartido avanzado*\>Ma
 
 Debe aparecer el grupo NAS_PROFESORES con permiso de modificación.
 
-## **Firewall SMB**
+## **Comprobación firewall SMB**
 
 Windows Server 2025 utiliza reglas más restrictivas al crear recursos compartidos y abre únicamente los puertos necesarios para SMB moderno. El acceso normal utiliza TCP 445.
 
@@ -699,9 +699,9 @@ Los servidores DNS como 8.8.8.8 o 1.1.1.1 resuelven nombres públicos de Interne
 
 Por tanto, hay dos alternativas.
 
-**Utilizar la dirección IP:** \\\\10.0.20.46\\PROFESORES
+1.  **Utilizar la dirección IP:** \\\\10.0.20.46\\PROFESORES
 
-**Alternativa por nombre:** Añadir en el equipo cliente una entrada en: C:\\Windows\\System32\\drivers\\etc\\hosts
+2.  **Alternativa por nombre:** Añadir en el equipo cliente una entrada en: C:\\Windows\\System32\\drivers\\etc\\hosts
 
 Ejemplo: 10.0.20.46 SRV-NAS01
 
