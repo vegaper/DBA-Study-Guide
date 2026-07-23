@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -365,16 +400,15 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
    
   <ul>
   <li><a href="#objetivos-de-la-práctica" id="toc-objetivos-de-la-práctica" class="nav-link active" data-scroll-target="#objetivos-de-la-práctica"><span class="header-section-number">1</span> <strong>Objetivos de la práctica</strong></a></li>
-  <li><a href="#parte-1.-configuración-de-la-máquina-virtual." id="toc-parte-1.-configuración-de-la-máquina-virtual." class="nav-link" data-scroll-target="#parte-1.-configuración-de-la-máquina-virtual."><span class="header-section-number">2</span> Parte 1. Configuración de la máquina virtual.</a>
+  <li><a href="#configuración-de-la-máquina-virtual." id="toc-configuración-de-la-máquina-virtual." class="nav-link" data-scroll-target="#configuración-de-la-máquina-virtual."><span class="header-section-number">2</span> Configuración de la máquina virtual.</a>
   <ul>
   <li><a href="#habilitar-uefi" id="toc-habilitar-uefi" class="nav-link" data-scroll-target="#habilitar-uefi"><span class="header-section-number">2.1</span> Habilitar UEFI</a></li>
   <li><a href="#organización-de-las-controladoras" id="toc-organización-de-las-controladoras" class="nav-link" data-scroll-target="#organización-de-las-controladoras"><span class="header-section-number">2.2</span> <strong>Organización de las controladoras</strong></a></li>
   <li><a href="#configuración-especial-de-nvme-en-virtualbox-patch" id="toc-configuración-especial-de-nvme-en-virtualbox-patch" class="nav-link" data-scroll-target="#configuración-especial-de-nvme-en-virtualbox-patch"><span class="header-section-number">2.3</span> <strong>Configuración especial de NVMe en VirtualBox (patch)</strong></a></li>
   <li><a href="#propuesta-de-direccionamiento" id="toc-propuesta-de-direccionamiento" class="nav-link" data-scroll-target="#propuesta-de-direccionamiento"><span class="header-section-number">2.4</span> <strong>Propuesta de direccionamiento</strong></a></li>
   <li><a href="#como-nos-queda-al-final" id="toc-como-nos-queda-al-final" class="nav-link" data-scroll-target="#como-nos-queda-al-final"><span class="header-section-number">2.5</span> Como nos queda al final:</a></li>
-  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"><span class="header-section-number">2.6</span> <img src="images\paste-PT91951uSYu2OwLfYKCEC.png" class="img-fluid"></a></li>
   </ul></li>
-  <li><a href="#parte-2-instalación-de-windows-server-2025" id="toc-parte-2-instalación-de-windows-server-2025" class="nav-link" data-scroll-target="#parte-2-instalación-de-windows-server-2025"><span class="header-section-number">3</span> Parte 2: <strong>Instalación de Windows Server 2025</strong></a>
+  <li><a href="#instalación-de-windows-server-2025" id="toc-instalación-de-windows-server-2025" class="nav-link" data-scroll-target="#instalación-de-windows-server-2025"><span class="header-section-number">3</span> <strong>Instalación de Windows Server 2025</strong></a>
   <ul>
   <li><a href="#instalar-complementos-del-invitado" id="toc-instalar-complementos-del-invitado" class="nav-link" data-scroll-target="#instalar-complementos-del-invitado"><span class="header-section-number">3.1</span> Instalar complementos del invitado</a></li>
   </ul></li>
@@ -414,9 +448,42 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
   <li><a href="#probar-el-acceso-desde-un-equipo-cliente" id="toc-probar-el-acceso-desde-un-equipo-cliente" class="nav-link" data-scroll-target="#probar-el-acceso-desde-un-equipo-cliente"><span class="header-section-number">6</span> <strong>Probar el acceso desde un equipo cliente</strong></a>
   <ul>
   <li><a href="#comprobación-conectividad" id="toc-comprobación-conectividad" class="nav-link" data-scroll-target="#comprobación-conectividad"><span class="header-section-number">6.1</span> Comprobación conectividad:</a></li>
-  <li><a href="#crear-una-conexión-de-red" id="toc-crear-una-conexión-de-red" class="nav-link" data-scroll-target="#crear-una-conexión-de-red"><span class="header-section-number">6.2</span> Crear una conexión de red</a></li>
-  <li><a href="#section-1" id="toc-section-1" class="nav-link" data-scroll-target="#section-1"><span class="header-section-number">6.3</span> <img src="images\paste-7ZVBJoHEckCYMziDtBc8T.png" class="img-fluid"> ****<img src="images\paste-kd0KsW0RgAxFhZlkrJDu0.png" class="img-fluid"></a></li>
-  <li><a href="#profesor" id="toc-profesor" class="nav-link" data-scroll-target="#profesor"><span class="header-section-number">6.4</span> <strong>20.1 Profesor</strong></a></li>
+  <li><a href="#crear-un-acceso-directo-a-la-carpeta-compartida-del-profesor." id="toc-crear-un-acceso-directo-a-la-carpeta-compartida-del-profesor." class="nav-link" data-scroll-target="#crear-un-acceso-directo-a-la-carpeta-compartida-del-profesor."><span class="header-section-number">6.2</span> Crear un acceso directo a la carpeta compartida del profesor.</a></li>
+  <li><a href="#crear-una-conexión-de-red." id="toc-crear-una-conexión-de-red." class="nav-link" data-scroll-target="#crear-una-conexión-de-red."><span class="header-section-number">6.3</span> Crear una conexión de red.</a>
+  <ul class="collapse">
+  <li><a href="#mapeo-de-unidades-de-red-con-net-use" id="toc-mapeo-de-unidades-de-red-con-net-use" class="nav-link" data-scroll-target="#mapeo-de-unidades-de-red-con-net-use"><span class="header-section-number">6.3.1</span> Mapeo de Unidades de Red con <code>net use</code></a></li>
+  <li><a href="#crear-una-conexión-como-profesor" id="toc-crear-una-conexión-como-profesor" class="nav-link" data-scroll-target="#crear-una-conexión-como-profesor"><span class="header-section-number">6.3.2</span> Crear una conexión como profesor</a></li>
+  <li><a href="#crear-una-conexión-como-alumno" id="toc-crear-una-conexión-como-alumno" class="nav-link" data-scroll-target="#crear-una-conexión-como-alumno"><span class="header-section-number">6.3.3</span> Crear una conexión como alumno</a></li>
+  <li><a href="#crear-una-conexión-como-director" id="toc-crear-una-conexión-como-director" class="nav-link" data-scroll-target="#crear-una-conexión-como-director"><span class="header-section-number">6.3.4</span> Crear una conexión como director</a></li>
+  <li><a href="#troubleshooting" id="toc-troubleshooting" class="nav-link" data-scroll-target="#troubleshooting"><span class="header-section-number">6.3.5</span> Troubleshooting</a>
+  <ul class="collapse">
+  <li><a href="#comprueba-la-conexión-activa-en-power-shell-como-administrador-get-smbconnection" id="toc-comprueba-la-conexión-activa-en-power-shell-como-administrador-get-smbconnection" class="nav-link" data-scroll-target="#comprueba-la-conexión-activa-en-power-shell-como-administrador-get-smbconnection"><span class="header-section-number">6.3.5.1</span> Comprueba la conexión activa en Power Shell <span class="hightligh">como administrador</span>: <code>Get-SmbConnection</code></a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#simulación-del-fallo-y-sustitución-de-un-disco-del-espacio-de-paridad" id="toc-simulación-del-fallo-y-sustitución-de-un-disco-del-espacio-de-paridad" class="nav-link" data-scroll-target="#simulación-del-fallo-y-sustitución-de-un-disco-del-espacio-de-paridad"><span class="header-section-number">7</span> <strong>Simulación del fallo y sustitución de un disco del espacio de paridad</strong></a>
+  <ul>
+  <li><a href="#identificar-claramente-los-discos-virtuales" id="toc-identificar-claramente-los-discos-virtuales" class="nav-link" data-scroll-target="#identificar-claramente-los-discos-virtuales"><span class="header-section-number">7.1</span> <strong>Identificar claramente los discos virtuales</strong></a></li>
+  <li><a href="#preparar-datos-para-comprobar-su-integridad" id="toc-preparar-datos-para-comprobar-su-integridad" class="nav-link" data-scroll-target="#preparar-datos-para-comprobar-su-integridad"><span class="header-section-number">7.2</span> <strong>Preparar datos para comprobar su integridad</strong></a></li>
+  <li><a href="#comprobar-el-estado-inicial" id="toc-comprobar-el-estado-inicial" class="nav-link" data-scroll-target="#comprobar-el-estado-inicial"><span class="header-section-number">7.3</span> <strong>Comprobar el estado inicial</strong></a></li>
+  <li><a href="#simular-la-avería-de-un-disco" id="toc-simular-la-avería-de-un-disco" class="nav-link" data-scroll-target="#simular-la-avería-de-un-disco"><span class="header-section-number">7.4</span> <strong>Simular la avería de un disco</strong></a></li>
+  <li><a href="#comprobar-el-estado-degradado" id="toc-comprobar-el-estado-degradado" class="nav-link" data-scroll-target="#comprobar-el-estado-degradado"><span class="header-section-number">7.5</span> <strong>Comprobar el estado degradado</strong></a></li>
+  <li><a href="#comprobar-que-los-datos-continúan-disponibles" id="toc-comprobar-que-los-datos-continúan-disponibles" class="nav-link" data-scroll-target="#comprobar-que-los-datos-continúan-disponibles"><span class="header-section-number">7.6</span> Comprobar que los datos continúan disponibles</a></li>
+  <li><a href="#sustitución-del-disco-averiado" id="toc-sustitución-del-disco-averiado" class="nav-link" data-scroll-target="#sustitución-del-disco-averiado"><span class="header-section-number">7.7</span> <strong>Sustitución del disco averiado</strong></a></li>
+  <li><a href="#comprobar-el-disco-nuevo" id="toc-comprobar-el-disco-nuevo" class="nav-link" data-scroll-target="#comprobar-el-disco-nuevo"><span class="header-section-number">7.8</span> <strong>Comprobar el disco nuevo</strong></a></li>
+  <li><a href="#agregar-el-disco-de-reemplazo-al-grupo" id="toc-agregar-el-disco-de-reemplazo-al-grupo" class="nav-link" data-scroll-target="#agregar-el-disco-de-reemplazo-al-grupo"><span class="header-section-number">7.9</span> <strong>Agregar el disco de reemplazo al grupo</strong></a>
+  <ul class="collapse">
+  <li><a href="#alternativa-mediante-powershell" id="toc-alternativa-mediante-powershell" class="nav-link" data-scroll-target="#alternativa-mediante-powershell"><span class="header-section-number">7.9.1</span> <strong>Alternativa mediante PowerShell</strong></a></li>
+  </ul></li>
+  <li><a href="#identificar-el-disco-averiado" id="toc-identificar-el-disco-averiado" class="nav-link" data-scroll-target="#identificar-el-disco-averiado"><span class="header-section-number">7.10</span> <strong>Identificar el disco averiado</strong></a></li>
+  <li><a href="#reparar-el-disco-virtual" id="toc-reparar-el-disco-virtual" class="nav-link" data-scroll-target="#reparar-el-disco-virtual"><span class="header-section-number">7.11</span> <strong>Reparar el disco virtual</strong></a></li>
+  <li><a href="#comprobar-que-la-reparación-ha-terminado" id="toc-comprobar-que-la-reparación-ha-terminado" class="nav-link" data-scroll-target="#comprobar-que-la-reparación-ha-terminado"><span class="header-section-number">7.12</span> <strong>Comprobar que la reparación ha terminado</strong></a>
+  <ul class="collapse">
+  <li><a href="#verificar-que-el-disco-antiguo-ya-no-contiene-datos" id="toc-verificar-que-el-disco-antiguo-ya-no-contiene-datos" class="nav-link" data-scroll-target="#verificar-que-el-disco-antiguo-ya-no-contiene-datos"><span class="header-section-number">7.12.1</span> <strong>Verificar que el disco antiguo ya no contiene datos</strong></a></li>
+  </ul></li>
+  <li><a href="#eliminar-la-referencia-al-disco-averiado" id="toc-eliminar-la-referencia-al-disco-averiado" class="nav-link" data-scroll-target="#eliminar-la-referencia-al-disco-averiado"><span class="header-section-number">7.13</span> <strong>Eliminar la referencia al disco averiado</strong></a></li>
+  <li><a href="#comprobación-final" id="toc-comprobación-final" class="nav-link" data-scroll-target="#comprobación-final"><span class="header-section-number">7.14</span> <strong>Comprobación final</strong></a></li>
+  <li><a href="#eliminar-definitivamente-el-antiguo-vdi" id="toc-eliminar-definitivamente-el-antiguo-vdi" class="nav-link" data-scroll-target="#eliminar-definitivamente-el-antiguo-vdi"><span class="header-section-number">7.15</span> <strong>Eliminar definitivamente el antiguo VDI</strong></a></li>
   </ul></li>
   </ul>
 </nav>
@@ -461,8 +528,8 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 <li><p>Comprender por qué Windows no permite utilizar varios usuarios simultáneamente contra el mismo servidor SMB.</p></li>
 </ul>
 </section>
-<section id="parte-1.-configuración-de-la-máquina-virtual." class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Parte 1. Configuración de la máquina virtual.</h1>
+<section id="configuración-de-la-máquina-virtual." class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Configuración de la máquina virtual.</h1>
 <p>Cada alumno creará un servidor windows a través de VirtualBox en adaptador puente.</p>
 <p>La variable xx representa el número asignado al alumno.</p>
 <p>Password para la práctica: Pass123!</p>
@@ -614,13 +681,11 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </section>
 <section id="como-nos-queda-al-final" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="como-nos-queda-al-final"><span class="header-section-number">2.5</span> Como nos queda al final:</h2>
-</section>
-<section id="section" class="level2" data-number="2.6">
-<h2 data-number="2.6" class="anchored" data-anchor-id="section"><span class="header-section-number">2.6</span> <img src="images\paste-PT91951uSYu2OwLfYKCEC.png" class="img-fluid"></h2>
+<p><img src="images\paste-PT91951uSYu2OwLfYKCEC.png" class="img-fluid"></p>
 </section>
 </section>
-<section id="parte-2-instalación-de-windows-server-2025" class="level1" data-number="3">
-<h1 data-number="3"><span class="header-section-number">3</span> Parte 2: <strong>Instalación de Windows Server 2025</strong></h1>
+<section id="instalación-de-windows-server-2025" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> <strong>Instalación de Windows Server 2025</strong></h1>
 <p>Inicia la máquina virtual desde la ISO.</p>
 <p>Selecciona: Windows Server 2025 Standard Evaluation (Experiencia de escritorio)</p>
 <p><img src="images\paste-V9XLT9_CdZtXyXHnySmeG.png" class="img-fluid"></p>
@@ -662,12 +727,9 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </section>
 <section id="configurar-la-red" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="configurar-la-red"><span class="header-section-number">4.2</span> <strong>Configurar la red</strong></h2>
-<p>en la shell usa ipconfig para ver qué dirección IP te ha asignado el DHCP, esa será la misma que configuraremos fija.<br>
+<p>En la shell usa ipconfig para ver qué dirección IP te ha asignado el DHCP, esa será la misma que configuraremos fija.<br>
 <img src="images\paste-YDVUjX7coA1AsYLflTii2.png" class="img-fluid"></p>
-<p>Panel de control</p>
-<p>→ Redes e Internet</p>
-<p>→ Centro de redes y recursos compartidos</p>
-<p>→ Cambiar configuración del adaptador</p>
+<p>Panel de control → Redes e Internet → Centro de redes y recursos compartidos → Cambiar configuración del adaptador</p>
 <p><img src="images\paste-RiYSQMtgLxLrEfazvQzmc.png" class="img-fluid"></p>
 <p>Abre las propiedades de Ethernet y configura IPv4.<br>
 <img src="images\paste-jzMXRcuPh2s3eIk3PaIN1.png" class="img-fluid"></p>
@@ -719,16 +781,10 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </section>
 <section id="crear-el-grupo-de-almacenamiento" class="level2" data-number="4.6">
 <h2 data-number="4.6" class="anchored" data-anchor-id="crear-el-grupo-de-almacenamiento"><span class="header-section-number">4.6</span> <strong>Crear el grupo de almacenamiento</strong></h2>
-<p>Abre:</p>
-<p>Administrador del servidor</p>
-<p>→ Servicios de archivos y almacenamiento</p>
-<p>→ Volúmenes</p>
-<p>→ Grupos de almacenamiento</p>
-<p>Selecciona el grupo:</p>
-<p>Primordial</p>
+<p>Abre: Administrador del servidor → Servicios de archivos y almacenamiento→ Volúmenes→ Grupos de almacenamiento</p>
+<p>Selecciona el grupo: Primordial</p>
 <p><img src="images\paste-uiEovgwv_RefHNT5Itk_7.png" class="img-fluid"></p>
-<p>En la sección <strong>Grupos de almacenamiento</strong>&gt;Tareas:</p>
-<p>→ Nuevo grupo de almacenamiento:</p>
+<p>En la sección <strong>Grupos de almacenamiento</strong>&gt;Tareas: → Nuevo grupo de almacenamiento:</p>
 <ul>
 <li><p>Nombre: GRUPO-NAS</p></li>
 <li><p>Descripción: Discos destinados al almacenamiento del servidor NAS</p></li>
@@ -737,7 +793,6 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 <img src="images\paste-xJzbUwa-za94rasYbibeq.png" class="img-fluid"></p>
 <p>En la columna de asignación selecciona: Automático</p>
 <p><strong>No</strong> selecciones ningún disco como <strong>reserva activa o Hot Spare</strong>. Con solo tres discos, los tres son necesarios para crear el espacio de paridad.</p>
-<p>Finaliza el asistente.</p>
 <p><strong>Comprobación (en PowerShell) :</strong></p>
 <p><code>Get-StoragePool | Format-Table FriendlyName,HealthStatus,OperationalStatus,Size,AllocatedSize</code></p>
 <p>Debe aparecer:</p>
@@ -894,7 +949,6 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <li><p>NAS_PROFESORES</p></li>
 <li><p>NAS_ALUMNOS</p></li>
 </ul>
-<p><strong>Pertenencia a grupos</strong></p>
 <p>Configura:</p>
 <table class="caption-top table">
 <thead>
@@ -1142,6 +1196,12 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <h2 data-number="5.6" class="anchored" data-anchor-id="crear-los-recursos-compartidos"><span class="header-section-number">5.6</span> <strong>Crear los recursos compartidos</strong></h2>
 <p>En cada carpeta: <em>Propiedades</em> → <em>Compartir</em> → <em>Uso compartido avanzado</em>&gt;Marca: <em>Compartir esta carpeta</em></p>
 <p><img src="images\paste-3Ez15rH92qO9u3lTz7vmY.png" class="img-fluid"></p>
+<p>Ahora click en Uso compartido avanzado</p>
+<p><img src="images\paste-UdCf7IEVJ86TrbjTIDJgB.png" class="img-fluid"></p>
+<p>Clickamos en Permisos y añadimos el grupo que debe estar autorizado para la carpeta en la que estemos:</p>
+<p><img src="images\paste-aYF6j50mihvxEQ3TANqEK.png" class="img-fluid"></p>
+<p>Le damos permiso para cambiar.<br>
+<img src="images\paste-s_i3AkjA343WvMJjztHhd.png" class="img-fluid"></p>
 <section id="comprobar-los-recursos-y-permisos" class="level3" data-number="5.6.1">
 <h3 data-number="5.6.1" class="anchored" data-anchor-id="comprobar-los-recursos-y-permisos"><span class="header-section-number">5.6.1</span> <strong>Comprobar los recursos y permisos</strong></h3>
 <p><strong>Recursos compartidos:</strong> <code>Get-SmbShare | Format-Table Name, Path, Description</code><br>
@@ -1181,24 +1241,41 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <p>En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen.<br>
 <img src="images\paste-fC3SLCQ3Xkqr6R3zULevk.png" class="img-fluid"></p>
 </section>
-<section id="crear-una-conexión-de-red" class="level2" data-number="6.2">
-<h2 data-number="6.2" class="anchored" data-anchor-id="crear-una-conexión-de-red"><span class="header-section-number">6.2</span> Crear una conexión de red</h2>
-<p>Vamos al explorador de archivos y sobre <em>Este Equipo</em> seleccionamos el buger menu <em>Ver más</em> (los tres puntos)<br>
+<section id="crear-un-acceso-directo-a-la-carpeta-compartida-del-profesor." class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="crear-un-acceso-directo-a-la-carpeta-compartida-del-profesor."><span class="header-section-number">6.2</span> Crear un acceso directo a la carpeta compartida del profesor.</h2>
+<p>La máquina virtual del profesor es SRV-NAS100 y nos ha proporcionado las contraseñas de los usuarios locales que ha creado en su máquina virtual. Ahora queremos crear un acceso directo en nuestro equipo host para poder acceder a su recurso NAS.</p>
+<p>Vamos al explorador de archivos y sobre <em>Este Equipo</em> seleccionamos el burger menu <em>Ver más</em> (los tres puntos)<br>
 <img src="images\paste-mRKiyzmc45nlHbJ-_JjgN.png" class="img-fluid"></p>
 <p><strong>Agregar una ubicación de red</strong></p>
-</section>
-<section id="section-1" class="level2" data-number="6.3">
-<h2 data-number="6.3" class="anchored" data-anchor-id="section-1"><span class="header-section-number">6.3</span> <img src="images\paste-7ZVBJoHEckCYMziDtBc8T.png" class="img-fluid"> ****<img src="images\paste-kd0KsW0RgAxFhZlkrJDu0.png" class="img-fluid"></h2>
+<p><img src="images\paste-7ZVBJoHEckCYMziDtBc8T.png" class="img-fluid"> <img src="images\paste-kd0KsW0RgAxFhZlkrJDu0.png" class="img-fluid"></p>
 <p><img src="images\paste-MtTSFjaAvqQMd8KWqh5ve.png" class="img-fluid"></p>
 <p><img src="images\paste-Trn420jMUwpqWorKln4tg.png" class="img-fluid"></p>
 <p>Tendremos acceso a las distintas carpetas de la máquina servidor a la que nos queremos conectar dependiendo del usuario que estemos usando (alumno, profesor etc) (recuerda que tiene que ser usuario y contraseña creados en la máquina a la que nos estamos conectando, no los que hemos configurado en nuestro servidor!)</p>
-<p><img src="images\paste-LtLZKj4ERomvvE7_g9Ko.png" class="img-fluid"></p>
+<p><img src="images\paste-LtLZKj4ERomvvE7_g9KoI.png" class="img-fluid"></p>
 </section>
-<section id="profesor" class="level2" data-number="6.4">
-<h2 data-number="6.4" class="anchored" data-anchor-id="profesor"><span class="header-section-number">6.4</span> <strong>20.1 Profesor</strong></h2>
-<p>Desde CMD:</p>
-<p>net use Z: \\192.168.50.107\PROFESORES /user:SRV-NAS01\profesor01 *</p>
+<section id="crear-una-conexión-de-red." class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="crear-una-conexión-de-red."><span class="header-section-number">6.3</span> Crear una conexión de red.</h2>
+<p>Ahora nos vamos a conectar a los recursos compartidos de nuestra propia máquina virtual.</p>
+<section id="mapeo-de-unidades-de-red-con-net-use" class="level3" data-number="6.3.1">
+<h3 data-number="6.3.1" class="anchored" data-anchor-id="mapeo-de-unidades-de-red-con-net-use"><span class="header-section-number">6.3.1</span> Mapeo de Unidades de Red con <code>net use</code></h3>
+<p>El comando <code>net use</code> se utiliza en entornos Windows para conectar el equipo local a un recurso compartido en la red (como los que se configuran mediante SMB) y asignarle una letra de unidad virtual para facilitar su acceso desde el Explorador de archivos.</p>
+</section>
+<section id="crear-una-conexión-como-profesor" class="level3" data-number="6.3.2">
+<h3 data-number="6.3.2" class="anchored" data-anchor-id="crear-una-conexión-como-profesor"><span class="header-section-number">6.3.2</span> Crear una conexión como profesor</h3>
+<p>Desde CMD: <code>net use Z: \\10.0.20.46\PROFESORES /user:SRV-NAS01\profesor01 *</code></p>
 <p>El asterisco solicita la contraseña sin mostrarla.</p>
+<p><img src="images\paste-I0GyKIIqgnMLBCscCw0Fv.png" class="img-fluid"></p>
+<ul>
+<li><p><strong><code>net use</code></strong>: Es la utilidad principal del sistema operativo en línea de comandos para gestionar las conexiones a recursos compartidos.</p></li>
+<li><p><strong><code>Z:</code></strong>: Es la letra de unidad local que se le va a asignar a este recurso. Una vez ejecutado con éxito, los usuarios verán un nuevo “Disco Z:” en su equipo.</p></li>
+<li><p><strong><code>\\10.0.20.46\PROFESORES</code></strong>: Es la ruta <strong>UNC (Universal Naming Convention)</strong> del recurso compartido. <code>10.0.20.46</code> es la dirección IP del servidor o equipo que aloja la carpeta, y <code>PROFESORES</code> es el nombre exacto con el que se ha compartido dicho recurso en la red.</p></li>
+<li><p><strong><code>/user:SRV-NAS01\profesor01</code></strong>: Indica las credenciales específicas con las que se realizará la conexión. En este contexto, <code>SRV-NAS01</code> es el nombre del dominio o del servidor local donde existe el usuario, y <code>profesor01</code> es la cuenta que cuenta con los permisos necesarios para acceder.</p></li>
+<li><p><strong><code>*</code> (Asterisco)</strong>: Es un parámetro de seguridad. Obliga a la terminal a solicitar la contraseña de forma interactiva (ocultando los caracteres mientras se teclea), evitando el grave riesgo de seguridad que supone escribir la contraseña en texto plano directamente en el comando o en un script.</p></li>
+</ul>
+<p><img src="images\paste-U2TQfaaBzpbpRwMUy1D_U.png" class="img-fluid"></p>
+<blockquote class="blockquote">
+<p><strong>Nota técnica sobre permisos:</strong> Para que este comando tenga éxito, el usuario <code>profesor01</code> debe contar con la validación de dos capas de seguridad en el servidor de destino: los permisos de compartición de red (SMB) y los permisos locales del sistema de archivos (NTFS).</p>
+</blockquote>
 <p>El usuario deberá poder:</p>
 <ul>
 <li><p>Acceder a PROFESORES.</p></li>
@@ -1211,125 +1288,47 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <p>No deberá poder acceder a:</p>
 <p>DIRECCION</p>
 <p>ALUMNOS</p>
-<p><strong>20.2 Alumno</strong></p>
-<p>Primero elimina la conexión anterior:</p>
-<p>net use * /delete /y</p>
-<p>Cierra también todas las ventanas del Explorador abiertas contra el NAS.</p>
+</section>
+<section id="crear-una-conexión-como-alumno" class="level3" data-number="6.3.3">
+<h3 data-number="6.3.3" class="anchored" data-anchor-id="crear-una-conexión-como-alumno"><span class="header-section-number">6.3.3</span> Crear una conexión como alumno</h3>
 <p>Conecta como alumno:</p>
-<p>net use Z: \\192.168.50.107\ALUMNOS /user:SRV-NAS01\alumno01 *</p>
-<p><strong>20.3 Dirección</strong></p>
-<p>net use Z: \\192.168.50.107\DIRECCION /user:SRV-NAS01\director01 *</p>
-<p><strong>21. Cambio de usuario SMB</strong></p>
-<p>Windows no permite normalmente mantener, dentro de la misma sesión de Windows, conexiones contra el mismo servidor utilizando usuarios diferentes. Este comportamiento es intencionado.</p>
-<p>Para cambiar de usuario:</p>
-<ol type="1">
-<li><p>Cierra todas las ventanas del Explorador abiertas contra el NAS.</p></li>
-<li><p>Ejecuta:</p></li>
-</ol>
-<p>net use * /delete /y</p>
-<ol start="3" type="1">
-<li>Comprueba:</li>
-</ol>
-<p>Get-SmbConnection</p>
-<ol start="4" type="1">
-<li>Si existen credenciales guardadas:</li>
-</ol>
-<p>cmdkey /list</p>
-<p>Elimina la correspondiente al servidor o a su IP:</p>
-<p>cmdkey /delete:192.168.50.107</p>
-<ol start="5" type="1">
-<li>Conecta con el usuario nuevo.</li>
-</ol>
-<p>Si todavía se conserva una sesión, la opción más fiable para una práctica es:</p>
-<p>Cerrar sesión en el equipo cliente</p>
-<p>→ Volver a iniciar sesión</p>
-<p>→ Conectar con el siguiente usuario</p>
+<p><code>net use Y: \\10.0.20.46\ALUMNOS /user:SRV-NAS01\alumno01 *</code></p>
+<p><img src="images\paste-sp1B4nx7XrSftdAM5uoXK.png" class="img-fluid"></p>
+<p><span class="highlight">No nos va a dejar</span>, como dice el mensaje primero tenemos que borrar la conexión anterior, para ello en la consola de comandos: <code>net use * /delete /y</code></p>
+<p><img src="images\paste-DJJovpEWiF0cAUVmSrBJA.png" class="img-fluid"></p>
+<p>Cierra también todas las ventanas del Explorador abiertas contra el NAS.</p>
+<p>Ahora puedes crear la conexión con alumno:</p>
+<p><img src="images\paste-vy5XPvYecDm_eRYtUx9F1.png" class="img-fluid"></p>
+<p><img src="images\paste-cnEvoeK5ZsK0Ih5siBjUU.png" class="img-fluid"></p>
+</section>
+<section id="crear-una-conexión-como-director" class="level3" data-number="6.3.4">
+<h3 data-number="6.3.4" class="anchored" data-anchor-id="crear-una-conexión-como-director"><span class="header-section-number">6.3.4</span> Crear una conexión como director</h3>
+<p><code>net use * /delete /y</code></p>
+<p><img src="images\paste-kPXqGncMNHuYaVRxHR-sW.png" class="img-fluid"></p>
+</section>
+<section id="troubleshooting" class="level3" data-number="6.3.5">
+<h3 data-number="6.3.5" class="anchored" data-anchor-id="troubleshooting"><span class="header-section-number">6.3.5</span> Troubleshooting</h3>
+<section id="comprueba-la-conexión-activa-en-power-shell-como-administrador-get-smbconnection" class="level4" data-number="6.3.5.1">
+<h4 data-number="6.3.5.1" class="anchored" data-anchor-id="comprueba-la-conexión-activa-en-power-shell-como-administrador-get-smbconnection"><span class="header-section-number">6.3.5.1</span> Comprueba la conexión activa en Power Shell <span class="hightligh">como administrador</span>: <code>Get-SmbConnection</code></h4>
+<p><img src="images\paste-Dt1mhYSJzniB02M88CAvn.png" class="img-fluid"></p>
+<p>Comprueba si existen credenciales guardadas: <code>cmdkey /list</code></p>
+<p><img src="images\paste-PfYOH3quH-is15-myVdfo.png" class="img-fluid"></p>
+<p>Si hay alguna puedes eliminarla con su correspondiente nombre de servidor o su IP: <code>cmdkey /delete:10.0.20.46</code></p>
+<p>Conecta con el usuario nuevo. Si todavía se conserva una sesión, la opción más fiable para una práctica es:</p>
+<p>Cerrar sesión en el equipo cliente → Volver a iniciar sesión → Conectar con el siguiente usuario</p>
 <p>No deben probarse simultáneamente dos usuarios diferentes contra el mismo nombre o dirección del NAS. Cada prueba debe realizarse de forma independiente.</p>
-<p><strong>22. Matriz final de comprobación</strong></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Usuario</th>
-<th style="text-align: left;">DIRECCION</th>
-<th style="text-align: left;">PROFESORES</th>
-<th style="text-align: left;">ALUMNOS</th>
-<th style="text-align: left;">COMUN</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"><strong>director01</strong></td>
-<td style="text-align: left;">Modificar</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><strong>profesor01</strong></td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"><strong>profesor02</strong></td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><strong>alumno01</strong></td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-<td style="text-align: left;">Modificar</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"><strong>alumno02</strong></td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Denegado</td>
-<td style="text-align: left;">Modificar</td>
-<td style="text-align: left;">Modificar</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><strong>Administrador</strong></td>
-<td style="text-align: left;">Control total</td>
-<td style="text-align: left;">Control total</td>
-<td style="text-align: left;">Control total</td>
-<td style="text-align: left;">Control total</td>
-</tr>
-</tbody>
-</table>
-<p>La palabra <strong>Denegado</strong> en esta tabla significa que no se le ha concedido acceso. No significa que hayamos creado una entrada explícita de tipo Denegar.</p>
-<p><strong>23. Resultado final esperado</strong></p>
-<p>La infraestructura deberá quedar así:</p>
-<p>Con este diseño quedan claramente separados:</p>
-<ul>
-<li><p>El disco del sistema.</p></li>
-<li><p>Los discos físicos de almacenamiento.</p></li>
-<li><p>El grupo de almacenamiento.</p></li>
-<li><p>El disco virtual de paridad.</p></li>
-<li><p>El volumen NTFS.</p></li>
-<li><p>Los permisos NTFS.</p></li>
-<li><p>Los permisos SMB.</p></li>
-<li><p>La pertenencia de usuarios a grupos.</p></li>
-<li><p>La herencia de permisos.</p></li>
-<li><p>La autenticación desde los clientes.</p></li>
-</ul>
-<p><strong>24. Simulación del fallo y sustitución de un disco del espacio de paridad</strong></p>
+</section>
+</section>
+</section>
+</section>
+<section id="simulación-del-fallo-y-sustitución-de-un-disco-del-espacio-de-paridad" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> <strong>Simulación del fallo y sustitución de un disco del espacio de paridad</strong></h1>
 <p>En esta parte comprobaremos que el espacio de paridad continúa funcionando cuando se pierde uno de sus tres discos físicos y aprenderemos a sustituirlo por uno nuevo.</p>
 <p><strong>Importante:</strong> no se debe desconectar el disco NVMe de 60 GB que contiene Windows Server. Se desconectará únicamente uno de los tres discos de 20 GB pertenecientes a GRUPO-NAS.</p>
 <p>En este laboratorio no vamos a corromper manualmente el archivo VDI. Simularemos una avería desconectando uno de los discos de datos de la controladora NVMe. De esta forma, Windows Server interpretará que ha perdido la comunicación con uno de los discos.</p>
 <p>Un espacio de paridad con tres discos puede soportar el fallo de <strong>un único disco</strong>. Mientras permanezca degradado no debe desconectarse un segundo disco, porque el espacio podría quedar inaccesible y producirse una pérdida de datos. Microsoft describe los estados Degraded e Incomplete como situaciones en las que se ha reducido la resistencia, aunque los datos todavía pueden continuar accesibles.</p>
-<p><strong>24.1 Identificar claramente los discos virtuales</strong></p>
+<section id="identificar-claramente-los-discos-virtuales" class="level2" data-number="7.1">
+<h2 data-number="7.1" class="anchored" data-anchor-id="identificar-claramente-los-discos-virtuales"><span class="header-section-number">7.1</span> <strong>Identificar claramente los discos virtuales</strong></h2>
 <p>Para facilitar esta prueba, los archivos VDI deberían tener nombres diferentes:</p>
 <p>SRV-NASxx-SO.vdi 60 GB</p>
 <p>SRV-NASxx-DATOS1.vdi 20 GB</p>
@@ -1337,35 +1336,30 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <p>SRV-NASxx-DATOS3.vdi 20 GB</p>
 <p>Esto evita desconectar accidentalmente el disco del sistema operativo.</p>
 <p>Desde PowerShell, comprueba los discos pertenecientes al grupo:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
-<p>Anota o captura el resultado. Aunque todos puedan tener el mismo nombre:</p>
-<p>ORCL-VBOX-NVME-VER12</p>
-<p>sus valores SerialNumber y UniqueId deben ser distintos.</p>
-<p><strong>24.2 Preparar datos para comprobar su integridad</strong></p>
-<p>Antes de provocar el fallo, crea un archivo de prueba de 100 MB:</p>
-<p>fsutil file createnew N:\NAS\COMUN\PRUEBA-PARIDAD.bin 104857600</p>
-<p>Crea también un archivo de texto:</p>
-<p>“Archivo creado antes de simular el fallo del disco.” |</p>
-<p>Set-Content “N:\NAS\COMUN\ANTES-DEL-FALLO.txt”</p>
-<p>Calcula el hash SHA-256 del archivo binario:</p>
-<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p><code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</code></p>
+<p><img src="images\paste-oHWr0mLAqFTkOi7phVfuB.png" class="img-fluid"></p>
+<p>Aunque todos puedan tener el mismo nombre, sus valores SerialNumber y UniqueId deben ser distintos.</p>
+</section>
+<section id="preparar-datos-para-comprobar-su-integridad" class="level2" data-number="7.2">
+<h2 data-number="7.2" class="anchored" data-anchor-id="preparar-datos-para-comprobar-su-integridad"><span class="header-section-number">7.2</span> <strong>Preparar datos para comprobar su integridad</strong></h2>
+<p>En la máquina virtual:</p>
+<p>Antes de provocar el fallo, crea un archivo de prueba de 100 MB: <code>fsutil file createnew N:\NAS\COMUN\PRUEBA-PARIDAD.bin 104857600</code></p>
+<p>Crea también un archivo de texto: <code>"Archivo creado antes de simular el fallo del disco." | Set-Content "N:\NAS\COMUN\ANTES-DEL-FALLO.txt"</code></p>
+<p>Calcula el hash SHA-256 del archivo binario: <code>Get-FileHash "N:\NAS\COMUN\PRUEBA-PARIDAD.bin" -Algorithm SHA256</code></p>
 <p>Guarda el resultado. El hash nos permitirá comprobar que el archivo no cambia después del fallo y la reparación.</p>
-<p><strong>Ejemplo:</strong></p>
-<p>Algorithm : SHA256</p>
-<p>Hash : 8A7C…</p>
-<p>Path : N:\NAS\COMUN\PRUEBA-PARIDAD.bin</p>
+<p><img src="images\paste-kRozeJj31nJzqk_sx7xgG.png" class="img-fluid"></p>
 <p>También conviene comprobar desde un equipo cliente que el recurso es accesible:</p>
-<p>\\192.168.50.xxx\COMUN</p>
-<p><strong>24.3 Comprobar el estado inicial</strong></p>
-<p>Antes de desconectar ningún disco, ejecuta:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</p>
-<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
-<p>Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus</p>
-<p>Get-Volume -DriveLetter N |</p>
-<p>Format-Table DriveLetter,FileSystemLabel,FileSystem,HealthStatus,OperationalStatus,SizeRemaining,Size</p>
+<p>desde el host, en el explorador de archivos: <code>\\10.0.20.46\COMUN</code></p>
+<p><img src="images\paste-vnIZHLmWhLzO9rqEoIa-k.png" class="img-fluid"></p>
+</section>
+<section id="comprobar-el-estado-inicial" class="level2" data-number="7.3">
+<h2 data-number="7.3" class="anchored" data-anchor-id="comprobar-el-estado-inicial"><span class="header-section-number">7.3</span> <strong>Comprobar el estado inicial</strong></h2>
+<p>Antes de desconectar ningún disco, ejecuta: <code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</code></p>
+<p><img src="images\paste-CywbMLiwb60nOMl4cNomp.png" class="img-fluid"></p>
+<p><code>Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus</code></p>
+<p><img src="images\paste-zrgdE9u2pINH0xbkkzv4O.png" class="img-fluid"></p>
+<p><code>Get-Volume -DriveLetter N | Format-Table DriveLetter,FileSystemLabel,FileSystem,HealthStatus,OperationalStatus,SizeRemaining,Size</code></p>
+<p><img src="images\paste-ak4dfV-gRBKTUG9m2TPBR.png" class="img-fluid"></p>
 <p>Resultado esperado:</p>
 <table class="caption-top table">
 <thead>
@@ -1393,73 +1387,61 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 </tr>
 </tbody>
 </table>
-<p><strong>24.4 Simular la avería de un disco</strong></p>
-<p>Apaga correctamente Windows Server:</p>
-<p>Stop-Computer</p>
-<p>Espera hasta que VirtualBox muestre la máquina como completamente apagada.</p>
-<p>En el equipo anfitrión:</p>
-<p><strong>VirtualBox</strong></p>
-<p>→ Seleccionar <strong>WS25 UEFI</strong></p>
-<p>→ Configuración</p>
-<p>→ Almacenamiento</p>
-<p>→ Controladora NVMe</p>
-<p>Selecciona uno de los discos de datos, por ejemplo:</p>
-<p>SRV-NASxx-DATOS2.vdi</p>
-<p>Pulsa <strong>Quitar el dispositivo seleccionado de la controladora</strong>.</p>
-<p>No selecciones:</p>
-<p>SRV-NASxx-SO.vdi</p>
-<p>Cuando VirtualBox pregunte qué hacer con el disco:</p>
+</section>
+<section id="simular-la-avería-de-un-disco" class="level2" data-number="7.4">
+<h2 data-number="7.4" class="anchored" data-anchor-id="simular-la-avería-de-un-disco"><span class="header-section-number">7.4</span> <strong>Simular la avería de un disco</strong></h2>
+<p>Apaga correctamente Windows Server: Stop-Computer. Espera hasta que VirtualBox muestre la máquina como completamente apagada.</p>
+<p>En <strong>VirtualBox</strong></p>
+<p>→ Seleccionar <strong>WS25 UEFI</strong> → Configuración → Almacenamiento → Controladora NVMe</p>
+<p>Selecciona uno de los discos de datos .</p>
+<p>Pulsa <strong>Quitar el dispositivo seleccionado de la controladora</strong>. <span class="highlight">No selecciones el disco que contiene el sistema operativo!</span></p>
+<p><img src="images\paste-bLucUUdI41NeLBzR7cuFp.png" class="img-fluid"></p>
 <ul>
 <li><p>Desconéctalo de la máquina virtual.</p></li>
 <li><p>Conserva el archivo VDI.</p></li>
 <li><p>No lo elimines todavía del disco del anfitrión.</p></li>
+<li><p>Inicia nuevamente la máquina virtual.</p></li>
 </ul>
-<p>La controladora NVMe deberá quedar temporalmente así:</p>
-<p>Controladora NVMe</p>
-<p>├── SRV-NASxx-SO.vdi</p>
-<p>├── SRV-NASxx-DATOS1.vdi</p>
-<p>└── SRV-NASxx-DATOS3.vdi</p>
-<p>Inicia nuevamente la máquina virtual.</p>
-<p><strong>24.5 Comprobar el estado degradado</strong></p>
+</section>
+<section id="comprobar-el-estado-degradado" class="level2" data-number="7.5">
+<h2 data-number="7.5" class="anchored" data-anchor-id="comprobar-el-estado-degradado"><span class="header-section-number">7.5</span> <strong>Comprobar el estado degradado</strong></h2>
 <p>Abre PowerShell como administrador y ejecuta:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p><code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</code></p>
 <p>El disco desconectado puede mostrar estados semejantes a:</p>
 <p>OperationalStatus : Lost Communication</p>
 <p>HealthStatus : Warning</p>
+<p><img src="images\paste-d8jcfCZAt-8KOv6YrdGpe.png" class="img-fluid"></p>
 <p>La descripción exacta puede variar, pero uno de los discos debe aparecer como ausente, sin comunicación o no saludable.</p>
-<p>Comprueba el grupo:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,IsReadOnly</p>
-<p>Comprueba el disco virtual:</p>
-<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
-<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,DetachedReason</p>
+<p>Comprueba el grupo: <code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,IsReadOnly</code></p>
+<p><img src="images\paste-iMUaavbMJ_JKQPfuIrKwe.png" class="img-fluid"></p>
+<p>Comprueba el disco virtual: <code>Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,DetachedReason</code></p>
+<p><img src="images\paste-Y9OdTSpwUInZsiemic2ww.png" class="img-fluid"></p>
 <p>Los estados más habituales serán:</p>
-<p>HealthStatus : Warning</p>
-<p>OperationalStatus : Degraded</p>
-<p>o:</p>
-<p>OperationalStatus : Incomplete</p>
+<ul>
+<li><p>HealthStatus : Warning</p></li>
+<li><p>OperationalStatus : Degraded</p></li>
+<li><p>OperationalStatus : Incomplete</p></li>
+</ul>
 <p>Esto no significa necesariamente que los datos se hayan perdido. Significa que el espacio ha perdido su tolerancia a fallos y necesita que se sustituya el disco. En un servidor independiente, Microsoft indica que, después de conectar el reemplazo, debe utilizarse Repair-VirtualDisk para restaurar la resistencia.</p>
-<p><strong>24.6 Comprobar que los datos continúan disponibles</strong></p>
+</section>
+<section id="comprobar-que-los-datos-continúan-disponibles" class="level2" data-number="7.6">
+<h2 data-number="7.6" class="anchored" data-anchor-id="comprobar-que-los-datos-continúan-disponibles"><span class="header-section-number">7.6</span> Comprobar que los datos continúan disponibles</h2>
 <p>Comprueba que el volumen sigue montado:</p>
-<p>Get-Volume -DriveLetter N</p>
-<p>Comprueba que el archivo existe:</p>
-<p>Test-Path “N:\NAS\COMUN\PRUEBA-PARIDAD.bin”</p>
+<p>Get-Volume -DriveLetter N <img src="images/image.png" class="img-fluid" alt="alt text"></p>
+<p>Comprueba que el archivo existe: <code>Test-Path "N:\NAS\COMUN\PRUEBA-PARIDAD.bin"</code></p>
 <p>Resultado esperado: True</p>
-<p>Vuelve a calcular su hash:</p>
-<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p>Vuelve a calcular su hash: <code>Get-FileHash "N:\NAS\COMUN\PRUEBA-PARIDAD.bin" -Algorithm SHA256</code></p>
 <p>El hash debe coincidir exactamente con el obtenido antes de desconectar el disco.</p>
-<p>Crea un archivo mientras el espacio está degradado:</p>
-<p>“El espacio de paridad continúa funcionando con un disco ausente.” |</p>
-<p>Set-Content “N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt”</p>
+<p><img src="images/paste-yg3yF9L8UGK89NOzboyv6.png" class="img-fluid"></p>
+<p>Crea un archivo mientras el espacio está degradado: <code>"El espacio de paridad continúa funcionando con un disco ausente." |Set-Content "N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt"</code></p>
 <p>Desde el equipo cliente:</p>
 <ol type="1">
 <li><p>Accede al recurso COMUN.</p></li>
 <li><p>Abre ANTES-DEL-FALLO.txt.</p></li>
-<li><p>Comprueba que aparece CREADO-DURANTE-EL-FALLO.txt.</p></li>
+<li><p>Comprueba que aparece CREADO-DURANTE-EL-FALLO.txt.</p>
+<p><img src="images/paste-EKSvuHWlCiup4WNJXqa4d.png" class="img-fluid"></p></li>
 <li><p>Crea un archivo nuevo desde la red.</p></li>
-<li><p>Modifica y elimina ese archivo.</p></li>
+<li><p>Modifica ese archivo.</p></li>
 </ol>
 <p>Utiliza el mismo usuario SMB con el que ya estabas conectado. No cambies de usuario durante esta comprobación para evitar que Windows reutilice credenciales anteriores.</p>
 <p><strong>Resultado esperado</strong></p>
@@ -1472,10 +1454,11 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <li><p>El estado del almacenamiento aparece como degradado.</p></li>
 <li><p>Ya no existe protección frente al fallo de otro disco.</p></li>
 </ul>
-<p><strong>25. Sustitución del disco averiado</strong></p>
-<p><strong>25.1 Crear el disco de reemplazo</strong></p>
-<p>Apaga nuevamente la máquina virtual:</p>
-<p>Stop-Computer</p>
+</section>
+<section id="sustitución-del-disco-averiado" class="level2" data-number="7.7">
+<h2 data-number="7.7" class="anchored" data-anchor-id="sustitución-del-disco-averiado"><span class="header-section-number">7.7</span> <strong>Sustitución del disco averiado</strong></h2>
+<p><strong>Crear el disco de reemplazo</strong></p>
+<p>Apaga nuevamente la máquina virtual.</p>
 <p>En VirtualBox crea un nuevo disco:</p>
 <table class="caption-top table">
 <thead>
@@ -1504,110 +1487,96 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 </tbody>
 </table>
 <p>Conecta el disco nuevo a la misma controladora NVMe, utilizando el puerto que ha quedado libre:</p>
-<p>Controladora NVMe</p>
-<p>├── SRV-NASxx-SO.vdi</p>
-<p>├── SRV-NASxx-DATOS1.vdi</p>
-<p>├── SRV-NASxx-DATOS3.vdi</p>
-<p>└── SRV-NASxx-REEMPLAZO.vdi</p>
+<p>Controladora NVMe:</p>
+<p><img src="images/Captura de pantalla 2026-07-23 133300.png" class="img-fluid"></p>
 <p>Los ajustes especiales de NVMe aplicados mediante VBoxManage permanecen asociados a la máquina virtual. No es necesario repetirlos mientras no se elimine y vuelva a crear la controladora NVMe.</p>
 <p>Inicia Windows Server.</p>
-<p><strong>25.2 Comprobar el disco nuevo</strong></p>
-<p>Ejecuta:</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,FriendlyName,SerialNumber,UniqueId,CanPool,OperationalStatus,HealthStatus,Size</p>
+</section>
+<section id="comprobar-el-disco-nuevo" class="level2" data-number="7.8">
+<h2 data-number="7.8" class="anchored" data-anchor-id="comprobar-el-disco-nuevo"><span class="header-section-number">7.8</span> <strong>Comprobar el disco nuevo</strong></h2>
+<p>Ejecuta: <code>Get-PhysicalDisk | Format-Table DeviceId,FriendlyName,SerialNumber,UniqueId,CanPool,OperationalStatus,HealthStatus,Size</code></p>
 <p>El disco nuevo debe mostrar:</p>
+<p><img src="images/Captura de pantalla 2026-07-23 133919.png" class="img-fluid"></p>
 <p>CanPool : True</p>
 <p>OperationalStatus : OK</p>
 <p>HealthStatus : Healthy</p>
-<p>También puedes mostrar exclusivamente los discos disponibles:</p>
-<p>Get-PhysicalDisk -CanPool $true</p>
+<p>También puedes mostrar exclusivamente los discos disponibles: <code>Get-PhysicalDisk -CanPool $true</code></p>
 <p>Debería aparecer un único disco de aproximadamente 20 GB.</p>
 <p>No inicialices el disco desde Administración de discos, no crees particiones y no lo formatees.</p>
-<p>Si aparece CanPool=False, consulta el motivo:</p>
-<p>Get-PhysicalDisk |</p>
-<p>Select-Object FriendlyName,SerialNumber,UniqueId,CanPool,CannotPoolReason</p>
-<p><strong>25.3 Agregar el disco de reemplazo al grupo</strong></p>
-<p>Abre:</p>
-<p>Administrador del servidor</p>
-<p>→ Servicios de archivos y almacenamiento</p>
-<p>→ Volúmenes</p>
-<p>→ Grupos de almacenamiento</p>
-<p>Selecciona:</p>
-<p>GRUPO-NAS</p>
-<p>En la sección <strong>Discos físicos</strong>:</p>
-<p>TAREAS</p>
-<p>→ Agregar disco físico</p>
-<p>Selecciona:</p>
-<p>SRV-NASxx-REEMPLAZO.vdi</p>
-<p>En <strong>Asignación</strong>, selecciona:</p>
-<p>Automático</p>
+<p>Si aparece CanPool=False, consulta el motivo: <code>Get-PhysicalDisk | Select-Object FriendlyName,SerialNumber,UniqueId,CanPool,CannotPoolReason</code></p>
+</section>
+<section id="agregar-el-disco-de-reemplazo-al-grupo" class="level2" data-number="7.9">
+<h2 data-number="7.9" class="anchored" data-anchor-id="agregar-el-disco-de-reemplazo-al-grupo"><span class="header-section-number">7.9</span> <strong>Agregar el disco de reemplazo al grupo</strong></h2>
+<p>Abre: <em>Administrador del servidor → Servicios de archivos y almacenamiento → Volúmenes → Grupos de almacenamiento</em></p>
+<p>Selecciona: <em>GRUPO-NAS</em></p>
+<p><img src="images/Captura de pantalla 2026-07-23 134134.png" class="img-fluid"></p>
+<p>En la sección <strong>Discos físicos</strong>: <em>TAREAS → Agregar disco físico</em></p>
+<p>Selecciona: <em>SRV-NASxx-REEMPLAZO.vdi</em></p>
+<p>En <strong>Asignación</strong>, selecciona: <em>Automático</em></p>
 <p>No lo configures como reserva activa.</p>
-<p>Pulsa <strong>Aceptar</strong>.</p>
 <p>Microsoft permite agregar el nuevo disco desde el Administrador del servidor o mediante Add-PhysicalDisk. El disco debe encontrarse en el grupo primordial y mostrar CanPool=True.</p>
-<p><strong>Alternativa mediante PowerShell</strong></p>
-<p>$Pool = Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
-<p>$NuevoDisco = Get-PhysicalDisk -CanPool $true</p>
-<p>Add-PhysicalDisk `</p>
-<p>-StoragePool $Pool `</p>
-<p>-PhysicalDisks $NuevoDisco `</p>
-<p>-Usage AutoSelect</p>
+<section id="alternativa-mediante-powershell" class="level3" data-number="7.9.1">
+<h3 data-number="7.9.1" class="anchored" data-anchor-id="alternativa-mediante-powershell"><span class="header-section-number">7.9.1</span> <strong>Alternativa mediante PowerShell</strong></h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">$NuevoDisco</span> = Get-PhysicalDisk <span class="at">-CanPool</span> <span class="va">$true</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Add-PhysicalDisk</span> <span class="kw">`</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">-StoragePool</span> <span class="va">$Pool</span> <span class="kw">`</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">-PhysicalDisks</span> <span class="va">$NuevoDisco</span> <span class="kw">`</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> AutoSelect</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="nota">
+<p>¿Cómo funciona el backtick ( ` ) en PowerShell?</p>
+<p>Técnicamente, el <em>backtick</em> (o acento grave) es el <strong>carácter de escape</strong> en PowerShell. Cuando lo colocas justo al final de una línea, lo que hace es “escapar” o anular el salto de línea que viene a continuación. Es tu forma de decirle a la consola: <em>“Este comando aún no ha terminado, sigue leyendo en la línea de abajo”</em>.</p>
+<p>Se utiliza muchísimo en los scripts para que el código sea más legible y no tener una línea kilométrica que te obligue a hacer scroll horizontal para leer todos los parámetros.</p>
+<p><strong>La trampa del espacio en blanco:</strong> Para que el <em>backtick</em> funcione como continuador de línea, tiene que ser <strong>estrictamente el último carácter</strong> antes de pulsar <em>Enter</em>. Si por accidente dejas un espacio en blanco después del <em>backtick</em>, el comando fallará. PowerShell intentará “escapar” ese espacio en blanco en lugar del salto de línea, cortando la instrucción por la mitad.</p>
+</div>
 <p>Comprueba el resultado:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<p><code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk |Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</code></p>
+<p><img src="images/Captura de pantalla 2026-07-23 134800.png" class="img-fluid"></p>
 <p>En este momento aparecerán:</p>
 <ul>
 <li><p>Dos discos originales saludables.</p></li>
 <li><p>El nuevo disco saludable.</p></li>
 <li><p>La referencia al disco ausente o averiado.</p></li>
 </ul>
-<p><strong>25.4 Identificar el disco averiado</strong></p>
-<p>Ejecuta:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,VirtualDiskFootprint</p>
-<p>Localiza el disco cuyo estado no sea correcto y copia su UniqueId.</p>
-<p>Ejemplo conceptual:</p>
-<p>UniqueId : ID-DEL-DISCO-AVERIADO</p>
-<p>OperationalStatus : Lost Communication</p>
-<p>HealthStatus : Warning</p>
-<p>Usage : Retired</p>
-<p>El disco puede haber sido marcado automáticamente como Retired.</p>
+</section>
+</section>
+<section id="identificar-el-disco-averiado" class="level2" data-number="7.10">
+<h2 data-number="7.10" class="anchored" data-anchor-id="identificar-el-disco-averiado"><span class="header-section-number">7.10</span> <strong>Identificar el disco averiado</strong></h2>
+<p>Ejecuta: <code>Get-StoragePool -FriendlyName "GRUPO-NAS" |Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,VirtualDiskFootprint</code></p>
+<p>Localiza el disco cuyo estado no sea correcto y copia su <em>UniqueId.</em></p>
+<p>El disco puede haber sido marcado automáticamente como Retired (Usage : Retired)</p>
 <p>Si todavía aparece como Auto-Select, retíralo lógicamente utilizando su identificador:</p>
-<p>Set-PhysicalDisk `</p>
-<p>-UniqueId “ID-DEL-DISCO-AVERIADO” `</p>
-<p>-Usage Retired</p>
-<p>No copies literalmente ID-DEL-DISCO-AVERIADO: debe sustituirse por el UniqueId real mostrado en el servidor.</p>
-<p>La marca Retired indica que Storage Spaces debe dejar de utilizar ese disco y mover o reconstruir sus datos sobre otros discos disponibles.</p>
-<p><strong>25.5 Reparar el disco virtual</strong></p>
-<p>Inicia la reparación:</p>
-<p>Repair-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS”</p>
-<p>Comprueba el trabajo:</p>
-<p>Get-StorageJob</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Set-PhysicalDisk</span> <span class="kw">`</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">-UniqueId</span> <span class="st">"ID-DEL-DISCO-AVERIADO"</span> <span class="kw">`</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> Retired</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>La marca <em>Retired</em> indica que Storage Spaces debe dejar de utilizar ese disco y mover o reconstruir sus datos sobre otros discos disponibles.</p>
+</section>
+<section id="reparar-el-disco-virtual" class="level2" data-number="7.11">
+<h2 data-number="7.11" class="anchored" data-anchor-id="reparar-el-disco-virtual"><span class="header-section-number">7.11</span> <strong>Reparar el disco virtual</strong></h2>
+<p>Inicia la reparación: <code>Repair-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS"</code></p>
+<p>Comprueba el trabajo: <code>Get-StorageJob</code></p>
 <p>Mientras se está reparando puede aparecer información similar a:</p>
 <p>Name : Repair</p>
 <p>JobState : Running</p>
 <p>PercentComplete : 42</p>
-<p>Repite el comando hasta que finalice:</p>
-<p>Get-StorageJob</p>
 <p>Como los discos utilizados en la práctica son pequeños, es posible que la reparación finalice tan rápidamente que Get-StorageJob no llegue a mostrar ningún trabajo activo.</p>
 <p>Durante la reparación, el disco virtual puede mostrar:</p>
-<p>OperationalStatus : In Service</p>
-<p>HealthStatus : Warning</p>
+<ul>
+<li><p><em>OperationalStatus : In Service</em></p></li>
+<li><p><em>HealthStatus : Warning</em></p></li>
+</ul>
 <p>Microsoft recomienda reparar el disco virtual, esperar a que termine el trabajo y comprobar después que el almacenamiento vuelva a un estado saludable.</p>
-<p><strong>25.6 Comprobar que la reparación ha terminado</strong></p>
-<p>Ejecuta:</p>
-<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS” |</p>
-<p>Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus,Size</p>
+</section>
+<section id="comprobar-que-la-reparación-ha-terminado" class="level2" data-number="7.12">
+<h2 data-number="7.12" class="anchored" data-anchor-id="comprobar-que-la-reparación-ha-terminado"><span class="header-section-number">7.12</span> <strong>Comprobar que la reparación ha terminado</strong></h2>
+<p>Ejecuta: <code>Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus,Size</code></p>
 <p>Resultado esperado:</p>
-<p>OperationalStatus : OK</p>
-<p>HealthStatus : Healthy</p>
-<p>Comprueba el grupo:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</p>
-<p>Comprueba el volumen:</p>
-<p>Get-Volume -DriveLetter N |</p>
-<p>Format-Table DriveLetter,FileSystemLabel,HealthStatus,OperationalStatus,SizeRemaining,Size</p>
+<ul>
+<li><p><em>OperationalStatus : OK</em></p></li>
+<li><p><em>HealthStatus : Healthy</em></p></li>
+</ul>
+<p>Comprueba el grupo: <code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize</code></p>
+<p>Comprueba el volumen: <code>Get-Volume -DriveLetter N | Format-Table DriveLetter,FileSystemLabel,HealthStatus,OperationalStatus,SizeRemaining,Size</code></p>
 <p>Resultado esperado:</p>
 <table class="caption-top table">
 <thead>
@@ -1639,56 +1608,59 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 </tr>
 </tbody>
 </table>
-<p><strong>25.7 Verificar que el disco antiguo ya no contiene datos</strong></p>
-<p>Ejecuta:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Select-Object DeviceId,SerialNumber,UniqueId,Usage,OperationalStatus,HealthStatus,VirtualDiskFootprint</p>
+<section id="verificar-que-el-disco-antiguo-ya-no-contiene-datos" class="level3" data-number="7.12.1">
+<h3 data-number="7.12.1" class="anchored" data-anchor-id="verificar-que-el-disco-antiguo-ya-no-contiene-datos"><span class="header-section-number">7.12.1</span> <strong>Verificar que el disco antiguo ya no contiene datos</strong></h3>
+<p>Ejecuta: <code>Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Select-Object DeviceId,SerialNumber,UniqueId,Usage,OperationalStatus,HealthStatus,VirtualDiskFootprin</code>t</p>
 <p>El disco averiado debería mostrar:</p>
-<p>Usage : Retired</p>
-<p>VirtualDiskFootprint : 0</p>
+<ul>
+<li><p>Usage : Retired</p></li>
+<li><p>VirtualDiskFootprint : 0</p></li>
+</ul>
 <p>VirtualDiskFootprint=0 significa que el disco virtual ya no depende del disco retirado. Microsoft recomienda comprobar este valor antes de eliminar definitivamente el disco del grupo.</p>
-<p><strong>25.8 Eliminar la referencia al disco averiado</strong></p>
+</section>
+</section>
+<section id="eliminar-la-referencia-al-disco-averiado" class="level2" data-number="7.13">
+<h2 data-number="7.13" class="anchored" data-anchor-id="eliminar-la-referencia-al-disco-averiado"><span class="header-section-number">7.13</span> <strong>Eliminar la referencia al disco averiado</strong></h2>
 <p>Recupera el objeto correspondiente mediante su UniqueId:</p>
-<p>$Pool = Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
-<p>$DiscoAveriado = Get-PhysicalDisk `</p>
-<p>-UniqueId “ID-DEL-DISCO-AVERIADO”</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">$DiscoAveriado</span> = Get-PhysicalDisk <span class="kw">`</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-UniqueId</span> <span class="st">"ID-DEL-DISCO-AVERIADO"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Elimínalo del grupo:</p>
-<p>Remove-PhysicalDisk `</p>
-<p>-StoragePool $Pool `</p>
-<p>-PhysicalDisks $DiscoAveriado</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Remove-PhysicalDisk</span> <span class="kw">`</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">-StoragePool</span> <span class="va">$Pool</span> <span class="kw">`</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-PhysicalDisks</span> <span class="va">$DiscoAveriado</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Confirma la operación cuando PowerShell lo solicite.</p>
 <p>Remove-PhysicalDisk elimina el disco físico indicado de la configuración del grupo. Antes de utilizarlo debe existir capacidad suficiente para mantener la resistencia del disco virtual.</p>
-<p>No ejecutes:</p>
-<p>Remove-VirtualDisk</p>
-<p>Ese comando eliminaría DISCO-VIRTUAL-NAS, el volumen y los datos almacenados.</p>
-<p><strong>25.9 Comprobación definitiva</strong></p>
-<p>Ejecuta:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS” |</p>
-<p>Get-PhysicalDisk |</p>
-<p>Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</p>
+<div class="nota-importante">
+<p>No ejecutes: <code>Remove-VirtualDisk</code> Ese comando eliminaría DISCO-VIRTUAL-NAS, el volumen y los datos almacenados.</p>
+</div>
+</section>
+<section id="comprobación-final" class="level2" data-number="7.14">
+<h2 data-number="7.14" class="anchored" data-anchor-id="comprobación-final"><span class="header-section-number">7.14</span> <strong>Comprobación final</strong></h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-StoragePool</span> <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span> <span class="kw">|</span> <span class="ex">Get-PhysicalDisk</span> <span class="kw">|</span> <span class="ex">Format-Table</span> DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Deben quedar exactamente tres discos saludables dentro de GRUPO-NAS:</p>
 <ul>
 <li><p>Dos discos originales.</p></li>
 <li><p>Un disco de reemplazo.</p></li>
 </ul>
 <p>Comprueba todos los niveles:</p>
-<p>Get-StoragePool -FriendlyName “GRUPO-NAS”</p>
-<p>Get-VirtualDisk -FriendlyName “DISCO-VIRTUAL-NAS”</p>
-<p>Get-Volume -DriveLetter N</p>
-<p>Vuelve a calcular el hash:</p>
-<p>Get-FileHash “N:\NAS\COMUN\PRUEBA-PARIDAD.bin” -Algorithm SHA256</p>
+<p><code>Get-StoragePool -FriendlyName "GRUPO-NAS"</code></p>
+<p><code>Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS"</code></p>
+<p><code>Get-Volume -DriveLetter N</code></p>
+<p><strong>Vuelve a calcular el hash:</strong> <code>Get-FileHash "N:\NAS\COMUN\PRUEBA-PARIDAD.bin" -Algorithm SHA256</code></p>
 <p>Debe coincidir con los dos hashes anteriores.</p>
 <p>Comprueba también:</p>
-<p>Get-Content “N:\NAS\COMUN\ANTES-DEL-FALLO.txt”</p>
-<p>Get-Content “N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt”</p>
+<p><code>Get-Content "N:\NAS\COMUN\ANTES-DEL-FALLO.txt"</code></p>
+<p><code>Get-Content "N:\NAS\COMUN\CREADO-DURANTE-EL-FALLO.txt"</code></p>
 <p>Finalmente, desde el cliente vuelve a probar los recursos:</p>
-<p>\\192.168.50.xxx\DIRECCION</p>
-<p>\\192.168.50.xxx\PROFESORES</p>
-<p>\\192.168.50.xxx\ALUMNOS</p>
-<p>\\192.168.50.xxx\COMUN</p>
+<p>\\10.0.20.46\DIRECCION</p>
+<p>\\10.0.20.46\PROFESORES</p>
+<p>\\10.0.20.46\ALUMNOS</p>
+<p>\\10.0.20.46\COMUN</p>
 <p>Los usuarios deben conservar exactamente los mismos permisos que antes del fallo.</p>
-<p><strong>26. Eliminar definitivamente el antiguo VDI</strong></p>
+</section>
+<section id="eliminar-definitivamente-el-antiguo-vdi" class="level2" data-number="7.15">
+<h2 data-number="7.15" class="anchored" data-anchor-id="eliminar-definitivamente-el-antiguo-vdi"><span class="header-section-number">7.15</span> <strong>Eliminar definitivamente el antiguo VDI</strong></h2>
 <p>Cuando se haya comprobado que:</p>
 <ul>
 <li><p>GRUPO-NAS está saludable.</p></li>
@@ -1699,13 +1671,10 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <li><p>El disco antiguo ya no aparece dentro del grupo.</p></li>
 </ul>
 <p>Puede eliminarse el VDI averiado desde el anfitrión:</p>
-<p>VirtualBox</p>
-<p>→ Herramientas</p>
-<p>→ Medios</p>
-<p>→ Discos duros</p>
+<p><em>VirtualBox → Herramientas → Medios → Discos duros</em></p>
 <p>Selecciona el antiguo disco desconectado y elimínalo.</p>
 <p>No elimines ninguno de los tres discos que actualmente aparecen como saludables dentro de GRUPO-NAS.</p>
-<p><strong>27. Resumen de estados esperados</strong></p>
+<p><strong>Resumen de estados esperados</strong></p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 20%">

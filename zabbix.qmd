@@ -29,19 +29,21 @@ Al finalizar, el alumno deberá ser capaz de:
 
 Usaremos tres máquinas virtuales configuradas en modo **Adaptador Puente**.
 
-+----------------+---------------------+---------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Máquina        | Sistema operativo   | Función                               | IP propuesta                                                                                                                                                                             |
-+:===============+:====================+:======================================+:=========================================================================================================================================================================================+
-| **ZBX-DOCKER** | Ubuntu Server 26.04 | Docker + Zabbix + PostgreSQL + Web    | 192.168.31.13                                                                                                                                                                            |
-+----------------+---------------------+---------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **LNX-DB**     | Ubuntu Server 26.04 | Servidor Linux monitorizado + MariaDB | 10.0.20.60                                                                                                                                                                               |
-+----------------+---------------------+---------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **WIN-CLI**    | Windows 10/11       | Equipo Windows monitorizado           |                                                                                                                                                                                          |
-+----------------+---------------------+---------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| WIN-HOST       | Windows 11          | Host                                  | Wireless LAN adapter Wi-Fi:                                                                                                                                                              |
-|                |                     |                                       |                                                                                                                                                                                          |
-|                |                     |                                       | Connection-specific DNS Suffix . : IPv4 Address. . . . . . . . . . . : 192.168.31.147 Subnet Mask . . . . . . . . . . . : 255.255.255.0 Default Gateway . . . . . . . . . : 192.168.31.1 |
-+----------------+---------------------+---------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++----------------+---------------------+---------------------------------------+-----------------------------------------------+
+| Máquina        | Sistema operativo   | Función                               | IP propuesta                                  |
++:===============+:====================+:======================================+:==============================================+
+| **ZBX-DOCKER** | Ubuntu Server 26.04 | Docker + Zabbix + PostgreSQL + Web    | 10.0.20.50                                    |
++----------------+---------------------+---------------------------------------+-----------------------------------------------+
+| **LNX-DB**     | Ubuntu Server 26.04 | Servidor Linux monitorizado + MariaDB | 10.0.20.60                                    |
++----------------+---------------------+---------------------------------------+-----------------------------------------------+
+| **WIN-CLI**    | Windows 10/11       | Equipo Windows monitorizado           | 10.0.20.242                                   |
++----------------+---------------------+---------------------------------------+-----------------------------------------------+
+| WIN-HOST       | Windows 11          | Host                                  | IPv4 Address: 10.0.20.11                      |
+|                |                     |                                       |                                               |
+|                |                     |                                       | Subnet Mask : 255.255.255.0                   |
+|                |                     |                                       |                                               |
+|                |                     |                                       | Default Gateway . . . . . . . . . : 10.0.20.1 |
++----------------+---------------------+---------------------------------------+-----------------------------------------------+
 
 En **ZBX-DOCKER** tendremos estos contenedores:
 
@@ -64,14 +66,14 @@ En **ZBX-DOCKER** tendremos estos contenedores:
 ``` text
                     Navegador del host
                             |
-                            | http://192.168.31.13:8080
+                            | http://10.0.20.50:8080
                             v
                       zabbix-web
                          Nginx
                             |  
                             v
                     zabbix-server
-                            | http://192.168.31.13
+                            | http://10.0.20.50
                             v
                     postgres-server
                     
@@ -81,6 +83,7 @@ En **ZBX-DOCKER** tendremos estos contenedores:
         Ubuntu Server                  Windows 10/11
         Zabbix Agent 2                 Zabbix Agent 2
         MariaDB                        Servicios Windows
+        10.0.20.60                     10.0.20.242 
 ```
 
 1\. El alumno entra por navegador del host a Zabbix web server
@@ -93,19 +96,17 @@ En **ZBX-DOCKER** tendremos estos contenedores:
 
 ------------------------------------------------------------------------
 
-# Parte 1 — Preparar la máquina ZBX-DOCKER
+# Preparar la máquina ZBX-DOCKER
 
 Esta parte se realiza en la máquina:
 
 \* **Host:** ZBX-DOCKER
 
-\* **IP:** 192.168.31.13
+\* **IP:** 10.0.20.50
 
 \* **Sistema:** Ubuntu Server 26.04
 
 Instalamos Ubuntu Server en adaptador puetne y fijamos la ip
-
-![](images/paste-fypqV0KmJp7XvJbQXvOyd6.png)
 
 ![](images/paste-Czc-xzXa-e3FeqhsaX_RQ.png)
 
@@ -137,7 +138,7 @@ Comprobar conectividad con las otras máquinas haciendo ping desde el host a la 
 
 ------------------------------------------------------------------------
 
-# Parte 2 — Instalar Docker y Docker Compose
+# Instalar Docker y Docker Compose
 
 > **Nota técnica:** Docker recomienda instalar Docker Engine en Ubuntu configurando previamente su repositorio apt, y Docker Compose se instala actualmente como plugin con el paquete docker-compose-plugin.
 
@@ -234,7 +235,7 @@ Si no da error de permisos, Docker está listo.
 
 ------------------------------------------------------------------------
 
-# Parte 3 — Crear el proyecto Docker Compose de Zabbix
+# Crear el proyecto Docker Compose de Zabbix
 
 ## Crear una carpeta de trabajo
 
@@ -336,7 +337,7 @@ volumes:
   zabbix-postgres-data:
 ```
 
-# Parte 4 — Entender el archivo Docker Compose
+# Entender el archivo Docker Compose
 
 ## Servicio postgres-server
 
@@ -348,7 +349,7 @@ Este es el motor principal de Zabbix. Se encarga de consultar agentes, recibir d
 
 ## Servicio zabbix-web
 
-Este contenedor ofrece la interfaz web. Publicamos el puerto **8080**. Por eso entraremos desde el navegador a `[http://192.168.31.13:8080](http://192.168.31.13:8080)`. No usamos el puerto 80 directamente para evitar conflictos con otros servicios web del sistema.
+Este contenedor ofrece la interfaz web. Publicamos el puerto **8080**. Por eso entraremos desde el navegador a `http://10.0.20.50:8080`. No usamos el puerto 80 directamente para evitar conflictos con otros servicios web del sistema.
 
 ## Red interna zabbix-net
 
@@ -356,13 +357,13 @@ Docker crea una red privada bridge para que los contenedores se comuniquen entre
 
 ## Volumen zabbix-postgres-data
 
-El volumen guarda los datos de PostgreSQL de forma persistente. Si el contenedor se destruye o se actualiza, la información permanece intacta en el volumen. Si el volumen se borra explícitamente, se pierde toda la base de datos de Zabbix. *Docker sin volumen es como escribir los apuntes en la arena de la playa. Muy bonito hasta que llega la ola.*
+El volumen guarda los datos de PostgreSQL de forma persistente. Si el contenedor se destruye o se actualiza, la información permanece intacta en el volumen. Si el volumen se borra explícitamente, se pierde toda la base de datos de Zabbix.
 
 ------------------------------------------------------------------------
 
-# Parte 5 — Arrancar Zabbix
+# Arrancar Zabbix
 
-Desde la carpeta del proyecto ejecute:
+Desde la carpeta del proyecto ejecuta:
 
 ``` bash
 cd ~/zabbix-docker
@@ -387,9 +388,9 @@ docker compose logs -f
 
 ------------------------------------------------------------------------
 
-# Parte 6 — Acceder a Zabbix desde navegador
+# Acceder a Zabbix desde navegador
 
-Desde el equipo anfitrión, abra un navegador web y acceda a: `[http://192.168.31.13:8080](http://192.168.31.13:8080)`
+Desde el equipo anfitrión, abre un navegador web y accede a: `http://10.0.20.50:8080`
 
 ## Credenciales iniciales
 
@@ -400,24 +401,60 @@ Desde el equipo anfitrión, abra un navegador web y acceda a: `[http://192.168.3
 
 ## Cambiar idioma
 
-Dentro del panel de control de Zabbix: 1. Vaya a **User settings** -\> **Profile** -\> **Language**. 2. Seleccione **Spanish (es_ES)** y guarde los cambios.
+Dentro del panel de control de Zabbix:
+
+1\. Ve a ***User settings** -\> **Profile** -\> **Language**.*
+
+2\. Selecciona **Spanish (es_ES)** y guarda los cambios.
 
 ## Cambiar la contraseña inicial
 
-1.  Vaya a **User settings** -\> **Profile** -\> **Change password**.
+1.  Ve a ***User settings** -\> **Profile** -\> **Change password**.*
 2.  Para clase usaremos una clave genérica unificada: `Zabbix_Alumno_2026!`
 
 ------------------------------------------------------------------------
 
-# Parte 7 — Comprobar puertos desde ZBX-DOCKER
+# Comprobar puertos desde ZBX-DOCKER
 
-En la máquina Ubuntu donde está Docker, verifique que los puertos estén escuchando en el sistema de red:
+En la máquina Ubuntu donde está Docker, verificar que los puertos estén escuchando en el sistema de red:
 
 ``` bash
 ss -tulpen | grep -E '8080|10051'
 ```
 
-Si el cortafuegos de Ubuntu (`UFW`) está activo, habilite las conexiones entrantes:
+Básicamente, este comando responde a la pregunta: "¿Qué programas o servicios están escuchando activamente en los puertos 8080 o 10051 de mi máquina?"
+
+1\. `ss` (Socket Statistics)
+
+Es la herramienta moderna que sustituye al antiguo `netstat`. Sirve para inspeccionar las conexiones de red (sockets). Las letras que le siguen (`-tulpen`) son los modificadores (flags) que le dicen exactamente qué información recopilar:
+
+-   **`-t`** (TCP): Muestra los puertos con protocolo TCP.
+
+-   **`-u`** (UDP): Muestra los puertos con protocolo UDP.
+
+-   **`-l`** (Listening): Muestra **solo** los puertos que están "escuchando" (esperando recibir conexiones entrantes), ignorando las conexiones que ya están establecidas.
+
+-   **`-p`** (Processes): Muestra el nombre y el ID (PID) del proceso o programa que tiene secuestrado ese puerto. *(Nota para los apuntes: a menudo requiere ejecutar el comando con `sudo` para poder ver los procesos de otros usuarios)*.
+
+-   **`-e`** (Extended): Muestra información extendida y detallada sobre el socket, como el usuario propietario y los inodos.
+
+-   **`-n`** (Numeric): Obliga a mostrar las direcciones IP y los números de puerto tal cual (en formato numérico), en lugar de intentar traducirlos a nombres de servicios (por ejemplo, mostrará `80` en lugar de `http`). Esto acelera muchísimo la ejecución del comando.
+
+2\. `|` (La tubería o *Pipe*)
+
+Toma todo el listado inmenso que genera el comando `ss` de la izquierda y se lo pasa directamente como texto al comando de la derecha para que lo procese.
+
+3\. `grep -E '8080|10051'`
+
+Es el filtro. Toma ese listado de conexiones en bruto y extrae solo lo que te interesa.
+
+-   **`grep`**: El comando clásico de búsqueda de texto en Linux.
+
+-   **`-E`** (Extended): Activa las expresiones regulares extendidas. Esto es clave porque permite utilizar caracteres especiales de lógica.
+
+-   **`'8080|10051'`**: Gracias al parámetro `-E`, la barra vertical `|` funciona como un operador lógico **OR** (O). Le estás diciendo al filtro: "Imprime solo las líneas de texto que contengan la cadena '8080' **O** la cadena '10051'".
+
+Si el cortafuegos de Ubuntu (`UFW`) está activo, habilita las conexiones entrantes:
 
 ``` bash
 sudo ufw allow 8080/tcp
@@ -425,11 +462,15 @@ sudo ufw allow 10051/tcp
 sudo ufw reload
 ```
 
-------------------------------------------------------------------------
+# Preparar la máquina Linux monitorizada
 
-# Parte 8 — Preparar la máquina Linux monitorizada
+Esta parte se realiza íntegramente en la máquina:
 
-Esta parte se realiza íntegramente en la máquina: \* **Host:** LNX-DB \* **IP Real Estática:** 10.0.20.60 \* **Sistema:** Ubuntu Server 26.04
+-   **Host:** LNX-DB
+
+-   **IP Real Estática:** 10.0.20.60
+
+-   **Sistema:** Ubuntu Server 26.04
 
 ## Ajustar nombre de host y actualizar
 
@@ -443,6 +484,16 @@ sudo apt update && sudo apt upgrade -y
 ``` bash
 sudo apt install -y mariadb-server stress-ng netcat-openbsd
 ```
+
+Este comando se utiliza en distribuciones de Linux basadas en Debian (como Ubuntu) para descargar e instalar tres herramientas específicas de una sola vez, de forma automática y con permisos de administrador.
+
+El comando instala el siguiente software (separado por espacios):
+
+-   **`mariadb-server`**: Instala el servidor de bases de datos relacionales MariaDB. Es uno de los motores de bases de datos de código abierto más populares del mundo y funciona como un reemplazo directo (y mejorado) de MySQL.
+
+-   **`stress-ng`**: Es una herramienta de diagnóstico diseñada para someter el hardware y el sistema operativo a pruebas de estrés. Permite simular cargas pesadas en la CPU, la memoria RAM, los discos o la red para evaluar el rendimiento y la estabilidad del equipo bajo presión.
+
+-   **`netcat-openbsd`**: Instala la variante de OpenBSD de Netcat (que se ejecuta en la terminal simplemente como `nc`). Conocida como la "navaja suiza" de las redes TCP/IP, es una utilidad vital para leer, escribir, abrir puertos y diagnosticar problemas de conectividad en red.
 
 Habilitamos el servicio del motor de base de datos de pruebas:
 
@@ -470,15 +521,17 @@ Modificamos el archivo de configuración del agente:
 sudo nano /etc/zabbix/zabbix_agent2.conf
 ```
 
-Busque y edite con cuidado las siguientes líneas asegurándose de poner la IP correcta del servidor central de Zabbix y el nombre del equipo correspondiente:
+Buscar y editar las siguientes líneas asegurándose de poner la IP correcta **del servidor central de Zabbix** y el nombre del equipo actual:
 
 ``` ini
-Server=192.168.31.13
-ServerActive=192.168.31.13
+Server=10.0.20.50
+ServerActive=10.0.20.50
 Hostname=lnx-db
 ```
 
-Reinicie y aplique los cambios en el inicio del sistema operativo:
+Asegúrate de que el nombre de la máquina virtual que estamos configurando coincida exactamente con el nombre que le Ves a dar a este equipo cuando lo des de alta más adelante en el panel web de Zabbix.
+
+Reinicia y aplica los cambios en el inicio del sistema operativo:
 
 ``` bash
 sudo systemctl restart zabbix-agent2
@@ -487,19 +540,17 @@ sudo systemctl enable zabbix-agent2
 
 ## Abrir firewall de red en LNX-DB
 
-Si UFW está habilitado, abra el puerto **10050** para permitir que el servidor central de Zabbix consulte las métricas:
+Si UFW está habilitado, abre el puerto **10050** para permitir que el servidor central de Zabbix consulte las métricas:
 
 ``` bash
 sudo ufw allow 10050/tcp
 ```
 
-------------------------------------------------------------------------
+# Añadir LNX-DB en la interfaz de Zabbix
 
-# Parte 9 — Añadir LNX-DB en la interfaz de Zabbix
+Desde el entorno web de Zabbix: ***Data collection** -\> **Hosts** -\> **Create host***
 
-Desde el entorno web de Zabbix, vaya a: **Data collection** -\> **Hosts** -\> **Create host**
-
-Configure rigurosamente los siguientes parámetros:
+Configura:
 
 | Campo            | Valor                 |
 |:-----------------|:----------------------|
@@ -511,13 +562,19 @@ Configure rigurosamente los siguientes parámetros:
 | **Port**         | 10050                 |
 | **Template**     | Linux by Zabbix agent |
 
-Haga clic en **Add**. Espere 1 o 2 minutos hasta que la etiqueta de estado "ZBX" se ponga de color verde. Después, dirígete a **Monitoring** -\> **Latest data**, filtre por el host `lnx-db` y valide que están entrando de forma constante todas las métricas operativas del sistema.
+Haz clic en **Add**. Espere 1 o 2 minutos hasta que la etiqueta de estado "ZBX" se ponga de color verde.
 
-------------------------------------------------------------------------
+Después, dirígete a ***Monitoring** -\> **Latest data***, filtra por el host `lnx-db` y valida que están entrando de forma constante todas las métricas operativas del sistema.
 
-# Parte 10 — Preparar la máquina Windows monitorizada
+# Preparar la máquina Windows monitorizada
 
-Esta parte se realiza en: \* **Host:** WIN-CLI \* **IP:** 10.0.20.242 \* **Sistema:** Windows 10/11
+Esta parte se realiza en:
+
+-   **Host:** WIN-CLI
+
+-   **IP:** 10.0.20.242
+
+-   **Sistema:** Windows 10/11
 
 ## Descargar Zabbix Agent 2
 
@@ -526,11 +583,19 @@ Esta parte se realiza en: \* **Host:** WIN-CLI \* **IP:** 10.0.20.242 \* **Siste
 
 ## Instalar el agente en el sistema
 
-Ejecute el instalador MSI como administrador e introduzca los datos del laboratorio: \* **Host name:** win-cli \* **Zabbix server IP/DNS:** 192.168.31.13 \* **Server or Proxy for active checks:** 192.168.31.13 \* **Listen port:** 10050
+Ejecuta el intalador MSI como administrador e introduzca los datos del laboratorio:
+
+-   **Host name:** win-cli
+
+-   **Zabbix server IP/DNS:** 10.0.20.50
+
+-   **Server or Proxy for active checks:** 10.0.20.50
+
+-   **Listen port:** 10050
 
 ## Comprobar el servicio en Windows
 
-Abra una consola de **PowerShell** como administrador y ejecute:
+Abre una consola de **PowerShell** como administrador y ejecuta:
 
 ``` powershell
 Get-Service "*Zabbix*"
@@ -540,7 +605,7 @@ Get-Service "*Zabbix*"
 
 ## Abrir firewall de Windows Defender
 
-En la consola de PowerShell como administrador, cree la regla para permitir el tráfico entrante de monitorización:
+En la consola de PowerShell como administrador, crea la regla para permitir el tráfico entrante de monitorización:
 
 ``` powershell
 New-NetFirewallRule `
@@ -549,12 +614,12 @@ New-NetFirewallRule `
   -Protocol TCP `
   -LocalPort 10050 `
   -Action Allow `
-  -RemoteAddress 192.168.31.13
+  -RemoteAddress 10.0.20.50
 ```
 
-# Parte 11 — Añadir WIN-CLI en Zabbix
+# Añadir WIN-CLI en Zabbix
 
-Desde la interfaz web de Zabbix, proceda a dar de alta la máquina cliente: **Data collection** -\> **Hosts** -\> **Create host**
+Desde la interfaz web de Zabbix, proceda a dar de alta la máquina cliente: ***Data collection** -\> **Hosts** -\> **Create host***
 
 | Campo            | Valor                   |
 |:-----------------|:------------------------|
@@ -566,26 +631,42 @@ Desde la interfaz web de Zabbix, proceda a dar de alta la máquina cliente: **Da
 | **Port**         | 10050                   |
 | **Template**     | Windows by Zabbix agent |
 
-Haga clic en **Add**. Posteriormente verifique la entrada de contadores en el apartado de **Latest data**.
+Haz clic en **Add**. Posteriormente Verifica la entrada de contadores en el apartado de **Latest data**.
 
-# Parte 12 — Comprobar comunicación desde el servidor Zabbix
+# Comprobar comunicación desde el servidor Zabbix
 
 Como el servidor Zabbix está dentro de un contenedor aislado, la forma más clara de comprobar la conectividad de red es inyectarse directamente en él.
 
-En la terminal de **ZBX-DOCKER**, ejecute:
+En la terminal de **ZBX-DOCKER**, ejecuta:
 
 ``` bash
 docker exec -it zabbix-server sh
 ```
 
-Dentro de la shell interna del contenedor, haga un ping de prueba hacia el host Linux:
+**¿Por qué hay que "inyectarse"?**
+
+Aunque la máquina virtual anfitriona (ZBX-DOCKER) tenga conectividad perfecta, el contenedor donde reside Zabbix opera en su propia "burbuja" lógica de red. Si hay un problema de comunicación entre el servidor y el agente, hacer un simple `ping` desde el anfitrión no sirve como prueba definitiva. **Hay que diagnosticar el problema desde la perspectiva exacta del servidor Zabbix**, lo que obliga a entrar dentro de su contenedor para lanzar las pruebas desde allí.
+
+El comando: `docker exec -it zabbix-server sh` actúa como una puerta de acceso para abrir una terminal interactiva dentro de un contenedor que ya está encendido y funcionando. Se divide así:
+
+-   **`docker exec`** (Execute): Es la instrucción principal que le indica a Docker: *"Quiero ejecutar un nuevo proceso dentro de un contenedor en ejecución"*.
+
+-   **`-i`** (Interactive): Mantiene el canal de entrada de datos (STDIN) abierto. Sin este parámetro, el contenedor no escucharía las pulsaciones de tu teclado.
+
+-   **`-t`** (TTY): Asigna una seudoterminal. Al combinarlo con el anterior (formando el clásico **`-it`**), el sistema simula una consola interactiva real, permitiendo escribir y ver los resultados en vivo.
+
+-   **`zabbix-server`**: Es el identificador o nombre exacto del contenedor objetivo en el que deseas entrar.
+
+-   **`sh`** (Shell): Es el comando específico que se le pide a Docker que ejecuta al entrar. Invoca el *Bourne shell*, el intérprete de comandos más básico y estándar. En los contenedores se suele usar `sh` en lugar de `bash`, ya que las imágenes base (como Alpine Linux) están súper reducidas y no incluyen herramientas pesadas para ahorrar espacio.
+
+Dentro de la shell interna del contenedor, haz un ping de prueba hacia el host Linux:
 
 ``` bash
 ping -c 3 10.0.20.60
 exit
 ```
 
-De igual modo, verifique los puertos abiertos de los agentes desde la máquina base Ubuntu de **ZBX-DOCKER**:
+De igual modo, verifica los puertos abiertos de los agentes desde la máquina base Ubuntu de **ZBX-DOCKER**:
 
 ``` bash
 nc -zv 10.0.20.60 10050
@@ -594,149 +675,157 @@ nc -zv 10.0.20.242 10050
 
 *Resultado esperado:* `succeeded`.
 
-# Parte 13 — Crear una comprobación del servicio MariaDB
+# Crear una comprobación del servicio MariaDB
 
 El objetivo de esta sección es monitorizar el estado de salud del puerto remoto del motor de base de datos (`3306/tcp`) para que Zabbix envíe un aviso si el servicio se cae.
 
 ## Crear el ítem en Zabbix
 
-Vaya a: **Data collection** -\> **Hosts** -\> Seleccione la línea de `lnx-db` -\> Haga clic en **Items** -\> **Create item**.
+***Data collection** -\> **Hosts** -\>* Seleccione la línea de `lnx-db` -\> clic en ***Items** -\> **Create item**.*
 
-Configure los siguientes valores: \* **Name:** Comprobación puerto MariaDB 3306 \* **Type:** Simple check \* **Key:** net.tcp.service\[tcp,,3306\] \* **Type of information:** Numeric unsigned \* **Update interval:** 1m
+Configura los siguientes valores: \* **Name:** Comprobación puerto MariaDB 3306 \* **Type:** Simple check \* **Key:** net.tcp.service\[tcp,,3306\] \* **Type of information:** Numeric unsigned \* **Update interval:** 1m
 
-Guarde el registro. Este ítem realiza una petición de red TCP devolviendo de forma periódica: \* **`1`**: El puerto está abierto y responde de forma correcta. \* **`0`**: El puerto está cerrado o inaccesible.
+Guarda el registro.
 
-------------------------------------------------------------------------
+Este ítem realiza una petición de red TCP devolviendo de forma periódica:
 
-# Parte 14 — Crear una alerta para MariaDB (Trigger)
+\* **`1`**: El puerto está abierto y responde de forma correcta.
 
-Para automatizar la detección del fallo cuando la métrica caiga a cero: Vaya a: **Data collection** -\> **Hosts** -\> Haga clic en **Triggers** en la línea de `lnx-db` -\> **Create trigger**
+\* **`0`**: El puerto está cerrado o inaccesible.
+
+# Crear una alerta para MariaDB (Trigger)
+
+Para automatizar la detección del fallo cuando la métrica caiga a cero: Ve a: **Data collection** -\> **Hosts** -\> Haz clic en **Triggers** en la línea de `lnx-db` -\> **Create trigger**
 
 -   **Name:** MariaDB no responde en {HOST.NAME}
 -   **Severity:** High
 -   **Expression:** last(/lnx-db/net.tcp.service\[tcp,,3306\])=0
 
-Guarde el disparador. Si el último valor recibido de la comprobación del puerto 3306 es estrictamente 0, Zabbix generará un problema visual visible en la consola general.
+Guarda el disparador. Si el último valor recibido de la comprobación del puerto 3306 es estrictamente 0, Zabbix generará un problema visual visible en la consola general.
 
-------------------------------------------------------------------------
-
-# Parte 15 — Provocar una incidencia controlada
+# Provocar una incidencia controlada
 
 ## Forzar la caída de la base de datos
 
-Conéctate por terminal a **LNX-DB** e interrumpa de forma controlada el servicio de MariaDB:
+Conéctate por terminal a **LNX-DB** e interrumpe de forma controlada el servicio de MariaDB:
 
 ``` bash
 sudo systemctl stop mariadb
 ```
 
-Espera un lapso de entre 1 y 2 minutos. Compruebe la sección de **Monitoring** -\> **Problems** en la web de Zabbix. Deberá aparecer una alerta crítica activa de color rojo.
+Espera un lapso de entre 1 y 2 minutos. Comprueba la sección de ***Monitoring** -\> **Problems*** en la web de Zabbix. Deberá aparecer una alerta crítica activa de color rojo.
 
 ## Recuperar el servicio
 
-Levante de nuevo el servicio en **LNX-DB**:
+Levanta de nuevo el servicio en **LNX-DB**:
 
 ``` bash
 sudo systemctl start mariadb
 ```
 
-Observe el panel de control web y verifique cómo el problema se resuelve de forma automática en cuanto se ejecuta la siguiente comprobación recurrente.
+Observa el panel de control web y Verifica cómo el problema se resuelve de forma automática en cuanto se ejecuta la siguiente comprobación recurrente.
 
-------------------------------------------------------------------------
+# Generar carga de CPU en Linux
 
-# Parte 16 — Generar carga de CPU en Linux
-
-Validaremos los gráficos inyectando estrés al sistema. En la terminal de **LNX-DB**, ejecute:
+Validaremos los gráficos inyectando estrés al sistema. En la terminal de **LNX-DB**, ejecuta:
 
 ``` bash
 stress-ng --cpu 2 --timeout 120s
 ```
 
-Vaya de forma inmediata en la web a **Monitoring** -\> **Latest data**, busque las métricas de procesador de `lnx-db` y compruebe el pico de utilización generado por la herramienta.
+En la web ***Monitoring** -\> **Latest data**,* busca las métricas de procesador de `lnx-db` y Comprueba el pico de utilización generado por la herramienta.
 
-------------------------------------------------------------------------
+# Generar consumo de disco duro real
 
-# Parte 17 — Generar consumo de disco duro real
+> **Nota:** En Ubuntu Server, el directorio virtual `/tmp` está montado sobre un sistema de archivos temporal de tipo `tmpfs` residente directo en la memoria RAM. Para simular un llenado real en las métricas de disco de almacenamiento físico de la partición raíz (`/`), **la prueba debe realizarse de forma obligatoria dentro de su directorio personal o carpeta home (`~/`)**.
 
-> **Nota pedagógica fundamental:** En Ubuntu Server, el directorio virtual `/tmp` está montado sobre un sistema de archivos temporal de tipo `tmpfs` residente directo en la memoria RAM. Para simular un llenado real en las métricas de disco de almacenamiento físico de la partición raíz (`/`), **la prueba debe realizarse de forma obligatoria dentro de su directorio personal o carpeta home (`~/`)**.
-
-En la consola de **LNX-DB**, reserve un archivo ficticio de 2 Gigabytes de tamaño en su disco persistente:
+En la consola de **LNX-DB**, reserva un archivo ficticio de 2 Gigabytes de tamaño en su disco persistente:
 
 ``` bash
 fallocate -l 2G ~/prueba_zabbix.img
 ```
 
-Verifique la alteración local de las particiones de almacenamiento con:
+Verifica la alteración local de las particiones de almacenamiento con:
 
 ``` bash
 df -h
 ```
 
-Compruebe en la interfaz web de Zabbix cómo las gráficas de almacenamiento del host detectan el incremento de espacio ocupado en la partición de almacenamiento raíz de la VM.
+`df` (Disk Free) : Es el comando principal. Su función es leer y reportar la cantidad de espacio en disco disponible y utilizado en todos los sistemas de archivos que están montados actualmente en el sistema operativo. Si se ejecuta solo (sin modificadores), muestra los tamaños en bloques de 1 Kilobyte, lo cual resulta bastante difícil de leer de un vistazo rápido.
 
-Una vez completada la comprobación, elimine el archivo para limpiar el entorno del laboratorio:
+`-h` (Human-readable) : Es el modificador que le da sentido práctico al comando. Le indica al sistema que debe traducir los números en crudo a un formato "legible para humanos".
+
+-   En lugar de mostrar un bloque interminable de números, convierte automáticamente los valores a **Megabytes (MB)**, **Gigabytes (GB)** o **Terabytes (TB)** según corresponda, añadiendo una letra al final (por ejemplo, `G` para Gigabytes o `M` para Megabytes).
+
+Comprueba en la interfaz web de Zabbix cómo las gráficas de almacenamiento del host detectan el incremento de espacio ocupado en la partición de almacenamiento raíz de la VM.
+
+Una vez completada la comprobación, elimina el archivo para limpiar el entorno del laboratorio:
 
 ``` bash
 rm ~/prueba_zabbix.img
 df -h
 ```
 
-------------------------------------------------------------------------
+# Crear un dashboard básico
 
-# Parte 18 — Crear un dashboard básico
+Ve a: ***Dashboards** -\> **Create dashboard***
 
-Vaya a: **Dashboards** -\> **Create dashboard** \* **Name:** Monitorización aula - Zabbix Docker
+\* **Name:** Monitorización aula - Zabbix Docker
 
-Añada componentes visuales (*Widgets*) para tener un centro de control básico: \* **Problems**: Muestra las incidencias operativas activas de la red. \* **Host availability**: Muestra de un vistazo si las máquinas del aula están vivas o caídas. \* **Graph**: Rendimiento de CPU en tiempo real de `lnx-db`. \* **Graph**: Histórico de consumo de RAM de `win-cli`. \* **Graph**: Espacio utilizado en disco duro persistente de `lnx-db`.
+Añade componentes visuales (*Widgets*) para tener un centro de control básico:
 
-------------------------------------------------------------------------
+\* **Problems**: Muestra las incidencias operativas activas de la red.
 
-# Parte 19 — Comandos útiles de Docker Compose
+\* **Host availability**: Muestra de un vistazo si las máquinas del aula están vivas o caídas.
+
+\* **Graph**: Rendimiento de CPU en tiempo real de `lnx-db`.
+
+**Graph**: Histórico de consumo de RAM de `win-cli`.
+
+\* **Graph**: Espacio utilizado en disco duro persistente de `lnx-db`.
+
+# Comandos útiles de Docker Compose
 
 Estas tareas de administración operativa se deben realizar posicionados en la ruta raíz del proyecto (`cd ~/zabbix-docker`):
 
--   **Ver el estado y salud actual de los contenedores:** `bash     docker compose ps`
--   **Ver logs continuos en tiempo real:** `bash     docker compose logs -f`
--   **Ver logs de un único contenedor específico:** `bash     docker compose logs -f zabbix-server`
--   **Reiniciar todos los servicios de la plataforma:** `bash     docker compose restart`
--   **Detener los contenedores sin borrar su estado:** `bash     docker compose stop`
--   **Destruir los contenedores y redes virtuales del proyecto:** `bash     docker compose down`
--   **Borrar de forma absoluta los contenedores, redes y la base de datos completa:** `bash     docker compose down -v` \> **¡Peligro!** El parámetro `-v` elimina de forma irreversible el volumen de almacenamiento de PostgreSQL. Si se ejecuta, los alumnos perderán de golpe todas las configuraciones, hosts y dashboards creados en la práctica.
+-   **Ver el estado y salud actual de los contenedores:** `docker compose ps`
+-   **Ver logs continuos en tiempo real:** `docker compose logs -f`
+-   **Ver logs de un único contenedor específico:** `docker compose logs -f zabbix-server`
+-   **Reiniciar todos los servicios de la plataforma:** `docker compose restart`
+-   **Detener los contenedores sin borrar su estado:** `docker compose stop`
+-   **Destruir los contenedores y redes virtuales del proyecto:** `docker compose down`
+-   **Borrar de forma absoluta los contenedores, redes y la base de datos completa:** `docker compose down -v` \> [**¡Peligro!** El parámetro `-v` elimina de forma irreversible el volumen de almacenamiento de PostgreSQL. Si se ejecuta, los alumnos perderán de golpe todas las configuraciones, hosts y dashboards creados en la práctica.]{.highlight}
 
-------------------------------------------------------------------------
-
-# Parte 20 — Solución de problemas comunes (Troubleshooting)
+# Solución de problemas comunes (Troubleshooting)
 
 ## T1: No carga la interfaz web de Zabbix en el puerto 8080
 
--   Asegúrese de que el contenedor web esté activo ejecutando `docker compose ps`.
--   Revise las trazas del servidor HTTP interno con `docker compose logs zabbix-web`.
--   Compruebe que el puerto responda localmente en el anfitrión con `ss -tulpen | grep 8080`.
+-   Asegúrate de que el contenedor web esté activo ejecutando `docker compose ps`.
+-   Revisa las trazas del servidor HTTP interno con `docker compose logs zabbix-web`.
+-   Comprueba que el puerto responda localmente en el anfitrión con `ss -tulpen | grep 8080`.
 
 ## T2: Abre la web pero indica que no puede conectar con el Servidor Central Zabbix
 
--   El motor del core se ha detenido. Revise los motivos del fallo con `docker compose logs zabbix-server`.
--   Asegúrese de que no se hayan modificado los puertos de enlace del manifiesto yaml.
+-   El motor del core se ha detenido. Revisa los motivos del fallo con `docker compose logs zabbix-server`.
+-   Asegúrate de que no se hayan modificado los puertos de enlace del manifiesto yaml.
 
 ## T3: El Servidor Zabbix no puede conectar con la Base de Datos PostgreSQL
 
--   Examine los motivos del rechazo de la base de datos con `docker compose logs postgres-server`.
--   Valide que las credenciales declaradas coincidan de forma exacta. Imprima sus variables con `cat .env` y compruebe que los campos `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` tengan los mismos valores tipográficos en todas las secciones del manifiesto `docker-compose.yml`.
+-   Examina los motivos del rechazo de la base de datos con `docker compose logs postgres-server`.
+-   Valida que las credenciales declaradas coincidan de forma exacta. Imprima sus variables con `cat .env` y Comprueba que los campos `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` tengan los mismos valores tipográficos en todas las secciones del manifiesto `docker-compose.yml`.
 
 ## T4: La máquina de pruebas LNX-DB se queda sin registrar datos en la web
 
--   Compruebe que el servicio del agente de monitorización esté activo: `systemctl status zabbix-agent2`.
--   Extraiga y verifique los parámetros del archivo de configuración ejecutando: `bash     grep -E "^Server=|^ServerActive=|^Hostname=" /etc/zabbix/zabbix_agent2.conf`
--   Verifique que apunte de forma estricta a la IP de la máquina de Docker (`192.168.31.13`) y que el nombre de host coincida letra por letra en la interfaz web de administración.
-
-------------------------------------------------------------------------
+-   Comprueba que el servicio del agente de monitorización esté activo: `systemctl status zabbix-agent2`.
+-   Extrae y Verifica los parámetros del archivo de configuración ejecutando: `bash     grep -E "^Server=|^ServerActive=|^Hostname=" /etc/zabbix/zabbix_agent2.conf`
+-   Verifica que apunte de forma estricta a la IP de la máquina de Docker (`10.0.20.50`) y que el nombre de host coincida letra por letra en la interfaz web de administración.
 
 # Resultado final esperado
 
 Al concluir satisfactoriamente el laboratorio, la infraestructura lógica de red se conformará siguiendo esta topología:
 
 ``` text
-Ubuntu Server (ZBX-DOCKER) [192.168.31.13]
+Ubuntu Server (ZBX-DOCKER) [10.0.20.50]
 │
 ├── [Contenedor] PostgreSQL Server (Persistencia de base de datos)
 ├── [Contenedor] Zabbix Server Engine (Gestiona puerto 10051)
@@ -745,5 +834,3 @@ Ubuntu Server (ZBX-DOCKER) [192.168.31.13]
       ├── Enlace Pasivo/Activo (Puerto 10050) ---> Ubuntu Server (LNX-DB) [10.0.20.60] (MariaDB)
       └── Enlace Pasivo/Activo (Puerto 10050) ---> Windows Client (WIN-CLI) [10.0.20.242]
 ```
-
-------------------------------------------------------------------------
