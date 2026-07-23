@@ -28,14 +28,14 @@ Este será el "chivato" que leerá cómo está tu CPU, RAM, Disco y Red.
 
 1.  Ve a la página oficial de versiones de Windows Exporter en GitHub: <https://github.com/prometheus-community/windows_exporter/releases>
 
-2.  Descarga el archivo que termina en `.msi` (por ejemplo, `windows_exporter-x.xx.x-amd64.msi`). ![](images/Screenshot%202026-06-25%20183316.png)
+2.  Descarga el archivo que termina en `.msi` (por ejemplo, `windows_exporter-x.xx.x-amd64.msi`). ![](images/Screenshot_2026-06-25_183316.png)
 
 3.  Haz doble clic en el instalador y dale a Siguiente \> Instalar. (Se instala como un Servicio de Windows en segundo plano). Deja todo como está por defecto.\
-    ![](images/Screenshot%202026-06-25%20183521.png)
+    ![](images/Screenshot_2026-06-25_183521.png)
 
 4.  **Verificación:** Abre tu navegador de internet y entra en `http://localhost:9182/metrics`.
 
-    -   *Si ves una pantalla blanca llena de texto incomprensible con números, ¡funciona perfectamente! Esos son los datos en bruto.*
+    - *Si ves una pantalla blanca llena de texto incomprensible con números, ¡funciona perfectamente! Esos son los datos en bruto.*
 
 ## Paso 2: Instalar la Base de Datos (Prometheus)
 
@@ -65,7 +65,7 @@ scrape_configs:
 
 6.  Guarda el archivo y haz doble clic en **`prometheus.exe`** para arrancarlo. Se quedará una ventana negra de consola abierta. Déjala ahí.
 
-    ![](images/Screenshot%202026-06-25%20184744.png)
+    ![](images/Screenshot_2026-06-25_184744.png)
 
 ## Paso 3: Instalar el Visualizador (Grafana)
 
@@ -73,7 +73,7 @@ scrape_configs:
 
 1.  Ve a la página de descarga de Grafana OSS: <https://grafana.com/grafana/download?platform=windows>
 
-    ![](images/Screenshot%202026-06-25%20184413.png)
+    ![](images/Screenshot_2026-06-25_184413.png)
 
 2.  Descarga el instalador de Windows (Windows Installer) y ejecútalo.
 
@@ -101,7 +101,7 @@ Ahora tenemos que decirle a Grafana de dónde sacar los datos y qué plantilla u
 
 1.  En el menú izquierdo, ve a **Dashboards** (paneles) y haz clic en el botón **New** (Nuevo) en la esquina superior derecha, y elige **Import**.
 
-    ![](images/Screenshot%202026-06-25%20185944.png)
+    ![](images/Screenshot_2026-06-25_185944.png)
 
 2.  En la casilla que dice "Import via grafana.com", escribe el número **`14694`** y dale al botón "Load" a la derecha.
 
@@ -117,13 +117,13 @@ Importar está genial, pero para dominar la herramienta hay que saber pescar los
 
 2.  **Add new element** en la barra lateral derecha y luego selecciona **+** en el panel y después *Edit visualization*
 
-    ![](/images/Screenshot%202026-06-25%20193651.png){width="394"}
+    ![](/images/Screenshot_2026-06-25_193651.png){width="394"}
 
 3.  Te aparecerá la pantalla de edición. En la mitad inferior, verás una pestaña llamada **Query**. Asegúrate de que el origen de datos (Data source) seleccionado sea **Prometheus**.
 
 4.  En la caja de texto que dice *Metric* , escribe exactamente esta métrica que genera el Exporter: `windows_memory_physical_free_bites`
 
-5.  Selecciona el tipo de grafico que quieres: time series.![](/images/Screenshot%202026-06-25%20194629.png)
+5.  Selecciona el tipo de grafico que quieres: time series.![](/images/Screenshot_2026-06-25_194629.png)
 
 6.  **¡A ponerlo bonito!** En el menú de la derecha, busca la sección **Panel options** y en *Title* escribe "RAM Libre".
 
@@ -158,9 +158,9 @@ Aquí tienes cómo hacerlo en un par de clics para que arranque solo y de forma 
 
 **El último toque maestro (para que sea invisible):**
 
--   En la lista del Programador de tareas, busca la tarea que acabas de crear ("Iniciar Prometheus"), haz doble clic sobre ella para abrir sus Propiedades.
+- En la lista del Programador de tareas, busca la tarea que acabas de crear ("Iniciar Prometheus"), haz doble clic sobre ella para abrir sus Propiedades.
 
--   En la pestaña *General*, marca la casilla **"Ejecutar tanto si el usuario inició sesión como si no"** y también marca **"Ejecutar con los privilegios más altos"**. (Te pedirá la contraseña de tu usuario de Windows para confirmar).
+- En la pestaña *General*, marca la casilla **"Ejecutar tanto si el usuario inició sesión como si no"** y también marca **"Ejecutar con los privilegios más altos"**. (Te pedirá la contraseña de tu usuario de Windows para confirmar).
 
 ¡Y listo! Ya puedes reiniciar el ordenador tranquilamente. A partir de ahora, Grafana, Windows Exporter y Prometheus arrancarán solos en segundo plano sin que tú veas ninguna consola negra, y tendrás tu dashboard de métricas siempre disponible en `localhost:3000`.
 
@@ -168,17 +168,17 @@ Aquí tienes cómo hacerlo en un par de clics para que arranque solo y de forma 
 
 **Los datos de Prometheus**
 
--   **¿Dónde se guardan?** Cuando arrancas Prometheus por primera vez, él crea automáticamente una carpeta llamada `data` justo al lado del archivo `prometheus.exe`. Ahí dentro es donde va escribiendo todo el historial en su propio formato. Aunque cierres la ventana negra y la vuelvas a abrir mañana, Prometheus leerá esa carpeta y el gráfico continuará donde lo dejaste.
+- **¿Dónde se guardan?** Cuando arrancas Prometheus por primera vez, él crea automáticamente una carpeta llamada `data` justo al lado del archivo `prometheus.exe`. Ahí dentro es donde va escribiendo todo el historial en su propio formato. Aunque cierres la ventana negra y la vuelvas a abrir mañana, Prometheus leerá esa carpeta y el gráfico continuará donde lo dejaste.
 
--   **El borrado automático (Retención):** Por defecto, Prometheus está configurado para guardar los datos durante **15 días**. Una vez que se alcanza el día 16, empieza a borrar automáticamente los datos más antiguos. Nunca va a crecer de forma descontrolada.
+- **El borrado automático (Retención):** Por defecto, Prometheus está configurado para guardar los datos durante **15 días**. Una vez que se alcanza el día 16, empieza a borrar automáticamente los datos más antiguos. Nunca va a crecer de forma descontrolada.
 
--   **¿Cómo borrarlo tú manualmente?** Como esto es un laboratorio para hacer pruebas, si algún día quieres hacer "borrón y cuenta nueva", es súper sencillo:
+- **¿Cómo borrarlo tú manualmente?** Como esto es un laboratorio para hacer pruebas, si algún día quieres hacer "borrón y cuenta nueva", es súper sencillo:
 
-    -   Cierra la ventana negra de Prometheus.
+  - Cierra la ventana negra de Prometheus.
 
-    -   Ve a la carpeta donde lo tienes guardado.
+  - Ve a la carpeta donde lo tienes guardado.
 
-    -   Selecciona la carpeta **`data`** y bórrala sin miedo.
+  - Selecciona la carpeta **`data`** y bórrala sin miedo.
 
-    -   La próxima vez que arranques Prometheus, creará una carpeta `data` nueva y empezará a grabar desde cero.
+  - La próxima vez que arranques Prometheus, creará una carpeta `data` nueva y empezará a grabar desde cero.
 :::
