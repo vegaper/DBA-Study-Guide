@@ -5,7 +5,28 @@ format: html
 
 En este capítulo abordaremos la base común a todas las variantes de SQL. Aunque cada SGBD tiene sus particularidades, la sintaxis fundamental es universal. Para los ejemplos prácticos utilizaremos datasets reales de películas (`imdb_movies.csv`) y de salud mundial (`world_health_org.csv`).
 
-Para empezar, antes de usar un gestor de bases de datos vamos a usar la web <https://sqliteonline.com/>
+Para empezar, antes de usar un gestor de bases de datos vamos a usar la web <https://sqliteonline.com/> que nos permite trabajar en SQLite, MariaDB, PostgreSQL y MS SQL.
+
+Nosotros en esta introducción a SQL vamos a trabajar con SQLite porque es muy amigable para una primera toma de contacto.
+
+::: {.callout-note title="Nota sobre el Estándar SQL, los Dialectos y la Portabilidad"}
+### ¿Por qué lo que lees aquí puede variar según el motor de base de datos?
+
+El lenguaje SQL está regulado por un estándar internacional (ANSI/ISO SQL). Sin embargo, ningún motor de base de datos lo implementa al 100% de la misma manera. Cada motor (**SQLite, PostgreSQL, MySQL, SQL Server, Oracle**) añade sus propias funciones, optimizaciones o flexibilidades sintácticas. A estas variaciones las llamamos **dialectos de SQL**.
+
+Durante el curso trabajaremos principalmente con **SQLite** por su sencillez y rapidez de despliegue, pero nuestro objetivo es que aprendas a escribir **SQL portable**: consultas que funcionen con los mínimos cambios posibles en cualquier entorno profesional.
+
+------------------------------------------------------------------------
+
+### Buenas prácticas para escribir SQL portable
+
+1.  **Respeta el orden de ejecución lógico:** Aunque algunos motores (como SQLite) sean permisivos con ciertos atajos —por ejemplo, permitir alias de columnas en el `WHERE`—, acostúmbrate a seguir la norma general para evitar que tus consultas fallen en otros sistemas.
+2.  **Usa sintaxis explícita:** Prefiere siempre `JOIN ... ON` en lugar de relacionar tablas en la cláusula `WHERE`. Es la norma estándar y hace las consultas más legibles y mantenibles.
+3.  **Cuidado con las comillas:**
+    - Usa **comillas simples** (`'texto'`) para valores de texto/cadenas.
+    - Usa **comillas dobles** (`"columna"`) o directamente nada para los nombres de tablas y columnas.
+4.  **Atención a las funciones de fecha, texto y paginación:** Son las que más varían entre motores. Mientras en SQLite o PostgreSQL usamos `LIMIT` para paginar, SQL Server usa `TOP` y Oracle `FETCH FIRST`.
+:::
 
 ------------------------------------------------------------------------
 
@@ -32,6 +53,12 @@ WHERE country = 'USA';
 > **¡Uso de alias en el WHERE!**\
 > Podrías pensar que si has llamado `puntuacion` a la columna, puedes usarla en el `WHERE` así: `WHERE puntuacion > 8.0`. **Esto dará error**.\
 > El motor SQL ejecuta las instrucciones en este orden: `FROM` $\rightarrow$ `WHERE` $\rightarrow$ `SELECT`. Cuando el motor está evaluando el `WHERE`, todavía no ha llegado al `SELECT`, por lo que **aún no sabe que ese alias existe**. En el `WHERE` siempre debes usar el nombre original de la columna.
+
+::: {.note title="La excepción de SQLite"}
+Aunque el estándar SQL prohíbe usar alias en el WHERE debido al orden de ejecución, SQLite incluye una excepción especial y sí lo permite para hacer la escritura más rápida.
+
+Sin embargo, \*\*es una mala práctica depender de esto\*\*. Acostúmbrate a usar siempre el nombre original en el WHERE; de lo contrario, tus consultas fallarán cuando trabajes con otros motores como PostgreSQL, Oracle o SQL Server.
+:::
 
 ![](images/paste-14_1.png)
 
@@ -438,4 +465,342 @@ El `HAVING` evalúa las condiciones *después* de haber hecho el `GROUP BY`. Sir
 5\. Al evaluar la condición, se preguntó: *¿Es `'NA' <> 'NA'`?* Como es Falso, el `HAVING` **descartó a todo el grupo de Roger Moore** de un plumazo.
 
 > **Nota para otros motores SQL:** Esta trampa del `HAVING` solo te ocurrirá en SQLite o en versiones antiguas de MySQL. Si intentas ejecutar la consulta del `HAVING` en SQL Server, PostgreSQL u Oracle, te lanzará un error de sintaxis avisándote de que no puedes poner la columna `bondactorsalary` en el `HAVING` a menos que uses una función de agregación (como `MAX`, `MIN`, etc.) o la incluyas en el `GROUP BY`.
+:::
+
+# Agregaciones Condicionales
+
+En unaq agregación condicional restringimos la variable sobre la cual buscamos operar al cumplimiento de una o más condiciones. En otras palabras, realizarmos una operación sobre un subconjunto de observaciones (filas) que cumplan con una o más condiciones especfícas. Para implementar una agreagación condicional podemos usar la función `CASE WHEN` dentro de la función de agregación.
+
+En la siguiente query contamos cuántas películas duran más de 120 minutos y cuántas duran menos o igual a 120 minutos.
+
+``` sql
+
+SELECT 
+    SUM(CASE WHEN duration > 120 THEN 1 ELSE 0 END) AS peliculas_largas,   
+    SUM(CASE WHEN duration <= 120 THEN 1 ELSE 0 END) AS peliculas_cortas
+FROM imdb_movies;
+```
+
+En la siguiente query calculamos la suma de los ingresos por sector, usando `CASE WHEN` dentro de la función `SUM`.
+
+``` sql
+SELECT SUM(CASE WHEN SECTOR 0 'Technology' then Revenue END) AS Revenue_Technology,
+       SUM(CASE WHEN SECTOR = 'Healthcare' THEN Revenue END) AS Revenue_Healthcare,
+       SUM(CASE WHEN SECTOR = 'Finance' THEN Revenue END) AS Revenue_Finance
+FROM fortune;
+```
+
+# Trabajando con Fechas y Tiempos en SQL Lite
+
+Trabajar con fechas en SQLite tiene una gran particularidad que suele confundir bastante al principio: SQLite no tiene un tipo de datos nativo para fechas (a diferencia de otros motores como PostgreSQL o SQL Server, que tienen DATE o TIMESTAMP).
+
+En su lugar, SQLite almacena las fechas como datos de tipo texto, entero o decimal, usando sus funciones de fecha incorporadas para operar con ellas.
+
+El estándar recomendado: Cadenas de texto (ISO-8601) La mejor práctica en SQLite es guardar las fechas como texto en formato estándar ISO-8601:
+
+Solo fecha: 'YYYY-MM-DD' (ej. '2026-07-28')
+
+Fecha y hora: 'YYYY-MM-DD HH:MM:SS' (ej. '2026-07-28 10:30:00')
+
+¿Por qué este formato? Porque al usar la estructura año-mes-día, el orden alfabético coincide exactamente con el orden cronológico. Eso permite filtrar con \< o \> y usar ORDER BY directamente sin problemas.
+
+En SQL Lite tenemos que extraer la fecha de una columna de tipo `DATETIME` para poder trabajar con ella. Para ello podemos usar la función `DATE()`.
+
+**Insertar la fecha actual automáticamente**
+
+``` sql
+CREATE TABLE usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    fecha_registro TEXT DEFAULT CURRENT_DATE,          -- Solo 'YYYY-MM-DD'
+    creado_en TEXT DEFAULT CURRENT_TIMESTAMP          -- 'YYYY-MM-DD HH:MM:SS'
+);
+```
+
+**Funciones principales para manipular fechas**
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Función** | **¿Qué devuelve?** | **Ejemplo** | **Resultado** |
+| `date(...)` | La fecha | `SELECT date('now');` | `'2026-07-28'` |
+| `time(...)` | La hora | `SELECT time('now');` | `'10:30:00'` |
+| `datetime(...)` | Fecha y hora | `SELECT datetime('now');` | `'2026-07-28 10:30:00'` |
+| `strftime(...)` | Formato personalizado | `SELECT strftime('%Y', 'now');` | `'2026'` |
+| `julianday(...)` | Días julianos (decimal) | `SELECT julianday('now');` | `2461250.93...` |
+
+**Modificadores (Añadir o restar tiempo)**
+
+```{sql}
+-- Sumar o restar días, meses o años
+SELECT date('now', '+7 days');             -- Fecha dentro de una semana
+SELECT date('now', '-1 month');            -- Fecha hace un mes
+SELECT date('now', '+1 year', '-2 days');  -- Combinación de varios modificadores
+
+-- Buscar inicios de periodo
+SELECT date('now', 'start of month');      -- Primer día del mes actual
+SELECT date('now', 'start of year');       -- 1 de enero del año actual
+```
+
+String function time: `strftime()`
+
+STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para extraer el año, mes o día de una fecha, el resultado es un texto, por lo que si queremos hacer comparaciones con números, debemos castear el resultado a `INTEGER` o `REAL`
+
+ejemplo: `select cast (STRFTIME('%m', fecha) as integer) as mes_numerico`
+
+- `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
+
+- `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
+
+- `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
+
+- `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
+
+- `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
+
+- `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
+
+- `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
+
+- `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
+
+- `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
+
+```{sql}
+SELECT 
+    strftime('%Y-%m', fecha_venta) AS mes,
+    COUNT(*) AS total_ventas
+FROM ventas
+GROUP BY mes;
+```
+
+**Calcular la diferencia de días entre dos fechas**
+
+Dado que las fechas en texto no se pueden restar directamente, convertimos la fecha a días julianos con `julianday()`:
+
+```{sql}
+SELECT 
+    nombre_tarea,
+    CAST(julianday(fecha_fin) - julianday(fecha_inicio) AS INTEGER) AS dias_duracion
+FROM proyectos;
+```
+
+::: practica
+# Práctica Individual SQL 02
+
+Ejercicios prácticos de consultas SQL sobre bases de datos reales. Pon a prueba tus conocimientos de agregación, filtrado y análisis de datos .
+
+------------------------------------------------------------------------
+
+## EJERCICIO 1: Duración de Películas
+
+**Tabla:** `imdb_movies`
+
+Analiza la distribución de películas según su duración utilizando la tabla `imdb_movies` .
+
+- **Menos de 60 min:** ¿Cuántas películas tienen una duración inferior a 60 minutos?
+- **Entre 60 y 100 min:** ¿Cuántas películas se encuentran en el rango de 60 a 100 minutos?
+- **Más de 100 min:** ¿Cuántas películas superan los 100 minutos de duración?
+
+```{sql}
+select 
+Case 
+	when imdb_movies.duration <60 THEN '<60'
+    when imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
+    when imdb_movies.duration >100 THEN '>100'
+    ELSE 'Duración desconocida' 
+END
+as rango_duracion
+,count(*) as n
+from imdb_movies
+GROUP by 
+Case 
+	when imdb_movies.duration <60 THEN '<60'
+    when imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
+    when imdb_movies.duration >100 THEN '>100'
+END
+
+```
+
+------------------------------------------------------------------------
+
+## EJERCICIO 2: Películas de Acción Cortas
+
+**Tabla:** `imdb_movies`
+
+Filtra las películas del género acción que tengan una duración inferior a 60 minutos en la tabla `imdb_movies` .
+
+- **Contar:** ¿Cuántas películas de acción duran menos de 60 minutos?
+
+  ``` sql
+  select
+      count (*)
+  from imdb_movies
+  where 
+          duration <60 
+          AND gender like '%Action%'
+  ```
+
+- **Listar:** Obtén un listado completo con los títulos de dichas películas .
+
+  ```{sql}
+  select 
+      duration
+      ,movie_title
+      ,gender
+  from imdb_movies
+  where 
+      duration <60 
+      AND gender like '%Action%'
+  ```
+
+------------------------------------------------------------------------
+
+## EJERCICIO 3: Bitcoin - Tendencia Alcista en 2018
+
+**Tabla:** `bitcoin_daily_rates_formatdate`
+
+Trabaja con la tabla `bitcoin_daily_rates_formatdate` para analizar el campo `High` durante el año 2018 .
+
+- **Mínimo de cotización:** ¿Cuál sería el día con la cotización más baja dentro de una tendencia alcista (campo `High`) en 2018?
+
+  Nota: hacemos limit 5 para asegurarnos de que no hay empate y por lo tanto más de un día con la mínima, pero luego seleccionaremos sólo el día que tenga el mínimo valor. \
+
+  ``` sql
+  select * from bitcoin_daily_rates_formatdate
+  where 
+  date between '2018-00-00' AND '2018-99-99'
+  ORDER BY high asc
+  limit 5
+  ```
+
+- **Media ese día:** ¿Cuál es la media de cotización correspondiente a ese mismo día?
+
+  ``` sql
+  select *,
+  (open + high +low + close )/4 as media_cotización
+  from bitcoin_daily_rates_formatdate
+  where date = '2018-12-15'
+  ```
+
+------------------------------------------------------------------------
+
+## EJERCICIO 4: Películas por Género y Votos
+
+**Tabla:** `imdb_movies`
+
+Muestra el número de películas por género y la película con mayor número de votos (`num_voted_users`) en cada caso . Respeta el orden indicado: `Action` \| `Crime` \| `Comedy` \| `Drama` \| `Romance` y asigna cada película al primero de estos géneros en los que aparezca. Ignora los demás para las agregaciones.
+
+- Para cada género, indica el total de películas y el título con mayor número de votos.
+
+  ``` sql
+  select 
+   case 
+   	when  gender like '%Action%' then 'Action'
+   	when  gender like '%Crime%' then  'Crime' 
+   	when  gender like '%Comedy%' then 'Comedy'
+   	when  gender like '%Drama%' then  'Drama' 
+   	when  gender like '%Romance%' then 'Romance' 
+   END as primera_categoria
+   
+    ,case 
+   	when  gender like '%Action%' then max(num_voted_users)
+   	when  gender like '%Crime%' then  max(num_voted_users) 
+   	when  gender like '%Comedy%' then max(num_voted_users)
+   	when  gender like '%Drama%' then  max(num_voted_users)
+   	when  gender like '%Romance%' then max(num_voted_users)
+   END as max_votos
+   
+   ,case 
+   	when  gender like '%Action%' then sum(1)
+   	when  gender like '%Crime%' then  sum(1)
+   	when  gender like '%Comedy%' then sum(1)
+   	when  gender like '%Drama%' then  sum(1)
+   	when  gender like '%Romance%' then sum(1)
+   END as n_pelis
+  , movie_title
+
+  from imdb_movies
+  where gender like '%Action%'
+   or gender like '%Crime%'
+   or gender like '%Comedy%'
+   or gender like '%Drama%'
+   or gender like '%Romance%'
+
+  group by 
+   case 
+   when  gender like '%Action%' then 'Action'
+   when  gender like '%Crime%' then  'Crime' 
+   when  gender like '%Comedy%' then 'Comedy'
+   when  gender like '%Drama%' then  'Drama' 
+   when  gender like '%Romance%' then 'Romance' 
+   END
+   order by num_voted_users desc
+   
+  ```
+
+------------------------------------------------------------------------
+
+## EJERCICIO 5: Personajes de Star Wars
+
+**Tabla:** `star_wars_characters`
+
+Usando la tabla `star_wars_characters`, agrupa los personajes por color de ojos (`eye_color`) y planeta de origen (`homeworld`) .
+
+- **Contar personajes:** Muestra cuántos personajes comparten el mismo color de ojos y planeta de origen .
+- **Filtrar datos:** Excluir colores de ojos `unknown` y planetas sin datos o nombre (`NA`) .
+
+------------------------------------------------------------------------
+
+## EJERCICIO 6: James Bond - Presupuesto de Películas
+
+**Tabla:** `jamesbond`
+
+Identifica y calcula el presupuesto de las películas de la saga James Bond que cumplan las siguientes condiciones, usando la tabla `jamesbond` :
+
+- **Director:** Dirigidas por John Glen .
+- **Actor protagonista:** Protagonizadas por Timothy Dalton .
+- **Cálculo:** Calcula el presupuesto total de dichas películas .
+
+------------------------------------------------------------------------
+
+## EJERCICIO 7: Créditos por Estado Personal
+
+**Tabla:** `loan-data`
+
+Analiza la tabla `loan-data` para obtener información sobre los créditos según el estado personal del solicitante .
+
+- **Créditos otorgados:** ¿Cuál es la cantidad y el número de créditos concedidos, agrupados por estado personal?
+- **Créditos no otorgados:** ¿Cuál es la cantidad y el número de créditos denegados, agrupados por estado personal?
+
+------------------------------------------------------------------------
+
+## EJERCICIO 8: Películas de Acción con Alta Valoración
+
+**Tabla:** `imdb_movies`
+
+Obtén un listado de películas de acción de la tabla `imdb_movies` que cumplan todos los criterios siguientes :
+
+1.  **Likes del actor protagonista:** Más de 10.000 likes en Facebook .
+2.  **Valoración en IMDb:** Puntuación de al menos 8 sobre 10 .
+3.  **Fecha de estreno:** Películas con fecha anterior a 2012 .
+
+------------------------------------------------------------------------
+
+## EJERCICIO 9: Top 20 Películas por Presupuesto y Beneficio
+
+**Tabla:** `imdb_movies`
+
+Usando la tabla `imdb_movies`, obtén las 20 películas junto a su género en cada uno de los siguientes rankings :
+
+- **Mayor presupuesto:** Las 20 películas con el presupuesto más elevado y el género al que pertenecen .
+- **Mayor beneficio:** Las 20 películas con el mayor beneficio obtenido y el género al que pertenecen .
+
+------------------------------------------------------------------------
+
+## Propuesta Adicional: ¡Regala un Ejercicio a tus Compañeros!
+
+Como parte de esta práctica individual, cada estudiante deberá crear y proponer un ejercicio SQL original para compartir con el resto de la clase .
+
+- **Sé creativo:** Diseña una consulta interesante y retadora usando cualquiera de las tablas trabajadas .
+- **Comparte y aprende:** El intercambio de ejercicios enriquece el aprendizaje colectivo y refuerza los conceptos .
 :::
