@@ -34,11 +34,11 @@ Durante el curso trabajaremos principalmente con **SQLite** por su sencillez y r
 
 Toda consulta relacional parte de tres pilares:
 
-\* **`SELECT`**: Define qué columnas queremos recuperar.
+- **`SELECT`**: Define qué columnas queremos recuperar.
 
-\* **`FROM`**: Especifica la tabla origen de los datos.
+- **`FROM`**: Especifica la tabla origen de los datos.
 
-\* **`WHERE`**: Filtra las filas según una condición lógica.
+- **`WHERE`**: Filtra las filas según una condición lógica.
 
 ## Los Alias (`AS`) y el orden de ejecución
 
@@ -47,7 +47,7 @@ Podemos renombrar temporalmente las columnas o las tablas usando la palabra clav
 ``` sql
 SELECT movie_title AS titulo, imdb_score AS puntuacion 
 FROM imdb_movies 
-WHERE country = 'USA';
+WHERE COUNTry = 'USA';
 ```
 
 > **¡Uso de alias en el WHERE!**\
@@ -68,7 +68,7 @@ Disponemos de operadores como `=`, `!=` (o `<>`), `>`, `<`, `>=`, `<=` y `BETWEE
 
 ## Operadores en campos no numéricos (Texto y Fechas)
 
-Los operadores de comparación no se limitan a números. Si los usamos con texto o fechas, SQL aplica un orden lexicográfico (alfabético) o cronológico.
+Los operadores de comparación no se LIMITan a números. Si los usamos con texto o fechas, SQL aplica un orden lexicográfico (alfabético) o cronológico.
 
 ## El Operador `BETWEEN` (Rangos inclusivos)
 
@@ -112,7 +112,7 @@ WHERE duration BETWEEN 90 AND 120;
 >
 >     El motor SQL incluirá a "Argentina" y "Bolivia", pero cuando evalúe "Canada", "Chile" o "Colombia", el sistema dirá: *"Un momento, estas palabras son mayores que 'C' (están más adelante en el alfabeto), así que quedan fuera"*. El único país con la letra C que pasaría el filtro sería uno que se llamase literalmente "C", a secas.
 >
->     **Por eso el límite superior se establece en 'D':** Al poner `BETWEEN 'A' AND 'D'`, el límite superior es exactamente el carácter 'D'. \* "Canada" se incluye porque alfabéticamente es menor que 'D'. \* "Colombia" se incluye porque alfabéticamente es menor que 'D'. \* "Denmark" (Dinamarca) **queda excluido** porque "Denmark" tiene más letras y, por tanto, es mayor que 'D' a secas. \* El único país con 'D' que se colaría en los resultados sería uno que se llamase exactamente "D".
+>     **Por eso el límite superior se establece en 'D':** Al poner `BETWEEN 'A' AND 'D'`, el límite superior es exactamente el carácter 'D'. - "Canada" se incluye porque alfabéticamente es menor que 'D'. - "Colombia" se incluye porque alfabéticamente es menor que 'D'. - "Denmark" (Dinamarca) **queda excluido** porque "Denmark" tiene más letras y, por tanto, es mayor que 'D' a secas. - El único país con 'D' que se colaría en los resultados sería uno que se llamase exactamente "D".
 >
 >     > **La alternativa profesional (y menos confusa):** Aunque el truco de `BETWEEN 'A' AND 'D'` funciona para atrapar todo lo que empieza por A, B y C, suele generar esta misma confusión que has tenido tú al leerlo. Por eso, para evitar malentendidos, en entornos profesionales se suele preferir usar operadores matemáticos o comodines para los textos:
 >     >
@@ -130,9 +130,9 @@ WHERE duration BETWEEN 90 AND 120;
 
 1.  **El peligro de los nulos con `NOT`:** El valor `NULL` en SQL significa "desconocido". Si evalúas `WHERE NOT (Adult_literacy_rate = 96.7)`, las filas con `NULL` **desaparecerán**. Cualquier comparación directa con un nulo da como resultado nulo, y el `WHERE` solo deja pasar lo que es estrictamente `TRUE`. Para trabajar con nulos hay que usar `IS NULL` o `IS NOT NULL`.
 
-2.  **La prioridad de `AND` sobre `OR`:** Si mezclas ambos sin paréntesis: `WHERE country = 'USA' OR country = 'UK' AND duration > 120`, el motor evaluará primero el `AND`.\
+2.  **La prioridad de `AND` sobre `OR`:** Si mezclas ambos sin paréntesis: `WHERE Country = 'USA' OR Country = 'UK' AND duration > 120`, el motor evaluará primero el `AND`.\
     Esto significa: *"Tráeme cualquier película de USA (dure lo que dure) O BIEN películas de UK que duren más de 120 min"*.\
-    **Solución:** Usa siempre paréntesis para forzar la lógica que deseas: `WHERE (country = 'USA' OR country = 'UK') AND duration > 120`.
+    **Solución:** Usa siempre paréntesis para forzar la lógica que deseas: `WHERE (Country = 'USA' OR Country = 'UK') AND duration > 120`.
 
 ::: nota
 La trampa de los tipos de datos en SQLite:
@@ -276,7 +276,7 @@ SELECT
 FROM world_health_org;
 ```
 
-**¿Qué pasa con PostgreSQL y Oracle?** Motores muy apegados al estándar estricto como PostgreSQL no tienen una función `IF()` ni `IIF()` nativa. En estos motores, la única forma oficial de hacer un if/else es utilizar la sintaxis case when
+**¿Qué pasa con PostgreSQL y Oracle?** Motores muy apegados al estándar estricto como PostgreSQL no tienen una función `IF()` ni `IIF()` nativa. En estos motores, la única forma oficial de hacer un if/else es utilizar la sintaxis CASE WHEN
 
 ``` sql
 -- La alternativa universal (funciona en TODOS los motores, incluyendo SQLite)
@@ -397,7 +397,7 @@ Observa esta sencilla tabla:
 
 ![](images/paste-25_1.png)
 
-veamos que pasa si ponemos la condicion de que las ventas sean mayores de 15 en el where:\
+veamos que pasa si ponemos la condicion de que las ventas sean mayores de 15 en el WHERE:\
 ![](images/paste-27_1.png)
 
 Ahora veamos que pasa si la condición en la cláusula HAVING, como ya hemos dicho, para usarla correctamente en el having, tenemos que usar el valor agregado, en este caso suma:\
@@ -484,7 +484,7 @@ FROM imdb_movies;
 En la siguiente query calculamos la suma de los ingresos por sector, usando `CASE WHEN` dentro de la función `SUM`.
 
 ``` sql
-SELECT SUM(CASE WHEN SECTOR 0 'Technology' then Revenue END) AS Revenue_Technology,
+SELECT SUM(CASE WHEN SECTOR 0 'Technology' THEN Revenue END) AS Revenue_Technology,
        SUM(CASE WHEN SECTOR = 'Healthcare' THEN Revenue END) AS Revenue_Healthcare,
        SUM(CASE WHEN SECTOR = 'Finance' THEN Revenue END) AS Revenue_Finance
 FROM fortune;
@@ -545,7 +545,7 @@ String function time: `strftime()`
 
 STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para extraer el año, mes o día de una fecha, el resultado es un texto, por lo que si queremos hacer comparaciones con números, debemos castear el resultado a `INTEGER` o `REAL`
 
-ejemplo: `select cast (STRFTIME('%m', fecha) as integer) as mes_numerico`
+ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
 
 - `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
 
@@ -601,25 +601,38 @@ Analiza la distribución de películas según su duración utilizando la tabla `
 - **Entre 60 y 100 min:** ¿Cuántas películas se encuentran en el rango de 60 a 100 minutos?
 - **Más de 100 min:** ¿Cuántas películas superan los 100 minutos de duración?
 
-```{sql}
-select 
+``` sql
+SELECT 
+    count (CASE WHEN duration >100 THEN 1 END) AS duracion_mayor_100,
+    count (CASE WHEN duration BETWEEN 60 AND 100 THEN 1 END) AS duracion_60_100,
+    count (CASE WHEN duration <60 THEN 1 END) AS duracion_menor_60
+FROM imdb_movies
+```
+
+![](images/2026-07-29-09-35-22.png)
+
+Otra forma de hacerlo es usando `CASE WHEN` en el `SELECT` y luego agrupando por el mismo `CASE WHEN` en el `GROUP BY`:
+
+``` sql
+SELECT 
 Case 
-	when imdb_movies.duration <60 THEN '<60'
-    when imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
-    when imdb_movies.duration >100 THEN '>100'
+    WHEN imdb_movies.duration <60 THEN '<60'
+    WHEN imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
+    WHEN imdb_movies.duration >100 THEN '>100'
     ELSE 'Duración desconocida' 
 END
 as rango_duracion
-,count(*) as n
-from imdb_movies
+,COUNT(*) AS n
+FROM imdb_movies
 GROUP by 
 Case 
-	when imdb_movies.duration <60 THEN '<60'
-    when imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
-    when imdb_movies.duration >100 THEN '>100'
+    WHEN imdb_movies.duration <60 THEN '<60'
+    WHEN imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
+    WHEN imdb_movies.duration >100 THEN '>100'
 END
-
 ```
+
+![](images/2026-07-29-09-36-01.png)
 
 ------------------------------------------------------------------------
 
@@ -632,26 +645,28 @@ Filtra las películas del género acción que tengan una duración inferior a 60
 - **Contar:** ¿Cuántas películas de acción duran menos de 60 minutos?
 
   ``` sql
-  select
-      count (*)
-  from imdb_movies
-  where 
+  SELECT
+      COUNT (*)
+  FROM imdb_movies
+  WHERE 
           duration <60 
-          AND gender like '%Action%'
+          AND gender LIKE '%Action%'
   ```
 
 - **Listar:** Obtén un listado completo con los títulos de dichas películas .
 
-  ```{sql}
-  select 
+  ``` sql
+  SELECT 
       duration
       ,movie_title
       ,gender
-  from imdb_movies
-  where 
+  FROM imdb_movies
+  WHERE 
       duration <60 
-      AND gender like '%Action%'
+      AND gender LIKE '%Action%'
   ```
+
+  ![](images/2026-07-29-09-41-13.png)
 
 ------------------------------------------------------------------------
 
@@ -663,80 +678,77 @@ Trabaja con la tabla `bitcoin_daily_rates_formatdate` para analizar el campo `Hi
 
 - **Mínimo de cotización:** ¿Cuál sería el día con la cotización más baja dentro de una tendencia alcista (campo `High`) en 2018?
 
-  Nota: hacemos limit 5 para asegurarnos de que no hay empate y por lo tanto más de un día con la mínima, pero luego seleccionaremos sólo el día que tenga el mínimo valor. \
+  Nota: hacemos LIMIT 5 para asegurarnos de que no hay empate y por lo tanto más de un día con la mínima, pero luego seleccionaremos sólo el día que tenga el mínimo valor.\
+
+  Podemos simplemente ordenar y ver cuál o cuáles son los valores más bajos
 
   ``` sql
-  select * from bitcoin_daily_rates_formatdate
-  where 
-  date between '2018-00-00' AND '2018-99-99'
-  ORDER BY high asc
-  limit 5
+  SELECT * FROM bitcoin_daily_rates_formatdate
+  WHERE 
+  date BETWEEN '2018-00-00' AND '2018-99-99'
+  ORDER BY high ASC
+  LIMIT 5
   ```
+
+  O podemos usar la agregación MIN para conseguirlo
+
+  ``` sql
+  SELECT date, min(high) as cotización_mínima FROM bitcoin_daily_rates_formatdate
+  WHERE 
+  date BETWEEN '2018-00-00' AND '2018-99-99'
+  ```
+
+  ![](images/2026-07-29-10-23-08.png)
 
 - **Media ese día:** ¿Cuál es la media de cotización correspondiente a ese mismo día?
 
   ``` sql
-  select *,
-  (open + high +low + close )/4 as media_cotización
-  from bitcoin_daily_rates_formatdate
-  where date = '2018-12-15'
+  SELECT 
+    date
+    , min(high) as cotización_mínima 
+    , (open + high +low + close )/4 AS media_cotización
+    FROM bitcoin_daily_rates_formatdate
+    WHERE 
+    date BETWEEN '2018-00-00' AND '2018-99-99'
   ```
 
-------------------------------------------------------------------------
+  ## ![](images/2026-07-29-10-24-47.png)
 
 ## EJERCICIO 4: Películas por Género y Votos
 
 **Tabla:** `imdb_movies`
 
-Muestra el número de películas por género y la película con mayor número de votos (`num_voted_users`) en cada caso . Respeta el orden indicado: `Action` \| `Crime` \| `Comedy` \| `Drama` \| `Romance` y asigna cada película al primero de estos géneros en los que aparezca. Ignora los demás para las agregaciones.
+Muestra el número de películas por género y la película con mayor número de votos (`num_voted_users`) en cada caso . Respeta el orden indicado: `Action` \| `Crime` \| `Comedy` \| `Drama` \| `Romance` y asigna cada película al primero de estos géneros en los que aparezca. Ignora los demás géneros para las agregaciones.
 
 - Para cada género, indica el total de películas y el título con mayor número de votos.
 
   ``` sql
-  select 
-   case 
-   	when  gender like '%Action%' then 'Action'
-   	when  gender like '%Crime%' then  'Crime' 
-   	when  gender like '%Comedy%' then 'Comedy'
-   	when  gender like '%Drama%' then  'Drama' 
-   	when  gender like '%Romance%' then 'Romance' 
-   END as primera_categoria
-   
-    ,case 
-   	when  gender like '%Action%' then max(num_voted_users)
-   	when  gender like '%Crime%' then  max(num_voted_users) 
-   	when  gender like '%Comedy%' then max(num_voted_users)
-   	when  gender like '%Drama%' then  max(num_voted_users)
-   	when  gender like '%Romance%' then max(num_voted_users)
-   END as max_votos
-   
-   ,case 
-   	when  gender like '%Action%' then sum(1)
-   	when  gender like '%Crime%' then  sum(1)
-   	when  gender like '%Comedy%' then sum(1)
-   	when  gender like '%Drama%' then  sum(1)
-   	when  gender like '%Romance%' then sum(1)
-   END as n_pelis
-  , movie_title
+  SELECT 
+   CASE 
+    WHEN  gender LIKE '%Action%' THEN 'Action'
+    WHEN  gender LIKE '%Crime%' THEN  'Crime' 
+    WHEN  gender LIKE '%Comedy%' THEN 'Comedy'
+    WHEN  gender LIKE '%Drama%' THEN  'Drama' 
+    WHEN  gender LIKE '%Romance%' THEN 'Romance' 
+   END AS primera_categoria   
+   , MAX(num_voted_users) AS mas_votada  
+   , COUNT(*) as n_pelis
+   , movie_title
 
-  from imdb_movies
-  where gender like '%Action%'
-   or gender like '%Crime%'
-   or gender like '%Comedy%'
-   or gender like '%Drama%'
-   or gender like '%Romance%'
-
-  group by 
-   case 
-   when  gender like '%Action%' then 'Action'
-   when  gender like '%Crime%' then  'Crime' 
-   when  gender like '%Comedy%' then 'Comedy'
-   when  gender like '%Drama%' then  'Drama' 
-   when  gender like '%Romance%' then 'Romance' 
+  FROM imdb_movies
+  GROUP BY 
+   CASE 
+   WHEN  gender LIKE '%Action%' THEN 'Action'
+   WHEN  gender LIKE '%Crime%' THEN  'Crime' 
+   WHEN  gender LIKE '%Comedy%' THEN 'Comedy'
+   WHEN  gender LIKE '%Drama%' THEN  'Drama' 
+   WHEN  gender LIKE '%Romance%' THEN 'Romance' 
    END
-   order by num_voted_users desc
-   
+  having primera_categoria != 'NULL'
+   ORDER BY num_voted_users DESC
   ```
+
+![](images/2026-07-29-11-36-52.png)
 
 ------------------------------------------------------------------------
 
@@ -747,9 +759,23 @@ Muestra el número de películas por género y la película con mayor número de
 Usando la tabla `star_wars_characters`, agrupa los personajes por color de ojos (`eye_color`) y planeta de origen (`homeworld`) .
 
 - **Contar personajes:** Muestra cuántos personajes comparten el mismo color de ojos y planeta de origen .
-- **Filtrar datos:** Excluir colores de ojos `unknown` y planetas sin datos o nombre (`NA`) .
+- **Filtrar datos:** Excluir colores de ojos `unknown` y planetas sin datos o nombre (`NA`).
 
-------------------------------------------------------------------------
+El truco aquí está en que al pedirnos personajes que compartan color de ojos y planeta, tenemos que eliminar los que sean solo 1.
+
+``` sql
+SELECT 
+eye_color
+,homeworld
+,COUNT (*) AS N
+FROM star_wars_characters_2 
+WHERE homeworld != 'NA' and eye_color != 'unknown'
+GROUP BY eye_color, homeworld
+having count(*) >1
+ORDER BY COUNT(*) DESC
+```
+
+ ![](images/2026-07-29-12-19-27.png)
 
 ## EJERCICIO 6: James Bond - Presupuesto de Películas
 
@@ -759,8 +785,18 @@ Identifica y calcula el presupuesto de las películas de la saga James Bond que 
 
 - **Director:** Dirigidas por John Glen .
 - **Actor protagonista:** Protagonizadas por Timothy Dalton .
-- **Cálculo:** Calcula el presupuesto total de dichas películas .
+- **Cálculo:** Calcula el presupuesto total de dichas películas.
 
+``` sql
+SELECT 
+director
+,actor
+,SUM(budget) as presupuesto_combinado
+,COUNT(distinct jamesbond.film) as películas
+FROM jamesbond
+WHERE director = 'John Glen' AND actor = 'Timothy Dalton'
+```
+![](images/2026-07-29-13-28-31.png)
 ------------------------------------------------------------------------
 
 ## EJERCICIO 7: Créditos por Estado Personal
@@ -772,7 +808,29 @@ Analiza la tabla `loan-data` para obtener información sobre los créditos segú
 - **Créditos otorgados:** ¿Cuál es la cantidad y el número de créditos concedidos, agrupados por estado personal?
 - **Créditos no otorgados:** ¿Cuál es la cantidad y el número de créditos denegados, agrupados por estado personal?
 
-------------------------------------------------------------------------
+``` sql
+ SELECT personal_status
+, class
+, SUM (credit_amount)
+, COUNT(*)
+FROM LoanData
+GROUP BY personal_status, class
+```
+
+![](images/2026-07-29-10-11-51.png)
+
+``` sql
+ SELECT 
+personal_status
+,SUM (CASE WHEN class = 'good' THEN credit_amount END) AS prestamo_concedido
+,sum(CASE WHEN class = 'good' THEN 1 END) AS n_prestamos_concedidos
+,sum (CASE WHEN class = 'bad' THEN credit_amount END ) AS prestamo_rechazados
+,sum(CASE WHEN class = 'bad' THEN 1 END) AS n_prestamos_rechazados
+FROM LoanData
+GROUP BY personal_status
+```
+
+## ![](images/2026-07-29-10-15-40.png)
 
 ## EJERCICIO 8: Películas de Acción con Alta Valoración
 
@@ -783,6 +841,15 @@ Obtén un listado de películas de acción de la tabla `imdb_movies` que cumplan
 1.  **Likes del actor protagonista:** Más de 10.000 likes en Facebook .
 2.  **Valoración en IMDb:** Puntuación de al menos 8 sobre 10 .
 3.  **Fecha de estreno:** Películas con fecha anterior a 2012 .
+
+``` sql
+SELECT  movie_title, gender, imdb_score, actor_1_facebook,title_year FROM imdb_movies
+WHERE   
+    imdb_movies.actor_1_facebook > 10000
+AND imdb_movies.imdb_score >=8
+AND imdb_movies.title_year < 2012
+AND imdb_movies.gender LIKE '%Action%'
+```
 
 ------------------------------------------------------------------------
 
@@ -795,6 +862,18 @@ Usando la tabla `imdb_movies`, obtén las 20 películas junto a su género en ca
 - **Mayor presupuesto:** Las 20 películas con el presupuesto más elevado y el género al que pertenecen .
 - **Mayor beneficio:** Las 20 películas con el mayor beneficio obtenido y el género al que pertenecen .
 
+``` sql
+SELECT movie_title, gender, budget FROM imdb_movies
+ORDER BY budget DESC 
+LIMIT 20
+```
+
+``` sql
+SELECT movie_title, gender, gross FROM imdb_movies
+ORDER BY gross DESC 
+LIMIT 20
+```
+
 ------------------------------------------------------------------------
 
 ## Propuesta Adicional: ¡Regala un Ejercicio a tus Compañeros!
@@ -802,5 +881,154 @@ Usando la tabla `imdb_movies`, obtén las 20 películas junto a su género en ca
 Como parte de esta práctica individual, cada estudiante deberá crear y proponer un ejercicio SQL original para compartir con el resto de la clase .
 
 - **Sé creativo:** Diseña una consulta interesante y retadora usando cualquiera de las tablas trabajadas .
-- **Comparte y aprende:** El intercambio de ejercicios enriquece el aprendizaje colectivo y refuerza los conceptos .
+- **Comparte y aprende:** El intercambio de ejercicios enriquece el aprendizaje colectivo y refuerza los conceptos.
+
+Usando la tabla fortune: Clasifica las empresas en tres categorías según su número de empleados (Employees):
+
+Pequeña: Menos de 10.000 empleados. Mediana: Entre 10.000 y 50.000 empleados. Grande: Más de 50.000 empleados.
+
+Muestra para cada categoría el número total de empresas, el beneficio total acumulado y el beneficio medio.
+
+Filtra únicamente las empresas del sector Financials que pertenezcan a la industria Commercial Banks o Diversified Financials, Y cuyo volumen de ingresos (Revenue) sea superior a 20.000 millones.
+
+``` sql
+SELECT 
+    CASE 
+        WHEN Employees < 10000 THEN 'Pequeña (<10k)'
+        WHEN Employees BETWEEN 10000 AND 50000 THEN 'Mediana (10k-50k)'
+        WHEN Employees > 50000 THEN 'Grande (>50k)'
+    END AS tamano_empresa,
+    COUNT(*) AS total_empresas,
+    ROUND(SUM(Profits),1) AS beneficio_total,
+    ROUND(AVG(Profits),1) AS beneficio_medio
+
+FROM fortune
+
+WHERE Sector = 'Financials' 
+  AND Industry IN ('Commercial Banks', 'Diversified Financials') 
+  AND Revenue > 20000
+  
+GROUP BY 
+    CASE 
+        WHEN Employees < 10000 THEN 'Pequeña (<10k)'
+        WHEN Employees BETWEEN 10000 AND 50000 THEN 'Mediana (10k-50k)'
+        WHEN Employees > 50000 THEN 'Grande (>50k)'
+    END
+ORDER BY beneficio_medio DESC;
+```
+
+![](images/2026-07-29-12-08-39.png)
+
+------------------------------------------------------------------------
+
+## Preguntas de los alumnos
+
+Usando la tabla jamesbond: ¿Cuales son las 5 películas de James Bond con mayor margen sobre ingresos (% del beneficio)? Indicar película, director, actor y margen
+
+``` sql
+select 
+film
+, director
+, boxoffice
+, budget
+, round ((boxoffice - budget),0) as profit 
+, round ((((boxoffice - budget)*100) /boxoffice),2)  as margen
+from jamesbond
+order by margen desc
+limit 5
+```
+
+La lógica del Margen (El "quesito" de las ganancias)El margen sobre ingresos responde a esta pregunta sencilla: "De cada 100 € que entran por taquilla, ¿cuántos euros nos quedan limpios en el bolsillo?"
+
+Si analizamos Dr. No:
+
+- Ingresos (Boxoffice): 448,8 M€ (este es el 100% del dinero recaudado)
+
+- Gasto (Budget): 7,0 M€ (lo que costó hacerla)
+
+- Beneficio (Profit): 441,8 M€ (lo que queda limpio)
+
+Si repartimos la tarta de esos 448,8 M€ recaudados:Tan solo el 1,56% de la recaudación sirvió para cubrir los costes de producción ($7 / 448,8$). El 98,44% restante ($441,8 / 448,8$) es beneficio puro. En resumen: De cada 100 € que la gente se gastó en el cine para ver la película, 1,56 € sirvieron para pagar el presupuesto y 98,44 € fueron ganancia neta. De ahí sale ese 98,44%.
+
+Otras formas de analizar el beneficio:\
+**Rentabilidad sobre el gasto (ROI)** o el **multiplicador de la inversión**:
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Métrica** | **¿Qué pregunta responde?** | **Cálculo en Dr. No** | **Resultado** |
+| **Margen sobre Ingresos** | De lo recaudado, ¿qué % es beneficio? | $441,8 / 448,8 \times 100$ | **98,44%** |
+| **Rentabilidad (ROI)** | Del dinero invertido, ¿qué % hemos ganado? | $441,8 / 7,0 \times 100$ | **6.311%** |
+| **Multiplicador** | ¿Por cuánto se multiplicó el presupuesto? | $448,8 / 7,0$ | **64,1 veces** |
+
+------------------------------------------------------------------------
+Usando la tabla LoanData
+Calcular la cantidad de créditos concedidos según hombres y mujeres, clasificados por tres grupos de edad (menos de 30 años, de 30 a 40 años y más de 40 años), 
+que tienen un coche en propiedad y viven en la casa propia.
+
+``` sql
+select 
+case
+	when age <30 then '<30'
+	when age <=40 then '30>=40'
+	else '>40'
+END AS grupo
+,count(case when class = 'good' then 1 END) AS concecidos
+,count(case when class = 'bad' then 1 END) AS denegados
+
+from LoanData
+where housing = 'own'
+AND property_magnitu = 'car'
+group BY
+case when age <30 then '<30'
+when age <=40 then '30>=40'
+else '>40'
+END
+```
+
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+------------------------------------------------------------------------
+
+``` sql
+
+```
+
 :::
