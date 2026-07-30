@@ -1,16 +1,166 @@
 ---
-title: "Lenguajes SQL"
+title: "Introducción a los Lenguajes SQL y Bases de Datos Relacionales"
 format: html
 ---
 
-El lenguaje SQL se organiza en cuatro grandes categorías:
+# Tipos de Datos: Estructurados, Semi-estructurados y No Estructurados
 
-- Lenguaje de Definición de Datos (DDL Data Definition Language): CREATE, ALTER, DROP, TRUNCATE
+Antes de hablar de SQL, es fundamental entender cómo se organiza la información. No todos los datos se almacenan de la misma forma, y la elección del sistema depende del nivel de estructura que requieran.
 
-- Lenguaje de Manipulación de Datos (DML Data Manipulation Language): SELECT, INSERT, UPDATE, DELETE
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Criterio** | **Datos Estructurados** | **Datos Semi-estructurados** | **Datos No Estructurados** |
+| **Modelo** | Rígido (Tablar: filas y columnas) | Flexible (Etiquetas y jerarquías) | Sin modelo predefinido |
+| **Esquema** | *Schema-on-Write* (se define antes) | *Schema-on-Read* (se interpreta al leer) | Sin esquema explícito |
+| **Ejemplos** | Tablas de SQL, hojas de cálculo | Archivos JSON, XML, YAML | Documentos PDF, audio, imagen, video |
+| **Consulta** | Lenguajes formales (SQL) | Rutas/Campos (XPath, JSON path) | Búsqueda indexada, NLP, Machine Learning |
 
-- Lenguaje de Control de Datos (DCL Data Control Language): GRANT, REVOKE
+## Ventajas e Inconvenientes de los Datos Estructurados
 
-- Lenguaje de Consulta (TQL Transaction Control Language): COMMIT, ROLLBACK, SAVEPOINT
+- **Ventajas:**
 
-Cada una de estas categorías tiene un propósito específico en la gestión y manipulación de bases de datos.\
+  - **Consistencia y Calidad:** Al requerir un esquema previo, se evitan datos duplicados, inconsistentes o mal formados.
+
+  - **Integridad de Negocio:** Permiten aplicar reglas estrictas (restricciones de tipo, claves primarias, claves foráneas).
+
+  - **Rendimiento Predictible:** Las búsquedas sobre índices estructurados son extremadamente rápidas y eficientes.
+
+- **Inconvenientes:**
+
+  - **Poca Flexibilidad:** Cambiar la estructura de una base de datos en producción (modificar tablas, añadir columnas) requiere migraciones planificadas.
+
+  - **Escalabilidad Horizontal Compleja:** Escalar una base de datos relacional en múltiples servidores distribuidos es más difícil que en sistemas NoSQL.
+
+# ¿Cómo funciona una Base de Datos Relacional (RDBMS)?
+
+Un **RDBMS** (*Relational Database Management System*) es un software diseñado para crear, mantener y consultar bases de datos relacionales basadas en el modelo relacional.
+
+```         
+           [ Cliente / Aplicación ]
+                      │
+               ▼ (Consulta SQL)
+┌─────────────────────────────────────────────────────────┐
+│                      Motor RDBMS                        │
+│  1. Parser / Analizador  ────► Verifica sintaxis        │
+│  2. Optimizador          ────► Elige la ruta más rápida │
+│  3. Motor de Ejecución   ────► Procesa los datos        │
+└────────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+                    [ Storage Engine ]
+                             │
+                             ▼
+                   [ Disco / Memoria ]
+```
+
+## Componentes Clave
+
+- **Tablas (Relaciones):** La información se organiza en tablas compuestas por **filas (tuplas)** que representan registros concretos y **columnas (atributos)** que representan los campos de información.
+
+- **Claves (Keys):**
+
+  - **Clave Primaria (*Primary Key*):** Identificador único e irrepetible para cada fila de una tabla.
+
+  - **Clave Foránea (*Foreign Key*):** Campo que conecta una fila de una tabla con la clave primaria de otra, estableciendo relaciones físicas entre datos.
+
+- **Garantía ACID (Propiedades Transaccionales):**
+
+  - **A - Atomicidad:** La transacción ocurre por completo o no ocurre en absoluto (todo o nada).
+
+  - **C - Consistencia:** La base de datos pasa de un estado válido a otro estado válido, respetando todas las reglas.
+
+  - **I - Aislamiento (*Isolation*):** Las transacciones concurrentes no interfieren entre sí.
+
+  - **D - Durabilidad:** Una vez confirmados los cambios, estos persisten incluso tras un fallo del sistema.
+
+# Categorías del Lenguaje SQL
+
+El lenguaje **SQL** (*Structured Query Language*) no es un único bloque monolítico; se divide en **cuatro grandes categorías** según la función que realiza cada instrucción sobre la base de datos:
+
+```         
+                  ┌─────────────────────────────────────────┐
+                  │              Lenguaje SQL               │
+                  └────┬───────────┬───────────┬────────────┘
+                       │           │           │
+           ┌───────────┘           │           └───────────┐
+           ▼                       ▼                       ▼
+        ┌─────┐                 ┌─────┐                 ┌─────┐
+        │ DDL │                 │ DML │                 │ DCL │
+        └─────┘                 └─────┘                 └─────┘
+           │                       │                       │
+Estructura (CREATE...)   Datos (SELECT...)        Permisos (GRANT...)
+           │
+           └───────────────────────┐
+                                   ▼
+                                ┌─────┐
+                                │ TCL │
+                                └─────┘
+                         Transacciones (COMMIT...)
+```
+
+## DDL (Data Definition Language)
+
+Se utiliza para **definir, alterar o eliminar la estructura** de los objetos de la base de datos (tablas, índices, vistas, esquemas).
+
+- `CREATE`: Crea nuevos objetos (tablas, bases de datos).
+
+- `ALTER`: Modifica la estructura de objetos existentes.
+
+- `DROP`: Elimina objetos de forma permanente.
+
+- `TRUNCATE`: Vacía completamente el contenido de una tabla conservando su estructura.
+
+## DML (Data Manipulation Language)
+
+Se encarga de la **manipulación y consulta de los datos** contenidos dentro de las estructuras previamente creadas.
+
+- `SELECT`: Recupera y consulta datos almacenados.
+
+- `INSERT`: Inserta nuevos registros en una tabla.
+
+- `UPDATE`: Modifica registros existentes.
+
+- `DELETE`: Elimina registros específicos bajo ciertas condiciones.
+
+## DCL (Data Control Language)
+
+Gestiona la **seguridad, permisos y niveles de acceso** de los usuarios a los objetos de la base de datos.
+
+- `GRANT`: Otorga privilegios o permisos a usuarios o roles.
+
+- `REVOKE`: Retira privilegios previamente concedidos.
+
+## TCL (Transaction Control Language)
+
+Administra los **cambios generados por las sentencias DML**, agrupándolos en transacciones para garantizar la integridad (propiedades ACID). *(A veces denominado TQL en algunos entornos).*
+
+- `COMMIT`: Guarda de forma permanente todos los cambios de la transacción actual.
+
+- `ROLLBACK`: Revierte los cambios realizados en la transacción actual devolviendo la base de datos a su estado anterior.
+
+- `SAVEPOINT`: Establece un punto de restauración intermedio dentro de una transacción.
+
+# Principales Sistemas RDBMS y Dialectos SQL
+
+Aunque existe un estándar internacional (**ANSI/ISO SQL**), la mayoría de los motores de bases de datos implementan su propio **dialecto** con funciones, extensiones y particularidades sintácticas.
+
+## Puntos en Común
+
+- Utilizan el mismo modelo relacional basado en tablas, claves primarias y foráneas.
+
+- Soportan las instrucciones sintácticas fundamentales (`SELECT`, `INSERT`, `UPDATE`, `DELETE`, `WHERE`, `JOIN`).
+
+- Implementan mecanismos de integridad referencial y propiedades ACID.
+
+## Diferencias y Principales Motores
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Motor RDBMS** | **Tipo / Licencia** | **Características Destacadas** | **Dialecto / Extensión** |
+| **PostgreSQL** | Código abierto (Permisivo) | Cumplimiento estricto de estándares, excelente manejo de JSON, tipos de datos avanzados y extensibilidad. | PL/pgSQL |
+| **MySQL / MariaDB** | Código abierto (GPL / Dual) | Muy popular en desarrollo web (WordPress, LAMP stack), gran velocidad de lectura y facilidad de despliegue. | SQL Estándar / MariaDB SQL |
+| **Microsoft SQL Server** | Propietario (Enterprise) | Excelente integración con el ecosistema de Microsoft (.NET, Azure), herramientas potentes de Business Intelligence. | T-SQL (Transact-SQL) |
+| **Oracle Database** | Propietario (Enterprise) | Dominante en grandes corporaciones, alta disponibilidad, particionamiento avanzado y gran volumen de datos. | PL/SQL |
+| **SQLite** | Código abierto (Dominio público) | Base de datos embebida, sin servidor (*serverless*), almacena toda la base de datos en un único archivo. | SQLite Dialect |
+
+> **Nota sobre compatibilidad:** Escribir código SQL estándar (ANSI SQL) garantiza que tus consultas funcionen en casi cualquier motor con mínimos ajustes. Sin embargo, aprovechar las funciones nativas del dialecto de cada motor (como funciones de fecha, manipulación de texto o procedimientos almacenados) permite optimizar el rendimiento al máximo.
