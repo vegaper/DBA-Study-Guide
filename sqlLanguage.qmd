@@ -585,7 +585,7 @@ SELECT
 FROM proyectos;
 ```
 
-::: practica
+:::: practica
 # Práctica Individual SQL 02
 
 Ejercicios prácticos de consultas SQL sobre bases de datos reales. Pon a prueba tus conocimientos de agregación, filtrado y análisis de datos .
@@ -1103,12 +1103,11 @@ ORDER BY bitcoin_daily_rates_formatdate.date ;
 
 Obten de la tabla ‘jamesbond’:
 
-Las películas de Sean Connery con una recaudación de taquilla de la siguiente manera: 
--  Mayor a 800=Recaudación_exitosa,
+Las películas de Sean Connery con una recaudación de taquilla de la siguiente manera:  - Mayor a 800=Recaudación_exitosa,
 
--  entre 800 y 500=Recaudación_normal y
+- entre 800 y 500=Recaudación_normal y
 
--  menor a 500=Recaudación_baja
+- menor a 500=Recaudación_baja
 
 ``` sql
 SELECT film
@@ -1121,60 +1120,13 @@ FROM jamesbond
 WHERE actor= 'Sean Connery' ;
 ```
 
-------------------------------------------------------------------------
-Utilizando la tabla fortune, 
+| Utilizando la tabla fortune, |
+|:-----------------------------------------------------------------------|
+| Utilizando la tabla videogames_games: |
+| Crea una consulta que muestre el nombre del videojuego, su plataforma, sus ventas en Europa y una columna nueva llamada categoría_éxito usando las siguientes condiciones : -superventas si son mayores a 3.0 millones -exitoso si están entre 1.0 y 3.0millones -venta moderada si son menor de 1.0 millones muestra únicamente el top15 de juegos con mayor venta en Europabetw |
+| `sql select videogames_games.name , platform_code , eu_sales ,case WHEN eu_sales >3 THEN 'SUPERVENTAS' WHEN eu_sales BETWEEN 1 AND 3 THEN 'EXITOSO' WHEN eu_sales <1 THEN 'VENTA MODERADA' END as categoria_exito from videogames_games ORDER BY eu_sales DESC LIMIT 15` |
 
-analiza los sectores que contengan al menos 10 empresas.
-Para cada sector muestra:
-Número total de empresas.
-Suma de los ingresos.
-Suma de los beneficios.
-Número de empresas con pérdidas, es decir, con Profits menor que cero.
-Número de empresas con 100.000 empleados o más.
-Mayor ingreso individual obtenido por una empresa del sector.
-Ordena primero por el número de empresas con pérdidas, de mayor a menor, y después por los beneficios totales, también de mayor a menor.
-
-``` sql
-SELECT  
-    sector
-    , count(*) as n_empresas
-    , SUM(revenue) as ingresos
-    , SUM(profits) AS beneficios
-    , SUM(CASE WHEN profits <=0 THEN 1 END) as perdidas
-    , SUM(CASE WHEN employees >100000 THEN 1 END) AS grandes
-    , MAX(revenue) as mayor_ingreso
-FROM fortune 
-GROUP BY sector
-HAVING COUNT(*) >9
-ORDER BY 
-    SUM(CASE WHEN profits <=0 THEN 1 END) DESC
-    , SUM(profits) DESC ;
-```
-------------------------------------------------------------------------
-Utilizando la tabla  videogames_games:
-
-Crea una consulta que muestre el nombre del videojuego, su plataforma, sus ventas en Europa y una columna nueva llamada categoría_éxito usando las siguientes condiciones :
--superventas si son mayores a 3.0 millones
--exitoso si están entre 1.0 y 3.0millones
--venta moderada si son menor de 1.0 millones
-muestra únicamente el top15 de juegos con mayor venta en Europabetw
-
-``` sql
-select 
-  videogames_games.name
-, platform_code
-, eu_sales
-,case 
-  WHEN eu_sales >3 THEN 'SUPERVENTAS' 
-  WHEN eu_sales BETWEEN 1 AND 3 THEN 'EXITOSO' 
-  WHEN eu_sales <1 THEN 'VENTA MODERADA'
-END as categoria_exito
-from videogames_games
-ORDER BY eu_sales DESC
-LIMIT 15
-```
-------------------------------------------------------------------------
-Utilizando la tabla  videogames_games:
+Utilizando la tabla videogames_games:
 
 Queremos saber el nombre los videojuegos y plataforma que tuvieron mayor número de ventas global según su generación:
 
@@ -1183,7 +1135,6 @@ Queremos saber el nombre los videojuegos y plataforma que tuvieron mayor número
 - Gen Z: Juegos lanzados entre 1997 y 2012.
 
 - Gen Alfa: Juegos lanzados a partir de 2013.
-
 
 ``` sql
 select 
@@ -1204,10 +1155,9 @@ group by
   END 
 
 ORDER BY eu_sales + na_sales + jp_sales + other_sales desc
-
 ```
 
-:::.nota-importante
+::: nota-importante
 Esta consulta solo va a funcionar en SQLite, dará error en los otros motores ya que los campos name y platform_code no están incluidos en la agregación y por lo tanto son 'bare columns' como ya vimos.
 
 PostgreSQL, SQL Server y Oracle:
@@ -1225,6 +1175,7 @@ SQLite (Tu caso actual):
 SQLite tiene una excepción documentada: cuando usas MAX() o MIN() sobre columnas no agrupadas, garantiza que los demás campos extraídos (name, platform_code) pertenezcan a la misma fila donde se encontró ese máximo. Es cómodo para prototipar, pero te genera "malos hábitos" si luego migras a PostgreSQL u otros.
 
 Conseguir el mismo resultado en mySQL puede complicarse mucho y requiere funciones ventana que aún no hemos estudiado:
+
 ``` sql
 WITH juegos_clasificados AS (
     SELECT 
@@ -1256,11 +1207,9 @@ SELECT
 FROM juegos_clasificados
 WHERE posicion = 1 AND generacion IS NOT NULL
 ORDER BY total_ventas DESC;
-
 ```
 :::
 
-:::
 
 Más ejercicios desde internet:
 
@@ -1283,35 +1232,15 @@ FROM pages
 WHERE page_id NOT IN  (SELECT page_id FROM page_likes) ;
 ```
 
-------------------------------------------------------------------------
-<https://datalemur.com/questions/tesla-unfinished-parts>
+| <https://datalemur.com/questions/tesla-unfinished-parts> |
+|:-----------------------------------------------------------------------|
+| <https://datalemur.com/questions/laptop-mobile-viewership> |
+| `sql SELECT SUM(CASE WHEN device_type IN ('tablet','phone') THEN 1 END) AS 'mobile_views' ,SUM(CASE WHEN device_type = 'laptop' THEN 1 END) AS 'laptop_views' FROM viewership;` |
 
-``` sql
-SELECT part
-, assembly_step 
-FROM parts_assembly
- WHERE FINISH_DATE IS NULL;
-```
-
-------------------------------------------------------------------------
-<https://datalemur.com/questions/laptop-mobile-viewership>
-
-``` sql
-SELECT 
-    SUM(CASE WHEN device_type IN ('tablet','phone') THEN 1 END) AS 'mobile_views'
-    ,SUM(CASE WHEN device_type = 'laptop' THEN 1 END) AS 'laptop_views'
-FROM viewership;
-```
-
-------------------------------------------------------------------------
 <https://datalemur.com/questions/sql-average-post-hiatus-1>
 
-::: .nota
-nota: MySQL o PostGre no usan las fechas como SQLite, así que tendrás que goglear como se usan las fechas en una de esas variantes, por ejemplo para mySQL:
-Calcular diferencia en días usa la función DATEDIFF()
-Ejemplo: Resta la segunda fecha de la primera y da el total de días:SELECT DATEDIFF('2026-12-31', '2026-12-25');year
-Extraer el año de una fecha usa la función YEAR()
-Ejemplo: SELECT YEAR('07/10/2021 12:00:00')
+::: nota
+nota: MySQL o PostGre no usan las fechas como SQLite, así que tendrás que goglear como se usan las fechas en una de esas variantes, por ejemplo para mySQL: Calcular diferencia en días usa la función DATEDIFF() Ejemplo: Resta la segunda fecha de la primera y da el total de días:SELECT DATEDIFF('2026-12-31', '2026-12-25');year Extraer el año de una fecha usa la función YEAR() Ejemplo: SELECT YEAR('07/10/2021 12:00:00')
 :::
 
 ``` sql
@@ -1324,47 +1253,13 @@ group by user_id
 having count(*) >1;
 ```
 
-------------------------------------------------------------------------
-<https://datalemur.com/questions/teams-power-users>
+ <https://datalemur.com/questions/teams-power-users> 
 
-``` sql
-SELECT  
-sender_id
-,COUNT(*) AS message_count
-FROM messages
-where sent_date between '2022-08-01' AND '2022-08-30'
-GROUP BY sender_id;
-```
+ NOTA, esta require subqueries que no hemos dado aún. <https://datalemur.com/questions/sql-histogram-tweets> 
 
-------------------------------------------------------------------------
-NOTA, esta require subqueries que no hemos dado aún. 
-<https://datalemur.com/questions/sql-histogram-tweets>
-
-``` sql
-select 
-    t.posts as tweet_bucket
-    ,count(*) as users_num
-from (
-    SELECT 
-        count (*) as posts
-    FROM tweets
-    where year(tweet_date) =2022
-    group by user_id
-) as t
-group by posts
-
-```
-------------------------------------------------------------------------
-<>
-
-
-``` sql
-
-```
-------------------------------------------------------------------------
-<>
-
-
-``` sql
-
-```
+ ``` sql 
+ select 
+    t.posts as tweet_bucket ,count(*) as users_num 
+    from ( SELECT count (*) as posts 
+    FROM tweets where year(tweet_date) =2022 group by user_id ) as t group by posts 
+ ```
