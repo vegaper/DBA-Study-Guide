@@ -585,7 +585,103 @@ SELECT
 FROM proyectos;
 ```
 
-:::: practica
+Añadir or restar de fechas
+
+```{sql}
+-- Restar 1 día
+SELECT date('now', '-1 day');
+
+-- Restar 1 mes a una fecha específica
+SELECT date('2026-09-02', '-1 month');
+
+-- Restar 1 año
+SELECT date('now', '-1 year');
+
+-- Combinar varias restas (ej. restar 1 año y 2 meses)
+SELECT date('2026-09-02', '-1 year', '-2 month');
+```
+
+# Funciones y Comandos Esenciales de SQL
+
+## Manejo de valores nulos
+
+### COALESCE()
+
+Coalesce(valor1, valor2, ....)
+
+Lo que hace esta función es devolver el primero valor NO NULO de la lista que le pasamos. Normalmente introduciremos campos en los valores, y como último valor introduciremos un valor que queramos poner por defecto si todos los demás son nulos, pero no es obligatorio este último.
+
+``` sql
+coalesce(telefono_movil, telefono_fijo, 'sin teléfono de contacto.')
+```
+
+Una nota importante es que coalesce va a devolver cualquier valor que no sea nulo, incluyendo celdas en blanco.
+
+## Funcines de ventana
+
+### OVER()
+
+Define una ventana de filas sobre la que se aplica una función, sin colapsar el resultado en una sola fila como haría el group by.
+
+``` sql
+SELECT 
+    vendedor
+    ,SUM(ventas) OVER() as total_general
+    ,ventas *100 /  SUM(ventas) OVER() as porcentaje
+ FROM datos_analisis
+```
+
+### PARTITION BY()
+
+La funcion OVER se aplica sobre un grupo definido en Partition By
+
+``` sql
+SELECT 
+    vendedor
+    ,SUM(ventas) OVER() as total_general
+    ,ventas *100 /  SUM(ventas) OVER(PARTITION BY region) as porcentaje_regional
+ FROM datos_analisis
+```
+
+### DENSE_RANK()
+
+Asigna un rango consecutivo a cada fila. Si hay empate, les asigna el mismo ranking y al siguiente le asigna el siguiente rango disponible, es decir, puede haber 1,1,1,1,2,2,3,4,4,4,5....
+
+``` sql
+SELECT 
+    empleado
+    , salario
+    , DENSE_RANK() OVER(ORDER BY salario DESC) AS ranking 
+FROM datos_analisis
+```
+
+### ROW_NUMBER()
+
+Asigna un número secuencial único a cada fila dentro de la ventana, sin importar los empates. Cada fila tiene un número distinto.
+
+``` sql
+SELECT 
+    cliente_id
+   , nombre
+   , fecha
+   , ROW_NUMBER () OVER(
+        PARTITION BY cliente_id
+        ORDER BY fecha DESC
+   ) as rn
+FROM datos_analisis
+```
+
+### LAG() y LEAD()
+
+Accede a valores de filas anteriores o siguientes.
+
+``` sql
+select 
+    ventas - LAG(ventas, 1) OVER (order by mes) as variacion
+from datos_analisis
+```
+
+::::: practica
 # Práctica Individual SQL 02
 
 Ejercicios prácticos de consultas SQL sobre bases de datos reales. Pon a prueba tus conocimientos de agregación, filtrado y análisis de datos .
@@ -1210,7 +1306,6 @@ ORDER BY total_ventas DESC;
 ```
 :::
 
-
 Más ejercicios desde internet:
 
 <https://datalemur.com/questions/matching-skills>
@@ -1253,13 +1348,14 @@ group by user_id
 having count(*) >1;
 ```
 
- <https://datalemur.com/questions/teams-power-users> 
+<https://datalemur.com/questions/teams-power-users>
 
- NOTA, esta require subqueries que no hemos dado aún. <https://datalemur.com/questions/sql-histogram-tweets> 
+NOTA, esta require subqueries que no hemos dado aún. <https://datalemur.com/questions/sql-histogram-tweets>
 
- ``` sql 
- select 
-    t.posts as tweet_bucket ,count(*) as users_num 
-    from ( SELECT count (*) as posts 
-    FROM tweets where year(tweet_date) =2022 group by user_id ) as t group by posts 
- ```
+``` sql
+select 
+   t.posts as tweet_bucket ,count(*) as users_num 
+   from ( SELECT count (*) as posts 
+   FROM tweets where year(tweet_date) =2022 group by user_id ) as t group by posts 
+```
+:::::

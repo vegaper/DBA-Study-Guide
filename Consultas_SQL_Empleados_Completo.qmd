@@ -1,0 +1,449 @@
+**SOLUCIONARIO COMPLETO**
+
+# **Consultas SQL sobre Empleados**
+
+Enunciados · soluciones SQL · resultados obtenidos
+
+**Entorno: SQLite \| Tabla: Empleados \| Registros: 150**
+
+**Condición de importación:** los campos vacíos del CSV deben importarse como NULL para reproducir exactamente los resultados.
+
+# **1. Empleados activos con salarios elevados**
+
+**ENUNCIADO**
+
+Muestra el identificador, nombre, apellidos, departamento y salario de los empleados activos que cobran al menos 50.000 €. Ordena el resultado desde el salario más alto hasta el más bajo. En caso de empate, ordena alfabéticamente.
+
+**SOLUCIÓN SQL**
+
+```sql
+SELECT 
+id_empleado, 
+nombre, 
+apellidos, 
+departamento, 
+salario 
+FROM Empleados 
+WHERE activo = 1 
+AND salario  >= 50000 
+ORDER BY 
+salario DESC, 
+apellidos, 
+nombre;
+```
+**RESULTADO**
+
+**Total: 19 filas devueltas**
+
+# **2. Teletrabajadores sin comisión**
+
+**ENUNCIADO**
+
+Muestra los empleados cuya modalidad sea teletrabajo y que no tengan asignada ninguna comisión. Ordena el resultado por apellidos y nombre.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+id_empleado, 
+nombre, 
+apellidos, 
+modalidad, 
+comision 
+FROM Empleados 
+WHERE modalidad = 'Teletrabajo' 
+AND comision IS NULL 
+ORDER BY 
+apellidos, 
+nombre;
+```
+**RESULTADO**
+
+**Total: 35 filas devueltas**
+
+# **3. Clasificación de las evaluaciones**
+
+**ENUNCIADO**
+
+Muestra todos los empleados activos y clasifica su evaluación según estos criterios: 9 o más, «Excelente»; desde 7 hasta menos de 9, «Notable»; desde 5 hasta menos de 7, «Aprobada»; y menos de 5, «Necesita mejorar». Ordena el resultado desde la evaluación más alta hasta la más baja.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+id_empleado, 
+nombre, 
+apellidos, 
+evaluacion, 
+CASE 
+WHEN evaluacion  >= 9 THEN 'Excelente' 
+WHEN evaluacion  >= 7 THEN 'Notable' 
+WHEN evaluacion  >= 5 THEN 'Aprobada' 
+ELSE 'Necesita mejorar' 
+END AS nivel_evaluacion 
+FROM Empleados 
+WHERE activo = 1 
+ORDER BY 
+evaluacion DESC, 
+apellidos, 
+nombre;
+```
+**RESULTADO**
+
+**Total: 143 filas devueltas**
+
+# **4. Contrataciones desde 2020**
+
+**ENUNCIADO**
+
+Muestra los empleados contratados desde el año 2020, incluido. Añade una columna que muestre únicamente su año de contratación y ordena el resultado cronológicamente.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+id_empleado, 
+nombre, 
+apellidos, 
+fecha_contratacion, 
+strftime( 
+'%Y', 
+fecha_contratacion 
+) AS anio_contratacion 
+FROM Empleados 
+WHERE CAST( 
+strftime('%Y', fecha_contratacion) 
+AS INTEGER 
+)  >= 2020 
+ORDER BY 
+fecha_contratacion, 
+id_empleado;
+```
+**RESULTADO**
+
+**Total: 52 filas devueltas**
+
+# **5. Resumen salarial de los empleados activos**
+
+**ENUNCIADO**
+
+Calcula, para los empleados activos, el número total de empleados, el salario medio, el salario mínimo, el salario máximo y la suma total de los salarios. Redondea la media y la suma a dos decimales.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+COUNT( *) AS total_activos, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio, 
+MIN(salario) AS salario_minimo, 
+MAX(salario) AS salario_maximo, 
+ROUND( 
+SUM(salario), 
+2 
+) AS masa_salarial 
+FROM Empleados 
+WHERE activo = 1;
+```
+**RESULTADO**
+
+**Total: 1 fila devuelta**
+
+*143 empleados activos · salario medio: 41.248,95 € · mínimo: 26.500 € · máximo: 98.500 € · masa salarial: 5.898.600 €*
+
+# **6. Resumen salarial por departamento**
+
+**ENUNCIADO**
+
+Muestra cada departamento, el número de empleados que tiene y su salario medio. Ordena los departamentos desde el salario medio más alto hasta el más bajo.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+departamento, 
+COUNT( *) AS total_empleados, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio 
+FROM Empleados 
+GROUP BY departamento 
+ORDER BY 
+salario_medio DESC, 
+departamento;
+```
+**RESULTADO**
+
+**Total: 10 filas devueltas**
+
+# **7. Empleados por modalidad y estado**
+
+**ENUNCIADO**
+
+Agrupa a los empleados por modalidad de trabajo y estado —activo o inactivo—. Muestra el número de empleados y el salario medio de cada combinación.
+
+**SOLUCIÓN SQL**
+
+```sql
+SELECT 
+modalidad, 
+activo, 
+COUNT( *) AS total_empleados, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio 
+FROM Empleados 
+GROUP BY 
+modalidad, 
+activo 
+ORDER BY 
+modalidad, 
+activo DESC;
+```
+**RESULTADO**
+
+**Total: 6 filas devueltas**
+
+# **8. Resumen de actividad y comisiones por departamento**
+
+**ENUNCIADO**
+
+Muestra, para cada departamento, el número total de empleados, el número de empleados activos, el número de empleados inactivos y el número de empleados que tienen comisión. Ordena los departamentos desde el que tiene más empleados activos.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+departamento, 
+COUNT( *) AS total_empleados,
+      
+SUM(  
+    CASE  
+        WHEN activo  = 1 THEN 1  
+        ELSE 0  
+    END  
+) AS empleados _activos,
+
+SUM(  
+    CASE  
+        WHEN activo  = 0 THEN 1  
+        ELSE 0  
+    END  
+) AS empleados _inactivos,
+
+SUM(  
+    CASE  
+        WHEN comision IS NOT NULL THEN 1  
+        ELSE 0  
+    END  
+) AS con _comision
+
+
+FROM Empleados 
+GROUP BY departamento 
+ORDER BY 
+empleados_activos DESC, 
+departamento;
+```
+**RESULTADO**
+
+**Total: 10 filas devueltas**
+
+# **9. Contrataciones por año**
+
+**ENUNCIADO**
+
+Muestra el número de empleados contratados en cada año y el salario medio actual de esos empleados. Ordena el resultado cronológicamente.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+strftime( 
+'%Y', 
+fecha_contratacion 
+) AS anio, 
+COUNT( *) AS contrataciones, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio 
+FROM Empleados 
+GROUP BY strftime( 
+'%Y', 
+fecha_contratacion 
+) 
+ORDER BY anio;
+``` 
+**RESULTADO**
+
+**Total: 22 filas devueltas**
+
+# **10. Años con al menos siete contrataciones**
+
+**ENUNCIADO**
+
+Muestra solamente los años en los que se contrataron siete o más empleados. Indica el año y el número de contrataciones. Ordena primero los años con más contrataciones.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+strftime( 
+'%Y', 
+fecha_contratacion 
+) AS anio, 
+COUNT( *) AS contrataciones 
+FROM Empleados 
+GROUP BY strftime( 
+'%Y', 
+fecha_contratacion 
+) 
+HAVING COUNT( *)  >= 7 
+ORDER BY 
+contrataciones DESC, 
+anio;
+```
+**RESULTADO**
+
+**Total: 16 filas devueltas**
+
+# **11. Departamentos activos con salario medio elevado**
+
+**ENUNCIADO**
+
+Trabajando solamente con empleados activos, muestra los departamentos que tengan al menos ocho empleados activos y un salario medio igual o superior a 40.000 €. Muestra también la diferencia entre el salario máximo y el salario mínimo de cada departamento.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+departamento, 
+COUNT( *) AS total_empleados, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio, 
+ROUND( 
+MAX(salario) - MIN(salario), 
+2 
+) AS diferencia_salarial 
+FROM Empleados 
+WHERE activo = 1 
+GROUP BY departamento 
+HAVING COUNT( *)  >= 8 
+AND AVG(salario)  >= 40000 
+ORDER BY 
+salario_medio DESC, 
+departamento;
+```
+**RESULTADO**
+
+**Total: 4 filas devueltas**
+
+*Departamentos obtenidos: Dirección, Datos, Desarrollo y Sistemas.*
+
+# **12. Coste por departamento y modalidad**
+
+**ENUNCIADO**
+
+Trabajando solamente con empleados activos, agrupa los datos por departamento y modalidad. Muestra el número de empleados, el salario medio y el coste total formado por la suma del salario y la comisión. Incluye solamente las combinaciones que tengan al menos tres empleados.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+departamento, 
+modalidad, 
+COUNT( *) AS total_empleados, 
+ROUND( 
+AVG(salario), 
+2 
+) AS salario_medio, 
+ROUND( 
+SUM( 
+salario + COALESCE(comision, 0) 
+), 
+2 
+) AS coste_total 
+FROM Empleados 
+WHERE activo = 1 
+GROUP BY 
+departamento, 
+modalidad 
+HAVING COUNT( *)  >= 3 
+ORDER BY 
+departamento, 
+coste_total DESC;
+``` 
+**RESULTADO**
+
+**Total: 27 filas devueltas**
+
+# **13. Empleados agrupados por tramo salarial**
+
+**ENUNCIADO**
+
+Clasifica y agrupa a los empleados en estos tramos salariales: menos de 30.000 €; de 30.000 a 44.999 €; de 45.000 a 59.999 €; y 60.000 € o más. Para cada tramo, muestra el número de empleados, la evaluación media y el número de empleados activos. Incluye solamente los tramos que tengan al menos cinco empleados.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+CASE 
+WHEN salario  < 30000 
+THEN 'Menos de 30.000 €' 
+WHEN salario  < 45000 
+THEN 'De 30.000 a 44.999 €' 
+WHEN salario  < 60000 
+THEN 'De 45.000 a 59.999 €' 
+ELSE '60.000 € o más' 
+END AS tramo_salarial,       
+COUNT( *) AS total _empleados,
+
+ROUND(  
+    AVG(evaluacion),  
+    2  
+) AS evaluacion _media,
+
+SUM(  
+    CASE  
+        WHEN activo  = 1 THEN 1  
+        ELSE 0  
+    END  
+) AS activos
+FROM Empleados 
+GROUP BY total_empleados 
+HAVING COUNT( *)  >= 5;
+```
+**RESULTADO**
+
+**Total: 4 filas devueltas**
+
+# **14. Resumen por departamento y antigüedad**
+
+**ENUNCIADO**
+
+Trabajando solamente con empleados activos, clasifícalos según su año de contratación, tomando como fecha de referencia el 1 de septiembre de 2026, en estos tramos: menos de 5 años; de 5 a 9 años; y 10 años o más. Agrupa los resultados por departamento y tramo. Muestra el número de empleados, el salario medio y la evaluación media. Incluye solamente los grupos que tengan al menos dos empleados.
+
+**SOLUCIÓN SQL**
+```sql
+SELECT 
+departamento, 
+CASE 
+WHEN CAST(strftime('%Y', '2026-09-01') AS INTEGER) 
+- CAST(strftime('%Y', fecha_contratacion) AS INTEGER)  < 5 
+THEN 'Menos de 5 años' 
+WHEN CAST(strftime('%Y', '2026-09-01') AS INTEGER) 
+- CAST(strftime('%Y', fecha_contratacion) AS INTEGER)  < 10 
+THEN 'De 5 a 9 años' 
+ELSE '10 años o más' 
+END AS tramo_antiguedad, 
+COUNT( *) AS total_empleados, 
+ROUND(AVG(salario), 2) AS salario_medio, 
+ROUND(AVG(evaluacion), 2) AS evaluacion_media 
+FROM Empleados 
+WHERE activo = 1 
+GROUP BY 
+departamento, 
+tramo_antiguedad 
+HAVING COUNT( *)  >= 2 
+ORDER BY 
+departamento;
+```
+**RESULTADO**
+
+**Total: 27 filas devueltas**
