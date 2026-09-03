@@ -16,7 +16,7 @@ Muestra el identificador, nombre, apellidos, departamento y salario de los emple
 
 **SOLUCIÓN SQL**
 
-```sql
+ ```sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -31,6 +31,7 @@ salario DESC,
 apellidos, 
 nombre;
 ```
+
 **RESULTADO**
 
 **Total: 19 filas devueltas**
@@ -42,7 +43,8 @@ nombre;
 Muestra los empleados cuya modalidad sea teletrabajo y que no tengan asignada ninguna comisión. Ordena el resultado por apellidos y nombre.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -56,6 +58,7 @@ ORDER BY
 apellidos, 
 nombre;
 ```
+
 **RESULTADO**
 
 **Total: 35 filas devueltas**
@@ -67,7 +70,8 @@ nombre;
 Muestra todos los empleados activos y clasifica su evaluación según estos criterios: 9 o más, «Excelente»; desde 7 hasta menos de 9, «Notable»; desde 5 hasta menos de 7, «Aprobada»; y menos de 5, «Necesita mejorar». Ordena el resultado desde la evaluación más alta hasta la más baja.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -86,6 +90,7 @@ evaluacion DESC,
 apellidos, 
 nombre;
 ```
+
 **RESULTADO**
 
 **Total: 143 filas devueltas**
@@ -97,7 +102,8 @@ nombre;
 Muestra los empleados contratados desde el año 2020, incluido. Añade una columna que muestre únicamente su año de contratación y ordena el resultado cronológicamente.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -116,6 +122,7 @@ ORDER BY
 fecha_contratacion, 
 id_empleado;
 ```
+
 **RESULTADO**
 
 **Total: 52 filas devueltas**
@@ -127,7 +134,8 @@ id_empleado;
 Calcula, para los empleados activos, el número total de empleados, el salario medio, el salario mínimo, el salario máximo y la suma total de los salarios. Redondea la media y la suma a dos decimales.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 COUNT( *) AS total_activos, 
 ROUND( 
@@ -143,6 +151,7 @@ SUM(salario),
 FROM Empleados 
 WHERE activo = 1;
 ```
+
 **RESULTADO**
 
 **Total: 1 fila devuelta**
@@ -156,7 +165,8 @@ WHERE activo = 1;
 Muestra cada departamento, el número de empleados que tiene y su salario medio. Ordena los departamentos desde el salario medio más alto hasta el más bajo.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados, 
@@ -170,6 +180,7 @@ ORDER BY
 salario_medio DESC, 
 departamento;
 ```
+
 **RESULTADO**
 
 **Total: 10 filas devueltas**
@@ -182,7 +193,7 @@ Agrupa a los empleados por modalidad de trabajo y estado —activo o inactivo—
 
 **SOLUCIÓN SQL**
 
-```sql
+ ```sql
 SELECT 
 modalidad, 
 activo, 
@@ -199,6 +210,7 @@ ORDER BY
 modalidad, 
 activo DESC;
 ```
+
 **RESULTADO**
 
 **Total: 6 filas devueltas**
@@ -210,7 +222,8 @@ activo DESC;
 Muestra, para cada departamento, el número total de empleados, el número de empleados activos, el número de empleados inactivos y el número de empleados que tienen comisión. Ordena los departamentos desde el que tiene más empleados activos.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados,
@@ -243,6 +256,7 @@ ORDER BY
 empleados_activos DESC, 
 departamento;
 ```
+
 **RESULTADO**
 
 **Total: 10 filas devueltas**
@@ -254,7 +268,8 @@ departamento;
 Muestra el número de empleados contratados en cada año y el salario medio actual de esos empleados. Ordena el resultado cronológicamente.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 strftime( 
 '%Y', 
@@ -271,7 +286,8 @@ GROUP BY strftime(
 fecha_contratacion 
 ) 
 ORDER BY anio;
-``` 
+```
+
 **RESULTADO**
 
 **Total: 22 filas devueltas**
@@ -283,7 +299,8 @@ ORDER BY anio;
 Muestra solamente los años en los que se contrataron siete o más empleados. Indica el año y el número de contrataciones. Ordena primero los años con más contrataciones.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 strftime( 
 '%Y', 
@@ -300,6 +317,7 @@ ORDER BY
 contrataciones DESC, 
 anio;
 ```
+
 **RESULTADO**
 
 **Total: 16 filas devueltas**
@@ -311,7 +329,8 @@ anio;
 Trabajando solamente con empleados activos, muestra los departamentos que tengan al menos ocho empleados activos y un salario medio igual o superior a 40.000 €. Muestra también la diferencia entre el salario máximo y el salario mínimo de cada departamento.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados, 
@@ -332,6 +351,7 @@ ORDER BY
 salario_medio DESC, 
 departamento;
 ```
+
 **RESULTADO**
 
 **Total: 4 filas devueltas**
@@ -345,7 +365,8 @@ departamento;
 Trabajando solamente con empleados activos, agrupa los datos por departamento y modalidad. Muestra el número de empleados, el salario medio y el coste total formado por la suma del salario y la comisión. Incluye solamente las combinaciones que tengan al menos tres empleados.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 departamento, 
 modalidad, 
@@ -369,7 +390,8 @@ HAVING COUNT( *)  >= 3
 ORDER BY 
 departamento, 
 coste_total DESC;
-``` 
+```
+
 **RESULTADO**
 
 **Total: 27 filas devueltas**
@@ -381,7 +403,8 @@ coste_total DESC;
 Clasifica y agrupa a los empleados en estos tramos salariales: menos de 30.000 €; de 30.000 a 44.999 €; de 45.000 a 59.999 €; y 60.000 € o más. Para cada tramo, muestra el número de empleados, la evaluación media y el número de empleados activos. Incluye solamente los tramos que tengan al menos cinco empleados.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 CASE 
 WHEN salario  < 30000 
@@ -409,6 +432,7 @@ FROM Empleados
 GROUP BY total_empleados 
 HAVING COUNT( *)  >= 5;
 ```
+
 **RESULTADO**
 
 **Total: 4 filas devueltas**
@@ -420,7 +444,8 @@ HAVING COUNT( *)  >= 5;
 Trabajando solamente con empleados activos, clasifícalos según su año de contratación, tomando como fecha de referencia el 1 de septiembre de 2026, en estos tramos: menos de 5 años; de 5 a 9 años; y 10 años o más. Agrupa los resultados por departamento y tramo. Muestra el número de empleados, el salario medio y la evaluación media. Incluye solamente los grupos que tengan al menos dos empleados.
 
 **SOLUCIÓN SQL**
-```sql
+
+ ```sql
 SELECT 
 departamento, 
 CASE 
@@ -444,6 +469,7 @@ HAVING COUNT( *)  >= 2
 ORDER BY 
 departamento;
 ```
+
 **RESULTADO**
 
 **Total: 27 filas devueltas**
