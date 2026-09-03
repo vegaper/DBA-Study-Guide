@@ -1,3 +1,8 @@
+---
+title: "Ejercicios solucionados: Consultas SQL sobre Empleados"
+format: html
+eval: false
+---
 **SOLUCIONARIO COMPLETO**
 
 # **Consultas SQL sobre Empleados**
@@ -16,7 +21,7 @@ Muestra el identificador, nombre, apellidos, departamento y salario de los emple
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -44,7 +49,7 @@ Muestra los empleados cuya modalidad sea teletrabajo y que no tengan asignada ni
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -71,7 +76,7 @@ Muestra todos los empleados activos y clasifica su evaluación según estos crit
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -103,7 +108,7 @@ Muestra los empleados contratados desde el año 2020, incluido. Añade una colum
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 id_empleado, 
 nombre, 
@@ -135,7 +140,7 @@ Calcula, para los empleados activos, el número total de empleados, el salario m
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 COUNT( *) AS total_activos, 
 ROUND( 
@@ -166,7 +171,7 @@ Muestra cada departamento, el número de empleados que tiene y su salario medio.
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados, 
@@ -193,7 +198,7 @@ Agrupa a los empleados por modalidad de trabajo y estado —activo o inactivo—
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 modalidad, 
 activo, 
@@ -223,31 +228,31 @@ Muestra, para cada departamento, el número total de empleados, el número de em
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados,
-      
+     
 SUM(  
-    CASE  
-        WHEN activo  = 1 THEN 1  
-        ELSE 0  
-    END  
-) AS empleados _activos,
+   CASE  
+       WHEN activo  = 1 THEN 1  
+       ELSE 0  
+   END  
+) AS empleados_activos,
 
 SUM(  
-    CASE  
-        WHEN activo  = 0 THEN 1  
-        ELSE 0  
-    END  
-) AS empleados _inactivos,
+   CASE  
+       WHEN activo  = 0 THEN 1  
+       ELSE 0  
+   END  
+) AS empleados_inactivos,
 
 SUM(  
-    CASE  
-        WHEN comision IS NOT NULL THEN 1  
-        ELSE 0  
-    END  
-) AS con _comision
+   CASE  
+       WHEN comision IS NOT NULL THEN 1  
+       ELSE 0  
+   END  
+) AS con_comision
 
 
 FROM Empleados 
@@ -269,7 +274,7 @@ Muestra el número de empleados contratados en cada año y el salario medio actu
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 strftime( 
 '%Y', 
@@ -300,7 +305,7 @@ Muestra solamente los años en los que se contrataron siete o más empleados. In
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 strftime( 
 '%Y', 
@@ -330,7 +335,7 @@ Trabajando solamente con empleados activos, muestra los departamentos que tengan
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 departamento, 
 COUNT( *) AS total_empleados, 
@@ -366,7 +371,7 @@ Trabajando solamente con empleados activos, agrupa los datos por departamento y 
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 departamento, 
 modalidad, 
@@ -404,7 +409,7 @@ Clasifica y agrupa a los empleados en estos tramos salariales: menos de 30.000 �
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 CASE 
 WHEN salario  < 30000 
@@ -415,22 +420,22 @@ WHEN salario  < 60000
 THEN 'De 45.000 a 59.999 €' 
 ELSE '60.000 € o más' 
 END AS tramo_salarial,       
-COUNT( *) AS total _empleados,
+COUNT( *) AS total_empleados,
 
 ROUND(  
-    AVG(evaluacion),  
-    2  
-) AS evaluacion _media,
+   AVG(evaluacion),  
+   2  
+) AS evaluacion_media,
 
 SUM(  
-    CASE  
-        WHEN activo  = 1 THEN 1  
-        ELSE 0  
-    END  
+   CASE  
+       WHEN activo  = 1 THEN 1  
+       ELSE 0  
+   END  
 ) AS activos
 FROM Empleados 
 GROUP BY total_empleados 
-HAVING COUNT( *)  >= 5;
+HAVING COUNT(*)  >= 5;
 ```
 
 **RESULTADO**
@@ -445,7 +450,7 @@ Trabajando solamente con empleados activos, clasifícalos según su año de cont
 
 **SOLUCIÓN SQL**
 
- ```sql
+``` sql
 SELECT 
 departamento, 
 CASE 
