@@ -1,0 +1,580 @@
+---
+title: "Tipos de Join en SQL"
+format: html
+---
+
+# Uniones de Tablas: El Concepto de `JOIN`
+
+En una base de datos relacional, la información **no se guarda en una sola tabla gigante**, sino que se divide en varias tablas pequeñas organizadas por tema para no repetir datos.
+
+Un **`JOIN`** es la herramienta que nos permite **volver a juntar la información de dos o más tablas** en una sola vista, usando una relación o "puente" que existe entre ellas.
+
+## Conceptos clave antes de empezar
+
+Para unir tablas, necesitamos entender dos piezas clave:
+
+1.  **Clave Primaria (Primary Key / PK):** Es el identificador único de cada fila en una tabla (como el DNI/cédula de una persona o el ID de un cliente). Nunca se repite.
+
+2.  **Clave Foránea (Foreign Key / FK):** Es una columna en *otra* tabla que hace referencia a la Clave Primaria de la primera tabla. Es el "hilo" que conecta ambas tablas.
+
+Un JOIN combina filas de dos o más tablas basándose en una condición relacinada entre ellas.
+
+La condición más común es la igualdad entre una clave primaria y una clave foránea.
+
+# INNER JOIN (La intersección / "Las coincidencias exactas")
+
+El `INNER JOIN` (Unión Interna) compara dos tablas y **devuelve únicamente las filas que tienen coincidencia en AMBAS tablas**.
+
+Si un registro de la Tabla A no tiene su "pareja" correspondiente en la Tabla B (o viceversa), **queda completamente fuera del resultado**.
+
+Analogía del mundo real: La Fiesta de Disfraces con Invitación
+
+Imagina que tienes:
+
+- **Tabla A:** Lista de personas invitadas a una fiesta.
+
+- **Tabla B:** Lista de personas que efectivamente llegaron y entraron.
+
+Un `INNER JOIN` te daría únicamente la lista de **las personas que estaban invitadas Y que además asistieron a la fiesta**. Si alguien fue invitado pero no fue, no aparece. Si alguien entró colado sin invitación, tampoco aparece.
+
+**Ejemplo práctico explicativo**
+
+Imaginemos que tenemos dos tablas en nuestra tienda online:
+
+**Tabla: `CLIENTES`**
+
+|             |            |
+|-------------|------------|
+| **id (PK)** | **nombre** |
+| **1**       | Ana        |
+| **2**       | Carlos     |
+| **3**       | María      |
+
+**Tabla: `PEDIDOS`**
+
+|        |                     |           |
+|--------|---------------------|-----------|
+| **id** | **cliente_id (FK)** | **total** |
+| 101    | **1**               | \$50      |
+| 102    | **1**               | \$30      |
+| 103    | **2**               | \$120     |
+
+> 📌 **Fíjate en esto:** María (ID 3) no ha hecho ningún pedido todavía. Y no hay ningún pedido asociado a un cliente que no exista.
+
+**La Consulta SQL**
+
+``` sqk
+SELECT 
+    clientes.nombre, 
+    pedidos.total
+FROM clientes
+INNER JOIN pedidos
+    ON clientes.id = pedidos.cliente_id;
+```
+
+**Desglose paso a paso de la sintaxis:**
+
+- **`SELECT clientes.nombre, pedidos.total`**
+
+  Le decimos qué columnas queremos ver. Como vienen de tablas distintas, ponemos `tabla.columna` para evitar confusiones.
+
+- **`FROM clientes`**
+
+  Especificamos la primera tabla (Tabla Principal / Izquierda).
+
+- **`INNER JOIN pedidos`**
+
+  Indicamos la segunda tabla que queremos conectar (Tabla Secundaria / Derecha).
+
+- **`ON clientes.id = pedidos.cliente_id`**
+
+  **¡La condición del puente!** Le explicamos a la base de datos cómo se relacionan: *"Busca dónde el `id` de la tabla `clientes` sea exactamente igual al `cliente_id` de la tabla `pedidos`"*.
+
+**Resultado de la consulta:**
+
+| nombre | total |
+|--------|-------|
+| Ana    | \$50  |
+| Ana    | \$30  |
+| Carlos | \$120 |
+
+**¿Por qué este resultado?**
+
+- **Ana** aparece 2 veces porque hizo 2 compras.
+
+- **Carlos** aparece 1 vez porque hizo 1 compra.
+
+- **María NO aparece en el resultado** porque no tiene ninguna coincidencia en la tabla de `pedidos`. El `INNER JOIN` la descarta por no tener pareja.
+
+¡Perfecto! Vamos a ampliar la familia de los `JOIN` con el **`LEFT JOIN`** (o `LEFT OUTER JOIN`), que es uno de los más utilizados en la vida real.
+
+# LEFT JOIN (Unión Izquierda)
+
+**¿Qué hace?**
+
+El `LEFT JOIN` toma **TODOS los datos de la primera tabla** (la tabla de la izquierda, la que pones en el `FROM`), y trae los datos de la segunda tabla (la de la derecha) **solo cuando hay coincidencia**.
+
+Si un registro de la tabla de la izquierda **no tiene pareja** en la tabla de la derecha, **NO se elimina**. En su lugar, la base de datos rellena los datos de la segunda tabla con valores vacíos (**`NULL`**).
+
+**Analogía del mundo real: La Lista de Asistencia de un Colegio**
+
+Imagina que eres profesor:
+
+- **Tabla Izquierda (`FROM`):** La lista oficial de **todos los alumnos** matriculados en la clase.
+
+- **Tabla Derecha (`JOIN`):** La lista de alumnos que **entregaron la tarea** hoy.
+
+Si haces un `LEFT JOIN`, el resultado será tu **lista completa de alumnos**. Al lado de los que entregaron, verás su nota. Al lado de los que **NO** entregaron la tarea, verás un espacio en blanco (`NULL`).
+
+> 🎯 *Diferencia clave:* El `INNER JOIN` habría borrado de la lista a los alumnos que no entregaron nada. El `LEFT JOIN` te los muestra a todos para que sepas quiénes faltan.
+
+**Ejemplo práctico explicativo**
+
+Volvamos a nuestras tablas de la tienda online:
+
+**Tabla Izquierda: `CLIENTES`**
+
+|             |            |
+|-------------|------------|
+| **id (PK)** | **nombre** |
+| **1**       | Ana        |
+| **2**       | Carlos     |
+| **3**       | María      |
+
+**Tabla Derecha: `PEDIDOS`**
+
+|        |                     |           |
+|--------|---------------------|-----------|
+| **id** | **cliente_id (FK)** | **total** |
+| 101    | **1**               | \$50      |
+| 102    | **1**               | \$30      |
+| 103    | **2**               | \$120     |
+
+📌 **Recuerda:** María (ID 3) es una clienta registrada, pero **nunca ha comprado nada**.
+
+``` sql
+SQL
+SELECT 
+    clientes.nombre, 
+    pedidos.total
+FROM clientes              -- 👈 ESTA es la tabla de la IZQUIERDA (LEFT)
+LEFT JOIN pedidos          -- 👈 ESTA es la tabla de la DERECHA
+    ON clientes.id = pedidos.cliente_id;
+```
+
+**Resultado de la consulta:**
+
+|            |            |
+|------------|------------|
+| **nombre** | **total**  |
+| Ana        | \$50       |
+| Ana        | \$30       |
+| Carlos     | \$120      |
+| **María**  | **`NULL`** |
+
+**¿Por qué sale este resultado?**
+
+- **Ana** y **Carlos** aparecen con sus compras normales porque coinciden en ambas tablas.
+
+- **María APARECE en el resultado** porque está en la tabla de la izquierda (`clientes`). Como no tiene ningún pedido en la tabla de la derecha, PostgreSQL pone un **`NULL`** (un valor nulo o vacío) en la columna `total`.
+
+**¿Para qué sirve esto en la vida real? (El superpoder del `LEFT JOIN`)**
+
+El `LEFT JOIN` es la mejor herramienta para **encontrar cosas que NO han ocurrido** o detectar inactividad.
+
+Si quieres saber: *"¿Qué clientes registrados jamás han realizado una compra?"*
+
+Solo tienes que añadir un `WHERE` buscando los valores nulos:
+
+``` sql
+SELECT clientes.nombre
+FROM clientes
+LEFT JOIN pedidos 
+    ON clientes.id = pedidos.cliente_id
+WHERE pedidos.cliente_id IS NULL;  -- Filtra solo las filas donde no hubo coincidencia
+```
+
+# RIGHT JOIN (Unión Derecha)
+
+**¿Qué hace?**
+
+El `RIGHT JOIN` toma **TODOS los datos de la segunda tabla** (la tabla de la derecha, la que pones después de la palabra `JOIN`), y trae los datos de la primera tabla (la de la izquierda) **solo cuando hay coincidencia**.
+
+Si un registro de la tabla de la derecha **no tiene pareja** en la tabla de la izquierda, la base de datos conserva esa fila y rellena las columnas de la tabla izquierda con valores vacíos (**`NULL`**).
+
+**Analogía del mundo real: El Ticket de Compra y los Productos**
+
+Imagina una tienda física:
+
+- **Tabla Izquierda (`FROM`):** La lista de **clientes registrados** en el club de fidelidad.
+
+- **Tabla Derecha (`JOIN`):** Todos los **tickets de venta** cobrados en caja hoy.
+
+Si haces un `RIGHT JOIN`, el resultado te mostrará **TODOS los tickets cobrados en el día**.
+
+- Si el ticket pertenece a un cliente registrado, verás el nombre del cliente.
+
+- Si la compra la hizo un cliente anónimo (sin tarjeta de fidelidad), el ticket aparecerá de todos modos, pero en la columna del cliente verás un **`NULL`**.
+
+**Ejemplo práctico explicativo**
+
+Cambiemos ligeramente nuestro ejemplo para ver el efecto real:
+
+**Tabla Izquierda: `CLIENTES`**
+
+|             |            |
+|-------------|------------|
+| **id (PK)** | **nombre** |
+| **1**       | Ana        |
+| **2**       | Carlos     |
+
+**Tabla Derecha: `PEDIDOS`**
+
+|        |                     |           |
+|--------|---------------------|-----------|
+| **id** | **cliente_id (FK)** | **total** |
+| 101    | **1**               | \$50      |
+| 102    | **1**               | \$30      |
+| 103    | **99**              | \$200     |
+
+> 📌 **Atención aquí:** El pedido 103 tiene un `cliente_id = 99` (alguien que compró como invitado/anónimo y no existe en la tabla de `clientes`).
+
+**La Consulta SQL**
+
+``` sql
+SELECT 
+    clientes.nombre, 
+    pedidos.id AS pedido_id,
+    pedidos.total
+FROM clientes              -- 👈 Tabla de la IZQUIERDA
+RIGHT JOIN pedidos         -- 👈 ESTA es la tabla de la DERECHA (RIGHT)
+    ON clientes.id = pedidos.cliente_id;
+```
+
+**Resultado de la consulta:**
+
+|            |               |           |
+|------------|---------------|-----------|
+| **nombre** | **pedido_id** | **total** |
+| Ana        | 101           | \$50      |
+| Ana        | 102           | \$30      |
+| **`NULL`** | **103**       | **\$200** |
+
+**¿Por qué sale este resultado?**
+
+- Los pedidos **101** y **102** encuentran su pareja con Ana.
+
+- El pedido **103 APARECE SÍ O SÍ** porque pertenece a la tabla de la derecha (`pedidos`). Como su `cliente_id` (99) no coincide con ningún cliente registrado, la columna `nombre` se rellena con **`NULL`**.
+
+**¿Por qué casi nadie usa `RIGHT JOIN`?**
+
+En el trabajo diario con bases de datos, **el 95% de los desarrolladores evita usar `RIGHT JOIN`**.
+
+¿Por qué? Porque cambiar el orden de lectura de izquierda a derecha vuelve las consultas complejas más difíciles de leer.
+
+Cualquier `RIGHT JOIN` se puede escribir como un `LEFT JOIN` simplemente invirtiendo el orden de las tablas en la consulta
+
+# FULL OUTER JOIN (Unión Total / Completa)
+
+**¿Qué hace?**
+
+El `FULL OUTER JOIN` combina los resultados de un `LEFT JOIN` y un `RIGHT JOIN` al mismo tiempo.
+
+Devuelve **TODAS las filas de AMBAS tablas**:
+
+- Si hay coincidencia entre filas, las une.
+
+- Si una fila de la izquierda **no tiene pareja** a la derecha, se muestra y rellena la derecha con **`NULL`**.
+
+- Si una fila de la derecha **no tiene pareja** a la izquierda, se muestra y rellena la izquierda con **`NULL`**.
+
+**Analogía del mundo real: La Fiesta de Encuentro de Exalumnos**
+
+Imagina dos listas:
+
+- **Tabla Izquierda (`FROM`):** Lista de alumnos que cursaron la Educación Primaria.
+
+- **Tabla Derecha (`JOIN`):** Lista de alumnos que cursaron la Educación Secundaria.
+
+Un `FULL OUTER JOIN` creará una lista general con **todos los estudiantes que hayan pasado por el colegio alguna vez**:
+
+- Verás a los que hicieron Primaria Y Secundaria juntos (coincidencia).
+
+- Verás a los que solo hicieron Primaria y luego se cambiaron de colegio (espacio en blanco / `NULL` en Secundaria).
+
+- Verás a los que entraron nuevos en Secundaria (espacio en blanco / `NULL` en Primaria).
+
+**Ejemplo práctico explicativo**
+
+Usemos nuestras dos tablas con casos sin pareja en ambos lados:
+
+**Tabla Izquierda: `CLIENTES`**
+
+|             |                           |
+|-------------|---------------------------|
+| **id (PK)** | **nombre**                |
+| **1**       | Ana                       |
+| **2**       | Carlos                    |
+| **3**       | **María** *(Sin pedidos)* |
+
+**Tabla Derecha: `PEDIDOS`**
+
+|        |                     |                                           |
+|--------|---------------------|-------------------------------------------|
+| **id** | **cliente_id (FK)** | **total**                                 |
+| 101    | **1**               | \$50                                      |
+| 102    | **1**               | \$30                                      |
+| 103    | **2**               | \$120                                     |
+| 104    | **99**              | **\$200** *(Pedido anónimo, sin cliente)* |
+
+**La Consulta SQL**
+
+``` sql
+SELECT 
+    clientes.nombre, 
+    pedidos.id AS pedido_id,
+    pedidos.total
+FROM clientes
+FULL OUTER JOIN pedidos
+    ON clientes.id = pedidos.cliente_id;
+```
+
+**Resultado de la consulta:**
+
+|            |               |            |                                      |
+|----------------|----------------|----------------|------------------------|
+| **nombre** | **pedido_id** | **total**  | **¿De dónde sale?**                  |
+| Ana        | 101           | \$50       | Coincidencia en ambas                |
+| Ana        | 102           | \$30       | Coincidencia en ambas                |
+| Carlos     | 103           | \$120      | Coincidencia en ambas                |
+| **María**  | **`NULL`**    | **`NULL`** | Viene solo de `CLIENTES` (Izquierda) |
+| **`NULL`** | **104**       | **\$200**  | Viene solo de `PEDIDOS` (Derecha)    |
+
+**¿Para qué sirve en la vida real?**
+
+Es ideal para **auditorías o limpieza de datos**, cuando necesitas detectar inconsistencias en ambos lados a la vez:
+
+1.  Ver qué clientes no han comprado nada.
+
+2.  Ver qué pedidos existen en el sistema sin un cliente asignado (errores de sistema).
+
+# CROSS JOIN (Producto Cartesiano / Combinación Total)
+
+**¿Qué hace?**
+
+A diferencia de todos los anteriores (`INNER`, `LEFT`, `RIGHT`, `FULL`), este JOIN **no utiliza la cláusula `ON`** porque no busca coincidencias.
+
+El `CROSS JOIN` toma **cada una de las filas de la primera tabla** y la combina con **cada una de las filas de la segunda tabla**.
+
+Produce una lista con **todas las combinaciones posibles** entre ambas tablas.
+
+> L**a regla matemática:**
+>
+> Si la Tabla A tiene **3 filas** y la Tabla B tiene **4 filas**, el resultado del `CROSS JOIN` tendrá **3 × 4 = 12 filas**.
+
+**Analogía del mundo real: Combinar Ropa o Crear un Menú**
+
+Imagina que vas a vestirte por la mañana:
+
+- **Tabla A (Camisetas):** Roja, Azul. (2 filas)
+
+- **Tabla B (Pantalones):** Vaquero, Negro, Blanco. (3 filas)
+
+Un `CROSS JOIN` te dará **todas las combinaciones de outfits posibles** que puedes hacer (2 × 3 = 6 combinaciones):
+
+1.  Roja + Vaquero
+
+2.  Roja + Negro
+
+3.  Roja + Blanco
+
+4.  Azul + Vaquero
+
+5.  Azul + Negro
+
+6.  Azul + Blanco
+
+**Ejemplo práctico explicativo**
+
+Imaginemos una tienda de comida rápida:
+
+Tabla: `PLATOS`
+
+|             |
+|-------------|
+| **plato**   |
+| Hamburguesa |
+| Tacos       |
+
+Tabla: `BEBIDAS`
+
+|            |
+|------------|
+| **bebida** |
+| Refresco   |
+| Agua       |
+| Cerveza    |
+
+**La Consulta SQL**
+
+Sintácticamente es el JOIN más sencillo porque **no lleva la condición `ON`**
+
+``` sql
+SELECT 
+    platos.plato, 
+    bebidas.bebida
+FROM platos
+CROSS JOIN bebidas;
+```
+
+*(Nota: También existe una sintaxis antigua que hace exactamente lo mismo: `SELECT * FROM platos, bebidas;`)*
+
+**Resultado de la consulta (2 platos × 3 bebidas = 6 combinaciones):**
+
+|             |            |
+|-------------|------------|
+| **plato**   | **bebida** |
+| Hamburguesa | Refresco   |
+| Hamburguesa | Agua       |
+| Hamburguesa | Cerveza    |
+| Tacos       | Refresco   |
+| Tacos       | Agua       |
+| Tacos       | Cerveza    |
+
+**¡Cuidado en la vida real! (El peligro del `CROSS JOIN`)**
+
+En entornos de producción, el `CROSS JOIN` debe usarse con **mucha precaución**.
+
+Si haces un `CROSS JOIN` accidentalmente entre dos tablas medianas, por ejemplo:
+
+- Una tabla de **10,000 clientes**
+
+- Una tabla de **5,000 productos**
+
+La base de datos intentará generar **¡50,000,000 de filas!** Esto puede colgar o ralentizar gravemente el servidor de la empresa.
+
+**¿Para qué sirve realmente en la práctica?**
+
+Aunque parece peligroso, tiene casos de uso muy específicos y potentes:
+
+1.  **Generar catálogos o combinaciones de productos:** Crear todas las combinaciones de tallas (S, M, L, XL) y colores (Rojo, Verde, Azul) para una nueva prenda.
+
+2.  **Matrices de reporte:** Generar una fila para cada mes del año por cada departamento de la empresa, para asegurar que el informe muestre los 12 meses aunque no haya habido ventas en alguno.
+
+Para cerrar el bloque de uniones con broche de oro, falta un caso especial que no es un comando nuevo, sino un "truco" de uso: el **`SELF JOIN`**.
+
+# SELF JOIN (Unirse a sí mismo)
+
+**¿Qué es?**
+
+Un `SELF JOIN` no es una palabra clave nueva en SQL (no escribes `SELF JOIN`). Consiste simplemente en **unir una tabla consigo misma** usando un `INNER JOIN` o un `LEFT JOIN`.
+
+Para que la base de datos no se confunda, le asignamos **dos apodos (alias) distintos** a la misma tabla dentro de la consulta, como si fueran dos tablas separadas.
+
+**Analogía del mundo real: La Estructura Jerárquica**
+
+Imagina una tabla de empleados donde cada trabajador tiene un `jefe_id` que apunta al `id` de otro empleado dentro de la misma lista:
+
+- **Tabla `EMPLEADOS` (Visto como Empleado):** Juan (ID 1, jefe_id: 2)
+
+- **Tabla `EMPLEADOS` (Visto como Jefe):** María (ID 2, jefe_id: NULL)
+
+Si quieres ver en una misma línea el nombre del empleado **y el nombre de su jefe**, tienes que cruzar la tabla de empleados contra sí misma.
+
+**Ejemplo rápido de consulta SQL**
+
+SQL
+
+``` sql
+SELECT 
+    e.nombre AS empleado,
+    j.nombre AS jefe
+FROM empleados e                  -- 'e' representa la vista de Empleados
+LEFT JOIN empleados j             -- 'j' representa la vista de Jefes (misma tabla)
+    ON e.jefe_id = j.id;
+```
+
+**Resultado:**
+
+|              |                                           |
+|--------------|-------------------------------------------|
+| **empleado** | **jefe**                                  |
+| Juan         | María                                     |
+| María        | `NULL` *(No tiene jefe, es la directora)* |
+
+**Casos de uso principales**
+
+1.  **Jerarquías:** Empleados y Jefes, Categorías y Subcategorías.
+
+2.  **Comparación entre filas:** Comparar las ventas de un cliente hoy con sus ventas de ayer dentro del mismo historial.
+
+# Resumen
+
+|  |  |  |
+|------------------|------------------|-------------------------------------|
+| **Tipo de JOIN** | **¿Lleva cláusula ON?** | **¿Qué devuelve?** |
+| **`INNER JOIN`** | **SÍ** | Solo filas con coincidencia en ambas tablas. |
+| **`LEFT JOIN`** | **SÍ** | Todo lo de la izquierda + coincidencias de la derecha. |
+| **`RIGHT JOIN`** | **SÍ** | Todo lo de la derecha + coincidencias de la izquierda. |
+| **`FULL JOIN`** | **SÍ** | Absolutamente todo lo de ambas tablas. |
+| **`CROSS JOIN`** | **NO** | **Todas las combinaciones posibles** (Producto cartesiano). |
+| `SELF JOIN` | **SÍ** | Relaciones de una tabla consigo misma. |
+
+# Operadores de Conjuntos en SQL
+
+Los operadores `UNION` y `UNION ALL` se utilizan para combinar los conjuntos de resultados de dos o más consultas `SELECT` en una única tabla de resultados.
+
+Para poder utilizar cualquiera de estos operadores, las consultas combinadas deben cumplir **tres reglas estrictas**: 1. **Mismo número de columnas:** Todas las consultas `SELECT` deben devolver exactamente la misma cantidad de columnas. 2. **Tipos de datos compatibles:** Las columnas en las posiciones correspondientes deben tener tipos de datos iguales o compatibles (por ejemplo, no puedes mezclar una columna de texto con una de fecha). 3. **Mismo orden:** Las columnas deben estar en el mismo orden en todas las consultas `SELECT`.
+
+------------------------------------------------------------------------
+
+## UNION
+
+El operador `UNION` combina los resultados de las consultas y **elimina las filas duplicadas**. Si una fila exacta aparece en los resultados de la primera consulta y también en la segunda, solo se mostrará una vez en el resultado final.
+
+Debido a que el motor de base de datos debe buscar y eliminar los duplicados, `UNION` requiere más recursos y tiempo de procesamiento que `UNION ALL`.
+
+### Sintaxis y Ejemplo
+
+Imagina que tenemos dos tablas: `Empleados_Madrid` y `Empleados_Barcelona`. Queremos una lista única de todos los puestos de trabajo que existen en la empresa, sin importar la ciudad.
+
+``` sql
+SELECT puesto
+FROM Empleados_Madrid
+
+UNION
+
+SELECT puesto
+FROM Empleados_Barcelona;
+```
+
+Resultado: Si el puesto "Desarrollador" está en ambas ciudades, aparecerá solo una vez en el listado final.
+
+UNION ALL El operador UNION ALL también combina los resultados de las consultas, pero mantiene todas las filas, incluyendo los duplicados.
+
+Como el motor de base de datos simplemente anexa los resultados de la segunda consulta a los de la primera sin evaluar si existen repeticiones, **UNION ALL es mucho más rápido y eficiente que UNION**.
+
+Sintaxis y Ejemplo Siguiendo el ejemplo anterior, si queremos saber el volumen total de contratos por puesto en ambas ciudades, necesitamos conservar cada registro individual.
+
+``` sql
+SELECT nombre, apellidos, puesto
+FROM Empleados_Madrid
+
+UNION ALL
+
+SELECT nombre, apellidos, puesto
+FROM Empleados_Barcelona;
+```
+
+**Resultado:** Si hay 5 desarrolladores en Madrid y 3 en Barcelona, el listado final tendrá 8 filas con el puesto "Desarrollador".
+
+## Resumen de diferencias clave
+
+|  |  |  |
+|----------------|------------------------|------------------------|
+| **Característica** | **UNION** | **UNION ALL** |
+| **Tratamiento de duplicados** | Los elimina (muestra valores únicos). | Los conserva (muestra todos los registros). |
+| **Rendimiento** | Más lento (requiere procesar y filtrar duplicados). | Más rápido (simplemente concatena los resultados). |
+| **Cuándo usarlo** | Cuando necesites una lista limpia de valores distintos procedentes de varias tablas. | Cuando necesites el volumen total de datos o estés seguro de que no hay duplicados entre las tablas. |
+
+> **Nota sobre el ordenamiento (ORDER BY):** Si necesitas ordenar los resultados combinados, la cláusula `ORDER BY` solo se debe escribir una vez, al final de la última consulta `SELECT`. Se aplicará a todo el conjunto de resultados unido.

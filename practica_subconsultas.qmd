@@ -1,0 +1,641 @@
+---
+title: "Subconsultas Resueltas en SQL"
+format: html
+toc: true
+---
+
+## Subconsulta 1. Empleados con salario superior a la media
+
+**Enunciado:** Muestra los empleados cuyo salario sea superior al salario medio de toda la empresa\[cite: 7\].
+
+``` sql
+SELECT
+id_empleado,
+nombre,
+apellidos,
+salario
+FROM Empleados
+WHERE salario > (
+SELECT AVG(salario)
+FROM Empleados
+)
+ORDER BY salario DESC;
+```
+
+**Resultado esperado:** 56 empleados\[cite: 7\].
+
+## Subconsulta 2. Empleado con el salario más alto
+
+**Enunciado:** Muestra el empleado o empleados que tengan el salario más alto de la empresa\[cite: 7\].
+
+``` sql
+SELECT
+id_empleado,
+nombre,
+apellidos,
+salario
+FROM Empleados
+WHERE salario = (
+SELECT MAX(salario)
+FROM Empleados
+);
+```
+
+**Resultado esperado:** 1 empleado\[cite: 7\].
+
+## Subconsulta 3. Segundo salario más alto
+
+**Enunciado:** Obtén el empleado o empleados que tengan el segundo salario más alto de la empresa\[cite: 7\].
+
+``` sql
+SELECT
+id_empleado,
+nombre,
+apellidos,
+salario
+FROM (
+SELECT
+id_empleado,
+nombre,
+apellidos,
+salario,
+DENSE_RANK() OVER (ORDER BY salario DESC) AS posicion
+FROM Empleados
+) AS ranking
+WHERE posicion = 2;
+```
+
+**Resultado esperado:** 1 empleado\[cite: 7\].
+
+## Subconsulta 4. Salario superior a la media del departamento
+
+**Enunciado:** Muestra los empleados cuyo salario sea superior al salario medio de su propio departamento\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.departamento,
+e.salario
+FROM Empleados AS e
+WHERE e.salario > (
+SELECT AVG(e2.salario)
+FROM Empleados AS e2
+WHERE e2.departamento = e.departamento
+)
+ORDER BY e.departamento, e.salario DESC;
+```
+
+> **Nota:** Esta es una subconsulta correlacionada, porque la subconsulta utiliza el departamento del empleado procesado por la consulta principal\[cite: 7\].
+
+**Resultado esperado:** 68 empleados\[cite: 7\].
+
+## Subconsulta 4plus. Salario superior a la media del departamento
+
+**Enunciado:** Muestra los empleados cuyo salario sea superior al salario medio de su propio departamento\[cite: 7\]. Muestra el salario medio del departamento\[cite: 7\].
+
+### OPCION 1\[cite: 7\]
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.departamento,
+e.salario
+FROM
+(SELECT *, round(AVG(salario) OVER (PARTITION BY departamento),2)
+AS media_departamento FROM Empleados) e
+WHERE e.salario > e.media_departamento
+ORDER BY e.departamento, e.salario DESC;
+```
+
+### OPCION 2\[cite: 7\]
+
+``` sql
+WITH eventual AS ( SELECT *, round(AVG(salario) OVER (PARTITION BY departamento),2)
+AS media_departamento
+FROM Empleados)
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.departamento,
+e.salario
+FROM eventual e
+WHERE e.salario > e.media.departamento
+ORDER BY e.departamento, e.salario DESC;
+```
+
+## Subconsulta 5. Salario máximo de cada departamento
+
+**Enunciado:** Muestra el empleado o empleados con el salario más alto de cada departamento\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.departamento,
+e.salario
+FROM Empleados AS e
+WHERE e.salario = (
+SELECT MAX(e2.salario)
+FROM Empleados AS e2
+WHERE e2.departamento = e.departamento
+)
+ORDER BY e.departamento;
+```
+
+**Resultado esperado:** 10 empleados, uno por departamento\[cite: 7\].
+
+## Subconsulta 6. Departamentos por encima de la media general
+
+**Enunciado:** Muestra los departamentos cuyo salario medio sea superior al salario medio de toda la empresa\[cite: 7\].
+
+``` sql
+SELECT
+departamento,
+ROUND(AVG(salario), 2) AS salario_medio
+FROM Empleados
+GROUP BY departamento
+HAVING AVG(salario) > (
+SELECT AVG(salario)
+FROM Empleados
+)
+ORDER BY salario_medio DESC;
+```
+
+**Resultado esperado:** 3 departamentos\[cite: 7\].
+
+## Subconsulta 7. Empleados de departamentos grandes
+
+**Enunciado:** Muestra los empleados que pertenezcan a departamentos con al menos 15 trabajadores\[cite: 7\].
+
+``` sql
+SELECT
+id_empleado,
+nombre,
+apellidos,
+departamento
+FROM Empleados
+WHERE departamento IN (
+SELECT departamento
+FROM Empleados
+GROUP BY departamento
+HAVING COUNT(*) >= 15
+)
+ORDER BY departamento, apellidos, nombre;
+```
+
+**Resultado esperado:** 59 empleados\[cite: 7\].
+
+## Subconsulta 8. Empleados que son responsables
+
+**Enunciado:** Muestra los empleados que tienen, al menos, un subordinado directo\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.puesto
+FROM Empleados AS e
+WHERE EXISTS (
+SELECT +
+FROM Empleados AS subordinado
+WHERE subordinado.id_responsable = e.id_empleado
+)
+ORDER BY e.id_empleado;
+```
+
+> **Nota:** EXISTS devuelve verdadero cuando la subconsulta encuentra al menos una fila\[cite: 7\].
+
+**Resultado esperado:** 20 responsables\[cite: 7\].
+
+## Subconsulta 9. Empleados sin subordinados
+
+**Enunciado:** Muestra los empleados que no tienen ningún subordinado directo\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.puesto
+FROM Empleados AS e
+WHERE NOT EXISTS (
+SELECT 1
+FROM Empleados AS subordinado
+WHERE subordinado.id_responsable = e.id_empleado
+)
+ORDER BY e.id_empleado;
+```
+
+**Resultado esperado:** 130 empleados\[cite: 7\].
+
+## Subconsulta 10. Empleados de responsables con salario elevado
+
+**Enunciado:** Muestra los empleados cuyo responsable cobra más que el salario medio de todos los empleados que ejercen como responsables\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.id_responsable
+FROM Empleados AS e
+WHERE e.id_responsable IN (
+SELECT r.id_empleado
+FROM Empleados AS r
+WHERE r.salario > (
+SELECT AVG(m.salario)
+FROM Empleados AS m
+WHERE EXISTS (
+SELECT *
+FROM Empleados AS subordinado
+WHERE subordinado.id_responsable = m.id_empleado
+)
+)
+)
+ORDER BY e.id_responsable, e.id_empleado;
+```
+
+> **Nota:** Esta consulta combina una subconsulta con IN, otra subconsulta para calcular la media y una subconsulta con EXISTS\[cite: 7\].
+
+**Resultado esperado:** 19 empleados\[cite: 7\].
+
+## Subconsulta 11. Empleados contratados antes que su responsable
+
+**Enunciado:** Localiza empleados cuya fecha de contratación sea anterior a la de su responsable directo\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.fecha_contratacion,
+e.id_responsable
+FROM Empleados AS e
+WHERE e.fecha_contratacion < (
+SELECT r.fecha_contratacion
+FROM Empleados AS r
+WHERE r.id_empleado = e.id_responsable
+)
+ORDER BY e.fecha_contratacion;
+```
+
+> **Nota:** Al utilizar fechas con formato AAAA-MM-DD, SQLite puede compararlas correctamente como texto\[cite: 7\].
+
+**Resultado esperado:** 31 empleados\[cite: 7\].
+
+## Subconsulta 12. Salario superior al máximo de otro departamento
+
+**Enunciado:** Muestra los empleados que cobren más que el empleado mejor pagado del departamento de Atención al cliente\[cite: 7\].
+
+``` sql
+SELECT
+id_empleado,
+nombre,
+apellidos,
+departamento,
+salario
+FROM Empleados
+WHERE salario > (
+SELECT MAX(salario)
+FROM Empleados
+WHERE departamento = 'Atención al cliente')
+ORDER BY salario DESC;
+```
+
+**Resultado esperado:** 22 empleados\[cite: 7\].
+
+## Subconsulta 13. Mejor evaluación de cada departamento
+
+**Enunciado:** Muestra los empleados que hayan obtenido la mejor evaluación de su departamento\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+e.departamento,
+e.evaluacion
+FROM Empleados AS e
+WHERE e.evaluacion IS NOT NULL AND e.evaluacion = (
+SELECT MAX(e2.evaluacion)
+FROM Empleados AS e2
+WHERE e2.departamento = e.departamento)
+ORDER BY e.departamento, e.id_empleado;
+```
+
+**Resultado esperado:** 10 empleados\[cite: 7\].
+
+## Subconsulta 14. Subconsulta dentro de SELECT
+
+**Enunciado:** Muestra cada empleado junto con el nombre completo de su responsable\[cite: 7\].
+
+``` sql
+SELECT
+e.id_empleado,
+e.nombre,
+e.apellidos,
+(
+SELECT r.nombre || ' ' || r.apellidos
+FROM Empleados AS r
+WHERE r.id_empleado = e.id_responsable
+) AS responsable
+FROM Empleados AS e
+ORDER BY e.id_empleado;
+```
+
+> **Nota:** En SQLite, el operador `||` se utiliza para concatenar texto\[cite: 7\]. El director general aparecerá sin responsable porque su id_responsable es NULL\[cite: 7\].
+
+**Resultado esperado:** 150 filas\[cite: 7\].
+
+## Subconsulta 15. Subconsulta dentro de FROM
+
+**Enunciado:** Calcula las estadísticas salariales de cada departamento y muestra únicamente aquellos cuyo salario medio sea superior a 35.000 €\[cite: 7\].
+
+### OPCION 1 - Subconsulta\[cite: 7\]
+
+``` sql
+SELECT
+resumen.departamento,
+resumen.numero_empleados,
+resumen.salario_medio
+FROM (
+SELECT departamento,
+COUNT(*) AS numero_empleados,
+ROUND(AVG(salario), 2) AS salario_medio
+FROM Empleados
+GROUP BY departamento) AS resumen
+WHERE resumen.salario_medio > 35000
+```
+
+### OPCION 2 - CTE\[cite: 7\]
+
+``` sql
+WITH resumen AS (
+SELECT departamento,
+COUNT(*) AS numero_empleados,
+ROUND(AVG(salario), 2) AS salario_medio
+FROM Empleados
+GROUP BY departamento)
+SELECT
+departamento,
+numero_empleados,
+salario_medio
+FROM resumen
+WHERE salario_medio > 35000
+```
+
+> **Nota:** La subconsulta de FROM genera una tabla temporal denominada resumen\[cite: 7\].
+
+**Resultado esperado:** 9 departamentos\[cite: 7\].
+
+Este documento reúne nueve ejercicios resueltos sobre subconsultas, expresiones de tabla comunes y funciones de ventana aplicadas a la tabla empleados\[cite: 7\]. Cada propuesta mantiene una estructura común para facilitar su lectura y comparación\[cite: 7\].
+
+## 1 Propuesta de Alberto
+
+\*\*Enunciado:\*\* Clasifica a los empleados activos por su salario dentro de cada departamento y muestra los tres salarios más altos\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 33 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+WITH clasificacion AS (
+SELECT
+id_empleado,
+nombre,
+apellidos,
+departamento,
+salario,
+DENSE_RANK() OVER (
+PARTITION BY departamento
+ORDER BY salario DESC
+) AS posicion
+FROM empleados
+WHERE activo = 1
+)
+SELECT id_empleado, nombre, salario, departamento
+FROM clasificacion
+WHERE posicion \<= 3
+ORDER BY departamento;
+\`\`\`
+
+## 2 Propuesta de Maikel
+
+\*\*Enunciado:\*\* Muestra los datos de los empleados que cumplen las siguientes condiciones\[cite: 7\]:
+
+[1.]{.underline} Son responsables de al menos un empleado (ejercen como jefes)\[cite: 7\].
+[2.]{.underline} Su salario es superior al salario de todos los empleados a su cargo\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 20 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT
+j.id_empleado,
+j.id_responsable,
+j.nombre,
+j.apellidos,
+j.salario
+FROM empleados AS j
+WHERE EXISTS (
+SELECT
+sub.id_empleado,
+sub.id_responsable,
+sub.nombre,
+sub.apellidos,
+sub.salario
+FROM empleados AS sub
+WHERE sub.id_responsable = j.id_empleado
+)
+AND j.salario \> (
+SELECT MAX(s.salario)
+FROM empleados AS s
+WHERE s.id_responsable = j.id_empleado
+);
+\`\`\`
+
+### Solución alternativa incluida en el original\[cite: 7\]
+\`\`\`sql
+WITH subordinados AS (
+SELECT id_responsable, MAX(salario) AS salario
+FROM empleados
+GROUP BY id_responsable
+)
+SELECT id_empleado, id_responsable, nombre
+FROM empleados AS jefes
+WHERE jefes.salario \>= (
+SELECT salario
+FROM subordinados
+WHERE subordinados.id_responsable = jefes.id_empleado
+);
+\`\`\`
+
+## 3 Propuesta de Aleksandra
+
+\*\*Enunciado:\*\* Muestra los empleados no activos que cobran más que la media salarial de la empresa y sus rangos salariales dentro de sus departamentos\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 2 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+WITH temporal AS (
+SELECT
+\*,
+DENSE_RANK() OVER (
+PARTITION BY departamento
+ORDER BY salario DESC
+) AS rango
+FROM empleados
+)
+SELECT id_empleado, nombre, apellidos, activo, rango
+FROM temporal
+WHERE activo = 0
+AND salario \> (
+SELECT AVG(salario)
+FROM empleados
+);
+\`\`\`
+
+## 4 Propuesta de Vicky
+
+\*\*Enunciado:\*\* Encuentra empleados de ciudades distintas de Madrid que se apellidan igual que los empleados de la oficina de Madrid\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 31 filas\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT apellidos, nombre, ciudad
+FROM empleados
+WHERE ciudad \<\> 'Madrid'
+AND apellidos IN (
+SELECT apellidos
+FROM empleados
+WHERE ciudad = 'Madrid'
+);
+\`\`\`
+
+## 5 Propuesta de Cristian
+
+\*\*Enunciado:\*\* Muestra a los empleados cuyo puesto sea Responsable, cuántos hay y cuántos de ellos fueron contratados después de 2013\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 5 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT
+nombre,
+(
+SELECT COUNT(\*)
+FROM empleados
+WHERE puesto LIKE '%Responsable%'
+) AS cant_RES,
+(
+SELECT COUNT(\*)
+FROM empleados
+WHERE puesto LIKE '%Responsable%'
+AND fecha_contrataci \> '2013-12-31'
+) AS cant_desp
+FROM empleados
+WHERE puesto LIKE '%Responsable%'
+AND fecha_contrataci \> '2013-12-31';
+\`\`\`
+
+## 6 Propuesta de Luisany
+
+\*\*Enunciado:\*\* Muestra el nombre, el salario y el identificador del responsable de los empleados que no son jefes de nadie y que ganan más que el salario medio de los empleados que dependen de su mismo responsable\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 64 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT
+e.nombre,
+e.salario,
+e.id_responsable,
+(
+SELECT ROUND (AVG(s.salario), 2)
+FROM empleados AS s
+WHERE s.id_responsable = e.id_responsable
+) AS media_responsable
+FROM empleados AS e
+WHERE NOT EXISTS (
+SELECT \*
+FROM empleados AS sub
+WHERE sub.id_responsable = e.id_empleado
+)
+AND e.salario \> (
+SELECT AVG(m.salario)
+FROM empleados AS m
+WHERE m.id_responsable = e.id_responsable
+)
+ORDER BY e.id_responsable;
+\`\`\`
+
+## 7 Propuesta de Maryna
+
+\*\*Enunciado:\*\* Muestra los empleados en modalidad de Teletrabajo cuyas ganancias totales (salario más comisión) sean superiores al promedio de ganancias totales de la empresa\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 15 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+WITH ganancias AS (
+SELECT
+nombre,
+apellidos,
+salario,
+comision,
+salario + COALESCE(comision, 0) AS ganancias,
+modalidad
+FROM empleados
+)
+SELECT \*
+FROM ganancias
+WHERE modalidad = 'Teletrabajo'
+AND ganancias \> (
+SELECT AVG(ganancias)
+FROM ganancias
+);
+\`\`\`
+
+## 8 Propuesta de Paola
+
+\*\*Enunciado:\*\* El departamento de Recursos Humanos necesita identificar a los líderes y profesionales mejor pagados de la organización\[cite: 7\]. El objetivo es listar de forma individual a todos los empleados de la empresa cuyo salario supere al del empleado mejor pagado del área de Finanzas\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 14 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT nombre, apellidos, salario, departamento
+FROM empleados
+WHERE salario \> (
+SELECT MAX(salario)
+FROM empleados
+WHERE departamento = 'Finanzas'
+);
+\`\`\`
+
+## 9 Propuesta de Karina
+
+\*\*Enunciado:\*\* Muestra el nombre, el puesto y el salario de los empleados cuyo puesto se encuentre entre los tres puestos con el salario medio más alto de la empresa\[cite: 7\].
+
+\*\*Resultado esperado:\*\* 3 empleados\[cite: 7\].
+
+### Solución SQL
+\`\`\`sql
+SELECT nombre, puesto, salario
+FROM empleados
+WHERE puesto IN (
+SELECT puesto
+FROM empleados
+GROUP BY puesto
+ORDER BY AVG(salario) DESC
+LIMIT 3
+);
+\`\`\`

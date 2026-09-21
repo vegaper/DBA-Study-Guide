@@ -532,7 +532,7 @@ CREATE TABLE usuarios (
 
 **Modificadores (Añadir o restar tiempo)**
 
-```sql
+``` sql
 -- Sumar o restar días, meses o años
 SELECT date('now', '+7 days');             -- Fecha dentro de una semana
 SELECT date('now', '-1 month');            -- Fecha hace un mes
@@ -567,7 +567,7 @@ ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
 
 - `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
 
-```sql
+``` sql
 SELECT 
     strftime('%Y-%m', fecha_venta) AS mes,
     COUNT(*) AS total_ventas
@@ -579,7 +579,7 @@ GROUP BY mes;
 
 Dado que las fechas en texto no se pueden restar directamente, convertimos la fecha a días julianos con `julianday()`:
 
-```sql
+``` sql
 SELECT 
     nombre_tarea,
     CAST(julianday(fecha_fin) - julianday(fecha_inicio) AS INTEGER) AS dias_duracion
@@ -588,7 +588,7 @@ FROM proyectos;
 
 Añadir or restar de fechas
 
-```sql
+``` sql
 -- Restar 1 día
 SELECT date('now', '-1 day');
 
@@ -1360,3 +1360,102 @@ select
    FROM tweets where year(tweet_date) =2022 group by user_id ) as t group by posts 
 ```
 :::::
+
+# Subconsultas SQL
+
+Una subconsulta es una consulta anidada dentro de otra consulta. Se ejecuta primero y su resulado es utilizado por la consulta externa.
+
+Se pueden crear subconsultas en el select, en el where o en el from
+
+## Subconsultas en el 'Where'.
+
+Filtra resultados calculados dinamicamente. La subconsulta se evalúa primero
+
+``` sql
+SELECT columna
+FROM tabla
+WHERE columna operador_condicional (
+    SELECT columna
+    FROM tabla2    
+);
+```
+
+``` sql
+SELECT 
+    nombre, 
+    salario   
+    from empleados
+where salario > (select avg(salario) from empleados)
+```
+
+La subconsulta se evalúa primero; su resultado se usa como criterio de filtro en la consulta externa.
+
+Ejemplo: Obtener empleados con salario mayor al promedio de todos los empleados. La subconsulta calcula el promedio global; la consulta externa filtra únicamente a quienes superan ese umbral.
+
+``` sql
+SELECT 
+    nombre, 
+    salario 
+    FROM empleados 
+    WHERE salario > ( SELECT AVG(salario) FROM empleados );
+```
+
+![](paste-RGC9W5jyIBV4SKMG31aaD)
+
+## Subconsultas en el select
+
+Agrega columnas calculadas dinamicamente.
+
+La subconsulta se coloca como una columna calculada dentro de la lista de selección. Debe devolver exactamente un solo valor escalar por cada fila procesada.
+
+``` sql
+SELECT 
+    nombre,
+    (SELECT MAX(salario) FROM empleados) AS max_sal
+FROM empleados;
+```
+
+Hay que tener en cuenta que parte se ejecuta antes y cuál después, por ejemplo en este ejemplo tenemos el mismo cálculo, que es la media del salario, pero el valor que está calculado con una subconsulta se calcula ANTES de filtrar los registros con la condición del WHERE, mientras que la media que se calcula sin subconsulta se calcula sobre el subset de los registros filtrados.
+
+``` sql
+SELECT 
+    nombre, 
+    salario,     
+    departamento,
+    AVG(Salario) OVER () AS media_filtrada,
+    (SELECT AVG(SALARIO ) FROM empleados)as media_sin_filtrar
+    from empleados
+where departamento ='Dirección'
+```
+
+## Subconsultas en el FROM
+
+La subconsulta en FROM actúa como una tabla virtual (tabla derivada). Debe llevar un alias obligatorio para poder ser referenciada por la consulta externa.
+
+``` sql
+SELECT alias.columna
+FROM (
+    SELECT columna
+    FROM tabla
+    WHERE condición
+    ) AS alias;
+```
+
+- Se ejecuta primero: La subconsulta interna genera un conjunto de resultados completo.
+
+- Alias obligatorio Sin alias, el motor SQL no puede referenciar la tabla derivada y arrojará un error.
+
+- Consulta externa opera sobre ella La consulta principal filtra, agrupa o selecciona columnas de esa tabla virtual.
+
+## Subconsultas correlacionadas
+
+Se ejecuta una vez por cada fila de la consulta externa
+
+``` sql
+SELECT 
+    nombre,
+    (SELECT SUM(ventas)
+FROM ventas v
+WHERE v.categoria = p.categoria) AS total_cat
+FROM productos p;
+```

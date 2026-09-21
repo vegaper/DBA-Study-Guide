@@ -1,0 +1,54 @@
+---
+title: "Tipos de claves en Bases de Datos Relacionales"
+format: html
+---
+
+Cada tipo de clave en una base de datos relacional cumple un propósito específico diseñado para garantizar la integridad de los datos, evitar duplicidades y permitir relaciones eficientes entre tablas.
+
+A continuación, se detalla la jerarquía y función de cada tipo de clave, ordenadas desde el concepto más general hasta el más específico.
+
+\*\* Superclave (Superkey) **Es cualquier conjunto de uno o más atributos (columnas) que pueden identificar de manera única una fila en una tabla. Su principal característica es que** puede contener atributos redundantes\*\* que no son estrictamente necesarios para la identificación única.
+
+- **Ejemplo:** En una tabla de Empleados, la combinación de `ID_Empleado` + `Nombre` es una superclave. Aunque el `ID_Empleado` por sí solo ya identifica a la persona, la combinación de ambos campos también garantiza que no haya dos filas iguales.
+
+**Clave Candidata (Candidate Key)** Es una "superclave mínima". Es decir, un conjunto de atributos que identifica unívocamente una fila, pero al que **no le sobra ningún atributo**. Si le quitas un atributo a una clave candidata, pierde su capacidad de identificar filas de forma única. Una tabla puede tener múltiples claves candidatas.
+
+- **Ejemplo:** En la misma tabla de Empleados, tanto el `ID_Empleado` como el `DNI` o el `Correo_Electronico` pueden identificar a una persona de forma única sin necesidad de combinarse con el nombre. Los tres son claves candidatas.
+
+**Clave Primaria (Primary Key - PK)** Es la clave candidata que el diseñador de la base de datos **selecciona finalmente como el identificador principal** de la tabla.
+
+- **Características estrictas de la Clave Primaria:**
+  - **Unicidad (UNIQUE):** No admite valores duplicados.
+  - **Obligatoriedad (NOT NULL):** No puede contener valores nulos (ninguna parte de la clave puede estar vacía).
+  - **Exclusividad:** Solo puede existir una clave primaria por tabla.
+  - **Referencia:** Es el campo al que normalmente apuntan otras tablas para establecer relaciones.
+  - **Puede ser compuesta:** Si se necesitan varias columnas juntas para identificar una fila única (ej. `ID_Pedido` + `ID_Producto` en una tabla de líneas de pedido), se denomina clave primaria compuesta.
+
+**Clave Alternativa (Alternate Key) y Restricción UNIQUE** Las claves alternativas son **todas las claves candidatas que NO fueron elegidas como Clave Primaria**. Siguen identificando registros de forma única y protegen la integridad de los datos.
+
+- **Implementación SQL (UNIQUE):** En SQL, las claves alternativas se implementan aplicando la restricción `UNIQUE` a la columna.
+- **Ejemplo:** Si elegimos `ID_Empleado` como clave primaria, los campos `DNI` y `Correo_Electronico` se convierten en claves alternativas. Se les aplicará una restricción `UNIQUE` para asegurar que dos empleados no compartan el mismo DNI o correo.
+- **Diferencia con la PK:** A diferencia de la primaria, una tabla sí puede tener múltiples restricciones `UNIQUE` y, dependiendo del motor de base de datos, los campos `UNIQUE` a veces pueden aceptar un valor `NULL`.
+
+**Clave Foránea (Foreign Key - FK)** Es la columna o conjunto de columnas en una tabla que **hace referencia a la Clave Primaria (o a una Clave Alternativa) de otra tabla**. Su función exclusiva es crear relaciones entre tablas y mantener la **integridad referencial**.
+
+- **Ejemplo:** En una tabla de `Empleados`, existe una columna llamada `ID_Departamento`. Esta columna es una Clave Foránea que apunta a la Clave Primaria de la tabla `Departamentos`. Esto garantiza que no se pueda asignar a un empleado un departamento que no existe en la empresa.
+- **Características:** A diferencia de las claves primarias, las claves foráneas sí pueden repetirse (muchos empleados pueden pertenecer al mismo departamento) y pueden contener valores nulos (un empleado que aún no tiene departamento asignado).
+
+**Clave compuesta**: una clave compuesta es una clave formada por dos o más columnas. Se usa cuando ninguna columna por sí sola identifica de forma única una fila.
+
+**Clave natural** clave que ya existe en el mundo real (DNI, NIE, ISBN...). Ventajas: tiene significado real. Inconveniente: Puede cambiar, tener errores o generar problemas de privacidad.
+
+**Clave artificial**: clave creada por la base de datos, sin significado real fuera de ella. Ventaja: simple, estable y eficiente. Inconveniente: No evita por sí sola duplicados reales
+
+------------------------------------------------------------------------
+
+## Resumen de la selección de claves
+
+1.  Tienes varios atributos que garantizan que una fila es única **(Superclaves)**.
+2.  Filtras aquellas a las que no les sobran columnas **(Claves Candidatas)**.
+3.  Eliges la mejor, más corta o más estable para que sea el identificador principal **(Clave Primaria)**.
+4.  El resto de opciones viables las proteges para que no haya duplicados **(Claves Alternativas / UNIQUE)**.
+5.  Usas el identificador principal en otras tablas para relacionar la información **(Clave Foránea)**.
+
+------------------------------------------------------------------------
