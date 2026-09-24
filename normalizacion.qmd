@@ -4,58 +4,60 @@ format: html
 ---
 
 # Introducción a la Normalización: Problemas de un mal diseño
+
 Antes de aplicar las reglas de normalización, es fundamental entender **por qué** son necesarias. Cuando diseñamos una base de datos agrupando toda la información en una única tabla gigante (diseño plano), generamos una serie de problemas estructurales graves que comprometen la integridad de los datos.
 
 Para ilustrar estos problemas, partiremos de tu ejemplo: una tabla única llamada `Empleados_Departamentos`.
 
-**Tabla: `Empleados_Departamentos`**
-* `id_empleado` (Clave Primaria)
-* `nombre`
-* `departamento`
-* `telefono_dpto`
-* `responsable_dpto`
+**Tabla: `Empleados_Departamentos`** \* `id_empleado` (Clave Primaria) \* `nombre` \* `departamento` \* `telefono_dpto` \* `responsable_dpto`
 
 El problema principal aquí es que **mezclamos conceptos (entidades) distintos**: datos que describen al empleado (`id_empleado`, `nombre`) con datos que describen al departamento (`telefono_dpto`, `responsable_dpto`).
 
 A partir de este mal diseño, surgen los siguientes problemas y anomalías:
 
 ## 1. Redundancia (Duplicidad de datos)
-La redundancia ocurre cuando el mismo dato se almacena innecesariamente múltiples veces. 
 
-* **En nuestro ejemplo:** Si el departamento de "Ventas" tiene 500 empleados, el número de teléfono de Ventas y el nombre de su responsable se escribirán **500 veces** en la base de datos. Esto supone un desperdicio enorme de espacio de almacenamiento y ralentiza las consultas.
+La redundancia ocurre cuando el mismo dato se almacena innecesariamente múltiples veces.
+
+- **En nuestro ejemplo:** Si el departamento de "Ventas" tiene 500 empleados, el número de teléfono de Ventas y el nombre de su responsable se escribirán **500 veces** en la base de datos. Esto supone un desperdicio enorme de espacio de almacenamiento y ralentiza las consultas.
 
 ## 2. Inconsistencia
+
 La inconsistencia es la consecuencia directa de la redundancia. Ocurre cuando existen diferentes valores para un dato que debería ser único y universal, provocando que la base de datos se contradiga a sí misma y deje de ser fiable.
 
-* **En nuestro ejemplo:** Si al registrar al empleado número 501 de Ventas alguien se equivoca al teclear el `telefono_dpto`, la base de datos dirá que el teléfono de Ventas es el "555-1000" en 500 registros, y "555-1001" en un registro. ¿Cuál es el verdadero? El sistema pierde su integridad.
+- **En nuestro ejemplo:** Si al registrar al empleado número 501 de Ventas alguien se equivoca al teclear el `telefono_dpto`, la base de datos dirá que el teléfono de Ventas es el "555-1000" en 500 registros, y "555-1001" en un registro. ¿Cuál es el verdadero? El sistema pierde su integridad.
 
----
+------------------------------------------------------------------------
 
 ## 3. Anomalías de manipulación de datos
 
 Un mal diseño no solo ocupa más espacio, sino que hace que las operaciones básicas (Insertar, Actualizar, Borrar) tengan comportamientos indeseados o directamente fallen. A esto se le llama **anomalías**.
 
 ### Anomalía de Actualización (Update Anomaly)
+
 Se produce cuando modificar un único dato del mundo real obliga a actualizar múltiples filas en la base de datos.
 
-* **El problema:** Si cambia el `responsable_dpto` de "Ventas", el sistema tiene que buscar y actualizar las 500 filas de los empleados de Ventas. 
-* **El riesgo:** Si el sistema falla a mitad del proceso o hay un error en la consulta, algunas filas tendrán al jefe nuevo y otras al jefe antiguo (generando, de nuevo, una inconsistencia).
+- **El problema:** Si cambia el `responsable_dpto` de "Ventas", el sistema tiene que buscar y actualizar las 500 filas de los empleados de Ventas.
+- **El riesgo:** Si el sistema falla a mitad del proceso o hay un error en la consulta, algunas filas tendrán al jefe nuevo y otras al jefe antiguo (generando, de nuevo, una inconsistencia).
 
 ### Anomalía de Inserción (Insert Anomaly)
+
 Se produce cuando el diseño de la tabla nos impide registrar cierta información a menos que inventemos datos ficticios para rellenar los campos obligatorios.
 
-* **El problema:** Imagina que la empresa crea el nuevo departamento de "Marketing", le asigna un responsable y un teléfono, pero **aún no ha contratado a ningún empleado** para ese departamento.
-* **El riesgo:** Como la Clave Primaria de la tabla es `id_empleado` (que no puede ser nula), es imposible guardar los datos del nuevo departamento. Tendríamos que inventar un empleado ficticio ("Empleado 0") solo para poder guardar el teléfono y el jefe de Marketing.
+- **El problema:** Imagina que la empresa crea el nuevo departamento de "Marketing", le asigna un responsable y un teléfono, pero **aún no ha contratado a ningún empleado** para ese departamento.
+- **El riesgo:** Como la Clave Primaria de la tabla es `id_empleado` (que no puede ser nula), es imposible guardar los datos del nuevo departamento. Tendríamos que inventar un empleado ficticio ("Empleado 0") solo para poder guardar el teléfono y el jefe de Marketing.
 
 ### Anomalía de Borrado (Delete Anomaly)
+
 Se produce cuando, al eliminar un registro que ya no necesitamos, borramos accidentalmente otra información valiosa que no queríamos perder.
 
-* **El problema:** Imagina que el departamento de "I+D" tiene un único empleado registrado en la base de datos. Si ese empleado renuncia y lo borramos de la tabla para darlo de baja, la fila entera desaparece.
-* **El riesgo:** Al borrar al empleado, **perdemos toda la información del departamento de I+D** (su teléfono y quién es su responsable). El departamento deja de existir en el sistema simplemente porque se quedó sin empleados temporalmente.
+- **El problema:** Imagina que el departamento de "I+D" tiene un único empleado registrado en la base de datos. Si ese empleado renuncia y lo borramos de la tabla para darlo de baja, la fila entera desaparece.
+- **El riesgo:** Al borrar al empleado, **perdemos toda la información del departamento de I+D** (su teléfono y quién es su responsable). El departamento deja de existir en el sistema simplemente porque se quedó sin empleados temporalmente.
 
----
+------------------------------------------------------------------------
 
 # Las formas normales
+
 El proceso de **normalización** consiste en aplicar una serie de reglas numéricas (Formas Normales) para descomponer tablas complejas en tablas más pequeñas y bien estructuradas, eliminando la redundancia y evitando las anomalías de actualización, inserción y borrado.
 
 - 1NF: Datos atómicos
@@ -64,43 +66,44 @@ El proceso de **normalización** consiste en aplicar una serie de reglas numéri
 
 Las Formas Normales son acumulativas: para alcanzar la 2FN, la tabla debe estar primero en 1FN; para la 3FN, debe estar en 2FN.
 
-## El concepto de dependencia. 
-Se dice que B depende de A cuando conociendo un valor de A, se puede determinar un unico valor de B.
-Ejemplo DNI-nombre:
-Cada DNI identifica a una unica persona, conocer el dni determina el nombre, pero no viceversa. 
-En ese ejemplo:$A$ es el DNI (el dato de origen, el que manda o determina).$B$ es el Nombre (el dato resultante, el que depende de $A$).La notación en Bases de DatosEn bases de datos, este concepto se llama Dependencia Funcional y se escribe con una flecha:$$A \rightarrow B \quad (\text{DNI} \rightarrow \text{Nombre})$$Esta expresión se lee de dos formas equivalentes:"$A$ determina funcionalmente a $B$" $\rightarrow$ El DNI determina el Nombre."$B$ depende funcionalmente de $A$" $\rightarrow$ El Nombre depende del DNI.
+## El concepto de dependencia.
+
+Se dice que B depende de A cuando conociendo un valor de A, se puede determinar un unico valor de B. Ejemplo DNI-nombre: Cada DNI identifica a una unica persona, conocer el dni determina el nombre, pero no viceversa. En ese ejemplo:$A$ es el DNI (el dato de origen, el que manda o determina).$B$ es el Nombre (el dato resultante, el que depende de $A$).La notación en Bases de DatosEn bases de datos, este concepto se llama Dependencia Funcional y se escribe con una flecha:$$A \rightarrow B \quad (\text{DNI} \rightarrow \text{Nombre})$$Esta expresión se lee de dos formas equivalentes:"$A$ determina funcionalmente a $B$" $\rightarrow$ El DNI determina el Nombre."$B$ depende funcionalmente de $A$" $\rightarrow$ El Nombre depende del DNI.
 
 ## Primera Forma Normal (1FN): Atomicidad y Unicidad
 
 Una tabla está en **1FN** si **cada columna contiene valores atómicos** (indivisibles) y no existen grupos o columnas repetidas para el mismo tipo de información.
 
 ### Reglas de la 1FN:
-1. **Valores atómicos:** Cada celda debe contener un único valor (no listas, no elementos separados por comas o guiones).
-2. **Sin atributos repetidos:** No se deben usar columnas como `Telefono1`, `Telefono2`, `Telefono3`.
-3. **Clave Primaria:** La tabla debe tener una clave primaria definida que identifique de forma única cada fila.
+
+1.  **Valores atómicos:** Cada celda debe contener un único valor (no listas, no elementos separados por comas o guiones).
+2.  **Sin atributos repetidos:** No se deben usar columnas como `Telefono1`, `Telefono2`, `Telefono3`.
+3.  **Clave Primaria:** La tabla debe tener una clave primaria definida que identifique de forma única cada fila.
 
 ### Ejemplo de violación de la 1FN
+
 En la siguiente tabla, la columna `telefonos` contiene múltiples valores en una sola celda y los pedidos están agrupados en un array o texto:
 
-| id_empleado | nombre | telefonos |
-| :--- | :--- | :--- |
-| 101 | Ana Gómez | 600111222, 600333444 |
-| 102 | Carlos Ruiz | 655888999 |
+| id_empleado | nombre      | telefonos            |
+|:------------|:------------|:---------------------|
+| 101         | Ana Gómez   | 600111222, 600333444 |
+| 102         | Carlos Ruiz | 655888999            |
 
 ### Solución (Aplicando 1FN)
+
 Separamos los valores en filas independientes garantizando que cada registro tenga datos atómicos:
 
-| id_empleado | nombre | telefono |
-| :--- | :--- | :--- |
-| 101 | Ana Gómez | 600111222 |
-| 101 | Ana Gómez | 600333444 |
-| 102 | Carlos Ruiz | 655888999 |
+| id_empleado | nombre      | telefono  |
+|:------------|:------------|:----------|
+| 101         | Ana Gómez   | 600111222 |
+| 101         | Ana Gómez   | 600333444 |
+| 102         | Carlos Ruiz | 655888999 |
 
 *(O idealmente, extrayendo los teléfonos a una tabla independiente `Telefonos_Empleados` vinculada por `id_empleado`).*
 
-Nota que en este caso hemos decidido que nombre es un campo definido por nombre y primer apellido y lo consideramos como una unidad, asi que no rompe la regla de la atomicidad. 
+Nota que en este caso hemos decidido que nombre es un campo definido por nombre y primer apellido y lo consideramos como una unidad, asi que no rompe la regla de la atomicidad.
 
----
+------------------------------------------------------------------------
 
 ## Segunda Forma Normal (2FN): Dependencia Funcional Completa
 
@@ -109,92 +112,92 @@ Una tabla está en **2FN** si **está en 1FN** y **todos los atributos que no so
 > **Atención:** Esta forma normal afecta principalmente a las tablas que tienen una **Clave Primaria Compuesta** (formada por 2 o más columnas). Si la clave primaria es simple (una sola columna), la tabla automáticamente cumple la 2FN.
 
 ### Regla de la 2FN:
-* **Eliminar dependencias parciales:** Ninguna columna que no sea clave debe depender solo de *una parte* de la clave primaria compuesta.
+
+- **Eliminar dependencias parciales:** Ninguna columna que no sea clave debe depender solo de *una parte* de la clave primaria compuesta.
 
 ### Ejemplo de violación de la 2FN
+
 Imagina una tabla de inscripciones a cursos donde la Clave Primaria Compuesta es `(id_estudiante, id_curso)`:
 
-| id_estudiante (PK) | id_curso (PK) | nombre_curso | nota |
-| :--- | :--- | :--- | :--- |
-| 1 | 101 | SQL Básico | 8.5 |
-| 2 | 101 | SQL Básico | 9.0 |
-| 1 | 102 | Python Avanzado | 7.0 |
+| id_estudiante (PK) | id_curso (PK) | nombre_curso    | nota |
+|:-------------------|:--------------|:----------------|:-----|
+| 1                  | 101           | SQL Básico      | 8.5  |
+| 2                  | 101           | SQL Básico      | 9.0  |
+| 1                  | 102           | Python Avanzado | 7.0  |
 
-* **Problema:** La columna `nota` depende de *ambos* (el estudiante y el curso que realizó). Pero la columna `nombre_curso` depende **únicamente de `id_curso`** (una parte de la clave primaria). Si el nombre del curso cambia, habría que actualizarlo en múltiples filas.
+- **Problema:** La columna `nota` depende de *ambos* (el estudiante y el curso que realizó). Pero la columna `nombre_curso` depende **únicamente de `id_curso`** (una parte de la clave primaria). Si el nombre del curso cambia, habría que actualizarlo en múltiples filas.
 
 ### Solución (Aplicando 2FN)
+
 Dividimos la tabla en dos para eliminar la dependencia parcial:
 
-**Tabla 1: `Cursos`**
-*(Clave Primaria: `id_curso`)*
+**Tabla 1: `Cursos`** *(Clave Primaria: `id_curso`)*
 
-| id_curso (PK) | nombre_curso |
-| :--- | :--- |
-| 101 | SQL Básico |
-| 102 | Python Avanzado |
+| id_curso (PK) | nombre_curso    |
+|:--------------|:----------------|
+| 101           | SQL Básico      |
+| 102           | Python Avanzado |
 
-**Tabla 2: `Inscripciones`**
-*(Clave Primaria Compuesta: `id_estudiante`, `id_curso`)*
+**Tabla 2: `Inscripciones`** *(Clave Primaria Compuesta: `id_estudiante`, `id_curso`)*
 
 | id_estudiante (PK) | id_curso (PK, FK) | nota |
-| :--- | :--- | :--- |
-| 1 | 101 | 8.5 |
-| 2 | 101 | 9.0 |
-| 1 | 102 | 7.0 |
+|:-------------------|:------------------|:-----|
+| 1                  | 101               | 8.5  |
+| 2                  | 101               | 9.0  |
+| 1                  | 102               | 7.0  |
 
----
+------------------------------------------------------------------------
 
 ## Tercera Forma Normal (3FN): Eliminación de Dependencias Transitivas
 
 Una tabla está en **3FN** si **está en 2FN** y **no existe ninguna dependencia transitiva** entre los atributos que no son clave.
 
 ### Regla de la 3FN:
-* **Eliminar dependencias transitivas:** Un atributo no clave **no debe depender de otro atributo no clave**. Todos los campos deben depender *directa y exclusivamente* de la clave primaria.
+
+- **Eliminar dependencias transitivas:** Un atributo no clave **no debe depender de otro atributo no clave**. Todos los campos deben depender *directa y exclusivamente* de la clave primaria.
 
 > **Regla nemotécnica famosa (Bill Kent):** *"Cada atributo debe aportar un dato sobre la clave primaria, toda la clave primaria, y nada más que la clave primaria."*
 
 ### Ejemplo de violación de la 3FN
+
 Observa la tabla `Empleados` (Clave Primaria: `id_empleado`):
 
-| id_empleado (PK) | nombre | id_departamento | nombre_departamento |
-| :--- | :--- | :--- | :--- |
-| 1 | Ana Gómez | D01 | Ventas |
-| 2 | Carlos Ruiz | D01 | Ventas |
-| 3 | María López | D02 | Marketing |
+| id_empleado (PK) | nombre      | id_departamento | nombre_departamento |
+|:-----------------|:------------|:----------------|:--------------------|
+| 1                | Ana Gómez   | D01             | Ventas              |
+| 2                | Carlos Ruiz | D01             | Ventas              |
+| 3                | María López | D02             | Marketing           |
 
-* **Problema:** 
-  * `nombre` e `id_departamento` dependen directamente de `id_empleado`.
-  * Sin embargo, `nombre_departamento` no depende de `id_empleado`, sino de `id_departamento` (un campo que no es clave). 
-  * Hay una dependencia transitiva: `id_empleado` $\rightarrow$ `id_departamento` $\rightarrow$ `nombre_departamento`.
+- **Problema:**
+  - `nombre` e `id_departamento` dependen directamente de `id_empleado`.
+  - Sin embargo, `nombre_departamento` no depende de `id_empleado`, sino de `id_departamento` (un campo que no es clave).
+  - Hay una dependencia transitiva: `id_empleado` $\rightarrow$ `id_departamento` $\rightarrow$ `nombre_departamento`.
 
 ### Solución (Aplicando 3FN)
+
 Extraemos los datos del departamento a su propia tabla:
 
-**Tabla 1: `Departamentos`**
-*(Clave Primaria: `id_departamento`)*
+**Tabla 1: `Departamentos`** *(Clave Primaria: `id_departamento`)*
 
 | id_departamento (PK) | nombre_departamento |
-| :--- | :--- |
-| D01 | Ventas |
-| D02 | Marketing |
+|:---------------------|:--------------------|
+| D01                  | Ventas              |
+| D02                  | Marketing           |
 
-**Tabla 2: `Empleados`**
-*(Clave Primaria: `id_empleado`)*
+**Tabla 2: `Empleados`** *(Clave Primaria: `id_empleado`)*
 
-| id_empleado (PK) | nombre | id_departamento (FK) |
-| :--- | :--- | :--- |
-| 1 | Ana Gómez | D01 |
-| 2 | Carlos Ruiz | D01 |
-| 3 | María López | D02 |
+| id_empleado (PK) | nombre      | id_departamento (FK) |
+|:-----------------|:------------|:---------------------|
+| 1                | Ana Gómez   | D01                  |
+| 2                | Carlos Ruiz | D01                  |
+| 3                | María López | D02                  |
 
----
+------------------------------------------------------------------------
 
 ## Resumen de las 3 Formas Normales
 
 | Forma Normal | Requisito Principal | ¿Qué problema elimina? |
-| :--- | :--- | :--- |
+|:-----------------------|:-----------------------|:-----------------------|
 | **1FN (Primera)** | Datos atómicos en las celdas y sin columnas repetidas. | Celdas con listas de valores o datos no estructurados. |
 | **2FN (Segunda)** | Estar en 1FN y eliminar dependencias parciales de claves compuestas. | Datos que solo dependen de una parte de la Clave Primaria. |
 | **3FN (Tercera)** | Estar en 2FN y eliminar dependencias transitivas entre columnas no clave. | Columnas no clave que dependen de otras columnas no clave. |
-
-
