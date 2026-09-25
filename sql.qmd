@@ -233,19 +233,27 @@ CREATE TABLE restaurantes
 
 --- encontrar restaurantes abiertos los domingos
 
-SELECT nombre, BIN(dias_abierto) AS dias FROM restaurantes WHERE (dias_abierto & b'0000001') > 0;
+SELECT nombre, BIN(dias_abierto) AS dias 
+FROM restaurantes 
+WHERE (dias_abierto & b'0000001') > 0;
 
 --- encontrar restaurantes que cierren los lunes
 
-SELECT nombre, BIN(dias_abierto) AS dias FROM restaurantes WHERE (dias_abierto & b'1000000') = 0;
+SELECT nombre, BIN(dias_abierto) AS dias 
+FROM restaurantes
+ WHERE (dias_abierto & b'1000000') = 0;
 
 --- encontrar restaurantes que cierran SOLO los lunes
 
-SELECT nombre, BIN(dias_abierto) AS dias FROM restaurantes WHERE dias_abierto = b'0111111';
+SELECT nombre, BIN(dias_abierto) AS dias 
+FROM restaurantes 
+WHERE dias_abierto = b'0111111';
 
 ---- encontrar restaurantes que abran SOLO los fines de semana
 
-SELECT nombre, BIN(dias_abierto) AS dias FROM restaurantes WHERE dias_abierto = b'0000011';
+SELECT nombre, BIN(dias_abierto) AS dias 
+FROM restaurantes 
+WHERE dias_abierto = b'0000011';
 ```
 
 Cada posición de la tira representa un día (Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo):
