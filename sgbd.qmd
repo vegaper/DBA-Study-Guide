@@ -1,0 +1,86 @@
+---
+title: "Sistemas de Gestión de Bases de Datos (SGBD)"
+format: html
+---
+
+# Arquitectura Cliente - Servidor en SGBD 
+
+En los Sistemas de Gestión de Bases de Datos Relacionales (SGBDR), el software no se ejecuta como una aplicación aislada, sino bajo una arquitectura distribuida:
+
+![Modelo Cliente-Servidor en redes. Source: takayib / Getty Images](paste-74OZmmYmd82_uwZ7LhQSK){width="424"}
+
+- **Servidor de Base de Datos (Database Engine / Daemon):**
+
+  - Es el proceso central que se ejecuta en segundo plano (demonio/servicio) gestionando el almacenamiento físico, la concurrencia, las consultas SQL, la seguridad y las transacciones.
+
+  - Requiere un equipo o sistema operativo que esté permanentemente encendido para responder peticiones en la red.
+
+- **Cliente de Base de Datos:**
+
+  - Es la herramienta o aplicación que utiliza el usuario final o administrador para interactuar con el servidor.
+
+  - Envía sentencias en lenguaje SQL a través de la red y recibe los resultados estructurados.
+
+  - *Ejemplos:* CLI/Terminal (`mysqlsh`, cliente `mysql`), Interfaces gráficas (MySQL Workbench, DBeaver) o aplicaciones (backends en Python, Java, PHP).
+
+## Interfaces de Escucha y Red (`bind-address` y Puertos)
+
+Para que el cliente y el servidor se comuniquen a través de la red, entran en juego varios conceptos de transporte y red:
+
+- **Puerto de Servicio:** Punto final de comunicación lógico. Por defecto, MySQL utiliza el puerto **TCP 3306**.
+
+- **Interfaz de Escucha (`bind-address`):**
+
+  - Especifica en qué tarjetas de red o direcciones IP locales el servidor escuchará peticiones de entrada.
+
+  - `127.0.0.1` (**Loopback/Localhost**): El servidor solo acepta conexiones locales que provengan de la misma máquina.
+
+  - `0.0.0.0` (**Todas las interfaces**): Indica al servidor que escuche peticiones provenientes de cualquier interfaz de red IPv4 configurada en la máquina.
+
+  - `IP específica` (ej. `192.168.100.20`): Limita la escucha únicamente a las peticiones que entren por esa interfaz de red concreta.
+
+## Archivos de Configuración
+
+Un SGBD se personaliza y ajusta mediante **archivos de texto de configuración** que se leen en el momento en que se inicia el servicio.
+
+- **Función:** Controlan parámetros globales como puertos de escucha, rutas de almacenamiento de datos, límites de memoria, comportamiento de registros (logs) y políticas de autenticación.
+
+- **Comportamiento en Linux:** En distribuciones como Ubuntu, se suelen estructurar de forma modular dentro del directorio `/etc/mysql/` (como `mysqld.cnf`).
+
+- **Ciclo de Vida:** Cualquier cambio realizado en estos archivos requiere reiniciar el servicio del motor de base de datos (`systemctl restart mysql`) para que surta efecto en memoria.
+
+## Usuarios, Host y Seguridad (Autenticación y Permisos)
+
+A diferencia de los sistemas operativos donde un usuario se define únicamente por su nombre, en motores como MySQL la identidad de una cuenta se compone de **dos partes independientes**:
+
+\$\$\\text{Cuenta} = \\text{'Usuario'} \@ \\text{'Host'}\$\$
+
+|  |  |  |
+|----------------|-------------------------------------|-------------------|
+| **Componente** | **Definición** | **Ejemplo** |
+| **Usuario** | Nombre de la cuenta/identidad. | `'root'`, `'app_user'` |
+| **Host** | La dirección IP o máquina desde la cual se le permite conectarse al usuario. | `'localhost'`, `'192.168.100.30'`, `'%'` |
+
+- **Significado de los Hosts más comunes:**
+
+  - `'localhost'`: Permite el acceso únicamente desde la propia máquina del servidor (vía sockets o loopback).
+
+  - `'192.168.100.30'`: Restringe el acceso de ese usuario exclusivamente a peticiones originadas desde esa IP específica.
+
+  - `'%'`: Comodín (*wildcard*) que permite al usuario intentar la autenticación desde cualquier IP de la red.
+
+- **Plugin de Autenticación:** El método técnico utilizado para validar la identidad del usuario (ej. `auth_socket` para validación mediante el usuario del SO, o `caching_sha2_password` para autenticación con contraseña mediante hashes seguros).
+
+- **Privilegios (Grants):** Permisos otorgados explícitamente a una cuenta para realizar acciones (SELECT, INSERT, ALL PRIVILEGES) sobre objetos del sistema (bases de datos, tablas).
+
+## Estructura Interna: Bases de Datos y Tablas por Defecto
+
+Cuando un motor de bases de datos se instala por primera vez, crea de manera automática un conjunto de estructuras y esquemas internos:
+
+- **Bases de Datos de Sistema / Metadatos:**
+
+  - Son bases de datos creadas por el propio instalador para gestionar el funcionamiento interno del SGBD.
+
+  - **Diccionario de datos y catálogo del sistema:** Guardan las definiciones de todos los usuarios, permisos asignados, rutinas, índices y la estructura de las tablas creadas por los usuarios.
+
+  - **Tablas por defecto:** Contienen registros esenciales de configuración (por ejemplo, la tabla `mysql.user` donde se almacenan las cuentas de usuario, sus hosts y contraseñas).

@@ -164,3 +164,174 @@ Aunque existe un estándar internacional (**ANSI/ISO SQL**), la mayoría de los 
 | **SQLite** | Código abierto (Dominio público) | Base de datos embebida, sin servidor (*serverless*), almacena toda la base de datos en un único archivo. | SQLite Dialect |
 
 > **Nota sobre compatibilidad:** Escribir código SQL estándar (ANSI SQL) garantiza que tus consultas funcionen en casi cualquier motor con mínimos ajustes. Sin embargo, aprovechar las funciones nativas del dialecto de cada motor (como funciones de fecha, manipulación de texto o procedimientos almacenados) permite optimizar el rendimiento al máximo.
+
+# Tipos de datos
+
+
+## Tipo de Dato Bit (`BIT`)
+
+### Descripción
+
+El tipo de dato `BIT` se utiliza para almacenar valores binarios o secuencias de bits (ceros y unos). A diferencia del booleano (que guarda una intención lógica de Verdadero/Falso), el tipo `BIT` está pensado para guardar números binarios o patrones de flags (banderas de estado).
+
+### Límites y Valores Permitidos
+
+- **BIT(1):** Almacena un solo bit: `0` o `1` (y `NULL` si la columna lo permite).
+
+
+``` sql
+-- Ejemplo en SQL Server / MySQL con BIT(1) y BIT(8)
+CREATE TABLE dispositivos (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    encendido BIT
+);
+
+-- Insertar valores binarios
+INSERT INTO dispositivos (id, nombre, encendido)
+VALUES (1, 'Sensor Temperatura', 1);
+
+-- Consulta
+SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
+```
+
+### Motores SQL donde existe
+
+|  |  |  |
+|-----------------|-----------------|---------------------------------------|
+| **Motor SQL** | **Soporte** | **Observaciones** |
+| **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
+| **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
+| **PostgreSQL** | Sí | Permite cadenas de bits de longitud fija `BIT(n)` o variable `BIT VARYING(n)`. |
+| **Oracle** | No nativo | Se suelen usar tipos numéricos `NUMBER(1)` o tipos RAW. |
+
+
+## BIT(M):
+ En motores como MySQL, $M$ representa la longitud en bits. $M$ suele ir de **1 a 64 bits**.
+
+  Piensa en la $M$ como la **"cantidad de casillas o interruptores"** que quieres reservar dentro de la misma columna.
+
+  Si solo pones un bit: `BIT(1)`
+
+  Es **1 sola casilla**. Solo cabe un `0` o un `1`.
+
+  - Es decir, la columna almacena solo: `0` o `1`.
+  Si pones varios bits: BIT(4) o BIT(8)Estás reservando una tira de ceros y unos. La $M$ indica cuántos ceros/unos exactos puedes meter alineados.
+  
+  Un ejemplo real: Días de la semana que abre un restauranteImagina que estás diseñando una base de datos para restaurantes y quieres guardar qué días de la semana abre cada lugar (de Lunes a Domingo = 7 días).En lugar de crear 7 columnas distintas (abre_lunes, abre_martes, ...), creas una sola columna llamada dias_abierto usando BIT(7):
+  ```sql
+  SQL
+CREATE TABLE restaurantes (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    dias_abierto BIT(7) -- Reserva 7 casillas (1 por cada día de la semana)
+);
+INSERT INTO restaurantes (id, nombre, dias_abierto)
+VALUES (2, 'Brunch del Domingo', b'0000011');
+
+# encontrar restaurantes abiertos los domingos
+SELECT nombre, BIN(dias_abierto) AS dias
+FROM restaurantes
+WHERE (dias_abierto & b'0000001') > 0;
+
+# encontrar restaurantes que cierren los lunes
+SELECT nombre, BIN(dias_abierto) AS dias
+FROM restaurantes
+WHERE (dias_abierto & b'1000000') = 0;
+
+# encontrar restaurantes que cierran SOLO los lunes
+SELECT nombre, BIN(dias_abierto) AS dias
+FROM restaurantes
+WHERE dias_abierto = b'0111111';
+
+# encontrar restaurantes que abran SOLO los fines de semana
+SELECT nombre, BIN(dias_abierto) AS dias
+FROM restaurantes
+WHERE dias_abierto = b'0000011';
+
+```
+
+ Cada posición de la tira representa un día (Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo): 
+ Restaurante 1 (Abre todos los días): Guardas: b'1111111' (7 unos).
+ Restaurante 2 (Solo abre fines de semana): Guardas: b'0000011' (5 ceros para entre semana, 2 unos para Sábado y Domingo). 
+ Restaurante 3 (Cierra los Lunes): Guardas: b'0111111' (0 el lunes, 1 el resto).
+ El máximo permitido es 64 (BIT(64)), que te daría una cadena de 64 ceros y unos seguidos.
+ ¿Qué ganas usando esto? 
+ Ahorro de espacio enorme: En lugar de gastar mucho espacio con 7 campos separados, guardas 7 opciones dentro de un espacio minúsculo en memoria. 
+ Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener que procesar múltiples campos.
+
+
+- **SQL Server:** `BIT` solo almacena `0`, `1` o `NULL`.
+
+### Espacio que ocupa en la Base de Datos
+
+- **SQL Server:** Optimiza el espacio agrupando columnas `BIT`.
+
+  - De 1 a 8 columnas de tipo `BIT` en una misma tabla ocupan **1 byte** en total.
+
+  - De 9 a 16 columnas `BIT` ocupan **2 bytes**, y así sucesivamente.
+
+- **MySQL / MariaDB:** Ocupa aproximadamente `(M + 7) / 8` bytes. Para un `BIT(1)`, se reserva 1 byte de almacenamiento por fila.
+
+- **PostgreSQL:** Soporta `BIT(n)` y `BIT VARYING(n)`. Ocupa 1 byte por cada 8 bits completos, más un pequeño costo de cabecera (*overhead*).
+
+## Resumen  (Puntos clave)
+
+- **Diferencia principal:** `BOOLEAN` está pensado para la lógica del negocio (`TRUE`/`FALSE`), mientras que `BIT` está pensado para almacenamiento binario compacto o un solo dígito binario (`0`/`1`).
+
+- **Inconsistencia entre motores:** Es un excelente dato para mencionar en clase: SQL Server no admite `BOOLEAN` y usa `BIT` en su lugar; MySQL admite `BOOLEAN` pero por dentro lo convierte a un número entero pequeño (`TINYINT`).
+
+- **Eficiencia:** El tipo `BIT` en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo `BIT` en un solo byte físico.
+
+## Tipo de Dato Lógico (`BOOLEAN` / `BOOL`)
+
+### Descripción
+
+El tipo de dato lógico representa valores de verdad binarios. Sirve para almacenar estados afirmativos o negativos, como si un usuario está activo, si un pedido ha sido pagado o si una opción está habilitada.
+
+En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres estados: `TRUE` (Verdadero), `FALSE` (Falso) y `NULL` (Desconocido / Sin valor).
+
+### Límites y Valores Permitidos
+
+- `TRUE`  `1`
+
+- `FALSE`  `0`
+
+- `NULL`
+
+### Espacio que ocupa en la Base de Datos
+
+- **PostgreSQL:** Ocupa **1 byte** por cada valor.
+
+- **MySQL / MariaDB:** Internamente no tiene un tipo booleano puro nativo; `BOOLEAN` es un alias de `TINYINT(1)`, por lo que ocupa **1 byte** (valores del `-128` al `127` o `0`/`1`).
+
+- **SQL Server:** No tiene tipo `BOOLEAN`. Utiliza `BIT` para cumplir esta función (ocupa de 1 a 8 bits por grupo en disco).
+
+### Motores SQL donde existe
+
+|  |  |  |
+|------------------|-------------------|-----------------------------------|
+| **Motor SQL** | **Soporte** | **Tipo Interno / Nota** |
+| **PostgreSQL** | Sí (Nativo) | `BOOLEAN` o `BOOL` |
+| **MySQL / MariaDB** | Sí (Como alias) | Se convierte a `TINYINT(1)` |
+| **SQLite** | No nativo | Usa enteros (`1` para TRUE, `0` para FALSE) |
+| **SQL Server** | No nativo | Se sustituye por el tipo `BIT` |
+| **Oracle Database** | Sí (A partir de 23c) | En versiones anteriores se usaba `NUMBER(1)` o `VARCHAR2(1)` |
+
+### Ejemplo en SQL
+
+``` sql
+-- Crear tabla de usuarios con estado activo (Booleano)
+CREATE TABLE usuarios (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    es_activo BOOLEAN DEFAULT TRUE
+);
+
+-- Insertar valores
+INSERT INTO usuarios (id, nombre, es_activo) 
+VALUES (1, 'Ana', TRUE), (2, 'Carlos', FALSE);
+
+-- Consulta filtrando por el campo lógico
+SELECT * FROM usuarios WHERE es_activo = TRUE;
+```
