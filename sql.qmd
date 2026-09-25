@@ -196,7 +196,7 @@ SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
 ### Motores SQL donde existe
 
 |  |  |  |
-|------------------|------------------|------------------------------------|
+|------------------|------------------|-----------------------------------|
 | **Motor SQL** | **Soporte** | **Observaciones** |
 | **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
 | **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
@@ -254,7 +254,7 @@ Cada posición de la tira representa un día (Lunes, Martes, Miércoles, Jueves,
 
 - Restaurante 2 (Solo abre fines de semana): Guardas: b'0000011' (5 ceros para entre semana, 2 unos para Sábado y Domingo).
 
--  Restaurante 3 (Cierra los Lunes): Guardas: b'0111111' (0 el lunes, 1 el resto).
+- Restaurante 3 (Cierra los Lunes): Guardas: b'0111111' (0 el lunes, 1 el resto).
 
 El máximo permitido es 64 (BIT(64)), que te daría una cadena de 64 ceros y unos seguidos.
 
@@ -280,13 +280,133 @@ Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener
 
 - **PostgreSQL:** Soporta `BIT(n)` y `BIT VARYING(n)`. Ocupa 1 byte por cada 8 bits completos, más un pequeño costo de cabecera (*overhead*).
 
-### Resumen (Puntos clave)
+### El tipo de dato `BIT` y los operadores `&`
 
-- **Diferencia principal:** `BOOLEAN` está pensado para la lógica del negocio (`TRUE`/`FALSE`), mientras que `BIT` está pensado para almacenamiento binario compacto o un solo dígito binario (`0`/`1`).
+El tipo de dato `BIT` y las operaciones a nivel de bit (`&`, `|`, `~`) **están permitidos en casi todos los SGBD principales**, aunque con diferencias en cómo lo manejan:
 
-- **Inconsistencia entre motores:** Es un excelente dato para mencionar en clase: SQL Server no admite `BOOLEAN` y usa `BIT` en su lugar; MySQL admite `BOOLEAN` pero por dentro lo convierte a un número entero pequeño (`TINYINT`).
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Motor SQL** | **¿Soporta BIT?** | **¿Soporta cadenas como BIT(7) o b'1111111'?** | **¿Soporta el operador &?** |
+| **Microsoft SQL Server** | **Sí**, pero es solo `BIT` (1 bit: `0` o `1`). | No admite longitud `BIT(M)` ni literales `b'111'`. | **Sí**, soporta `&`, \` |
+| **MySQL / MariaDB** | **Sí**, soporta `BIT(M)` de 1 a 64 bits. | **Sí**, admite `b'1010101'`. | **Sí**, soporta `&`, \` |
+| **PostgreSQL** | **Sí**, soporta `BIT(n)` y `BIT VARYING(n)`. | **Sí**, pero la sintaxis es `B'1010101'` (con **B** mayúscula). | **Sí**, soporta `&`, \` |
+| **SQLite** | **No** existe el tipo `BIT` explícito (usa enteros). | No admite sintaxis `BIT(M)`. | **Sí**, el operador `&` funciona con enteros (`INTEGER`). |
+| **Oracle** | **No** existe el tipo `BIT` explícito (usa `NUMBER(1)` o `RAW`). | No admite sintaxis `BIT(M)`. | Usa funciones como `BITAND(a, b)` en lugar de `&`. |
 
-- **Eficiencia:** El tipo `BIT` en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo `BIT` en un solo byte físico.
+::: extra
+El operador & (BITWISE AND) en motores con BIT(n)
+En motores como MySQL y PostgreSQL, el operador & realiza una comparación posición por posición entre dos cadenas de bits de igual longitud.
+
+Regla de evaluación
+Compara los dígitos alineados bajo la regla lógica de la puerta AND: solo mantiene un 1 si ambos bits en la misma posición son 1. Si cualquiera es 0, el resultado en esa posición pasa a ser 0.
+```
+  1 & 1 = 1   (Solo esta combinación da 1)
+  1 & 0 = 0
+  0 & 1 = 0
+  0 & 0 = 0
+```
+Concepto de "Máscara de Bits"
+El operador & se utiliza junto con una máscara (una tira binaria donde ponemos un 1 en el bit que nos interesa evaluar y 0 en todos los demás). Esto permite aislar y comprobar un estado concreto sin importar qué contengan los otros bits.
+
+Ejemplo práctico con BIT(7) (Días de la semana)
+Queremos evaluar si el restaurante abre el Domingo usando la máscara del Domingo (b'0000001'):
+
+```
+  1 1 1 1 1 1 1  (Abre todos los días)
+& 0 0 0 0 0 0 1  (Máscara del Domingo)
+-----------------
+  0 0 0 0 0 0 1  => Resultado > 0 (Cumple la condición)
+```
+```
+  1 1 1 1 1 0 0  (Cierra Sábado y Domingo)
+& 0 0 0 0 0 0 1  (Máscara del Domingo)
+-----------------
+  0 0 0 0 0 0 0  => Resultado = 0 (No cumple la condición)
+```
+Resumen de condiciones en consultas SQL
+Para comprobar si un bit está encendido (1): (columna & mascara) > 0
+
+Para comprobar si un bit está apagado (0): (columna & mascara) = 0
+:::
+
+::: extra
+Como funciona en motores que no admiten bit(n) pero admiten el operador &?
+
+En SQL Server usas el tipo **`TINYINT`** (que es un entero pequeño de 1 byte = 8 bits):
+
+**Traduces los días a su equivalente en número entero**
+
+Cada día de la semana corresponde a una potencia de 2 en binario:
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Día** | **Posición binaria** | **Valor en Binario** | **Valor Decimal a guardar** |
+| **Domingo** | Posición 1 | `0000001` | **1** |
+| **Sábado** | Posición 2 | `0000010` | **2** |
+| **Viernes** | Posición 3 | `0000100` | **4** |
+| **Jueves** | Posición 4 | `0000000` | **8** |
+| **Miércoles** | Posición 5 | `0001000` | **16** |
+| **Martes** | Posición 6 | `0010000` | **32** |
+| **Lunes** | Posición 7 | `0100000` | **64** |
+
+**Insertar registros usando números enteros**
+
+Sumas los valores decimales de los días que abren:
+
+- **Pizzería (Abre todos los días):** $64 + 32 + 16 + 8 + 4 + 2 + 1 =$ **127**
+
+- **Brunch (Solo Sábado y Domingo):** $2 + 1 =$ **3**
+
+- **Menú Ejecutivo (Lunes a Viernes):** $64 + 32 + 16 + 8 + 4 =$ **124**
+
+``` sql
+INSERT INTO restaurantes (id, nombre, dias_abierto)
+VALUES 
+(1, 'Pizzería Napoletana', 127),
+(2, 'Brunch del Domingo', 3),
+(3, 'Menú Ejecutivo', 124);
+```
+
+**La consulta con el operador `&` en SQL Server**
+La consulta funciona **exactamente igual que en MySQL**, pero en lugar de usar `b'0000001'` usas su número entero **`1`** (que representa al Domingo):
+``` sql
+-- Crear tabla en SQL Server
+CREATE TABLE restaurantes (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    dias_abierto TINYINT -- Guarda el patrón de 7 días como un número entero (0 a 255)
+);
+
+-- Insertar datos
+INSERT INTO restaurantes (id, nombre, dias_abierto) 
+VALUES 
+(1, 'Pizzería Napoletana', 127), -- Todos los días (64+32+16+8+4+2+1 = 127)
+(2, 'Brunch del Domingo', 3),     -- Solo Sábado y Domingo (2+1 = 3)
+(3, 'Menú Ejecutivo', 124),       -- Lunes a Viernes (64+32+16+8+4 = 124)
+(4, 'Bar Trattoria', 63);         -- Cierra solo el Lunes (32+16+8+4+2+1 = 63)
+
+-- Restaurantes abiertos los domingos
+SELECT nombre, dias_abierto 
+FROM restaurantes 
+WHERE (dias_abierto & 1) > 0;
+
+--- restaurantes que cierren los lunes
+SELECT nombre, dias_abierto 
+FROM restaurantes 
+WHERE (dias_abierto & 64) = 0;
+
+--- restaurantes que cierren SOLO los lunes
+--- Comparar directamente con la suma exacta de Martes a Domingo (32+16+8+4+2+1 = 63)
+SELECT nombre, dias_abierto 
+FROM restaurantes 
+WHERE dias_abierto = 63;
+
+-- restaurantes que abran los lunes
+SELECT nombre, dias_abierto 
+FROM restaurantes 
+WHERE (dias_abierto & 64) > 0;
+```
+:::
 
 ## Tipo de Dato Lógico (`BOOLEAN` / `BOOL`)
 
@@ -315,7 +435,7 @@ En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres est
 ### Motores SQL donde existe
 
 |  |  |  |
-|------------------|-------------------|----------------------------------|
+|-------------------|--------------------|----------------------------------|
 | **Motor SQL** | **Soporte** | **Tipo Interno / Nota** |
 | **PostgreSQL** | Sí (Nativo) | `BOOLEAN` o `BOOL` |
 | **MySQL / MariaDB** | Sí (Como alias) | Se convierte a `TINYINT(1)` |
@@ -340,3 +460,11 @@ VALUES (1, 'Ana', TRUE), (2, 'Carlos', FALSE);
 -- Consulta filtrando por el campo lógico
 SELECT * FROM usuarios WHERE es_activo = TRUE;
 ```
+
+### Resumen (Puntos clave)
+
+- **Diferencia principal:** `BOOLEAN` está pensado para la lógica del negocio (`TRUE`/`FALSE`), mientras que `BIT` está pensado para almacenamiento binario compacto o un solo dígito binario (`0`/`1`).
+
+- **Inconsistencia entre motores:** SQL Server no admite `BOOLEAN` y usa `BIT` en su lugar; MySQL admite `BOOLEAN` pero por dentro lo convierte a un número entero pequeño (`TINYINT`).
+
+- **Eficiencia:** El tipo `BIT` en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo `BIT` en un solo byte físico.
