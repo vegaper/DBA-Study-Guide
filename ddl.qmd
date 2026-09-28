@@ -213,7 +213,9 @@ ALTER TABLE cursos
 ## Cambiar restricciones
 
 ``` sql
-ALTER TABLE cursos     ADD CONSTRAINT chk_cursos_modalidad     CHECK (modalidad IN      ('Presencial','Teleformación','Mixta')     );
+ALTER TABLE cursos  
+    ADD CONSTRAINT chk_cursos_modalidad 
+    CHECK (modalidad IN  ('Presencial','Teleformación','Mixta')     );
 ```
 
 ``` sql
@@ -242,6 +244,14 @@ ALTER TABLE alumnos
 ```
 
 ## Modificar restricciones?
+
+### Ver todas las restricciones de la base de datos activa
+
+``` sql
+select * 
+    from information_schema.TABLE_CONSTRAINTS 
+    WHERE CONSTRAINT_SCHEMA = DATABASE();
+```
 
 ### Ver todas las restricciones de una tabla
 
@@ -293,6 +303,36 @@ En la mayoría de gestores, lo único que puedes cambiar directamente **sin borr
 ALTER TABLE cursos
     RENAME CONSTRAINT chk_cursos_modalidad TO chk_cursos_tipo_modalidad;
 ```
+
+### Qué pasa si has creado la restricción sin darle un nombre?
+
+Si creaste el `CHECK` en la misma línea de la columna (sin usar la palabra `CONSTRAINT`), MySQL le habrá asignado un nombre automático (por ejemplo, `objetos_chk_1` o `objetos_chk_2`).
+
+Para ver los nombres exactos de todas las constraints the tipo CHECK antes de borrar, ejecuta:
+
+``` sql
+SELECT CONSTRAINT_NAME, CHECK_CLAUSE 
+FROM information_schema.CHECK_CONSTRAINTS 
+WHERE CONSTRAINT_SCHEMA = DATABASE();
+```
+
+![](paste-_pZjj1H-QThs7nDA9Qt_Q)
+
+Una consulta un poco más compleja nos permite acceder a más información:
+
+``` sql
+SELECT 
+    tc.TABLE_NAME AS 'Tabla',
+    cc.CONSTRAINT_NAME AS 'Nombre Restricción',
+    cc.CHECK_CLAUSE AS 'Regla / Condición'
+FROM information_schema.CHECK_CONSTRAINTS cc
+JOIN information_schema.TABLE_CONSTRAINTS tc
+    ON cc.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+   AND cc.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+WHERE cc.CONSTRAINT_SCHEMA = DATABASE();
+```
+
+### Desctivar restricciones 
 
 **El estado de activación (En PostgreSQL / Oracle / SQL Server):** Puedes desactivarla temporalmente (`DISABLE CONSTRAINT`) y volver a activarla (`ENABLE CONSTRAINT`) sin tener que destruirla. *(MySQL no soporta desactivación temporal de restricciones CHECK de forma individual, solo permite definirlas como `NOT ENFORCED`)*.
 
@@ -391,7 +431,7 @@ Es muy común confundirlos porque ambos provocan **acciones automáticas** dentr
 - **Disparador (*Trigger*):** Es un **bloque de código procedural** (programado expresamente con un `CREATE TRIGGER`) que ejecuta lógica personalizada antes o después de una sentencia `INSERT`, `UPDATE` o `DELETE`.
 
 |  |  |  |
-|---------------------------------------|-----------------|-----------------|
+|-------------------------------------|------------------|------------------|
 | **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** |
 | **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. |
 | **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. |
