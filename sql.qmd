@@ -178,7 +178,7 @@ El tipo de dato `BIT` se utiliza para almacenar valores binarios o secuencias de
 - **BIT(1):** Almacena un solo bit: `0` o `1` (y `NULL` si la columna lo permite).
 
 ``` sql
--- Ejemplo en SQL Server / MySQL con BIT(1) y BIT(8)
+-- Ejemplo en SQL Server / MySQL 
 CREATE TABLE dispositivos (
     id INT PRIMARY KEY,
     nombre VARCHAR(50),
@@ -196,7 +196,7 @@ SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
 ### Motores SQL donde existe
 
 |  |  |  |
-|------------------|------------------|-----------------------------------|
+|-------------------|-------------------|---------------------------------|
 | **Motor SQL** | **Soporte** | **Observaciones** |
 | **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
 | **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
@@ -276,7 +276,6 @@ Ahorro de espacio enorme: En lugar de gastar mucho espacio con 7 campos separado
 Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener que procesar múltiples campos.
 :::
 
-
 ### Espacio que ocupa en la Base de Datos
 
 - **SQL Server:** Optimiza el espacio agrupando columnas `BIT`.
@@ -303,37 +302,36 @@ El tipo de dato `BIT` y las operaciones a nivel de bit (`&`, `|`, `~`) **están 
 | **Oracle** | **No** existe el tipo `BIT` explícito (usa `NUMBER(1)` o `RAW`). | No admite sintaxis `BIT(M)`. | Usa funciones como `BITAND(a, b)` en lugar de `&`. |
 
 ::: extra
-El operador & (BITWISE AND) en motores con BIT(n)
-En motores como MySQL y PostgreSQL, el operador & realiza una comparación posición por posición entre dos cadenas de bits de igual longitud.
+El operador & (BITWISE AND) en motores con BIT(n) En motores como MySQL y PostgreSQL, el operador & realiza una comparación posición por posición entre dos cadenas de bits de igual longitud.
 
-Regla de evaluación
-Compara los dígitos alineados bajo la regla lógica de la puerta AND: solo mantiene un 1 si ambos bits en la misma posición son 1. Si cualquiera es 0, el resultado en esa posición pasa a ser 0.
-```
+Regla de evaluación Compara los dígitos alineados bajo la regla lógica de la puerta AND: solo mantiene un 1 si ambos bits en la misma posición son 1. Si cualquiera es 0, el resultado en esa posición pasa a ser 0.
+
+```         
   1 & 1 = 1   (Solo esta combinación da 1)
   1 & 0 = 0
   0 & 1 = 0
   0 & 0 = 0
 ```
-Concepto de "Máscara de Bits"
-El operador & se utiliza junto con una máscara (una tira binaria donde ponemos un 1 en el bit que nos interesa evaluar y 0 en todos los demás). Esto permite aislar y comprobar un estado concreto sin importar qué contengan los otros bits.
 
-Ejemplo práctico con BIT(7) (Días de la semana)
-Queremos evaluar si el restaurante abre el Domingo usando la máscara del Domingo (b'0000001'):
+Concepto de "Máscara de Bits" El operador & se utiliza junto con una máscara (una tira binaria donde ponemos un 1 en el bit que nos interesa evaluar y 0 en todos los demás). Esto permite aislar y comprobar un estado concreto sin importar qué contengan los otros bits.
 
-```
+Ejemplo práctico con BIT(7) (Días de la semana) Queremos evaluar si el restaurante abre el Domingo usando la máscara del Domingo (b'0000001'):
+
+```         
   1 1 1 1 1 1 1  (Abre todos los días)
 & 0 0 0 0 0 0 1  (Máscara del Domingo)
 -----------------
   0 0 0 0 0 0 1  => Resultado > 0 (Cumple la condición)
 ```
-```
+
+```         
   1 1 1 1 1 0 0  (Cierra Sábado y Domingo)
 & 0 0 0 0 0 0 1  (Máscara del Domingo)
 -----------------
   0 0 0 0 0 0 0  => Resultado = 0 (No cumple la condición)
 ```
-Resumen de condiciones en consultas SQL
-Para comprobar si un bit está encendido (1): (columna & mascara) > 0
+
+Resumen de condiciones en consultas SQL Para comprobar si un bit está encendido (1): (columna & mascara) \> 0
 
 Para comprobar si un bit está apagado (0): (columna & mascara) = 0
 :::
@@ -376,8 +374,8 @@ VALUES
 (3, 'Menú Ejecutivo', 124);
 ```
 
-**La consulta con el operador `&` en SQL Server**
-La consulta funciona **exactamente igual que en MySQL**, pero en lugar de usar `b'0000001'` usas su número entero **`1`** (que representa al Domingo):
+**La consulta con el operador `&` en SQL Server** La consulta funciona **exactamente igual que en MySQL**, pero en lugar de usar `b'0000001'` usas su número entero **`1`** (que representa al Domingo):
+
 ``` sql
 -- Crear tabla en SQL Server
 CREATE TABLE restaurantes (
@@ -444,7 +442,7 @@ En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres est
 ### Motores SQL donde existe
 
 |  |  |  |
-|-------------------|--------------------|----------------------------------|
+|-------------------|--------------------|---------------------------------|
 | **Motor SQL** | **Soporte** | **Tipo Interno / Nota** |
 | **PostgreSQL** | Sí (Nativo) | `BOOLEAN` o `BOOL` |
 | **MySQL / MariaDB** | Sí (Como alias) | Se convierte a `TINYINT(1)` |
@@ -477,3 +475,493 @@ SELECT * FROM usuarios WHERE es_activo = TRUE;
 - **Inconsistencia entre motores:** SQL Server no admite `BOOLEAN` y usa `BIT` en su lugar; MySQL admite `BOOLEAN` pero por dentro lo convierte a un número entero pequeño (`TINYINT`).
 
 - **Eficiencia:** El tipo `BIT` en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo `BIT` en un solo byte físico.
+
+# Tipos de Datos Enteros (INTEGER)
+
+### Descripción
+
+Los tipos de datos enteros se utilizan para almacenar **números exactos sin parte decimal** (positivos, negativos o cero). Son los tipos de datos numéricos más eficientes a nivel de cómputo y almacenamiento en cualquier base de datos, por lo que se emplean como clave primaria (`PRIMARY KEY`), identificadores, contadores y claves foráneas (`FOREIGN KEY`).
+
+Existen varios subtipos que varían principalmente en la **cantidad de bytes que ocupan** y, por tanto, en el **rango de números que pueden almacenar**.
+
+### Clasificación y Rangos (Con signo / *Signed*)
+
+Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*).
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Tipo de Dato** | **Espacio** | **Rango con Signo (Signed)** | **Caso de Uso Típico** |
+| **`TINYINT`** | **1 Byte** (8 bits) | -128 a 127 | Estados, meses (1-12), edades, días de la semana. |
+| **`SMALLINT`** | **2 Bytes** (16 bits) | -32.768 a 32.767 | Años, recuentos pequeños, códigos postales cortos. |
+| **`INT` / `INTEGER`** | **4 Bytes** (32 bits) | -2.147.483.648 a 2.147.483.647 ($\approx \pm 2,14$ mil millones) | IDs estándar de tablas, contadores de usuarios, stocks. |
+| **`BIGINT`** | **8 Bytes** (64 bits) | -9.223.372.036.854.775.808 a 9.223.372.036.854.775.807 | Transacciones financieras, clicks de la web, datos masivos (*Big Data*). |
+
+*(Nota: En MySQL/MariaDB existe también `MEDIUMINT` de 3 Bytes, de -8.388.608 a 8.388.607).*
+
+### La opción `UNSIGNED` (Sin Signo)
+
+#### ¿Qué es?
+
+`UNSIGNED` es un modificador que elimina la capacidad de almacenar números negativos y desplaza todo el rango hacia la zona positiva.
+
+#### ¿Para qué sirve?
+
+Al no tener que reservar un bit para el signo +/- (el bit más significativo o *sign bit*), **duplica el valor máximo positivo** que cabe en el mismo espacio físico de bytes.
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Tipo de Dato** | **Rango Con Signo (Signed)** | **Rango Sin Signo (UNSIGNED)** |
+| **`TINYINT`** | -128 a 127 | **0 a 255** |
+| **`SMALLINT`** | -32.768 a 32.767 | **0 a 65.535** |
+| **`INT`** | -2.147.483.648 a 2.147.483.647 | **0 a 4.294.967.295** ($\approx 4,29$ mil millones) |
+| **`BIGINT`** | $-9,22 \times 10^{18}$ a $9,22 \times 10^{18}$ | **0 a 18.446.744.073.709.551.615** ($\approx 18,4$ quintillones) |
+
+::: nota
+**¿Cuándo usar `UNSIGNED`?**
+
+Es ideal para columnas que por su naturaleza **jamás pueden ser negativas**, como por ejemplo: un `ID` autoincremental, el precio de un producto en céntimos, la edad de una persona o el stock de inventario.
+:::
+
+### Motores SQL donde existe
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Motor SQL** | **Soporte de TINYINT, SMALLINT, INT, BIGINT** | **Soporte de la opción UNSIGNED** |
+| **MySQL / MariaDB** | **Sí**, soporta todos los tipos. | **Sí**, soporte completo para todos los enteros. |
+| **PostgreSQL** | Soporta `SMALLINT`, `INT`, `BIGINT`. **No** tiene `TINYINT` nativo. | **No** soporta la palabra clave `UNSIGNED` (se usan restricciones `CHECK (col >= 0)`). |
+| **SQL Server** | Soporta `BIGINT`, `INT`, `SMALLINT` y `TINYINT`. | **No** soporta la palabra clave `UNSIGNED`. *(Curiosidad: en SQL Server, `TINYINT` es `UNSIGNED` por defecto, de 0 a 255)*. |
+| **SQLite** | Todos se convierten internamente al tipo dinámico `INTEGER` (1 a 8 bytes según el valor). | **No** soporta la sintaxis `UNSIGNED`. |
+
+### Ejemplo en SQL
+
+``` sql
+-- Ejemplo de creación de tabla en MySQL/MariaDB
+CREATE TABLE productos (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, -- Permite el doble de IDs positivos (hasta 4,29 mil mill.)
+    nombre VARCHAR(100) NOT NULL,
+    stock INT UNSIGNED DEFAULT 0,                 -- El stock no puede ser negativo
+    mes_temporada TINYINT UNSIGNED,                -- Valores del 1 al 12 (1 byte de espacio)
+    codigo_categoria SMALLINT                     -- Admite categorías negativas si fuera necesario
+);
+
+-- Inserción de datos
+INSERT INTO productos (nombre, stock, mes_temporada, codigo_categoria)
+VALUES ('Portátil Gaming', 150, 11, -500);
+
+-- Intentar insertar un valor fuera de rango o negativo en un UNSIGNED (Dará error)
+-- INSERT INTO productos (nombre, stock) VALUES ('Error', -10);
+```
+
+# Tipos de Datos Numéricos Decimales
+
+## Decimales Exactos (`DECIMAL` / `NUMERIC`)
+
+### Descripción
+
+El tipo de dato `DECIMAL` (o su alias equivalente `NUMERIC`) almacena valores numéricos con coma flotante **exacta** (coma fija). Al no realizar aproximaciones binarias, garantiza que el número guardado en disco sea exactamente el mismo que introdujo el usuario, lo que resulta fundamental para cálculos financieros, contabilidad o presupuestos.
+
+Se define bajo la sintaxis **`DECIMAL(P, S)`**:
+
+- **Precisión (**$P$): Cantidad **total de dígitos** que se pueden almacenar en el número (sumando los dígitos antes y después de la coma).
+
+- **Escala (**$S$): Cantidad de dígitos reservados **a la derecha de la coma decimal**.
+
+> **Ejemplo:** En un campo `DECIMAL(6, 2)`:
+>
+> - $P = 6$ (6 dígitos en total).
+>
+> - $S = 2$ (2 de esos dígitos son decimales).
+>
+> - Máximo número entero permitido: $6 - 2 = 4$ dígitos enteros (hasta `9999.99`).
+
+### ¿Qué ocurre si intentas introducir un número distinto de decimales a los establecidos?
+
+1.  **Si pasas más decimales que la escala definida (**$S$):
+
+    El motor **redondea el número automáticamente** al número de decimales permitido.
+
+    - *Ejemplo:* Si en `DECIMAL(5, 2)` insertas `123.456`, la base de datos guardará `123.46`.
+
+2.  **Si pasas más dígitos enteros de los permitidos (**$P - S$):
+
+    Provoca un **error de desbordamiento (*Overflow / Out of range*)** y la consulta falla.
+
+    - *Ejemplo:* Si en `DECIMAL(5, 2)` intentas guardar `1234.5` (4 enteros), el motor no puede alojarlo porque solo admite 3 enteros ($5 - 2 = 3$).
+
+### Límites y Espacio de Almacenamiento
+
+- **Límites:** La precisión máxima varía según el gestor. Por ejemplo, en MySQL y PostgreSQL el límite es de **65 dígitos**, mientras que en SQL Server el máximo es de **38 dígitos**.
+
+- **Almacenamiento (Bytes):** No utiliza un número fijo de bytes. La base de datos agrupa los dígitos en bloques para calcular el espacio consumido.
+
+  - **MySQL / MariaDB:** Almacena cada 9 dígitos usando 4 bytes.
+
+  - **SQL Server:**
+
+    - Precisión 1 a 9 dígitos: **5 bytes**.
+
+    - Precisión 10 a 19 dígitos: **9 bytes**.
+
+    - Precisión 20 a 28 dígitos: **13 bytes**.
+
+    - Precisión 29 a 38 dígitos: **17 bytes**.
+
+## Decimales Aproximados (`FLOAT`, `REAL` y `DOUBLE`)
+
+### Descripción
+
+Los datos en punto flotante (`FLOAT`, `REAL`, `DOUBLE PRECISION`) guardan una **aproximación** del número real mediante notación científica binaria basada en el estándar IEEE 754. Se utilizan para magnitudes físicas, mediciones de sensores o coordenadas geográficas donde se prima la rapidez de cómputo sobre la precisión exacta.
+
+### Tipos y Subtipos
+
+- **`REAL` / `FLOAT(p)` (Precisión Simple):**
+
+  - **Espacio:** **4 bytes** (32 bits).
+
+  - **Precisión:** Garantiza unos **7 dígitos decimales** de precisión.
+
+- **`DOUBLE` / `DOUBLE PRECISION` / `FLOAT` (Precisión Doble):**
+
+  - **Espacio:** **8 bytes** (64 bits).
+
+  - **Precisión:** Garantiza aproximadamente **15 a 17 dígitos decimales** de precisión.
+
+### El problema de la aproximación
+
+Debido a que los ordenadores representan los números en base 2 (binario), ciertos números decimales periódicos en base 10 (como `0.1` o `0.2`) no pueden representarse de forma exacta en binario.
+
+``` sql
+-- Ejemplo típico de imprecisión en punto flotante
+SELECT 0.1 + 0.2; 
+-- En tipos FLOAT, el procesador puede devolver 0.30000000000000004
+```
+
+## Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Criterio** | **Exactos (DECIMAL / NUMERIC)** | **Aproximados (FLOAT / DOUBLE)** |
+| **Precisión** | **100% exacta.** Sin pérdidas ni redondeos impredecibles. | **Aproximada.** Puede acumular errores al sumar o multiplicar. |
+| **Rendimiento** | **Más lento.** Las operaciones aritméticas se procesan por software en la CPU. | **Extremadamente rápido.** La tarjeta gráfica y la CPU procesan punto flotante por hardware (FPU). |
+| **Almacenamiento** | Variable y superior (de 5 a 17+ bytes). | Fijo y compacto (4 u 8 bytes). |
+| **Uso Recomendado** | Dinero, impuestos, transacciones bancarias, inventarios. | Lecturas de sensores (temperatura, velocidad), física, astronomía, coordinadas GPS. |
+
+``` sql
+CREATE TABLE mediciones (
+    id INT PRIMARY KEY,
+    -- Tipo Exacto: Precio máximo 999999.99 €
+    precio DECIMAL(8, 2), 
+    
+    -- Tipo Aproximado: Temperatura de un sensor con margen de precisión
+    temperatura_sensor REAL, 
+    
+    -- Tipo Aproximado: Coordenada de alta precisión para cartografía
+    latitud DOUBLE PRECISION 
+);
+
+-- Inserción demostrando el redondeo de DECIMAL(8,2)
+INSERT INTO mediciones (id, precio, temperatura_sensor, latitud)
+VALUES (1, 19.999, 36.6543, 40.416775);
+
+-- En el campo precio se guardará 20.00 por el redondeo automático
+SELECT precio FROM mediciones WHERE id = 1;
+```
+
+### ¿Por qué NUNCA usar `FLOAT` para dinero?
+
+Si te preguntan en clase por qué no se debe usar `FLOAT` en una tienda online, la respuesta es el **efecto de acumulación de error de redondeo**:
+
+Si sumas millones de transacciones pequeñas guardadas en `FLOAT` (como `0.01` € por clic), las pequeñas diferencias binarias en el último decimal se van acumulando. Al final del año, la contabilidad puede descuadrar por varios cientos o miles de euros. En finanzas **siempre se exige `DECIMAL` o almacenar los importes en céntimos como `INTEGER`**.
+
+# Tipos de Datos de Cadena de Texto (`CHAR`, `VARCHAR`, `TEXT`)
+
+## Cadenas de Longitud Fija (`CHAR`) vs Longitud Variable (`VARCHAR`)
+
+### `CHAR(n)` – Longitud Fija
+
+- **Descripción:** Almacena cadenas de texto de longitud constante definida por $n$. Si el texto introducido es más corto que $n$, la base de datos **rellena el espacio restante con espacios en blanco a la derecha** hasta completar los $n$ caracteres.
+
+- **Límites:** Normalmente $n$ va de **1 a 255 caracteres**.
+
+- **Espacio que ocupa:** Ocupa siempre $n$ bytes/caracteres fijos, sin importar el texto introducido.
+
+- **Casos de uso:** Datos con longitud estrictamente uniforme: códigos ISO de país (`ES`, `MX`), DNI/NIF, códigos hash MD5/SHA256, códigos postales fijos.
+
+### `VARCHAR(n)` – Longitud Variable
+
+- **Descripción:** Almacena cadenas de texto de longitud variable hasta un máximo de $n$ caracteres. Solo consume el espacio equivalente a los caracteres realmente escritos, más un pequeño costo adicional para registrar la longitud del texto (*prefix length*).
+
+- **Límites:** Hasta **65.535 bytes** en MySQL/MariaDB o **8.000 caracteres** en SQL Server (`VARCHAR(8000)` o `VARCHAR(MAX)`).
+
+- **Espacio que ocupa:** **Longitud del texto guardado + 1 o 2 bytes de cabecera** (1 byte si la longitud máxima es menor que 255, 2 bytes si es mayor).
+
+- **Casos de uso:** Nombres de usuario, correos electrónicos, direcciones, títulos de artículos.
+
+### ¿Qué ocurre si intentas introducir un texto distinto a la longitud establecida?
+
+1.  **Si el texto es más corto:**
+
+    - En `CHAR(10)`: Al guardar `'Hola'`, el motor guarda `'Hola      '` (4 letras + 6 espacios).
+
+    - En `VARCHAR(10)`: Al guardar `'Hola'`, el motor guarda `'Hola'` y registra que la longitud es de 4 caracteres.
+
+2.  **Si el texto excede el límite** $n$:
+
+    - **Modo Estricto (Por defecto):** Lanza un error de truncado (*Data too long for column*) y cancela la transacción.
+
+    - **Modo No Estricto:** Trunca el texto automáticamente cortando las letras sobrantes a partir del carácter $n$.
+
+## Textos Largos (`TEXT` / `CLOB`)
+
+### Descripción
+
+Diseñado para almacenar grandes volúmenes de texto no estructurado donde la longitud máxima no se conoce de antemano o supera los límites de un `VARCHAR`.
+
+### Subtipos en MySQL / MariaDB
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Tipo** | **Longitud Máxima en Bytes / Caracteres** | **Espacio Real Consumido** |
+| **`TINYTEXT`** | Hasta 255 bytes | Longitud real + 1 byte |
+| **`TEXT`** | Hasta 65.535 bytes ($\approx 65$ KB) | Longitud real + 2 bytes |
+| **`MEDIUMTEXT`** | Hasta 16.777.215 bytes ($\approx 16$ MB) | Longitud real + 3 bytes |
+| **`LONGTEXT`** | Hasta 4.294.967.295 bytes ($\approx 4$ GB) | Longitud real + 4 bytes |
+
+*(Nota: En SQL Server se utiliza `VARCHAR(MAX)` y en PostgreSQL se usa `TEXT` de longitud ilimitada dinámicamente).*
+
+## Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Criterio** | **CHAR** | **VARCHAR** | **TEXT** |
+| **Velocidad / Rendimiento** | **Más rápido.** Al tener un tamaño fijo por fila, el motor calcula de forma directa la posición en memoria. | **Moderado.** Requiere leer la cabecera para determinar el fin de la cadena. | **Más lento.** Se almacena fuera del bloque principal de la fila (*Off-page storage*). |
+| **Uso de Espacio** | Ineficiente si los datos varían mucho de tamaño. | **Muy eficiente.** No desperdicia espacio en blanco. | Eficiente para grandes volúmenes, pero añade *overhead* de punteros. |
+| **Indexación y Búsquedas** | Búsquedas muy rápidas. | Permite índices estándar. | Requiere **índices de texto completo (*Full-Text Index*)** para búsquedas eficientes. |
+| **Uso Típico** | Códigos de país (`CHAR(2)`), Hashes. | Nombres, Emails, URLs. | Artículos de blog, JSON en texto, descripciones. |
+
+## Motores SQL y la opción `NVARCHAR` / Unicode
+
+### El prefijo `N` (`NCHAR`, `NVARCHAR`)
+
+En motores como **SQL Server** o **Oracle**, las variantes que empiezan por `N` representan texto **Unicode (National Language Set)**.
+
+- `VARCHAR`: Usa codificación de 1 byte por carácter (no soporta ciertos alfabetos complejos sin configurar la página de códigos).
+
+- `NVARCHAR`: Usa codificación UTF-16 (**2 bytes por carácter**), permitiendo guardar cualquier alfabeto del mundo (chino, cirílico, árabe) y emojis.
+
+| **Tipo** | **Almacenamiento** | **Capacidad** | **Ejemplo** |
+|------------------|------------------|------------------|------------------|
+| **`VARCHAR(n)`** | 1 byte por carácter\* | Hasta **`n`** bytes | **`"Hola"`** → 4 bytes |
+| **`NVARCHAR(n)`** | 2 bytes por carácter\* | Hasta **`n`** caracteres | **`"Hola"`** → 8 bytes |
+
+### Ejemplo en SQL
+
+``` sql
+CREATE TABLE publicaciones (
+    id INT PRIMARY KEY,
+    codigo_iso_pais CHAR(2),            -- Longitud fija siempre de 2 letras ('ES', 'MX')
+    titulo VARCHAR(150) NOT NULL,        -- Longitud variable hasta 150 caracteres
+    contenido TEXT,                      -- Texto largo de extensión variable
+    autor_soporte_multilenguaje NVARCHAR(100) -- Soporta caracteres internacionales
+);
+
+INSERT INTO publicaciones (id, codigo_iso_pais, titulo, contenido)
+VALUES (
+    1, 
+    'ES', 
+    'Aprender SQL en 2026', 
+    'Este es el contenido detallado de la lección sobre tipos de datos...'
+);
+```
+
+# Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
+
+## Descripción Resumida de Cada Tipo
+
+|  |  |  |  |  |
+|---------------|---------------|---------------|---------------|---------------|
+| **Tipo de Dato** | **Format / Estructura Estándar** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
+| **`DATE`** | `YYYY-MM-DD` | `1000-01-01` a `9999-12-31` | **3 bytes** | Fechas de nacimiento, fechas de contratación, vencimientos sin hora. |
+| **`TIME`** | `HH:MM:SS` (o `HH:MM:SS.p`) | `-838:59:59` a `838:59:59` | **3 bytes** | Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido. |
+| **`DATETIME`** | `YYYY-MM-DD HH:MM:SS` | `1000-01-01 00:00:00` a `9999-12-31 23:59:59` | **5 a 8 bytes** | Reservas de hotel, eventos del calendario, citas programadas. |
+| **`TIMESTAMP`** | `YYYY-MM-DD HH:MM:SS` | `1970-01-01 00:00:01` UTC a `2038-01-19 03:14:07` UTC | **4 bytes** | Auditoría, marcas de tiempo de modificación, registros (*logs*). |
+
+## Detalle de Cada Tipo de Dato
+
+### `DATE` (Solo Fecha)
+
+- **Formato estándar:** `YYYY-MM-DD` (ej. `'2026-09-28'`).
+
+- **Características:** Ignora por completo cualquier componente de hora. Si intentas insertar una hora en un campo `DATE`, la parte temporal se descarta.
+
+- **Almacenamiento:** Consume solo 3 bytes por fila, lo que optimiza significativamente el espacio en grandes volúmenes de datos.
+
+### `TIME` (Solo Hora o Intervalo)
+
+- **Formato estándar:** `HH:MM:SS` (opcionalmente con microsegundos `HH:MM:SS.ffffff`).
+
+- **Peculiaridad:** En muchos SGBD (como MySQL), `TIME` no solo representa la hora del día (00:00:00 a 23:59:59), sino también **tiempo transcurrido o duraciones**. Por este motivo, su rango permite horas negativas y valores superiores a 24 horas (desde `-838:59:59` hasta `838:59:59`).
+
+## 3. La Gran Diferencia: `DATETIME` vs `TIMESTAMP`
+
+Aunque ambos almacenan tanto la fecha como la hora, existen diferencias críticas en el manejo de zonas horarias (*Time Zones*) y almacenamiento interno.
+
+![](paste-PrVXDb6RMLZJBjZ9Cujia)
+
+### `DATETIME` (Constante e Independiente)
+
+- **Comportamiento:** Guarda el valor exacto tal como se introduce. **No realiza ninguna conversión de zona horaria.**
+
+- **Ejemplo:** Si guardas `'2026-05-10 14:00:00'` en Madrid y un usuario consulta esa fila desde Tokio, verá exactamente `'2026-05-10 14:00:00'`.
+
+- **Ventaja:** Ideal para eventos futuros programados donde la hora local no debe cambiar independientemente de la configuración del servidor.
+
+### `TIMESTAMP` (Dinámico y Basado en UTC)
+
+- **Comportamiento:**
+
+  1.  Al **insertar/escribir**, convierte la fecha/hora de la zona horaria del servidor/sesión actual a **UTC (Tiempo Universal Coordinado)** y guarda el número de segundos desde la época Unix (`1970-01-01 00:00:00 UTC`).
+
+  2.  Al **consultar/leer**, convierte ese valor UTC de nuevo a la zona horaria de la sesión que realiza la consulta.
+
+- **Ejemplo:** Si un servidor en Madrid (UTC+2 en verano) guarda `'2026-06-01 12:00:00'`, se almacena como `10:00:00 UTC`. Si un cliente consulta la base de datos desde Londres (UTC+1 en verano), obtendrá automáticamente `'2026-06-01 11:00:00'`.
+
+- **Limitación importante (El problema del año 2038):** Dado que muchos motores emplean un entero de 32 bits con signo para almacenar el `TIMESTAMP`, el valor máximo que puede registrar es el **19 de enero de 2038 a las 03:14:07 UTC**.
+
+## Tabla Comparativa Directa: `DATETIME` vs `TIMESTAMP`
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Característica** | **DATETIME** | **TIMESTAMP** |
+| **Zona Horaria** | Ignora la zona horaria (almacena texto/número literal). | **Sensible a la zona horaria** (convierte a UTC internamente). |
+| **Rango de Fechas** | Amplio (`1000` a `9999`). | Reducido (`1970` a `2038`). |
+| **Almacenamiento** | 5 bytes (en versiones modernas) a 8 bytes. | **4 bytes fijo.** |
+| **Actualización Automática** | Opcional según la versión de SQL. | Muy común para columnas tipo `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`. |
+
+Sintaxis en SQL de Ejemplo
+
+``` sql
+CREATE TABLE registros_eventos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    
+    -- Solo fecha de nacimiento
+    fecha_nacimiento DATE NOT NULL,
+    
+    -- Solo la hora de inicio de una reunión
+    hora_inicio TIME NOT NULL,
+    
+    -- Cita médica programada (debe permanecer fija a las 10:00 local)
+    cita_programada DATETIME NOT NULL,
+    
+    -- Auditar cuándo se insertó el registro (conversión automática con UTC)
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Auditar la última modificación del registro
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Ejemplo de inserción
+INSERT INTO registros_eventos (fecha_nacimiento, hora_inicio, cita_programada)
+VALUES ('1992-04-15', '09:30:00', '2026-10-15 10:00:00');
+```
+
+### Pregunta clave para la exposición: ¿Por qué en aplicaciones globales multi-región se prefiere `TIMESTAMP` o guardar en UTC?
+
+Si la aplicación tiene usuarios en España, México y Japón, guardar fechas de compras en `DATETIME` sin zona horaria provocaría un caos analítico (no sabrías qué compra ocurrió antes que otra en tiempo absoluto).
+
+Usar `TIMESTAMP` garantiza que **todas las transacciones queden alineadas en un tiempo universal (UTC)**, mostrándose ajustadas a la hora local de cada usuario cuando abren la app.
+
+# Tipos de Datos LOB: Texto Largo (`CLOB` / `TEXT`) y Datos Binarios (`BLOB`)
+
+## Concepto de LOB (*Large Objects*)
+
+Los tipos de datos **LOB** (*Large Objects*) están diseñados para almacenar volúmenes masivos de datos no estructurados o semiestructurados que superan los límites habituales de las columnas convencionales.
+
+Se dividen en dos categorías principales:
+
+1.  **`CLOB` / `TEXT` (*Character Large Object*):** Cadenas de caracteres de gran longitud donde la base de datos aplica reglas de codificación de caracteres (*collation*, UTF-8, etc.).
+
+2.  **`BLOB` (*Binary Large Object*):** Secuencias fijas de bytes binarios puros (secuencia de `0`s y `1`s) sin ninguna codificación de texto asociada.
+
+## Tipos y Subtipos de Datos
+
+### Tipos `BLOB` (Datos Binarios)
+
+Almacenan información en formato binario crudo. Son ideales para archivos como imágenes, audios, documentos PDF, ejecutables o claves cifradas.
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Tamaño Típico de Ejemplo** |
+| **`TINYBLOB`** | 255 bytes | Pequeños iconos, firmas digitales cortas |
+| **`BLOB`** | 65.535 bytes ($\approx 65$ KB) | Miniaturas (*thumbnails*), archivos de configuración |
+| **`MEDIUMBLOB`** | 16.777.215 bytes ($\approx 16$ MB) | Fotografías en alta resolución, canciones MP3 |
+| **`LONGBLOB`** | 4.294.967.295 bytes ($\approx 4$ GB) | Vídeos, instaladores de software, bases de datos integradas |
+
+*(Nota: En PostgreSQL el equivalente binario estándar se denomina `BYTEA` o `LARGE OBJECT`, mientras que en SQL Server se usa `VARBINARY(MAX)`).*
+
+### Tipos `TEXT` / `CLOB` (Texto Largo)
+
+Almacenan texto plano o marcado (HTML, XML, JSON en texto, código fuente) de gran extensión.
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Casos de Uso** |
+| **`TINYTEXT`** | 255 bytes | Resúmenes breves, notas de una línea |
+| **`TEXT`** | 65.535 bytes ($\approx 65$ KB) | Artículos de blog, descripciones de productos |
+| **`MEDIUMTEXT`** | 16,7 MB | Capítulos de libros, documentos HTML complejos |
+| **`LONGTEXT`** | 4 GB | Transcripciones completas, logs de sistema extensos |
+
+## ¿Cómo funcionan internamente? (*Off-Page Storage*)
+
+A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BLOB` y `TEXT` **no se guardan directamente dentro del bloque o página principal de la fila**:
+
+- **Puntero en la fila:** La tabla principal solo almacena un **puntero o dirección de memoria** (de unos pocos bytes).
+
+- **Página externa (*Off-page*):** El contenido real de la imagen o del texto largo se escribe en páginas de disco secundarias reservadas.
+
+> **Consecuencia en el rendimiento:** Hacer un `SELECT *` sobre una tabla que contiene columnas `BLOB` o `TEXT` obliga al motor a realizar lecturas adicionales en disco para seguir los punteros, ralentizando drásticamente la consulta.
+
+## Ventajas e Inconvenientes: ¿Cuándo usar `BLOB` y cuándo guardar la ruta en disco?
+
+Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.
+
+|  |  |  |
+|------------------------|------------------------|------------------------|
+| **Criterio** | **Guardar el archivo en la BD (BLOB)** | **Guardar en servidor/S3 y la ruta en la BD (VARCHAR)** |
+| **Integridad Transaccional (ACID)** | **Excelente.** Si haces un `ROLLBACK`, el archivo se borra o restaura junto con el registro. | **Riesgo.** El archivo puede borrarse del disco y dejar un puntero "huérfano" en la base de datos. |
+| **Copias de Seguridad (*Backups*)** | **Cómodo pero pesado.** Todo el sistema se respalda en un único archivo de base de datos. | **Rápido.** La base de datos ocupa pocos megabytes; los archivos se respaldan por separado. |
+| **Rendimiento de la Base de Datos** | **Degradado.** Aumenta el consumo de RAM (memoria de búfer) e I/O de disco. | **Óptimo.** La base de datos gestiona solo texto corto (`VARCHAR(255)`) con las rutas. |
+| **Seguridad / Control de Acceso** | **Alta.** Se aplican directamente los permisos de usuario de SQL. | **Media.** Depende del sistema de archivos o del almacenamiento en la nube (*Cloud Storage*). |
+
+Ejemplo de Sintaxis en SQL
+
+``` sql
+CREATE TABLE documentos_expediente (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_archivo VARCHAR(100) NOT NULL,
+    
+    -- Texto largo para el contenido extraído del documento
+    transcripcion_texto LONGTEXT, 
+    
+    -- Datos binarios puros para almacenar el archivo PDF original
+    archivo_pdf_contenido LONGBLOB,
+    
+    -- Buenas prácticas: Guardar también el hash para verificar integridad
+    hash_sha256 CHAR(64)
+);
+
+-- Ejemplo conceptual de inserción
+INSERT INTO documentos_expediente (nombre_archivo, transcripcion_texto, archivo_pdf_contenido)
+VALUES (
+    'contrato_alquiler.pdf',
+    'En la ciudad de Madrid, a 28 de septiembre...',
+    -- En MySQL se pueden cargar archivos locales binarios mediante LOAD_FILE
+    LOAD_FILE('/var/lib/mysql-files/contrato_alquiler.pdf')
+);
+```
+
+### ¿Por qué NUNCA se debe hacer `SELECT *` en una tabla con columnas `BLOB` o `LONGTEXT`?
+
+Si ejecutas `SELECT *` en una tabla con 100.000 registros que incluye una columna `LONGBLOB` con imágenes, el motor de la base de datos intentará cargar **todos esos megabytes/gigabytes de imágenes en la memoria RAM del servidor** para enviarlos por la red, colapsando el ancho de banda y la memoria caché (*buffer pool*).
+
+La regla de oro es consultar siempre explícitamente las columnas necesarias: `SELECT id, nombre_archivo FROM documentos_expediente;`

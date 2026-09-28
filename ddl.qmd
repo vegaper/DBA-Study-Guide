@@ -1,0 +1,400 @@
+---
+title: "Comandos DDL"
+format: html
+---
+
+# Crear una base de datos
+
+``` sql
+CREATE DATABASE IF NOT EXISTS centro_formacion
+DEFAULT CHARACTER SET utf8mb4
+DEFAULT COLLATE utf8mb4_0900_ai_ci;
+```
+
+Donde centro_formacion es el nombre de la base de datos
+
+`DEFAULT CHARACTER SET utf8mb4` significa que admite caracteres Unicode standard
+
+`DEFAULT COLLATE utf8mb4_0900_ai_ci` define reglas de comparación y ordenación.
+
+- `ai` significa insensible a los acentos "accent insensitive" (Ej. María = Maria)
+
+- `ci` significa case insensitive, que es que es insensible a las mayusculas o minisculas (ej. MARIA = Maria)
+
+Estas definiciones de la base de datos serán la configuración por defecto para las tablas que se creen en ella, pero pueden sobreescribirse en las tablas.
+
+En cualquier momento podemos ver cómo se creó la base de datos usando el comando `SHOW CREATE DATABASE {nombre base de datos}`
+
+![](paste-fhdZaUM9uGdstOI3vWEmQ)
+
+## Ver las bases de datos creadas en el servidor
+
+``` sql
+SHOW DATABASES;
+```
+
+![](paste-7L7_2_ac47IUfm-sBlSI0)
+
+## Entrar en la base de datos
+
+``` sql
+USE centro_formacion;
+```
+
+## Ver en qué base de datos estamos
+
+``` sql
+SELECT DATABASE();
+```
+
+# Crear una tabla
+
+``` sql
+CREATE TABLE cursos (
+    id_curso INT UNSIGNED AUTO_INCREMENT,
+    nombre_curso VARCHAR(100) NOT NULL,
+    modalidad VARCHAR(20) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_cursos PRIMARY KEY (id_curso),
+    CONSTRAINT uq_cursos_nombre UNIQUE (nombre_curso)  
+    
+);
+```
+
+`CONSTRAINT pk_cursos PRIMARY KEY (id_curso)` esto define la clave primaria bajo el nombre `pk_cursos`
+
+`CONSTRAINT uq_cursos_nombre UNIQUE (nombre_curso)` esto añade una restricción al campo nombre_curso para que no admita duplicados, guardamos esta regla bajo el nombre `uq_cursos_nombre`
+
+## Ver las tablas de la base de datos donde estamos
+
+`SHOW TABLES;`
+
+![](paste-x3Gvf37sPFgTl8J9X364E)
+
+## Ver la definición de la tabla que acabamos de crear:
+
+`DESCRIBE cursos;`
+
+![](paste-SnyGrjuDjtfFufRPjCs9x)
+
+Ver los comandos con los que se creo la tabla
+
+`SHOW CREATE TABLE cursos;`
+
+![](paste-bKtk8WUZZ2Nccztspwx07)
+
+# Crear una tabla relacionada
+
+``` sql
+CREATE TABLE alumnos (
+    id_alumno INT UNSIGNED AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    id_curso INT UNSIGNED NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'Activo',
+    CONSTRAINT pk_alumnos PRIMARY KEY (id_alumno),
+    CONSTRAINT fk_alumnos_cursos
+        FOREIGN KEY (id_curso)
+        REFERENCES cursos(id_curso)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL     
+);
+```
+
+- **`id_alumno INT UNSIGNED AUTO_INCREMENT`:** Clave primaria única. `UNSIGNED` impide números negativos y `AUTO_INCREMENT` asigna un entero correlativo de forma automática.
+
+- **`id_curso INT UNSIGNED NULL`:** Columna que actúa como clave foránea. Debe coincidir exactamente en tipo de dato (`INT UNSIGNED`) con la clave primaria de la tabla referenciada (`cursos`). Se define como `NULL` para permitir alumnos sin curso asignado.
+
+- **`CONSTRAINT pk_alumnos PRIMARY KEY (id_alumno)`:** Define explícitamente la restricción de clave primaria dándole un nombre claro (`pk_alumnos`).
+
+- **`CONSTRAINT fk_alumnos_cursos`:** Nombra la regla de clave foránea para poder modificarla o eliminarla con un `ALTER TABLE` en el futuro.
+
+## ¿Qué es una Clave Foránea (*Foreign Key*)?
+
+Una **Clave Foránea** es un campo en una tabla (tabla hija: `alumnos`) que apunta a la clave primaria de otra tabla (tabla padre: `cursos`).
+
+Garantiza la **integridad referencial**: impide que se registre un alumno apuntando a un `id_curso` que no exista en la tabla `cursos`.
+
+## Acciones Referenciales: `ON DELETE` y `ON UPDATE`
+
+Definen qué debe hacer MySQL cuando el registro de la tabla padre (`cursos`) se **modifica** (`ON UPDATE`) o se **elimina** (`ON DELETE`).
+
+|  |  |  |
+|------------------|---------------------------|---------------------------|
+| **Opción** | **¿Qué hace al Borrar/Actualizar el Padre?** | **Ejemplo con tu código** |
+| **`RESTRICT`** *(Por defecto)* | **Bloquea la operación.** Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados. | Si intentas borrar un curso que tiene alumnos, MySQL lanza un error. |
+| **`CASCADE`** | **Propaga el cambio.** Borra o actualiza automáticamente los registros hijos asociados. | En tu código (`ON UPDATE CASCADE`): Si el `id_curso` `5` pasa a ser `10`, todos los alumnos con `id_curso = 5` cambian a `10` automáticamente. |
+| **`SET NULL`** | **Pone a `NULL` la columna del hijo.** Mantiene al registro hijo pero rompe el vínculo. | En tu código (`ON DELETE SET NULL`): Si eliminas el curso `5`, los alumnos pertenecientes a ese curso pasan a tener `id_curso = NULL` (no se borra al alumno). |
+| **`NO ACTION`** | Similar a `RESTRICT` en MySQL. Comprueba la integridad al final de la instrucción. | Bloquea la eliminación/modificación si existen referencias activas. |
+
+- **Usa `ON DELETE CASCADE`** cuando el hijo no tenga sentido sin el padre (ejemplo: las líneas de detalle de una factura respecto a la cabecera de la factura; si se borra la factura, deben desaparecer sus líneas).
+
+- **Usa `ON DELETE SET NULL`** cuando la entidad hija tenga valor propio independientemente del padre (ejemplo: un alumno sigue existiendo aunque el curso se cancele).
+
+- **Usa `RESTRICT` (por defecto)** cuando quieras proteger datos críticos e impedir borrados accidentales de entidades principales sin revisión previa.
+
+# Modificar tablas
+
+ALTER TABLE cambia una tabla existente: añadir o eliminar columnas, modificar tipos y crear restricciones.
+
+## Modificar el tipo de datos
+
+``` sql
+ALTER TABLE cursos
+    MODIFY COLUMN nombre_curso VARCHAR(150) NOT NULL;
+```
+
+## Añadir columnas:
+
+``` sql
+-- Añade la columna 'modalidad' al final de la tabla
+ALTER TABLE cursos
+    ADD COLUMN modalidad VARCHAR(30) NOT NULL DEFAULT 'Presencial';
+
+-- Añade la columna 'email' justo después del campo 'apellidos'
+ALTER TABLE alumnos
+    ADD COLUMN email VARCHAR(100) NULL AFTER apellidos;
+
+-- Añade una columna al principio de todo (primera posición)
+ALTER TABLE cursos
+    ADD COLUMN codigo_curso VARCHAR(10) FIRST;
+```
+
+## Eliminar columnas:
+
+``` sql
+-- Elimina la columna 'estado' de la tabla alumnos
+ALTER TABLE alumnos
+    DROP COLUMN estado;
+```
+
+## Renombrar Columnas (`RENAME COLUMN`)
+
+Cambia únicamente el nombre de la columna sin modificar su tipo de dato o restricciones.
+
+``` sql
+-- Renombra 'horas' a 'duracion_horas' en la tabla cursos
+ALTER TABLE cursos
+    RENAME COLUMN horas TO duracion_horas;
+```
+
+## Renombrar la Tabla Completa (`RENAME TO`)
+
+``` sql
+-- Cambia el nombre de la tabla 'cursos' a 'acciones_formativas'
+ALTER TABLE cursos
+    RENAME TO acciones_formativas;
+```
+
+## Cambiar Nombre y Tipo de Dato a la Vez (`CHANGE COLUMN`)
+
+A diferencia de `MODIFY` (que solo cambia el tipo/atributos), `CHANGE` permite renombrar la columna y redefinir su tipo de dato en la misma instrucción.
+
+``` sql
+-- Cambia la columna 'nombre' por 'nombre_completo' y amplia su tamaño a VARCHAR(100)
+ALTER TABLE alumnos
+    CHANGE COLUMN nombre nombre_completo VARCHAR(100) NOT NULL;
+```
+
+## Gestionar Valores por Defecto (`SET / DROP DEFAULT`)
+
+Permite añadir o quitar un valor por defecto a una columna sin necesidad de redefinir su tipo de dato completo.
+
+``` sql
+-- Establece un valor por defecto para la columna duracion_horas
+ALTER TABLE cursos
+    ALTER COLUMN duracion_horas SET DEFAULT 50;
+
+-- Quita el valor por defecto de una columna
+ALTER TABLE cursos
+    ALTER COLUMN duracion_horas DROP DEFAULT;
+```
+
+## Cambiar restricciones
+
+``` sql
+ALTER TABLE cursos     ADD CONSTRAINT chk_cursos_modalidad     CHECK (modalidad IN      ('Presencial','Teleformación','Mixta')     );
+```
+
+``` sql
+-- Garantiza que no existan dos alumnos con el mismo email 
+ALTER TABLE alumnos     
+    ADD CONSTRAINT uq_alumnos_email UNIQUE (email);
+```
+
+``` sql
+-- Vincula la columna id_curso de alumnos con la tabla cursos 
+ALTER TABLE alumnos     
+    ADD CONSTRAINT fk_alumnos_cursos    
+    FOREIGN KEY (id_curso) 
+    REFERENCES cursos(id_curso)     
+    ON DELETE SET NULL    
+    ON UPDATE CASCADE;
+```
+
+``` sql
+-- Elimina la restricción CHECK que creaste para la modalidad 
+ALTER TABLE cursos     
+    DROP CHECK chk_cursos_modalidad;  
+-- Elimina la clave foránea en MySQL 
+ALTER TABLE alumnos     
+    DROP FOREIGN KEY fk_alumnos_cursos;
+```
+
+## Modificar restricciones?
+
+### Ver todas las restricciones de una tabla
+
+``` sql
+SELECT      
+    CONSTRAINT_NAME,      
+    CONSTRAINT_TYPE  
+FROM information_schema.TABLE_CONSTRAINTS  
+WHERE  
+    TABLE_SCHEMA = DATABASE()      
+    AND TABLE_NAME = 'alumnos';
+```
+
+En la inmensa mayoría de los motores SQL (incluyendo MySQL, PostgreSQL y SQL Server), **no existe un comando `ALTER CONSTRAINT` directo para modificar la lógica de una restricción**.
+
+Para cambiar las reglas de una restricción existente, el procedimiento estándar siempre consta de dos pasos: **eliminar la restricción antigua (`DROP`) y crear la nueva (`ADD`)**.
+
+Imagina que quieres modificar la restricción `CHECK` de la columna `modalidad` en la tabla `cursos` para incluir una nueva opción llamada `'Online'`.
+
+``` sql
+-- En MySQL / MariaDB / PostgreSQL / SQL Server
+ALTER TABLE cursos
+    DROP CHECK chk_cursos_modalidad;
+```
+
+*(Si fuera una clave foránea en MySQL, la sintaxis sería `DROP FOREIGN KEY fk_alumnos_cursos`)*.
+
+Crear la nueva restricción con los cambios (`ADD`)
+
+``` sql
+ALTER TABLE cursos
+    ADD CONSTRAINT chk_cursos_modalidad
+    CHECK (modalidad IN ('Presencial', 'Teleformación', 'Mixta', 'Online'));
+```
+
+En MySQL/MariaDB puedes encadenar varias acciones dentro del mismo `ALTER TABLE` separándolas con comas. Esto resulta más eficiente porque el motor solo reestructura la tabla una vez:
+
+``` sql
+-- Edición en un solo bloque (Recomendado)
+ALTER TABLE cursos
+    DROP CHECK chk_cursos_modalidad,
+    ADD CONSTRAINT chk_cursos_modalidad
+        CHECK (modalidad IN ('Presencial', 'Teleformación', 'Mixta', 'Online'));
+```
+
+En la mayoría de gestores, lo único que puedes cambiar directamente **sin borrar la restricción** es el nombre de la restricción
+
+``` sql
+ALTER TABLE cursos
+    RENAME CONSTRAINT chk_cursos_modalidad TO chk_cursos_tipo_modalidad;
+```
+
+**El estado de activación (En PostgreSQL / Oracle / SQL Server):** Puedes desactivarla temporalmente (`DISABLE CONSTRAINT`) y volver a activarla (`ENABLE CONSTRAINT`) sin tener que destruirla. *(MySQL no soporta desactivación temporal de restricciones CHECK de forma individual, solo permite definirlas como `NOT ENFORCED`)*.
+
+# Eliminación de datos y estructuras: `DROP, TRUNCATE y DELETE`
+
+## `DELETE` :
+
+Pertenece al lenguaje de manipulación de datos (**DML**). Elimina **filas individuales o específicas** de una tabla evaluando una condición mediante la cláusula `WHERE`.
+
+### Características
+
+- **Filtrado:** Admite la cláusula `WHERE`. Si se omite, elimina **todas** las filas de la tabla una a una.
+
+- **Contador `AUTO_INCREMENT`:** **NO resetea el contador**. Si borras el registro con `id = 10` y luego insertas uno nuevo, el nuevo registro tomará el `id = 11`.
+
+- **Rendimiento:** Más lento en tablas grandes. Genera un registro en el archivo de registro de transacciones (*transaction log*) por cada fila eliminada.
+
+- **Transacciones (`ROLLBACK`):** Al ser DML, se puede deshacer con un `ROLLBACK` si se ejecuta dentro de una transacción.
+
+- **Disparadores (*Triggers*):** Activa los *triggers* definidos para `ON DELETE`.
+
+``` sql
+-- Borrado parcial (Recomendado)
+DELETE FROM alumnos 
+WHERE id_alumno = 5;
+
+-- Borrado de todos los registros que cumplan una condición
+DELETE FROM alumnos 
+WHERE estado = 'Inactivo';
+
+-- Borrado total de filas sin eliminar la tabla (NO resetea AUTO_INCREMENT)
+DELETE FROM alumnos;
+```
+
+## `TRUNCATE`:
+
+**Vacía completamente una tabla** destruyendo las páginas de datos y recreando la tabla con su estructura original vacía.
+
+### Características
+
+- **Filtrado:** **NO admite la cláusula `WHERE`**. Siempre vacía la tabla completa.
+
+- **Contador `AUTO_INCREMENT`:** **SÍ resetea el contador a su valor inicial** (normalmente `1`).
+
+- **Rendimiento:** Extremadamente rápido. En lugar de borrar fila por fila, libera directamente las páginas de memoria reservadas.
+
+- **Claves Foráneas:** En MySQL/MariaDB, **no permite ejecutar `TRUNCATE` si la tabla está referenciada por una `FOREIGN KEY` activa**, incluso si la otra tabla está vacía. Hay que desactivar temporalmente la revisión de claves o usar `DELETE`.
+
+- **Disparadores (*Triggers*):** NO activa los *triggers* de tipo `DELETE`.
+
+``` sql
+-- Vacía la tabla alumnos y resetea el contador AUTO_INCREMENT a 1
+TRUNCATE TABLE alumnos;
+```
+
+## `DROP`:
+
+**Elimina por completo el objeto** (tabla, vista o base de datos) del sistema, borrando tanto su estructura como todos sus datos, índices, permisos y restricciones asociados.
+
+### Características
+
+- **Efecto:** La tabla deja de existir en el diccionario de datos (`information_schema`). Si intentas hacer un `SELECT` posterior, devolverá un error de *"Table doesn't exist"*.
+
+- **Cláusula de seguridad `IF EXISTS`:** Evita que el script falle con un error crítico si la tabla o base de datos ya fue eliminada previamente.
+
+``` sql
+-- Borrar tablas si existen (Atención al orden por las Foreign Keys)
+DROP TABLE IF EXISTS alumnos;
+DROP TABLE IF EXISTS cursos;
+
+-- Borrar una base de datos completa con todas sus tablas
+DROP DATABASE IF EXISTS centro_formacion;DROP TABLE IF EXISTS alumnos;
+DROP TABLE IF EXISTS cursos;
+DROP DATABASE IF EXISTS centro_formacion;
+```
+
+## Tabla Comparativa Directa
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Característica** | **DELETE** | **TRUNCATE** | **DROP** |
+| **Categoría SQL** | **DML** (*Data Manipulation*) | **DDL** (*Data Definition*) | **DDL** (*Data Definition*) |
+| **¿Qué elimina?** | Filas específicas o todas las filas. | Todas las filas de la tabla. | **La tabla completa + su estructura**. |
+| **Soporta `WHERE`** | **Sí** | **No** | **No** |
+| **Resetea `AUTO_INCREMENT`** | **No** | **Sí** | N/A (la tabla desaparece) |
+| **Mantiene la estructura** | **Sí** | **Sí** | **No** |
+| **Rendimiento** | Lento (registro fila por fila). | **Muy rápido** (libera páginas). | **Inmediato**. |
+| **Se puede hacer `ROLLBACK`** | **Sí** (si está en transacción). | Depende del motor (en MySQL no). | **No** |
+
+## Comportamiento de triggers y acciones de clave foránea durante el borrado
+
+Es muy común confundirlos porque ambos provocan **acciones automáticas** dentro de la base de datos, pero operan en capas totalmente distintas del motor:
+
+- **Acción Referencial de Clave Foránea (`ON DELETE` / `ON UPDATE`):** Es una **regla de integridad declarativa**. Está integrada en el motor de almacenamiento (como InnoDB) para mantener la consistencia entre tablas relacionadas.
+
+- **Disparador (*Trigger*):** Es un **bloque de código procedural** (programado expresamente con un `CREATE TRIGGER`) que ejecuta lógica personalizada antes o después de una sentencia `INSERT`, `UPDATE` o `DELETE`.
+
+|  |  |  |
+|---------------------------------------|-----------------|-----------------|
+| **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** |
+| **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. |
+| **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. |
+| **Acciones posibles** | Limitadas a 4 estándar: `RESTRICT`, `CASCADE`, `SET NULL`, `NO ACTION`. | Cualquier código SQL (insertar registros en logs, enviar alertas, actualizar otras tablas, etc.). |
+| **Disparo con `DROP TABLE`** | **No se ejecuta.** De hecho, bloquea el `DROP` de la tabla padre. | **No se ejecuta.** El trigger se destruye junto con la tabla sin dispararse. |
+| **Efecto en Cascada (`CASCADE`)** | Actualiza o borra en la tabla hija a nivel del motor interno. | En la mayoría de versiones de MySQL, los cambios en cascada por FK **no activan triggers en las tablas hijas**. |
