@@ -212,6 +212,8 @@ ALTER TABLE cursos
 
 ## Cambiar restricciones
 
+### Añadir restricciones a una tabla existente
+
 ``` sql
 ALTER TABLE cursos  
     ADD CONSTRAINT chk_cursos_modalidad 
@@ -332,13 +334,13 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 WHERE cc.CONSTRAINT_SCHEMA = DATABASE();
 ```
 
-### Desctivar restricciones 
+### Desctivar restricciones
 
 **El estado de activación (En PostgreSQL / Oracle / SQL Server):** Puedes desactivarla temporalmente (`DISABLE CONSTRAINT`) y volver a activarla (`ENABLE CONSTRAINT`) sin tener que destruirla. *(MySQL no soporta desactivación temporal de restricciones CHECK de forma individual, solo permite definirlas como `NOT ENFORCED`)*.
 
-# Eliminación de datos y estructuras: `DROP, TRUNCATE y DELETE`
+# Eliminación de datos y estructuras
 
-## `DELETE` :
+## `DELETE` 
 
 Pertenece al lenguaje de manipulación de datos (**DML**). Elimina **filas individuales o específicas** de una tabla evaluando una condición mediante la cláusula `WHERE`.
 
@@ -367,7 +369,7 @@ WHERE estado = 'Inactivo';
 DELETE FROM alumnos;
 ```
 
-## `TRUNCATE`:
+## `TRUNCATE`
 
 **Vacía completamente una tabla** destruyendo las páginas de datos y recreando la tabla con su estructura original vacía.
 
@@ -388,7 +390,7 @@ DELETE FROM alumnos;
 TRUNCATE TABLE alumnos;
 ```
 
-## `DROP`:
+## `DROP`
 
 **Elimina por completo el objeto** (tabla, vista o base de datos) del sistema, borrando tanto su estructura como todos sus datos, índices, permisos y restricciones asociados.
 
@@ -431,7 +433,7 @@ Es muy común confundirlos porque ambos provocan **acciones automáticas** dentr
 - **Disparador (*Trigger*):** Es un **bloque de código procedural** (programado expresamente con un `CREATE TRIGGER`) que ejecuta lógica personalizada antes o después de una sentencia `INSERT`, `UPDATE` o `DELETE`.
 
 |  |  |  |
-|-------------------------------------|------------------|------------------|
+|------------------|--------------------------|----------------------------|
 | **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** |
 | **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. |
 | **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. |
