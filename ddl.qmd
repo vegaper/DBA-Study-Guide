@@ -3,7 +3,7 @@ title: "Comandos DDL (Data Definition Language)"
 format: html
 ---
 
-# Crear una base de datos
+# Crear una base de datos (`CREATE`)
 
 ``` sql
 CREATE DATABASE IF NOT EXISTS centro_formacion
@@ -47,7 +47,7 @@ USE centro_formacion;
 SELECT DATABASE();
 ```
 
-# Crear una tabla
+# Crear una tabla (`CREATE`)
 
 ``` sql
 CREATE TABLE cursos (
@@ -77,7 +77,7 @@ CREATE TABLE cursos (
 
 ![](images/paste-SnyGrjuDjtfFufRPjCs9x.png)
 
-Ver los comandos con los que se creo la tabla
+## Ver los comandos con los que se creo la tabla
 
 `SHOW CREATE TABLE cursos;`
 
@@ -133,7 +133,7 @@ Definen qué debe hacer MySQL cuando el registro de la tabla padre (`cursos`) se
 
 - **Usa `RESTRICT` (por defecto)** cuando quieras proteger datos críticos e impedir borrados accidentales de entidades principales sin revisión previa.
 
-# Modificar tablas
+# Modificar tablas (`ALTER`)
 
 ALTER TABLE cambia una tabla existente: añadir o eliminar columnas, modificar tipos y crear restricciones.
 
@@ -144,7 +144,7 @@ ALTER TABLE cursos
     MODIFY COLUMN nombre_curso VARCHAR(150) NOT NULL;
 ```
 
-## Añadir columnas:
+## Añadir columnas (`ADD COLUMN`)
 
 ``` sql
 -- Añade la columna 'modalidad' al final de la tabla
@@ -160,7 +160,7 @@ ALTER TABLE cursos
     ADD COLUMN codigo_curso VARCHAR(10) FIRST;
 ```
 
-## Eliminar columnas:
+## Eliminar columnas (`DROP COLUMN`)
 
 ``` sql
 -- Elimina la columna 'estado' de la tabla alumnos
@@ -212,7 +212,7 @@ ALTER TABLE cursos
 
 ## Cambiar restricciones
 
-### Añadir restricciones a una tabla existente
+### Añadir restricciones a una tabla existente (`ADD CONSTRAINT`)
 
 ``` sql
 ALTER TABLE cursos  
@@ -245,7 +245,15 @@ ALTER TABLE alumnos
     DROP FOREIGN KEY fk_alumnos_cursos;
 ```
 
-## Modificar restricciones?
+## Borrar restricciones (`DROP ...`)
+
+``` sql
+-- En MySQL / MariaDB / PostgreSQL / SQL Server
+ALTER TABLE cursos
+    DROP CHECK chk_cursos_modalidad;
+```
+
+## ¿Modificar restricciones?
 
 ### Ver todas las restricciones de la base de datos activa
 
@@ -334,7 +342,7 @@ JOIN information_schema.TABLE_CONSTRAINTS tc
 WHERE cc.CONSTRAINT_SCHEMA = DATABASE();
 ```
 
-### Desctivar restricciones
+### Desactivar restricciones
 
 **El estado de activación (En PostgreSQL / Oracle / SQL Server):** Puedes desactivarla temporalmente (`DISABLE CONSTRAINT`) y volver a activarla (`ENABLE CONSTRAINT`) sin tener que destruirla. *(MySQL no soporta desactivación temporal de restricciones CHECK de forma individual, solo permite definirlas como `NOT ENFORCED`)*.
 
@@ -381,7 +389,7 @@ DELETE FROM alumnos;
 
 - **Rendimiento:** Extremadamente rápido. En lugar de borrar fila por fila, libera directamente las páginas de memoria reservadas.
 
-- **Claves Foráneas:** En MySQL/MariaDB, **no permite ejecutar `TRUNCATE` si la tabla está referenciada por una `FOREIGN KEY` activa**, incluso si la otra tabla está vacía. Hay que desactivar temporalmente la revisión de claves o usar `DELETE`.
+- **Claves Foráneas:** En MySQL/MariaDB, **no permite ejecutar `TRUNCATE` si la tabla está referenciada por una `FOREIGN KEY` activa**, incluso si la otra tabla está vacía. Hay que desactivar temporalmente la revisión de claves (`SET FOREIGN_KEY_CHECKS =0`) o usar `DELETE`.
 
 - **Disparadores (*Triggers*):** NO activa los *triggers* de tipo `DELETE`.
 
@@ -411,7 +419,7 @@ DROP TABLE IF EXISTS cursos;
 DROP DATABASE IF EXISTS centro_formacion;
 ```
 
-## Tabla Comparativa Directa
+## Tabla Comparativa
 
 |  |  |  |  |
 |------------------|------------------|------------------|------------------|

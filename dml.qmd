@@ -3,7 +3,7 @@ title: "Comandos DML (Data Manipulation Language)"
 format: html
 ---
 
-# La Sentencia `INSERT INTO` (DML)
+# La Sentencia `INSERT INTO`
 
 ## Descripción General
 
@@ -139,7 +139,7 @@ ALTER TABLE objetos AUTO_INCREMENT = 1;
 ```
 
 ::: nota-importante
-⚠️ [**Advertencia Crucial antes de pasar a Producción**]{.underline}
+[**Advertencia Crucial antes de pasar a Producción**]{.underline}
 
 Aunque esto es genial durante la fase de preparación de la base de datos, debes tener en cuenta dos reglas de oro:
 
@@ -218,7 +218,7 @@ SET
 WHERE codigo_inventario = 'ROM-0001';
 ```
 
-##  Precauciones Cruciales y Consideraciones Técnicas
+## Precauciones Cruciales y Consideraciones Técnicas
 
 ### El Peligro del `UPDATE` sin `WHERE`
 
@@ -268,7 +268,7 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 ## Resumen de Buenas Prácticas
 
 |  |  |
-|---------------------|---------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | **Acción** | **Recomendación** |
 | **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
@@ -287,7 +287,7 @@ DELETE FROM nombre_tabla
 WHERE condicion;
 ```
 
-Ejemplos Prácticos
+**Ejemplos Prácticos**
 
 ``` sql
 -- 1. Eliminar un registro específico
@@ -302,7 +302,28 @@ WHERE anio_inicio < 500 AND era_inicio = 'a.C.';
 DELETE FROM objetos;
 ```
 
-## Eliminar registros donde un campo es nulo (`IS NULL`)
+### Uso de nulo en las condiciones (`IS NULL`)
+
+(Esto vale tanto para delete como para update)
+
+``` sql
+DELETE FROM objetos
+WHERE fecha_ingreso IS NULL;
+```
+
+``` sql
+DELETE FROM objetos
+WHERE ubicacion_actual IS NOT NULL;
+```
+
+## Comprativa de Errores Comunes con `NULL`
+
+|  |  |  |
+|-------------------|---------------------------|---------------------------|
+| **Consulta SQL** | **Resultado en MySQL** | **Causa Técnica** |
+| `DELETE FROM objetos WHERE ubicacion_actual = NULL;` | **0 filas afectadas** (Incorrecto) | `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. |
+| `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. |
+| `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` | **Elimina las filas de forma correcta** | `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. |
 
 # La Sentencia `TRUNCATE TABLE`
 
@@ -317,7 +338,7 @@ TRUNCATE TABLE nombre_tabla;
 ## Comparativa Detallada: `DELETE` vs. `TRUNCATE TABLE`
 
 |  |  |  |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | **Criterio** | **DELETE** | **TRUNCATE TABLE** |
 | **Categoría SQL** | **DML** (Data Manipulation Language). | **DDL** (Data Definition Language). |
 | **Uso de cláusula `WHERE`** | **Sí permite.** Puede borrar filas selectivas o toda la tabla. | **No permite.** Siempre borra **todas** las filas de la tabla. |
@@ -347,3 +368,107 @@ DELETE FROM registros_log
 WHERE fecha_log < '2025-01-01' 
 LIMIT 1000;
 ```
+
+# Transacciones en MySQL: `START TRANSACTION`, `COMMIT` y `ROLLBACK`
+
+## ¿Qué es una Transacción?
+
+Una **transacción** es un conjunto de una o más sentencias SQL (**DML**) que se ejecutan como una **única unidad lógica de trabajo**.
+
+Por defecto, MySQL opera en modo **`autocommit = 1`** (activado). Esto significa que cada sentencia DML (`INSERT`, `UPDATE`, `DELETE`) ejecutada individualmente **se confirma automáticamente como una transacción independiente**.
+
+- Para agrupar varias operaciones en una sola transacción, debes usar **`START TRANSACTION`**.
+
+- También puedes desactivar el comportamiento automático para la sesión actual con:
+
+  ``` sql
+  SET autocommit = 0;
+  ```
+
+El objetivo de las transacciones es garantizar la integridad de los datos siguiendo las propiedades **ACID** (Atomaticidad, Consistencia, Aislamiento y Durabilidad). En términos prácticos: **o se aplican con éxito todas las operaciones del grupo, o no se aplica ninguna**.
+
+## Sentencias de Control de Transacciones (TCL)
+
+|  |  |
+|----|----|
+| **Comando** | **Descripción** |
+| **`START TRANSACTION`** (o `BEGIN`) | Inicia de forma explícita un bloque transaccional. |
+| **`COMMIT`** | Confirma y guarda permanentemente en la base de datos todos los cambios realizados desde el `START TRANSACTION`. |
+| **`ROLLBACK`** | Deshace y cancela todos los cambios realizados desde el `START TRANSACTION`, devolviendo la tabla a su estado inicial. |
+
+## Sintaxis y Ejemplo Práctico
+
+Imaginemos un proceso donde trasladamos un objeto de sala y registramos el movimiento en una tabla de auditoría:
+
+``` sql
+-- 1. Iniciamos la transacción
+START TRANSACTION;
+
+-- 2. Actualizamos la ubicación del objeto
+UPDATE objetos 
+SET ubicacion_actual = 'Sala 4 - Vitrina A'
+WHERE codigo_inventario = 'ROM-0001';
+
+-- 3. Insertamos el registro de auditoría
+INSERT INTO historial_movimientos (codigo_inventario, nueva_ubicacion, fecha)
+VALUES ('ROM-0001', 'Sala 4 - Vitrina A', NOW());
+
+-- 4. Si todo ha salido bien, confirmamos permanentemente los cambios
+COMMIT;
+```
+
+Si durante el proceso se detecta un error o una validación falla:
+
+``` sql
+-- Si algo falla antes del COMMIT, cancelamos todo:
+ROLLBACK;
+```
+
+::: nota-importante
+## DML vs. DDL en Transacciones 
+
+Las transacciones en MySQL están diseñadas principalmente para sentencias de manipulación de datos (**DML**).
+
+- **Sentencias DML (`INSERT`, `UPDATE`, `DELETE`):** Se pueden deshacer con un `ROLLBACK` si están dentro de un bloque de transacción.
+
+- **Sentencias DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`):** Provocan un **`COMMIT` implícito**.
+
+> **Advertencia:** Si ejecutas un `CREATE TABLE` o un `TRUNCATE TABLE` en medio de una transacción, MySQL guardará automáticamente todo el trabajo DML anterior y cerrará la transacción activa. **Un `ROLLBACK` posterior no podrá deshacer las sentencias DDL ni las DML anteriores a ella.**
+
+Ejemplo.
+
+``` sql
+START TRANSACTION;
+
+-- 1. Esto es DML
+UPDATE objetos SET estado_conservacion = 'Malo' WHERE id_objeto = 1;
+
+-- 2. Al ejecutar esto (DDL), MySQL ejecuta un COMMIT automático de la línea anterior
+ALTER TABLE objetos ADD COLUMN notas VARCHAR(250);
+
+-- 3. Intentamos hacer ROLLBACK
+ROLLBACK;
+```
+
+Puedes hacer un `ALTER TABLE` dentro de una transacción y luego un `ROLLBACK`
+
+**En MySQL (con el motor InnoDB), NO se puede.**
+
+En el momento exacto en que ejecutas un `ALTER TABLE` (o cualquier comando DDL):
+
+1.  MySQL detecta que vas a cambiar la estructura física de la base de datos.
+
+2.  De forma automática e imperativa, ejecuta un **`COMMIT` implícito** de todo lo que hayas hecho antes en la transacción.
+
+3.  Aplica el cambio de estructura.
+
+4.  Finaliza la transacción.
+
+Si ejecutas un `ROLLBACK` justo después del `ALTER TABLE`, **ya no habrá transacción activa que deshacer** (o solo deshará lo que hagas *después* del `ALTER`).
+
+- El `UPDATE` **NO** se deshace (se guardó permanentemente por el `COMMIT` automático provocado por el `ALTER`).
+
+- La nueva columna `notas` **NO** se elimina (los cambios DDL no son reversibles con `ROLLBACK` en MySQL).
+
+Aunque en **MySQL** las sentencias DDL hacen `COMMIT` implícito y rompen el `ROLLBACK`, existen otros motores de bases de datos como **PostgreSQL** o **SQLite** que sí soportan *Transactional DDL* (es decir, permiten meter un `ALTER TABLE` dentro de un `START TRANSACTION` y hacer `ROLLBACK` de la estructura). Pero en el estándar y comportamiento de **MySQL / MariaDB**, el DDL no es transaccional.
+:::
