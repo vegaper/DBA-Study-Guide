@@ -1,0 +1,349 @@
+---
+title: "Comandos DML (Data Manipulation Language)"
+format: html
+---
+
+# La Sentencia `INSERT INTO` (DML)
+
+## Descripción General
+
+La sentencia `INSERT INTO` pertenece al Lenguaje de Manipulación de Datos (**DML**). Se utiliza para **añadir nuevos registros (filas)** a una tabla existente dentro de la base de datos.
+
+## Sintaxis y Formas de Uso
+
+Existen principalmente tres formas de estructurar una instrucción `INSERT`:
+
+### Inserción indicando las columnas (Forma Recomendada)
+
+Es la práctica estándar en desarrollo. Se especifica de forma explícita el orden y nombre de las columnas en las que se insertarán datos.
+
+``` sql
+INSERT INTO nombre_tabla (columna1, columna2, columna3)
+VALUES (valor1, valor2, valor3);
+```
+
+### Inserción posicional (Omite el nombre de las columnas)
+
+Si no se enumeran las columnas, **es obligatorio proporcionar valores para todas y cada una de las columnas de la tabla**, respetando exactamente el mismo orden en el que fueron creadas en el esquema.
+
+``` sql
+-- Riesgoso: si la estructura de la tabla cambia, este script fallará o insertará datos en campos incorrectos
+INSERT INTO nombre_tabla 
+VALUES (valor1, valor2, valor3, valor4, ...);
+```
+
+### Inserción múltiple (Bulk Insert)
+
+Permite registrar múltiples filas dentro de una única consulta SQL. Es mucho más eficiente a nivel de red y procesamiento que ejecutar varios `INSERT` individuales.
+
+``` sql
+INSERT INTO objetos (codigo_inventario, nombre) 
+VALUES 
+    ('EGI-0001', 'Sarcófago'),
+    ('EGI-0002', 'Amuleto Anubis'),
+    ('EGI-0003', 'Papiro de Khans');
+```
+
+Ejemplo
+
+``` sql
+INSERT INTO objetos (
+    codigo_inventario, 
+    nombre, 
+    fecha_datacion, 
+    anio_inicio, 
+    era_inicio, 
+    precision_datacion
+) VALUES (
+    'ROM-0042', 
+    'Moneda de Julio César', 
+    '44 a. C.', 
+    44, 
+    'a.C.', 
+    'Exacta'
+);
+```
+
+## Consideraciones Especiales al Insertar Datos
+
+### Campos Autoincrementales (`AUTO_INCREMENT`)
+
+- No es necesario incluir las columnas `AUTO_INCREMENT` (como `id_objeto`) en la lista de columnas del `INSERT`. El motor genera el valor secuencial automáticamente.
+
+Si decides incluir la columna en la consulta, puedes pasarle `NULL` o `0` y MySQL asignará de todos modos el siguiente identificador disponible.
+
+:::: nota
+El "Salto" de IDs en `AUTO_INCREMENT` tras un Error de Inserción
+
+Cuando ejecutas un `INSERT` (ya sea de una o de varias filas) y la transacción falla o se aborda porque se viola una regla (por ejemplo, un `CHECK` o un `UNIQUE` duplicado):
+
+1.  MySQL solicita y asigna los nuevos identificadores `AUTO_INCREMENT` **antes** de validar las restricciones de la tabla.
+
+2.  Si la inserción falla, el motor **no echa hacia atrás (no reutiliza) los IDs** que ya había generado para esa operación fallida.
+
+3.  El contador global de la tabla sigue avanzando. La siguiente inserción exitosa tomará el número disponible en el contador, **dejando un hueco permanente en la secuencia numérica** (ejemplo: del ID `4` pasa directamente al ID `8`).
+
+¿Por qué está diseñado así el motor (InnoDB)? Por motivos de rendimiento y concurrencia. Si MySQL tuviera que bloquear el contador o rebobinar los números cada vez que falla una inserción o se hace un ROLLBACK, provocaría cuellos de botella masivos cuando varios usuarios insertan datos al mismo tiempo.
+
+En las bases de datos relacionales profesionales, **las claves primarias surrogate (`AUTO_INCREMENT`) sirven para garantizar unicidad e identificación, NO para contar elementos de forma correlativa**. Es totalmente normal y correcto que existan "huecos" en la secuencia de IDs debido a inserciones fallidas o registros eliminados.
+
+**Cómo consultar y resetear el contador de AUTO_INCREMENT**
+
+Si durante la fase de desarrollo o pruebas has tenido errores y quieres limpiar o reajustar la secuencia de identificadores, puedes hacerlo con los siguientes métodos:
+
+A. Consultar cuál será el próximo ID
+
+Para saber en qué número se ha quedado el contador interno:
+
+``` sql
+SELECT AUTO_INCREMENT 
+FROM information_schema.TABLES 
+WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'objetos';
+```
+
+**Modificar manualmente el contador (`ALTER TABLE`)**
+
+Si has borrado los últimos registros de prueba y quieres que el contador vuelva a un número específico:
+
+``` sql
+-- Cambia el próximo ID generado a 5 (debe ser mayor que el ID máximo actual en la tabla)
+ALTER TABLE objetos AUTO_INCREMENT = 5;
+```
+
+**Atención:** En MySQL, no puedes establecer el `AUTO_INCREMENT` a un valor menor o igual que el `PRIMARY KEY` más alto que ya exista guardado en la tabla.
+
+**Reordenar los IDs existentes**
+
+Si la tabla **no está siendo referenciada aún por claves foráneas (`FOREIGN KEY`)** en otras tablas, puedes renumerar los valores de la clave primaria ejecutando una variable de sesión dentro de un `UPDATE` y reajustar el contador al final.\
+
+Paso 1: modificar el campo manualmente para los registros activos.
+
+``` sql
+-- 1. Inicializamos una variable en 0 y actualizamos la clave primaria en orden
+SET @count = 0;
+
+UPDATE objetos 
+SET id_objeto = (@count := @count + 1) 
+ORDER BY id_objeto;
+```
+
+Paso 2: Reajustar el contador `AUTO_INCREMENT`
+
+Una vez que las filas tienen IDs del 1 al N de forma contigua, ajustas el contador para que la siguiente inserción sea $N+1$:
+
+``` sql
+-- 2. Fijamos el próximo AUTO_INCREMENT al número actual de filas + 1
+-- Si la tabla tiene 5 filas, el próximo id_objeto será 6
+ALTER TABLE objetos AUTO_INCREMENT = 1;
+```
+
+::: nota-importante
+⚠️ [**Advertencia Crucial antes de pasar a Producción**]{.underline}
+
+Aunque esto es genial durante la fase de preparación de la base de datos, debes tener en cuenta dos reglas de oro:
+
+1.  **Si ya existen Claves Foráneas (`FOREIGN KEY`):**
+
+    Si la tabla `objetos` ya está enlazada con otra tabla (por ejemplo, `movimientos_almacen` o `exposiciones` mediante `id_objeto`), **NO debes renumerar los IDs**. Si cambias el `id_objeto` de $10$ a $4$, romperás la relación referencial con los registros asociados de las otras tablas o provocarás errores de integridad.
+
+2.  **En producción real, los huecos SON NORMALES:**
+
+    Una vez que la aplicación esté lanzada a producción, **nunca se reordenan los IDs**. Las bases de datos relacionales están diseñadas para que las claves primarias autoincrementales sean identificadores únicos e inmutables, no contadores estéticos.
+:::
+::::
+
+### Valores Nulos (`NULL`) y Valores por Defecto (`DEFAULT`)
+
+- **Campos con `DEFAULT`:** Si una columna no obligatoria tiene definido un valor por defecto (por ejemplo, `precision_datacion` con `DEFAULT 'Desconocida'`) y la omites en el `INSERT`, el motor le asignará automáticamente dicho valor.
+
+- **Campos opcionales sin `DEFAULT`:** Si no incluyes una columna opcional y no tiene valor por defecto expreso, se le asignará `NULL`.
+
+- **Palabra clave `DEFAULT`:** Puedes forzar el valor por defecto de forma explícita en la lista de valores:
+
+  ``` sql
+  INSERT INTO objetos (codigo_inventario, nombre, precision_datacion)
+  VALUES ('GRE-0010', 'Casco Corintio', DEFAULT);
+  ```
+
+### Tipos de Datos y Comillas
+
+- **Cadenas de texto (`VARCHAR`, `TEXT`) y Fechas (`DATE`):** Los valores deben encerrarse siempre entre comillas simples (`'texto'`).
+
+- **Números (`INT`, `DECIMAL`):** Se escriben directamente sin comillas (ej. `450`).
+
+- **Fechas en formato ISO:** Las columnas de tipo `DATE` deben recibir la cadena en formato `'YYYY-MM-DD'` (por ejemplo, `'2026-04-15'`).
+
+### Restricciones de Integridad (`CHECK`, `UNIQUE`, `FOREIGN KEY`)
+
+- Si un valor infringe un `CHECK` (ej. un `mes_inicio` igual a `13`), la inserción se **cancela** con un error.
+
+- Si insertas un valor duplicado en una columna marcada como `UNIQUE` (ej. un `codigo_inventario` ya existente), MySQL abortará la operación indicando duplicidad de clave.
+
+## Resumen Comparativo de Inserciones
+
+|  |  |
+|----------------------------|--------------------------------------------|
+| **Escenario** | **Comportamiento en la Base de Datos** |
+| **Columna omitida con `AUTO_INCREMENT`** | Genera automáticamente el siguiente ID entero. |
+| **Columna omitida con `DEFAULT`** | Inserta el valor predefinido en la definición del campo. |
+| **Columna omitida sin `DEFAULT` (Permite `NULL`)** | Asigna `NULL` automáticamente. |
+| **Columna omitida con `NOT NULL` (Sin `DEFAULT`)** | **Error:** El campo no puede ser nulo. |
+
+# La Sentencia `UPDATE`
+
+## Descripción General
+
+La sentencia `UPDATE` se utiliza para **modificar los valores de registros que ya existen** dentro de una tabla. Permite actualizar desde una sola columna en una fila concreta hasta múltiples columnas en toda la tabla a la vez.
+
+## Sintaxis Estándar
+
+``` sql
+UPDATE nombre_tabla
+SET 
+    columna1 = nuevo_valor1,
+    columna2 = nuevo_valor2
+WHERE condicion;
+```
+
+## Ejemplo Práctico
+
+Imaginemos que necesitamos actualizar la ubicación y el estado de conservación del objeto con código `'ROM-0001'`:
+
+``` sql
+UPDATE objetos
+SET 
+    ubicacion_actual = 'Sala 3 - Vitrina B',
+    estado_conservacion = 'Bueno'
+WHERE codigo_inventario = 'ROM-0001';
+```
+
+##  Precauciones Cruciales y Consideraciones Técnicas
+
+### El Peligro del `UPDATE` sin `WHERE`
+
+Si ejecutas un `UPDATE` omitiendo la cláusula `WHERE`:
+
+``` sql
+-- ¡CUIDADO! Esto cambiaría la ubicación de TODOS los objetos del museo
+UPDATE objetos
+SET ubicacion_actual = 'Almacén Central';
+```
+
+El motor modificará **absolutamente todos los registros de la tabla**. Por seguridad en entornos de producción, es una buena práctica ejecutar primero un `SELECT` con el mismo `WHERE` para verificar qué filas se van a ver afectadas antes de lanzar el `UPDATE`.
+
+### Actualización basada en valores anteriores
+
+Puedes calcular el nuevo valor tomando como referencia el dato que la columna ya contenía:
+
+``` sql
+-- Ejemplo de incremento numérico
+UPDATE piezas_inventario
+SET lecturas_contador = lecturas_contador + 1
+WHERE id_objeto = 12;
+```
+
+### Asignación de valores `NULL` y `DEFAULT`
+
+Si la columna lo permite, puedes "limpiar" un campo asignándole `NULL` o restablecerlo a su valor predefinido usando la palabra clave `DEFAULT`:
+
+``` sql
+UPDATE objetos
+SET 
+    observaciones = NULL,
+    precision_datacion = DEFAULT
+WHERE id_objeto = 5;
+```
+
+### Evaluación de Restricciones en Tiempo de Ejecución
+
+Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`CHECK`, `UNIQUE`, `FOREIGN KEY`, `NOT NULL`):
+
+- Si intentas cambiar un `codigo_inventario` por uno que ya existe, la consulta fallará por violación de restricción `UNIQUE`.
+
+- Si cambias un `mes_inicio` a `15`, saltará el error de la restricción `CHECK`.
+
+- En un `UPDATE` multirregistro, si una sola fila viola una restricción, **toda la operación se cancela (rollback)** y ninguna fila se modifica.
+
+## Resumen de Buenas Prácticas
+
+|  |  |
+|---------------------|---------------------------------------------------|
+| **Acción** | **Recomendación** |
+| **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
+| **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
+| **Uso de Cláusula `LIMIT`** | En MySQL puedes añadir `LIMIT n` al final del `UPDATE` para asegurarte de no modificar más de $n$ filas por accidente. |
+
+# La Sentencia `DELETE`
+
+### Descripción General
+
+La instrucción `DELETE` forma parte del Lenguaje de Manipulación de Datos (**DML**). Se utiliza para **eliminar filas existentes** de una tabla de forma selectiva (mediante una condición `WHERE`) o masiva.
+
+### Sintaxis Estándar
+
+``` sql
+DELETE FROM nombre_tabla
+WHERE condicion;
+```
+
+Ejemplos Prácticos
+
+``` sql
+-- 1. Eliminar un registro específico
+DELETE FROM objetos 
+WHERE codigo_inventario = 'ROM-0001';
+
+-- 2. Eliminar un rango de registros basados en una condición
+DELETE FROM objetos 
+WHERE anio_inicio < 500 AND era_inicio = 'a.C.';
+
+-- 3. Eliminar TODOS los registros (¡Precaución!)
+DELETE FROM objetos;
+```
+
+## Eliminar registros donde un campo es nulo (`IS NULL`)
+
+# La Sentencia `TRUNCATE TABLE`
+
+### Descripción General
+
+`TRUNCATE TABLE` pertenece al Lenguaje de Definición de Datos (**DDL**). Su función es **vaciar completamente el contenido de una tabla**, destruyendo y recreando la estructura interna de la misma a nivel del motor de almacenamiento.
+
+``` sql
+TRUNCATE TABLE nombre_tabla;
+```
+
+## Comparativa Detallada: `DELETE` vs. `TRUNCATE TABLE`
+
+|  |  |  |
+|----|----|----|
+| **Criterio** | **DELETE** | **TRUNCATE TABLE** |
+| **Categoría SQL** | **DML** (Data Manipulation Language). | **DDL** (Data Definition Language). |
+| **Uso de cláusula `WHERE`** | **Sí permite.** Puede borrar filas selectivas o toda la tabla. | **No permite.** Siempre borra **todas** las filas de la tabla. |
+| **Rendimiento / Velocidad** | **Más lento.** Borra fila por fila, registrando cada eliminación en el *log* de transacciones. | **Mucho más rápido.** Desasigna las páginas de datos en disco directamente en lugar de procesar fila por fila. |
+| **Manejo de `AUTO_INCREMENT`** | **Mantiene el contador.** El próximo registro usará el número secuencial donde se quedó. | **Resetea el contador.** La secuencia `AUTO_INCREMENT` vuelve a iniciarse en `1`. |
+| **Uso de *Triggers* (Disparadores)** | **Activa los disparadores `BEFORE DELETE` y `AFTER DELETE`** por cada fila borrada. | **NO activa disparadores.** No ejecuta ningún *trigger* de borrado. |
+| **Comportamiento con `FOREIGN KEY`** | Aplica las reglas referenciales (`ON DELETE CASCADE`, `RESTRICT`, etc.). | **Se bloquea** si la tabla es referenciada por una clave foránea activa de otra tabla, incluso si está vacía. |
+| **Transaccionalidad (`ROLLBACK`)** | **Permite `ROLLBACK`** dentro de una transacción activa (`START TRANSACTION`). | **Auto-commit explícito.** Al ser DDL, commitea la transacción inmediatamente y **no se puede deshacer**. |
+
+## Consideraciones Técnicas y Buenas Prácticas
+
+### El Riesgo de `DELETE` sin `WHERE`
+
+Al igual que con `UPDATE`, si ejecutas `DELETE FROM tabla;` sin un filtro `WHERE`, borrarás todas las filas. A diferencia de `TRUNCATE`:
+
+- Tardará más tiempo según el volumen de datos.
+
+- **No reajustará el contador `AUTO_INCREMENT`**.
+
+### Uso de `LIMIT` en MySQL
+
+En MySQL puedes restringir la cantidad de filas que un `DELETE` eliminará en una sola ejecución. Esto es ideal en producción para borrar lotes masivos sin bloquear la base de datos:
+
+``` sql
+-- Borra los registros antiguos en lotes de 1000 filas
+DELETE FROM registros_log 
+WHERE fecha_log < '2025-01-01' 
+LIMIT 1000;
+```
