@@ -594,7 +594,7 @@ La contraseña nunca aparece en texto plano.
 
 ### Contenedores que estamos configurando en este archivo:
 
-### **Prometheus**
+### Prometheus
 
 -   Usa la imagen oficial `prom/prometheus`.
 
@@ -606,7 +606,7 @@ La contraseña nunca aparece en texto plano.
 
 -   Retiene datos durante **15 días**.
 
-### **Node Exporter**
+### Node Exporter
 
 -   Es el agente de monitorización del servidor
 
@@ -616,7 +616,7 @@ La contraseña nunca aparece en texto plano.
 
 -   Docker lo aísla, pero con `--path.rootfs=/host` puede acceder a la información del host.
 
-### **Grafana**
+### Grafana
 
 -   Usa la imagen oficial `grafana/grafana`.
 
@@ -640,7 +640,7 @@ docker compose up -d
 
 Docker Compose realiza **tres tareas fundamentales**:
 
-## **Descarga las imágenes necesarias (si no existen en el sistema)**
+## Descarga las imágenes necesarias (si no existen en el sistema)
 
 ``` yaml
 image: prom/prometheus:latest
@@ -865,7 +865,7 @@ Eso significa:
 -   `rate()` mira **cómo ha evolucionado el contador en todo el minuto** y devuelve una **tendencia** (derivada), que refleja mejor el comportamiento global, sin reaccionar de forma exagerada a un solo punto.
 :::
 
-#### **Panel 1:** Uso de CPU (%)
+#### Panel 1: Uso de CPU (%)
 
 Consulta PromQL: `100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)`
 
@@ -907,7 +907,7 @@ Es la forma más robusta de medir uso real de CPU.
 
 **La fórmula calcula el porcentaje de CPU usada restando el porcentaje de tiempo idle al 100%. Usa** `rate()` **para medir actividad reciente y** `avg` **para promediar todos los cores de la instancia.**
 
-#### **Panel 2:** Uso de memoria RAM (%)
+#### Panel 2: Uso de memoria RAM (%)
 
 Consulta: `100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))`
 
@@ -915,7 +915,7 @@ Unidad: Percent (0-100)
 
 Interpretación: Muestra qué porcentaje de RAM está en uso. MemAvailable es la métrica recomendada por el kernel para medir memoria realmente libre, porque incluye caché y buffers reutilizables.
 
-#### **Panel 3:** Uso de disco raíz (%)
+#### Panel 3: Uso de disco raíz (%)
 
 Consulta: `100 * (1 - (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}/node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay|squashfs"}))`
 
@@ -931,19 +931,19 @@ Unidad:Percent (0-100):
 
 Interpretación: Muestra cuánto espacio se está usando en la partición principal.
 
-#### **Panel 4: tráfico de red recibido**
+#### Panel 4: tráfico de red recibido
 
 Consulta: `rate(node_network_receive_bytes_total{device!="lo"}[1m])`
 
 Unidad: bytes/sec
 
-#### **Panel 5:** Tráfico de red enviado
+#### Panel 5: Tráfico de red enviado
 
 Consulta: `rate(node_network_transmit_bytes_total{device!="lo"}[1m])`
 
 Unidad: bytes/sec
 
-#### **Panel 6:** Escritura en disco (B/s)
+#### Panel 6: Escritura en disco (B/s)
 
 Consulta: `sum by (instance) ( rate(node_disk_written_bytes_total{device!~"loop.*|ram.*"}[1m]) )`
 
@@ -951,11 +951,11 @@ Tipo de visualización: Time series
 
 Unidad: bytes/sec
 
-#### **Resultado esperado**
+#### Resultado esperado
 
 Este panel debería mostrar picos cuando el sistema escriba datos en disco. Por ejemplo, al crear un fichero grande, instalar paquetes o realizar operaciones intensivas de escritura.
 
-#### **Panel 7: Lectura en disco** (B/s)
+#### Panel 7: Lectura en disco (B/s)
 
 Consulta: `sum by (instance) ( rate(node_disk_read_bytes_total{device!~"loop.*|ram.*"}[1m]) )`
 
@@ -963,17 +963,17 @@ Tipo de visualización: Time series
 
 Unidad: bytes/sec
 
-#### **Resultado esperado**
+#### Resultado esperado
 
 Este panel debería mostrar picos cuando el sistema lea datos del disco. Por ejemplo, al abrir ficheros grandes, cargar datos o leer información desde una base de datos.
 
-#### **Guardar el dashboard**
+#### Guardar el dashboard
 
 **Monitorización básica del servidor Ubuntu**
 
 Descripción: Dashboard básico para visualizar CPU, memoria, disco y red mediante Grafana, Prometheus y Node Exporter.
 
-### **Generar carga para ver cambios en el dashboard**
+### Generar carga para ver cambios en el dashboard
 
 Ahora vamos a provocar algo de actividad para que el dashboard lo muestre
 

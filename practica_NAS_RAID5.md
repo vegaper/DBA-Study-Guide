@@ -5,7 +5,7 @@ format: html
 
 En un equipo físico, el sistema operativo podría instalarse sobre un RAID creado por una controladora hardware. Sin embargo, VirtualBox no presenta directamente una controladora RAID física al sistema invitado. Para esta simulación utilizaremos discos virtuales independientes y Espacios de almacenamiento de Windows Server.
 
-# **Objetivos de la práctica**
+# Objetivos de la práctica
 
 Al finalizar la práctica, serás capaz de:
 
@@ -69,7 +69,7 @@ Cambiar chipset:\
 
 ![](images/paste-V9GU5r3aX3lmyyt8VQ4RH.png)
 
-## **Organización de las controladoras**
+## Organización de las controladoras
 
 La configuración quedará así:
 
@@ -119,7 +119,7 @@ Después de crear todos los discos nos quedará algo parecido a esto:
 
 ![](images/paste-NY1o3T_3m3673bLMDkRMr.png)
 
-## **Configuración especial de NVMe en VirtualBox (patch)**
+## Configuración especial de NVMe en VirtualBox (patch)
 
 Oracle documenta este patch como solución provisional para huéspedes Windows que no detectan correctamente los discos conectados a la controladora NVMe. Habrá que realizar estos pasos hasta que Virtual Box solucione el problema en una versión posterior.
 
@@ -150,7 +150,7 @@ Deben aparecer las dos propiedades configuradas con valor 0.
 \
 ![](images/paste-zvheMw8GQmFXm06uK9WpF.png)
 
-## **Propuesta de direccionamiento**
+## Propuesta de direccionamiento
 
 Para evitar conflictos con la puerta de enlace y con otros equipos, puede utilizarse esta fórmula:
 
@@ -168,7 +168,7 @@ Los discos VDI pueden ser de **reservado dinámicamente**. Windows seguirá vien
 
 ![](images/paste-PT91951uSYu2OwLfYKCEC.png)
 
-# **Instalación de Windows Server 2025**
+# Instalación de Windows Server 2025
 
 Inicia la máquina virtual desde la ISO.
 
@@ -211,9 +211,9 @@ Finalmente se cargará el panle de Administrador del servidor:\
 
 Seguir las instrucciones de instalación en otras prácticas de virtualización.
 
-# **Configuración inicial del servidor**
+# Configuración inicial del servidor
 
-## **Cambiar el nombre del equipo**
+## Cambiar el nombre del equipo
 
 Desde PowerShell como administrador:
 
@@ -227,7 +227,7 @@ Después del reinicio comprobamos usando el comando `hostname`
 
 ![](images/paste-w9-Sq98p5LHAH7wsW_xZL.png)
 
-## **Configurar la red**
+## Configurar la red
 
 En la shell usa ipconfig para ver qué dirección IP te ha asignado el DHCP, esa será la misma que configuraremos fija.\
 ![](images/paste-YDVUjX7coA1AsYLflTii2.png)
@@ -267,7 +267,7 @@ Los Resultados
 Comprobación DNS: `Resolve-DnsName www.microsoft.com`\
 ![](images/paste-bO-l-pQa5CI7FoLYWwH-1.png)
 
-## **Establecer el perfil de red como privado**
+## Establecer el perfil de red como privado
 
 Consulta el nombre del adaptador: `Get-NetConnectionProfile`
 
@@ -277,7 +277,7 @@ Si se llama Ethernet: `Set-NetConnectionProfile -InterfaceAlias "Ethernet" -Netw
 
 Una red privada permite configurar el descubrimiento de equipos y el uso compartido de archivos en una LAN de confianza.
 
-## **Comprobación de los discos**
+## Comprobación de los discos
 
 Abre PowerShell como administrador:
 
@@ -300,7 +300,7 @@ Es normal que todos tengan el mismo FriendlyName, lo importante es que tengan n�
 
 CanPool = True
 
-## **Crear el grupo de almacenamiento**
+## Crear el grupo de almacenamiento
 
 Abre: Administrador del servidor → Servicios de archivos y almacenamiento→ Volúmenes→ Grupos de almacenamiento
 
@@ -335,7 +335,7 @@ Debe aparecer:
 
 Microsoft establece este orden de trabajo: primero se agrupan los discos físicos, después se crea un disco virtual desde el grupo y, finalmente, se crea un volumen sobre el disco virtual.
 
-## **Crear el disco virtual con paridad (equivalente a RAID 5)**
+## Crear el disco virtual con paridad (equivalente a RAID 5)
 
 Selecciona GRUPO-NAS.
 
@@ -373,7 +373,7 @@ Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando 
 
 ![](images/paste-M6dKManox5pOiS9vR3KQ1.png)
 
-### **Comprobación (en PowerShell)**
+### Comprobación (en PowerShell)
 
 `Get-VirtualDisk |Format-Table FriendlyName,ResiliencySettingName,ProvisioningType,HealthStatus,Size,FootprintOnPool`
 
@@ -386,7 +386,7 @@ Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando 
 -   HealthStatus : Healthy\
     ![](images/paste-ld5H8jqBou5CSG-kTHmAo.png)
 
-### **Crear el volumen**
+### Crear el volumen
 
 ![](images/paste-yef636ocPvekRFqXt3B9-.png)
 
@@ -411,7 +411,7 @@ Comprueba el resultado en la shell: `Get-Volume -DriveLetter N`
 
 ![](images/paste-WyiXjZ_0DQa6zv6ZLTz7N.png)
 
-## **Crear usuarios y grupos locales**
+## Crear usuarios y grupos locales
 
 Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01, al contrario que los grupos y usuarios habituales de los entornos corporativos que son a nivel DNS
 
@@ -484,7 +484,7 @@ Configura:
 
 No asignaremos permisos directamente a los usuarios. Los permisos se asignarán a los grupos.
 
-## **Crear la estructura de carpetas**
+## Crear la estructura de carpetas
 
 Crea:
 
@@ -498,7 +498,7 @@ Crea:
 
 -   N:\\NAS\\COMUN
 
-# **Configurar los niveles de permisos**
+# Configurar los niveles de permisos
 
 En Windows existen dos niveles principales de permisos cuando trabajas con almacenamiento en red:
 
@@ -512,7 +512,7 @@ Ejemplo práctico:
 
 -   Si estás en otro ordenador de la clase o de la oficina y entras a esa misma carpeta mediante la red (`\\servidor\recurso`), **se aplican ambos permisos** (SMB y NTFS), y Windows aplicará la combinación más restrictiva entre los dos.
 
-## **Permisos de Seguridad o NTFS**
+## Permisos de Seguridad o NTFS
 
 Se configuran en Propiedades de la carpeta → Seguridad
 
@@ -524,13 +524,13 @@ Se aplican:
 
 -   A carpetas, subcarpetas y archivos.
 
-## **Permisos de Compartir**
+## Permisos de Compartir
 
 Se configuran en Propiedades de la carpeta → Compartir → Uso compartido avanzado → Permisos
 
 Solo se aplican cuando se accede mediante la red SMB (Server Message Block). Es un protocolo de red de capa de aplicación que se utiliza principalmente en sistemas Windows para compartir archivos, impresoras y carpetas entre diferentes equipos conectados a una misma red local LAN
 
-## **Permiso efectivo**
+## Permiso efectivo
 
 Cuando se accede por red se aplican ambos niveles. El usuario obtiene **la combinación más restrictiva**.
 
@@ -543,9 +543,9 @@ Cuando se accede por red se aplican ambos niveles. El usuario obtiene **la combi
 
 Por este motivo hay que revisar siempre las dos pestañas.
 
-## **Configurar la herencia correctamente**
+## Configurar la herencia correctamente
 
-### **Preparar la carpeta raíz**
+### Preparar la carpeta raíz
 
 Abre las propiedades de: N:\\NAS
 
@@ -582,7 +582,7 @@ Elimina de esta carpeta raíz las entradas generales que puedan aparecer, como:
 
 Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administradores. La herencia hace que las subcarpetas y archivos reciban automáticamente las entradas heredables del directorio padre. Windows permite deshabilitarla conservando las entradas como explícitas o eliminando únicamente las heredadas.
 
-## **Configurar los permisos NTFS**
+## Configurar los permisos NTFS
 
 1.  En cada subcarpeta entra en: *Propiedades → Seguridad → Editar → Agregar*
 
@@ -638,7 +638,7 @@ Debe aplicarse a *Esta carpeta, subcarpetas y archivos*, esta es la configuraci�
 
 No utilices Denegar. En esta práctica basta con no conceder acceso a los grupos no autorizados. Los permisos explícitos de denegación complican el cálculo de permisos efectivos y pueden afectar a usuarios que pertenezcan a varios grupos.
 
-## **Crear los recursos compartidos**
+## Crear los recursos compartidos
 
 En cada carpeta: *Propiedades* → *Compartir* → *Uso compartido avanzado*\>Marca: *Compartir esta carpeta*
 
@@ -655,7 +655,7 @@ Clickamos en Permisos y añadimos el grupo que debe estar autorizado para la car
 Le damos permiso para cambiar.\
 ![](images/paste-s_i3AkjA343WvMJjztHhd.png)
 
-### **Comprobar los recursos y permisos**
+### Comprobar los recursos y permisos
 
 **Recursos compartidos:** `Get-SmbShare | Format-Table Name, Path, Description`\
 ![](images/paste-IgaC-5V_kl3qCTCIz0m3n.png)
@@ -670,7 +670,7 @@ Le damos permiso para cambiar.\
 
 Debe aparecer el grupo NAS_PROFESORES con permiso de modificación.
 
-## **Comprobación firewall SMB**
+## Comprobación firewall SMB
 
 Windows Server 2025 utiliza reglas más restrictivas al crear recursos compartidos y abre únicamente los puertos necesarios para SMB moderno. El acceso normal utiliza TCP 445.
 
@@ -682,7 +682,7 @@ Resultado esperado: TcpTestSucceeded : True. Si devuelve False, revisa:
 
 *Firewall de Windows Defender* → *Configuración avanzada* → *Reglas de entrada* → *Uso compartido de archivos e impresoras (SMB-In)*
 
-## **Resolución del nombre del servidor**
+## Resolución del nombre del servidor
 
 Los servidores DNS como 8.8.8.8 o 1.1.1.1 resuelven nombres públicos de Internet, pero no conocen nombres locales como SRV-NAS01
 
@@ -698,7 +698,7 @@ Después podrá utilizarse: \\\\SRV-NAS01\\PROFESORES
 
 Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o el nombre.
 
-# **Probar el acceso desde un equipo cliente**
+# Probar el acceso desde un equipo cliente
 
 ## Comprobación conectividad:
 
@@ -818,7 +818,7 @@ Cerrar sesión en el equipo cliente → Volver a iniciar sesión → Conectar co
 
 No deben probarse simultáneamente dos usuarios diferentes contra el mismo nombre o dirección del NAS. Cada prueba debe realizarse de forma independiente.
 
-# **Simulación del fallo y sustitución de un disco del espacio de paridad**
+# Simulación del fallo y sustitución de un disco del espacio de paridad
 
 En esta parte comprobaremos que el espacio de paridad continúa funcionando cuando se pierde uno de sus tres discos físicos y aprenderemos a sustituirlo por uno nuevo.
 
@@ -828,7 +828,7 @@ En este laboratorio no vamos a corromper manualmente el archivo VDI. Simularemos
 
 Un espacio de paridad con tres discos puede soportar el fallo de **un único disco**. Mientras permanezca degradado no debe desconectarse un segundo disco, porque el espacio podría quedar inaccesible y producirse una pérdida de datos. Microsoft describe los estados Degraded e Incomplete como situaciones en las que se ha reducido la resistencia, aunque los datos todavía pueden continuar accesibles.
 
-## **Identificar claramente los discos virtuales**
+## Identificar claramente los discos virtuales
 
 Para facilitar esta prueba, los archivos VDI deberían tener nombres diferentes:
 
@@ -850,7 +850,7 @@ Desde PowerShell, comprueba los discos pertenecientes al grupo:
 
 Aunque todos puedan tener el mismo nombre, sus valores SerialNumber y UniqueId deben ser distintos.
 
-## **Preparar datos para comprobar su integridad**
+## Preparar datos para comprobar su integridad
 
 En la máquina virtual:
 
@@ -870,7 +870,7 @@ desde el host, en el explorador de archivos: `\\10.0.20.46\COMUN`
 
 ![](images/paste-vnIZHLmWhLzO9rqEoIa-k.png)
 
-## **Comprobar el estado inicial**
+## Comprobar el estado inicial
 
 Antes de desconectar ningún disco, ejecuta: `Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize`
 
@@ -893,7 +893,7 @@ Resultado esperado:
 | **Volumen D:**          | Healthy / OK    |
 | **Tres discos físicos** | Healthy / OK    |
 
-## **Simular la avería de un disco**
+## Simular la avería de un disco
 
 Apaga correctamente Windows Server: Stop-Computer. Espera hasta que VirtualBox muestre la máquina como completamente apagada.
 
@@ -915,7 +915,7 @@ Pulsa **Quitar el dispositivo seleccionado de la controladora**. [No selecciones
 
 -   Inicia nuevamente la máquina virtual.
 
-## **Comprobar el estado degradado**
+## Comprobar el estado degradado
 
 Abre PowerShell como administrador y ejecuta:
 
@@ -999,7 +999,7 @@ Aunque haya desaparecido uno de los discos:
 
 -   Ya no existe protección frente al fallo de otro disco.
 
-## **Sustitución del disco averiado**
+## Sustitución del disco averiado
 
 **Crear el disco de reemplazo**
 
@@ -1024,7 +1024,7 @@ Los ajustes especiales de NVMe aplicados mediante VBoxManage permanecen asociado
 
 Inicia Windows Server.
 
-## **Comprobar el disco nuevo**
+## Comprobar el disco nuevo
 
 Ejecuta: `Get-PhysicalDisk | Format-Table DeviceId,FriendlyName,SerialNumber,UniqueId,CanPool,OperationalStatus,HealthStatus,Size`
 
@@ -1046,7 +1046,7 @@ No inicialices el disco desde Administración de discos, no crees particiones y 
 
 Si aparece CanPool=False, consulta el motivo: `Get-PhysicalDisk | Select-Object FriendlyName,SerialNumber,UniqueId,CanPool,CannotPoolReason`
 
-## **Agregar el disco de reemplazo al grupo**
+## Agregar el disco de reemplazo al grupo
 
 Abre: *Administrador del servidor → Servicios de archivos y almacenamiento → Volúmenes → Grupos de almacenamiento*
 
@@ -1064,7 +1064,7 @@ No lo configures como reserva activa.
 
 Microsoft permite agregar el nuevo disco desde el Administrador del servidor o mediante Add-PhysicalDisk. El disco debe encontrarse en el grupo primordial y mostrar CanPool=True.
 
-### **Alternativa mediante PowerShell**
+### Alternativa mediante PowerShell
 
 ``` bash
 $Pool = Get-StoragePool -FriendlyName "GRUPO-NAS"
@@ -1099,7 +1099,7 @@ En este momento aparecerán:
 
 -   La referencia al disco ausente o averiado.
 
-## **Identificar el disco averiado**
+## Identificar el disco averiado
 
 Ejecuta: `Get-StoragePool -FriendlyName "GRUPO-NAS" |Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,VirtualDiskFootprint`
 
@@ -1117,7 +1117,7 @@ Set-PhysicalDisk `
 
 La marca *Retired* indica que Storage Spaces debe dejar de utilizar ese disco y mover o reconstruir sus datos sobre otros discos disponibles.
 
-## **Reparar el disco virtual**
+## Reparar el disco virtual
 
 Inicia la reparación: `Repair-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS"`
 
@@ -1141,7 +1141,7 @@ Durante la reparación, el disco virtual puede mostrar:
 
 Microsoft recomienda reparar el disco virtual, esperar a que termine el trabajo y comprobar después que el almacenamiento vuelva a un estado saludable.
 
-## **Comprobar que la reparación ha terminado**
+## Comprobar que la reparación ha terminado
 
 Ejecuta: `Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus,Size`
 
@@ -1165,7 +1165,7 @@ Resultado esperado:
 | **Disco de reemplazo** | Healthy                    |
 | **Disco antiguo**      | Retired o sin comunicación |
 
-### **Verificar que el disco antiguo ya no contiene datos**
+### Verificar que el disco antiguo ya no contiene datos
 
 Ejecuta: `Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Select-Object DeviceId,SerialNumber,UniqueId,Usage,OperationalStatus,HealthStatus,VirtualDiskFootprin`t
 
@@ -1177,7 +1177,7 @@ El disco averiado debería mostrar:
 
 VirtualDiskFootprint=0 significa que el disco virtual ya no depende del disco retirado. Microsoft recomienda comprobar este valor antes de eliminar definitivamente el disco del grupo.
 
-## **Eliminar la referencia al disco averiado**
+## Eliminar la referencia al disco averiado
 
 Recupera el objeto correspondiente mediante su UniqueId:
 
@@ -1203,7 +1203,7 @@ Remove-PhysicalDisk elimina el disco físico indicado de la configuración del g
 No ejecutes: `Remove-VirtualDisk` Ese comando eliminaría DISCO-VIRTUAL-NAS, el volumen y los datos almacenados.
 :::
 
-## **Comprobación final**
+## Comprobación final
 
 ``` bash
 Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size
@@ -1245,7 +1245,7 @@ Finalmente, desde el cliente vuelve a probar los recursos:
 
 Los usuarios deben conservar exactamente los mismos permisos que antes del fallo.
 
-## **Eliminar definitivamente el antiguo VDI**
+## Eliminar definitivamente el antiguo VDI
 
 Cuando se haya comprobado que:
 
