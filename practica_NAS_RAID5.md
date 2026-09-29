@@ -63,11 +63,11 @@ Password para la práctica: Pass123!
 Empezamos la creación de VM como siempre, pero hay que hacer algunos cambios antes de instalar:
 
 Cambiar chipset:\
-![](images\paste-sbQ7cxDkc-3P7qUIFah7b.png)
+![](images/paste-sbQ7cxDkc-3P7qUIFah7b.png)
 
 ## Habilitar UEFI
 
-![](images\paste-V9GU5r3aX3lmyyt8VQ4RH.png)
+![](images/paste-V9GU5r3aX3lmyyt8VQ4RH.png)
 
 ## **Organización de las controladoras**
 
@@ -94,30 +94,30 @@ No conectaremos los tres discos de datos a SATA porque, en las pruebas realizada
 :::
 
 Para crear los discos en NVMe, abrimos Almacenamiento y por defecto habrá creado una unidad de disco duro de controlador SATA:\
-![](images\paste-Vq0oViFs0Ectnv7bgq3TB.png)
+![](images/paste-Vq0oViFs0Ectnv7bgq3TB.png)
 
 La eliminamos clicando sobre *remove attachment*, pero conservamos la unidad óptica.
 
 Damos a añadir controladores:\
-![](images\paste-ymB6l5PUYhsg7eRaBN0Nv.png)
+![](images/paste-ymB6l5PUYhsg7eRaBN0Nv.png)
 
 y seleccionamos NMVe\
-![](images\paste-58jnUvfc2g5hV7b9cjjlU.png)
+![](images/paste-58jnUvfc2g5hV7b9cjjlU.png)
 
 Entonces enlazamos la unidad de disco duro en el controlador NVMe, dándole a ***add attachment***.\
-![](images\paste-gHn8VbeIB3s0gXzV27nii.png)
+![](images/paste-gHn8VbeIB3s0gXzV27nii.png)
 
 Ahí damos a crear para crear un disco duro que sustituya al que hemos quitado. Le daremos los 60 GB para el disco duro del SO.
 
-![](images\paste-TH1tWd0a2ZRcWc1Us_LDk.png)
+![](images/paste-TH1tWd0a2ZRcWc1Us_LDk.png)
 
 Creamos tres discos más de 20 GB y los añadimos al controlador NVMe
 
-![](images\paste-LVwN-m87-Ped-XMfnYHHp.png)
+![](images/paste-LVwN-m87-Ped-XMfnYHHp.png)
 
 Después de crear todos los discos nos quedará algo parecido a esto:
 
-![](images\paste-NY1o3T_3m3673bLMDkRMr.png)
+![](images/paste-NY1o3T_3m3673bLMDkRMr.png)
 
 ## **Configuración especial de NVMe en VirtualBox (patch)**
 
@@ -148,7 +148,7 @@ VBoxManage getextradata "WS25 UEFI" enumerate
 Deben aparecer las dos propiedades configuradas con valor 0.
 
 \
-![](images\paste-zvheMw8GQmFXm06uK9WpF.png)
+![](images/paste-zvheMw8GQmFXm06uK9WpF.png)
 
 ## **Propuesta de direccionamiento**
 
@@ -166,7 +166,7 @@ Los discos VDI pueden ser de **reservado dinámicamente**. Windows seguirá vien
 
 ## Como nos queda al final:
 
-![](images\paste-PT91951uSYu2OwLfYKCEC.png)
+![](images/paste-PT91951uSYu2OwLfYKCEC.png)
 
 # **Instalación de Windows Server 2025**
 
@@ -174,7 +174,7 @@ Inicia la máquina virtual desde la ISO.
 
 Selecciona: Windows Server 2025 Standard Evaluation (Experiencia de escritorio)
 
-![](images\paste-V9XLT9_CdZtXyXHnySmeG.png)
+![](images/paste-V9XLT9_CdZtXyXHnySmeG.png)
 
 Cuando el instalador solicite el destino, deben aparecer cuatro discos:
 
@@ -183,7 +183,7 @@ Cuando el instalador solicite el destino, deben aparecer cuatro discos:
 -   Tres de aproximadamente 20 GB.
 
 Selecciona únicamente el disco de 60 GB para instalar Windows Server.\
-![](images\paste-tp33XEItF-tz2dyZoyHPg.png)
+![](images/paste-tp33XEItF-tz2dyZoyHPg.png)
 
 No crees particiones ni volúmenes en los tres discos de 20 GB.
 
@@ -202,10 +202,10 @@ Después de instalar Windows:
 Microsoft indica que los discos destinados a Storage Spaces deben estar vacíos, sin formato y sin volúmenes. También indica que el sistema operativo no puede alojarse dentro del espacio de almacenamiento; por eso el disco del sistema queda separado del grupo.
 
 Una vez instalado el sistema, cada vez que queramos abrirlo nos pedirá introducir Ctrl+Alt+Del, pero al ser una máquina virtual esta combinación de comandos se aplicará a la máquina host, no a la VM, así que podemos utilizar la interfaz de Virtual Box para introducirlos:\
-![](images\paste-C0Zy3xHGGdc_a-nZ79VlF.png)
+![](images/paste-C0Zy3xHGGdc_a-nZ79VlF.png)
 
 Finalmente se cargará el panle de Administrador del servidor:\
-![](images\paste-KifpcX22ZbA5hNWfmo8v6.png)
+![](images/paste-KifpcX22ZbA5hNWfmo8v6.png)
 
 ## Instalar complementos del invitado
 
@@ -225,30 +225,30 @@ Sustituye xx por el número correspondiente que se te ha asignado en clase (para
 
 Después del reinicio comprobamos usando el comando `hostname`
 
-![](images\paste-w9-Sq98p5LHAH7wsW_xZL.png)
+![](images/paste-w9-Sq98p5LHAH7wsW_xZL.png)
 
 ## **Configurar la red**
 
 En la shell usa ipconfig para ver qué dirección IP te ha asignado el DHCP, esa será la misma que configuraremos fija.\
-![](images\paste-YDVUjX7coA1AsYLflTii2.png)
+![](images/paste-YDVUjX7coA1AsYLflTii2.png)
 
 Panel de control → Redes e Internet → Centro de redes y recursos compartidos → Cambiar configuración del adaptador
 
-![](images\paste-RiYSQMtgLxLrEfazvQzmc.png)
+![](images/paste-RiYSQMtgLxLrEfazvQzmc.png)
 
 Abre las propiedades de Ethernet y configura IPv4.\
-![](images\paste-jzMXRcuPh2s3eIk3PaIN1.png)
+![](images/paste-jzMXRcuPh2s3eIk3PaIN1.png)
 
 Comprueba la configuración: `Get-NetIPConfiguration` y haz un ping a 1.1.1.1 para comprobar que tenemos salida a internet.
 
-![](images\paste-LZdKBranAf2bSNEsrrr8D.png)\
+![](images/paste-LZdKBranAf2bSNEsrrr8D.png)\
 
 `Get-DnsClientServerAddress -AddressFamily IPv4`
 
-![](images\paste-BjjEdss9K99h2mNWEa1Nm.png)
+![](images/paste-BjjEdss9K99h2mNWEa1Nm.png)
 
 Comprueba la conectividad con el host: `Test-Connection 10.0.20.7 -Count 2`\
-![](images\paste-rWHOO-qJx80QbOdv9EI8N.png)
+![](images/paste-rWHOO-qJx80QbOdv9EI8N.png)
 
 Los Resultados
 
@@ -265,7 +265,7 @@ Los Resultados
     -   **¿Por qué `0` ms?** Esto indica una conexión extremadamente rápida y directa. Dado que estás haciendo ping desde una máquina virtual (VM) a su propia máquina anfitriona (host), el tráfico no sale a la red física real; todo sucede dentro de la memoria y la red virtual del software de virtualización (VirtualBox). Es esencialmente instantáneo, por lo que PowerShell lo redondea a 0 ms.
 
 Comprobación DNS: `Resolve-DnsName www.microsoft.com`\
-![](images\paste-bO-l-pQa5CI7FoLYWwH-1.png)
+![](images/paste-bO-l-pQa5CI7FoLYWwH-1.png)
 
 ## **Establecer el perfil de red como privado**
 
@@ -273,7 +273,7 @@ Consulta el nombre del adaptador: `Get-NetConnectionProfile`
 
 Si se llama Ethernet: `Set-NetConnectionProfile -InterfaceAlias "Ethernet" -NetworkCategory Private`
 
-![](images\paste-USKsHx4mQlyVihIv-pMbf.png)
+![](images/paste-USKsHx4mQlyVihIv-pMbf.png)
 
 Una red privada permite configurar el descubrimiento de equipos y el uso compartido de archivos en una LAN de confianza.
 
@@ -282,7 +282,7 @@ Una red privada permite configurar el descubrimiento de equipos y el uso compart
 Abre PowerShell como administrador:
 
 `Get-Disk | Format-Table Number,FriendlyName,SerialNumber,PartitionStyle,Size`\
-![](images\paste-F-zUzEsG8xdHqdSnjgZPM.png)
+![](images/paste-F-zUzEsG8xdHqdSnjgZPM.png)
 
 Resultado esperado:
 
@@ -294,7 +294,7 @@ Resultado esperado:
 
 `Get-PhysicalDisk | Format-Table FriendlyName, SerialNumber, CanPool, OperationalStatus, HealthStatus, Size`
 
-![](images\paste-gq1P7TsP7ZggLYmcvsn3B.png)
+![](images/paste-gq1P7TsP7ZggLYmcvsn3B.png)
 
 Es normal que todos tengan el mismo FriendlyName, lo importante es que tengan números de serie o identificadores diferentes y que los tres discos adicionales muestren:
 
@@ -306,7 +306,7 @@ Abre: Administrador del servidor → Servicios de archivos y almacenamiento→ V
 
 Selecciona el grupo: Primordial
 
-![](images\paste-uiEovgwv_RefHNT5Itk_7.png)
+![](images/paste-uiEovgwv_RefHNT5Itk_7.png)
 
 En la sección **Grupos de almacenamiento**\>Tareas: → Nuevo grupo de almacenamiento:
 
@@ -315,7 +315,7 @@ En la sección **Grupos de almacenamiento**\>Tareas: → Nuevo grupo de almacena
 -   Descripción: Discos destinados al almacenamiento del servidor NAS
 
 Selecciona exclusivamente los tres discos de 20 GB.\
-![](images\paste-xJzbUwa-za94rasYbibeq.png)
+![](images/paste-xJzbUwa-za94rasYbibeq.png)
 
 En la columna de asignación selecciona: Automático
 
@@ -331,7 +331,7 @@ Debe aparecer:
 
 -   GRUPO-NAS
 
-![](images\paste-u3Wy3-BEvjWaY2kmT46uI.png)
+![](images/paste-u3Wy3-BEvjWaY2kmT46uI.png)
 
 Microsoft establece este orden de trabajo: primero se agrupan los discos físicos, después se crea un disco virtual desde el grupo y, finalmente, se crea un volumen sobre el disco virtual.
 
@@ -341,7 +341,7 @@ Selecciona GRUPO-NAS.
 
 En la sección **Discos virtuales**: Tareas\> Nuevo disco virtual
 
-![](images\paste-uCOpeR5pFsJOTo7wxhwnb.png)
+![](images/paste-uCOpeR5pFsJOTo7wxhwnb.png)
 
 Configura:
 
@@ -352,11 +352,11 @@ Configura:
 | **Tipo de aprovisionamiento** | Fijo              |
 | **Tamaño**                    | Tamaño máximo     |
 
-![](images\paste-R_Aqh_fuBnYQPh7XixAUj.png)
+![](images/paste-R_Aqh_fuBnYQPh7XixAUj.png)
 
 Con tres discos de 20 GB, la capacidad bruta es de 60 GB decimales. La capacidad útil será inferior al equivalente de dos discos porque Windows reserva espacio para metadatos, caché y organización interna. No debe esperarse una cifra exacta de 40 GB.
 
-![](images\paste-8-vHRX3UFRGy5E7nkq9GT.png)\
+![](images/paste-8-vHRX3UFRGy5E7nkq9GT.png)\
 La configuración de paridad:
 
 -   Distribuye los datos entre los tres discos.
@@ -371,7 +371,7 @@ La configuración de paridad:
 
 Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando se cierre este asistente*
 
-![](images\paste-M6dKManox5pOiS9vR3KQ1.png)
+![](images/paste-M6dKManox5pOiS9vR3KQ1.png)
 
 ### **Comprobación (en PowerShell)**
 
@@ -384,11 +384,11 @@ Al terminar el disco virtual, deja marcada la opción: *Crear un volumen cuando 
 -   ProvisioningType : Fixed
 
 -   HealthStatus : Healthy\
-    ![](images\paste-ld5H8jqBou5CSG-kTHmAo.png)
+    ![](images/paste-ld5H8jqBou5CSG-kTHmAo.png)
 
 ### **Crear el volumen**
 
-![](images\paste-yef636ocPvekRFqXt3B9-.png)
+![](images/paste-yef636ocPvekRFqXt3B9-.png)
 
 Configura:
 
@@ -402,21 +402,21 @@ Configura:
 | **Etiqueta**             | DATOS-NAS         |
 | **Formato rápido**       | Activado          |
 
-![](images\paste-b35oE_UYoX0gbV6xTSiEH.png)
+![](images/paste-b35oE_UYoX0gbV6xTSiEH.png)
 
 Utilizaremos NTFS porque esta práctica está centrada en permisos, herencia, listas de control de acceso y recursos compartidos SMB.
 
-![](images\paste-4PnY2_EVlUPOjIod9PdMw.png)\
+![](images/paste-4PnY2_EVlUPOjIod9PdMw.png)\
 Comprueba el resultado en la shell: `Get-Volume -DriveLetter N`
 
-![](images\paste-WyiXjZ_0DQa6zv6ZLTz7N.png)
+![](images/paste-WyiXjZ_0DQa6zv6ZLTz7N.png)
 
 ## **Crear usuarios y grupos locales**
 
 Las cuentas locales pertenecen exclusivamente al servidor en el que se crean. En este caso, los usuarios de SRV-NAS01 solo tendrán derechos en SRV-NAS01, al contrario que los grupos y usuarios habituales de los entornos corporativos que son a nivel DNS
 
 Abre: Win + R \> `lusrmgr.msc`\
-![](images\paste-I5WI33yQhoYfIYB8s0sXT.png)
+![](images/paste-I5WI33yQhoYfIYB8s0sXT.png)
 
 `Win + R > lusrmgr.msc` es un comando que abre la herramienta **Usuarios y grupos locales** en Windows. Esta herramienta te permite administrar usuarios y grupos en tu computadora, lo cual es útil para:
 
@@ -440,7 +440,7 @@ Abre: Win + R \> `lusrmgr.msc`\
 
 **Usuarios locales**
 
-![](images\paste-By5QYG7l5oXw9mMNzmJpT.png)
+![](images/paste-By5QYG7l5oXw9mMNzmJpT.png)
 
 Crea, como mínimo:
 
@@ -450,17 +450,17 @@ Crea, como mínimo:
 -   alumno01
 -   alumno02
 
-![](images\paste-iK1PvF-g0Z27Sc_VXG9O-.png)
+![](images/paste-iK1PvF-g0Z27Sc_VXG9O-.png)
 
 En una práctica de laboratorio puede desmarcarse *El usuario debe cambiar la contraseña en el siguiente inicio de sesión,* y puede marcarse: *La contraseña nunca expira*
 
-![](images\paste-n5TMeiWVfuDYisCYfh1pU.png)
+![](images/paste-n5TMeiWVfuDYisCYfh1pU.png)
 
 Esto se hace únicamente para evitar interrupciones durante la práctica. No es una recomendación para un entorno real o en producción 
 
 **Grupos locales**
 
-![](images\paste-5_gBU3YbB9ejKQPjYSsXt.png)
+![](images/paste-5_gBU3YbB9ejKQPjYSsXt.png)
 
 Crea estos grupos y añádeles los usuarios que has creados antes
 
@@ -480,7 +480,7 @@ Configura:
 | **alumno01**   | NAS_ALUMNOS    |
 | **alumno02**   | NAS_ALUMNOS    |
 
-![](images\paste-2TMUHbL1Yjov-iaFGsrL4.png)
+![](images/paste-2TMUHbL1Yjov-iaFGsrL4.png)
 
 No asignaremos permisos directamente a los usuarios. Los permisos se asignarán a los grupos.
 
@@ -551,7 +551,7 @@ Abre las propiedades de: N:\\NAS
 
 Accede a: Seguridad → Opciones avanzadas → Deshabilitar herencia
 
-![](images\paste-bjwUHm9lm4rD5jFxy3QnP.png)
+![](images/paste-bjwUHm9lm4rD5jFxy3QnP.png)
 
 Windows mostrará dos opciones:
 
@@ -578,7 +578,7 @@ Elimina de esta carpeta raíz las entradas generales que puedan aparecer, como:
 
 -   CREATOR OWNER
 
-![](images\paste-7o7jGR46NCDC9Oad362yc.png)
+![](images/paste-7o7jGR46NCDC9Oad362yc.png)
 
 Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administradores. La herencia hace que las subcarpetas y archivos reciban automáticamente las entradas heredables del directorio padre. Windows permite deshabilitarla conservando las entradas como explícitas o eliminando únicamente las heredadas.
 
@@ -588,18 +588,18 @@ Las carpetas que se creen dentro heredarán los permisos de SYSTEM y Administrad
 
 2.  Pulsa **Ubicaciones** y selecciona el servidor local: *SRV-NAS01*
 
-![](images\paste-UYLeZ2pzRP2b9QZSh4D88.png)
+![](images/paste-UYLeZ2pzRP2b9QZSh4D88.png)
 
 3.  **Carpeta DIRECCION** Agrega: SRV-NAS01\\NAS_DIRECCION
 
-![](images\paste-aiATV-Ora-sxEwKbB-yda.png)
+![](images/paste-aiATV-Ora-sxEwKbB-yda.png)
 
 Concede: Modificar
 
-![](images\paste--ueet7x0rE116gQOdXvKm.png)
+![](images/paste--ueet7x0rE116gQOdXvKm.png)
 
 Debe aplicarse a *Esta carpeta, subcarpetas y archivos*, esta es la configuración por defecto, pero si quieres comprobarlo puedes verlo en *Seguridad* \> *Opciones avanzadas*\
-![](images\paste-kTpxlGXOCXxv5KcM4U90L.png)
+![](images/paste-kTpxlGXOCXxv5KcM4U90L.png)
 
 4.  **Carpeta PROFESORES**
 
@@ -642,31 +642,31 @@ No utilices Denegar. En esta práctica basta con no conceder acceso a los grupos
 
 En cada carpeta: *Propiedades* → *Compartir* → *Uso compartido avanzado*\>Marca: *Compartir esta carpeta*
 
-![](images\paste-3Ez15rH92qO9u3lTz7vmY.png)
+![](images/paste-3Ez15rH92qO9u3lTz7vmY.png)
 
 Ahora click en Uso compartido avanzado
 
-![](images\paste-UdCf7IEVJ86TrbjTIDJgB.png)
+![](images/paste-UdCf7IEVJ86TrbjTIDJgB.png)
 
 Clickamos en Permisos y añadimos el grupo que debe estar autorizado para la carpeta en la que estemos:
 
-![](images\paste-aYF6j50mihvxEQ3TANqEK.png)
+![](images/paste-aYF6j50mihvxEQ3TANqEK.png)
 
 Le damos permiso para cambiar.\
-![](images\paste-s_i3AkjA343WvMJjztHhd.png)
+![](images/paste-s_i3AkjA343WvMJjztHhd.png)
 
 ### **Comprobar los recursos y permisos**
 
 **Recursos compartidos:** `Get-SmbShare | Format-Table Name, Path, Description`\
-![](images\paste-IgaC-5V_kl3qCTCIz0m3n.png)
+![](images/paste-IgaC-5V_kl3qCTCIz0m3n.png)
 
 **Permisos de un recurso:** `Get-SmbShareAccess -Name PROFESORES`
 
-![](images\paste-HIkMtXWtne6t4F1vc4ohu.png)
+![](images/paste-HIkMtXWtne6t4F1vc4ohu.png)
 
 **Permisos NTFS:** `icacls N:\NAS\PROFESORES`
 
-![](images\paste-3IXiDAy_2ZqyFdyPM_Gig.png)
+![](images/paste-3IXiDAy_2ZqyFdyPM_Gig.png)
 
 Debe aparecer el grupo NAS_PROFESORES con permiso de modificación.
 
@@ -676,7 +676,7 @@ Windows Server 2025 utiliza reglas más restrictivas al crear recursos compartid
 
 Desde un cliente comprueba: `Test-NetConnection 10.0.20.46 -Port 445`
 
-![](images\paste-vhEZow1EmvMCImVYmDdMn.png)
+![](images/paste-vhEZow1EmvMCImVYmDdMn.png)
 
 Resultado esperado: TcpTestSucceeded : True. Si devuelve False, revisa:
 
@@ -703,26 +703,26 @@ Durante toda la prueba debe utilizarse siempre el mismo identificador: o la IP o
 ## Comprobación conectividad:
 
 En cmd en otro equipo dentro de la misma red haz un ping al nombre del servidor, puedes usar el nombre directamente, no hace falta usar la ip, ya que dentro de la misma red esos nombres se conocen.\
-![](images\paste-fC3SLCQ3Xkqr6R3zULevk.png)
+![](images/paste-fC3SLCQ3Xkqr6R3zULevk.png)
 
 ## Crear un acceso directo a la carpeta compartida del profesor.
 
 La máquina virtual del profesor es SRV-NAS100 y nos ha proporcionado las contraseñas de los usuarios locales que ha creado en su máquina virtual. Ahora queremos crear un acceso directo en nuestro equipo host para poder acceder a su recurso NAS.
 
 Vamos al explorador de archivos y sobre *Este Equipo* seleccionamos el burger menu *Ver más* (los tres puntos)\
-![](images\paste-mRKiyzmc45nlHbJ-_JjgN.png)
+![](images/paste-mRKiyzmc45nlHbJ-_JjgN.png)
 
 **Agregar una ubicación de red**
 
-![](images\paste-7ZVBJoHEckCYMziDtBc8T.png) ![](images\paste-kd0KsW0RgAxFhZlkrJDu0.png)
+![](images/paste-7ZVBJoHEckCYMziDtBc8T.png) ![](images/paste-kd0KsW0RgAxFhZlkrJDu0.png)
 
-![](images\paste-MtTSFjaAvqQMd8KWqh5ve.png)
+![](images/paste-MtTSFjaAvqQMd8KWqh5ve.png)
 
-![](images\paste-Trn420jMUwpqWorKln4tg.png)
+![](images/paste-Trn420jMUwpqWorKln4tg.png)
 
 Tendremos acceso a las distintas carpetas de la máquina servidor a la que nos queremos conectar dependiendo del usuario que estemos usando (alumno, profesor etc) (recuerda que tiene que ser usuario y contraseña creados en la máquina a la que nos estamos conectando, no los que hemos configurado en nuestro servidor!)
 
-![](images\paste-LtLZKj4ERomvvE7_g9KoI.png)
+![](images/paste-LtLZKj4ERomvvE7_g9KoI.png)
 
 ## Crear una conexión de red.
 
@@ -738,7 +738,7 @@ Desde CMD: `net use Z: \\10.0.20.46\PROFESORES /user:SRV-NAS01\profesor01 *`
 
 El asterisco solicita la contraseña sin mostrarla.
 
-![](images\paste-I0GyKIIqgnMLBCscCw0Fv.png)
+![](images/paste-I0GyKIIqgnMLBCscCw0Fv.png)
 
 -   **`net use`**: Es la utilidad principal del sistema operativo en línea de comandos para gestionar las conexiones a recursos compartidos.
 
@@ -750,7 +750,7 @@ El asterisco solicita la contraseña sin mostrarla.
 
 -   **`*` (Asterisco)**: Es un parámetro de seguridad. Obliga a la terminal a solicitar la contraseña de forma interactiva (ocultando los caracteres mientras se teclea), evitando el grave riesgo de seguridad que supone escribir la contraseña en texto plano directamente en el comando o en un script.
 
-![](images\paste-U2TQfaaBzpbpRwMUy1D_U.png)
+![](images/paste-U2TQfaaBzpbpRwMUy1D_U.png)
 
 > **Nota técnica sobre permisos:** Para que este comando tenga éxito, el usuario `profesor01` debe contar con la validación de dos capas de seguridad en el servidor de destino: los permisos de compartición de red (SMB) y los permisos locales del sistema de archivos (NTFS).
 
@@ -780,35 +780,35 @@ Conecta como alumno:
 
 `net use Y: \\10.0.20.46\ALUMNOS /user:SRV-NAS01\alumno01 *`
 
-![](images\paste-sp1B4nx7XrSftdAM5uoXK.png)
+![](images/paste-sp1B4nx7XrSftdAM5uoXK.png)
 
 [No nos va a dejar]{.highlight}, como dice el mensaje primero tenemos que borrar la conexión anterior, para ello en la consola de comandos: `net use * /delete /y`
 
-![](images\paste-DJJovpEWiF0cAUVmSrBJA.png)
+![](images/paste-DJJovpEWiF0cAUVmSrBJA.png)
 
 Cierra también todas las ventanas del Explorador abiertas contra el NAS.
 
 Ahora puedes crear la conexión con alumno:
 
-![](images\paste-vy5XPvYecDm_eRYtUx9F1.png)
+![](images/paste-vy5XPvYecDm_eRYtUx9F1.png)
 
-![](images\paste-cnEvoeK5ZsK0Ih5siBjUU.png)
+![](images/paste-cnEvoeK5ZsK0Ih5siBjUU.png)
 
 ### Crear una conexión como director
 
 `net use * /delete /y`
 
-![](images\paste-kPXqGncMNHuYaVRxHR-sW.png)
+![](images/paste-kPXqGncMNHuYaVRxHR-sW.png)
 
 ### Troubleshooting
 
 #### Comprueba la conexión activa en Power Shell [como administrador]{.hightligh}: `Get-SmbConnection`
 
-![](images\paste-Dt1mhYSJzniB02M88CAvn.png)
+![](images/paste-Dt1mhYSJzniB02M88CAvn.png)
 
 Comprueba si existen credenciales guardadas: `cmdkey /list`
 
-![](images\paste-PfYOH3quH-is15-myVdfo.png)
+![](images/paste-PfYOH3quH-is15-myVdfo.png)
 
 Si hay alguna puedes eliminarla con su correspondiente nombre de servidor o su IP: `cmdkey /delete:10.0.20.46`
 
@@ -846,7 +846,7 @@ Desde PowerShell, comprueba los discos pertenecientes al grupo:
 
 `Get-StoragePool -FriendlyName "GRUPO-NAS" | Get-PhysicalDisk | Format-Table DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size`
 
-![](images\paste-oHWr0mLAqFTkOi7phVfuB.png)
+![](images/paste-oHWr0mLAqFTkOi7phVfuB.png)
 
 Aunque todos puedan tener el mismo nombre, sus valores SerialNumber y UniqueId deben ser distintos.
 
@@ -862,27 +862,27 @@ Calcula el hash SHA-256 del archivo binario: `Get-FileHash "N:\NAS\COMUN\PRUEBA-
 
 Guarda el resultado. El hash nos permitirá comprobar que el archivo no cambia después del fallo y la reparación.
 
-![](images\paste-kRozeJj31nJzqk_sx7xgG.png)
+![](images/paste-kRozeJj31nJzqk_sx7xgG.png)
 
 También conviene comprobar desde un equipo cliente que el recurso es accesible:
 
 desde el host, en el explorador de archivos: `\\10.0.20.46\COMUN`
 
-![](images\paste-vnIZHLmWhLzO9rqEoIa-k.png)
+![](images/paste-vnIZHLmWhLzO9rqEoIa-k.png)
 
 ## **Comprobar el estado inicial**
 
 Antes de desconectar ningún disco, ejecuta: `Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,Size,AllocatedSize`
 
-![](images\paste-CywbMLiwb60nOMl4cNomp.png)
+![](images/paste-CywbMLiwb60nOMl4cNomp.png)
 
 `Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,ResiliencySettingName,OperationalStatus,HealthStatus`
 
-![](images\paste-zrgdE9u2pINH0xbkkzv4O.png)
+![](images/paste-zrgdE9u2pINH0xbkkzv4O.png)
 
 `Get-Volume -DriveLetter N | Format-Table DriveLetter,FileSystemLabel,FileSystem,HealthStatus,OperationalStatus,SizeRemaining,Size`
 
-![](images\paste-ak4dfV-gRBKTUG9m2TPBR.png)
+![](images/paste-ak4dfV-gRBKTUG9m2TPBR.png)
 
 Resultado esperado:
 
@@ -905,7 +905,7 @@ Selecciona uno de los discos de datos .
 
 Pulsa **Quitar el dispositivo seleccionado de la controladora**. [No selecciones el disco que contiene el sistema operativo!]{.highlight}
 
-![](images\paste-bLucUUdI41NeLBzR7cuFp.png)
+![](images/paste-bLucUUdI41NeLBzR7cuFp.png)
 
 -   Desconéctalo de la máquina virtual.
 
@@ -927,17 +927,17 @@ OperationalStatus : Lost Communication
 
 HealthStatus : Warning
 
-![](images\paste-d8jcfCZAt-8KOv6YrdGpe.png)
+![](images/paste-d8jcfCZAt-8KOv6YrdGpe.png)
 
 La descripción exacta puede variar, pero uno de los discos debe aparecer como ausente, sin comunicación o no saludable.
 
 Comprueba el grupo: `Get-StoragePool -FriendlyName "GRUPO-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,IsReadOnly`
 
-![](images\paste-iMUaavbMJ_JKQPfuIrKwe.png)
+![](images/paste-iMUaavbMJ_JKQPfuIrKwe.png)
 
 Comprueba el disco virtual: `Get-VirtualDisk -FriendlyName "DISCO-VIRTUAL-NAS" | Format-Table FriendlyName,OperationalStatus,HealthStatus,DetachedReason`
 
-![](images\paste-Y9OdTSpwUInZsiemic2ww.png)
+![](images/paste-Y9OdTSpwUInZsiemic2ww.png)
 
 Los estados más habituales serán:
 
