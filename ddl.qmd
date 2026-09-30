@@ -83,6 +83,170 @@ CREATE TABLE cursos (
 
 ![](images/paste-bKtk8WUZZ2Nccztspwx07.png)
 
+# Restricciones de Integridad (Constraints)
+
+Las restricciones (*constraints*) son reglas aplicadas a las columnas o tablas de una base de datos para garantizar la precisión, fiabilidad e integridad de los datos. MySQL evalúa estas restricciones en tiempo de ejecución de manera inmediata al ejecutar sentencias como `INSERT` o `UPDATE`.
+
+Si en una operación que afecta a múltiples registros (como un `UPDATE` multirregistro) una sola fila viola una restricción, toda la operación se cancela automáticamente (*rollback*) y no se modifica ninguna fila.
+
+## Tipos de Restricciones
+
+Existen diferentes tipos de restricciones que se pueden definir al crear o modificar una tabla:
+
+- **`NOT NULL`**: Obliga a que una columna siempre contenga un dato. Si en un `INSERT` se omite una columna definida como `NOT NULL` (y que no tiene un valor `DEFAULT`), MySQL lanzará un error indicando que el campo no puede ser nulo.
+
+- **`UNIQUE`**: Garantiza que todos los valores de una columna sean distintos. Si se intenta insertar un valor duplicado en una columna marcada como `UNIQUE`, MySQL abortará la operación por duplicidad de clave.
+
+- **`CHECK`**: Valida que los datos cumplan una condición lógica específica. Si un valor infringe un `CHECK` (por ejemplo, intentar guardar un `mes_inicio` igual a `13`), la inserción se cancela con un error.
+
+- **`PRIMARY KEY`**: Identifica de forma única cada fila de la tabla. Es el equivalente a combinar `NOT NULL` y `UNIQUE`.
+
+- **`FOREIGN KEY`**: Asegura la integridad referencial vinculando los datos de una columna con la clave primaria de otra tabla.
+
+###  `PRIMARY KEY` (Clave Primaria)
+
+Garantiza que cada fila sea única e identificable. No permite valores `NULL`.
+
+Al crear la tabla:
+
+``` sql
+CREATE TABLE cursos (
+    id_curso INT UNSIGNED AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+
+    -- Definición a nivel de tabla con nombre
+    CONSTRAINT pk_cursos PRIMARY KEY (id_curso)
+);
+```
+
+En una tabla existente:
+
+``` sql
+ALTER TABLE cursos 
+    ADD CONSTRAINT pk_cursos PRIMARY KEY (id_curso);
+```
+
+### `FOREIGN KEY` (Clave Foránea)
+
+Relaciona una columna con la clave primaria de otra tabla, garantizando la integridad referencial.
+
+``` sql
+CREATE TABLE alumnos (
+    id_alumno INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    id_curso INT UNSIGNED NULL,
+
+    -- Definición con regla de borrado
+    CONSTRAINT fk_alumnos_cursos 
+        FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
+        ON DELETE SET NULL
+);
+```
+
+``` sql
+-- En una tabla existente
+ALTER TABLE alumnos 
+    ADD CONSTRAINT fk_alumnos_cursos 
+    FOREIGN KEY (id_curso) REFERENCES cursos(id_curso);
+```
+
+### `UNIQUE` (Valor Único)
+
+Asegura que no existan dos filas con el mismo valor en esa columna (a excepción de los valores `NULL`, que sí pueden repetirse).
+
+``` sql
+CREATE TABLE usuarios (
+    id_usuario INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+
+    CONSTRAINT uq_usuarios_email UNIQUE (email)
+);
+```
+
+``` sql
+-- En una tabla existente
+ALTER TABLE usuarios 
+    ADD CONSTRAINT uq_usuarios_email UNIQUE (email);
+```
+
+### `CHECK` (Validación Condicional)
+
+Evalúa una condición lógica (`TRUE` / `FALSE`) antes de permitir insertar o actualizar un dato.
+
+``` sql
+CREATE TABLE empleados (
+    id_empleado INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    edad TINYINT UNSIGNED NOT NULL,
+    dni VARCHAR(20) NULL,
+    pasaporte VARCHAR(20) NULL,
+
+    -- CHECK simple de rango
+    CONSTRAINT chk_empleados_edad CHECK (edad >= 18),
+
+    -- CHECK combinando múltiples columnas
+    CONSTRAINT chk_identificacion_obligatoria 
+        CHECK (dni IS NOT NULL OR pasaporte IS NOT NULL)
+);
+```
+
+``` sql
+-- En una tabla existente
+ALTER TABLE empleados 
+    ADD CONSTRAINT chk_empleados_edad CHECK (edad >= 18);
+```
+
+### `NOT NULL` (Obligatoriedad)
+
+Obliga a que la columna contenga siempre un valor.
+
+``` sql
+CREATE TABLE categorias (
+    id_categoria INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL -- Definición a nivel de columna
+);
+```
+
+``` sql
+-- En una tabla existente
+-- En MySQL, NOT NULL se añade redefiniendo la columna con MODIFY
+ALTER TABLE categorias 
+    MODIFY COLUMN nombre VARCHAR(50) NOT NULL;
+```
+
+### `DEFAULT` (Valor por Defecto)
+
+Asigna un valor automático a la columna si en el `INSERT` no se especifica ninguno.
+
+``` sql
+CREATE TABLE pedidos (
+    id_pedido INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    estado VARCHAR(20) DEFAULT 'Pendiente',
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+``` sql
+ALTER TABLE pedidos 
+    ALTER COLUMN estado SET DEFAULT 'Pendiente';
+```
+
+## ¿Dónde se guardan las restricciones y cómo consultarlas?
+
+Toda la información sobre la estructura de las bases de datos en MySQL se guarda en una base de datos del sistema llamada **`information_schema`**. Puedes usar vistas específicas dentro de este esquema para auditar qué restricciones existen en tus tablas.
+
+### Consultar restricciones generales (Claves y Checks)
+
+La vista `TABLE_CONSTRAINTS` almacena un listado general de todas las restricciones aplicadas a las tablas (incluyendo `PRIMARY KEY`, `UNIQUE`, `FOREIGN KEY` y `CHECK`).
+
+``` sql
+SELECT 
+    CONSTRAINT_NAME AS 'Nombre de la Restricción',
+    CONSTRAINT_TYPE AS 'Tipo'
+FROM information_schema.TABLE_CONSTRAINTS
+WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'identificaciones';
+```
+
 # Crear una tabla relacionada
 
 ``` sql
@@ -120,7 +284,7 @@ Garantiza la **integridad referencial**: impide que se registre un alumno apunta
 Definen qué debe hacer MySQL cuando el registro de la tabla padre (`cursos`) se **modifica** (`ON UPDATE`) o se **elimina** (`ON DELETE`).
 
 |  |  |  |
-|------------------|---------------------------|---------------------------|
+|---------------|---------------|------------------------------------------|
 | **Opción** | **¿Qué hace al Borrar/Actualizar el Padre?** | **Ejemplo con tu código** |
 | **`RESTRICT`** *(Por defecto)* | **Bloquea la operación.** Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados. | Si intentas borrar un curso que tiene alumnos, MySQL lanza un error. |
 | **`CASCADE`** | **Propaga el cambio.** Borra o actualiza automáticamente los registros hijos asociados. | En tu código (`ON UPDATE CASCADE`): Si el `id_curso` `5` pasa a ser `10`, todos los alumnos con `id_curso = 5` cambian a `10` automáticamente. |
@@ -249,8 +413,17 @@ ALTER TABLE alumnos
 
 ``` sql
 -- En MySQL / MariaDB / PostgreSQL / SQL Server
-ALTER TABLE cursos
-    DROP CHECK chk_cursos_modalidad;
+
+-- Eliminar un CHECK, UNIQUE o FOREIGN KEY (usando su nombre asignado)
+ALTER TABLE empleados DROP CHECK chk_empleados_edad;
+ALTER TABLE usuarios DROP KEY uq_usuarios_email;
+ALTER TABLE alumnos DROP FOREIGN KEY fk_alumnos_cursos;
+
+-- Eliminar PRIMARY KEY
+ALTER TABLE cursos DROP PRIMARY KEY;
+
+-- Quitar un DEFAULT
+ALTER TABLE pedidos ALTER COLUMN estado DROP DEFAULT;
 ```
 
 ## ¿Modificar restricciones?
@@ -348,35 +521,6 @@ WHERE cc.CONSTRAINT_SCHEMA = DATABASE();
 
 # Eliminación de datos y estructuras
 
-## `DELETE`
-
-Pertenece al lenguaje de manipulación de datos (**DML**). Elimina **filas individuales o específicas** de una tabla evaluando una condición mediante la cláusula `WHERE`.
-
-### Características
-
-- **Filtrado:** Admite la cláusula `WHERE`. Si se omite, elimina **todas** las filas de la tabla una a una.
-
-- **Contador `AUTO_INCREMENT`:** **NO resetea el contador**. Si borras el registro con `id = 10` y luego insertas uno nuevo, el nuevo registro tomará el `id = 11`.
-
-- **Rendimiento:** Más lento en tablas grandes. Genera un registro en el archivo de registro de transacciones (*transaction log*) por cada fila eliminada.
-
-- **Transacciones (`ROLLBACK`):** Al ser DML, se puede deshacer con un `ROLLBACK` si se ejecuta dentro de una transacción.
-
-- **Disparadores (*Triggers*):** Activa los *triggers* definidos para `ON DELETE`.
-
-``` sql
--- Borrado parcial (Recomendado)
-DELETE FROM alumnos 
-WHERE id_alumno = 5;
-
--- Borrado de todos los registros que cumplan una condición
-DELETE FROM alumnos 
-WHERE estado = 'Inactivo';
-
--- Borrado total de filas sin eliminar la tabla (NO resetea AUTO_INCREMENT)
-DELETE FROM alumnos;
-```
-
 ## `TRUNCATE`
 
 **Vacía completamente una tabla** destruyendo las páginas de datos y recreando la tabla con su estructura original vacía.
@@ -419,6 +563,37 @@ DROP TABLE IF EXISTS cursos;
 DROP DATABASE IF EXISTS centro_formacion;
 ```
 
+## `DELETE` (DML)
+
+Pertenece al lenguaje de manipulación de datos (**DML**), pero lo incluimos también aquí por su relación con TRUNCATE y DROP
+
+Elimina **filas individuales o específicas** de una tabla evaluando una condición mediante la cláusula `WHERE`.
+
+### Características
+
+- **Filtrado:** Admite la cláusula `WHERE`. Si se omite, elimina **todas** las filas de la tabla una a una.
+
+- **Contador `AUTO_INCREMENT`:** **NO resetea el contador**. Si borras el registro con `id = 10` y luego insertas uno nuevo, el nuevo registro tomará el `id = 11`.
+
+- **Rendimiento:** Más lento en tablas grandes. Genera un registro en el archivo de registro de transacciones (*transaction log*) por cada fila eliminada.
+
+- **Transacciones (`ROLLBACK`):** Al ser DML, se puede deshacer con un `ROLLBACK` si se ejecuta dentro de una transacción.
+
+- **Disparadores (*Triggers*):** Activa los *triggers* definidos para `ON DELETE`.
+
+``` sql
+-- Borrado parcial (Recomendado)
+DELETE FROM alumnos 
+WHERE id_alumno = 5;
+
+-- Borrado de todos los registros que cumplan una condición
+DELETE FROM alumnos 
+WHERE estado = 'Inactivo';
+
+-- Borrado total de filas sin eliminar la tabla (NO resetea AUTO_INCREMENT)
+DELETE FROM alumnos;
+```
+
 ## Tabla Comparativa
 
 |  |  |  |  |
@@ -441,7 +616,7 @@ Es muy común confundirlos porque ambos provocan **acciones automáticas** dentr
 - **Disparador (*Trigger*):** Es un **bloque de código procedural** (programado expresamente con un `CREATE TRIGGER`) que ejecuta lógica personalizada antes o después de una sentencia `INSERT`, `UPDATE` o `DELETE`.
 
 |  |  |  |
-|------------------|--------------------------|----------------------------|
+|-----------------|--------------------------|----------------------------|
 | **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** |
 | **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. |
 | **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. |

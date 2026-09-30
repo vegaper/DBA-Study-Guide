@@ -268,7 +268,7 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 ## Resumen de Buenas Prácticas
 
 |  |  |
-|----------------------|--------------------------------------------------|
+|------------------------|------------------------------------------------|
 | **Acción** | **Recomendación** |
 | **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
@@ -325,30 +325,7 @@ WHERE ubicacion_actual IS NOT NULL;
 | `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. |
 | `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` | **Elimina las filas de forma correcta** | `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. |
 
-# La Sentencia `TRUNCATE TABLE`
 
-### Descripción General
-
-`TRUNCATE TABLE` pertenece al Lenguaje de Definición de Datos (**DDL**). Su función es **vaciar completamente el contenido de una tabla**, destruyendo y recreando la estructura interna de la misma a nivel del motor de almacenamiento.
-
-``` sql
-TRUNCATE TABLE nombre_tabla;
-```
-
-## Comparativa Detallada: `DELETE` vs. `TRUNCATE TABLE`
-
-|  |  |  |
-|------------------------|------------------------|------------------------|
-| **Criterio** | **DELETE** | **TRUNCATE TABLE** |
-| **Categoría SQL** | **DML** (Data Manipulation Language). | **DDL** (Data Definition Language). |
-| **Uso de cláusula `WHERE`** | **Sí permite.** Puede borrar filas selectivas o toda la tabla. | **No permite.** Siempre borra **todas** las filas de la tabla. |
-| **Rendimiento / Velocidad** | **Más lento.** Borra fila por fila, registrando cada eliminación en el *log* de transacciones. | **Mucho más rápido.** Desasigna las páginas de datos en disco directamente en lugar de procesar fila por fila. |
-| **Manejo de `AUTO_INCREMENT`** | **Mantiene el contador.** El próximo registro usará el número secuencial donde se quedó. | **Resetea el contador.** La secuencia `AUTO_INCREMENT` vuelve a iniciarse en `1`. |
-| **Uso de *Triggers* (Disparadores)** | **Activa los disparadores `BEFORE DELETE` y `AFTER DELETE`** por cada fila borrada. | **NO activa disparadores.** No ejecuta ningún *trigger* de borrado. |
-| **Comportamiento con `FOREIGN KEY`** | Aplica las reglas referenciales (`ON DELETE CASCADE`, `RESTRICT`, etc.). | **Se bloquea** si la tabla es referenciada por una clave foránea activa de otra tabla, incluso si está vacía. |
-| **Transaccionalidad (`ROLLBACK`)** | **Permite `ROLLBACK`** dentro de una transacción activa (`START TRANSACTION`). | **Auto-commit explícito.** Al ser DDL, commitea la transacción inmediatamente y **no se puede deshacer**. |
-
-## Consideraciones Técnicas y Buenas Prácticas
 
 ### El Riesgo de `DELETE` sin `WHERE`
 
@@ -390,7 +367,7 @@ El objetivo de las transacciones es garantizar la integridad de los datos siguie
 ## Sentencias de Control de Transacciones (TCL)
 
 |  |  |
-|----|----|
+|------------------------------------|------------------------------------|
 | **Comando** | **Descripción** |
 | **`START TRANSACTION`** (o `BEGIN`) | Inicia de forma explícita un bloque transaccional. |
 | **`COMMIT`** | Confirma y guarda permanentemente en la base de datos todos los cambios realizados desde el `START TRANSACTION`. |
@@ -425,7 +402,7 @@ ROLLBACK;
 ```
 
 ::: nota-importante
-## DML vs. DDL en Transacciones 
+## DML vs. DDL en Transacciones
 
 Las transacciones en MySQL están diseñadas principalmente para sentencias de manipulación de datos (**DML**).
 
