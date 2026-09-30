@@ -268,7 +268,7 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 ## Resumen de Buenas Prácticas
 
 |  |  |
-|------------------------|------------------------------------------------|
+|------------------------|-----------------------------------------------|
 | **Acción** | **Recomendación** |
 | **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
@@ -324,8 +324,6 @@ WHERE ubicacion_actual IS NOT NULL;
 | `DELETE FROM objetos WHERE ubicacion_actual = NULL;` | **0 filas afectadas** (Incorrecto) | `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. |
 | `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. |
 | `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` | **Elimina las filas de forma correcta** | `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. |
-
-
 
 ### El Riesgo de `DELETE` sin `WHERE`
 
