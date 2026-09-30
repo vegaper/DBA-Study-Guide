@@ -268,7 +268,7 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 ## Resumen de Buenas Prácticas
 
 |  |  |
-|------------------------|-----------------------------------------------|
+|-------------------------|-----------------------------------------------|
 | **Acción** | **Recomendación** |
 | **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
@@ -344,6 +344,81 @@ WHERE fecha_log < '2025-01-01'
 LIMIT 1000;
 ```
 
+## Interacción con Foreign Keys y Constraints
+
+Cuando intentas borrar un registro en una tabla padre (principal) que está relacionada mediante una clave foránea (`FOREIGN KEY`) con una tabla hija (secundaria), el resultado de la operación dependerá exclusivamente de dos factores:
+
+1.  **Si existen o no registros asociados en la tabla hija.**
+
+2.  **La regla `ON DELETE` configurada en la `FOREIGN KEY`.**
+
+Imaginemos una tabla padre (`departamentos`) y una tabla hija (`empleados`):
+
+``` sql
+CREATE TABLE departamentos (
+    id_dept INT PRIMARY KEY,
+    nombre VARCHAR(50)
+);
+
+CREATE TABLE empleados (
+    id_empleado INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    id_dept INT,
+    FOREIGN KEY (id_dept) REFERENCES departamentos(id_dept)
+    -- Aquí se define la regla ON DELETE
+);
+```
+
+### Casuísticas según la regla definida
+
+#### El registro padre NO tiene hijos relacionados
+
+Independientemente de la regla configurada (`CASCADE`, `RESTRICT`, `SET NULL`, etc.), **la fila de la tabla padre se eliminará directamente sin ningún problema** porque no viola ninguna integridad referencial.
+
+#### El registro padre SÍ tiene hijos relacionados
+
+Cuando hay filas asociadas en la tabla secundaria, la regla `ON DELETE` determina la acción a tomar:
+
+##### A. `ON DELETE RESTRICT` / `ON DELETE NO ACTION` (Comportamiento por defecto)
+
+- **Qué hace:** Bloquea la eliminación del registro padre para proteger la integridad referencial.
+
+- **Resultado:** MySQL devuelve un error de restricción de clave foránea (`Cannot delete or update a parent row: a foreign key constraint fails`).
+
+- **Ejemplo:** Intentar borrar el departamento con `id_dept = 1` cuando aún existen empleados en el departamento 1.
+
+##### B. `ON DELETE CASCADE` (Eliminación en cascada)
+
+- **Qué hace:** Elimina automáticamente el registro de la tabla padre **Y TAMBIÉN** elimina todas las filas asociadas en la tabla hija.
+
+- **Resultado:** Se borra el departamento y todos los empleados que pertenecían a dicho departamento se eliminan automáticamente.
+
+- **¡Atención!** Se debe usar con mucha precaución, ya que puede desencadenar borrados masivos involuntarios si hay varias tablas encadenadas.
+
+##### C. `ON DELETE SET NULL`
+
+- **Qué hace:** Elimina el registro de la tabla padre y actualiza la columna de la clave foránea en la tabla hija asignándole `NULL`.
+
+- **Resultado:** Se borra el departamento y la columna `id_dept` de los empleados que pertenecían a él pasa a ser `NULL` (quedan "huérfanos" o sin departamento asignado).
+
+- **Requisito:** La columna en la tabla hija (`id_dept`) **DEBE permitir valores nulos** (`NULL`). Si está definida como `NOT NULL`, la creación de la restricción o la ejecución fallará.
+
+##### D. `ON DELETE SET DEFAULT` *(Soportado en la especificación SQL, limitado en InnoDB)*
+
+- **Qué hace:** Elimina el registro padre y establece la clave foránea de la tabla hija al valor por defecto configurado (`DEFAULT`).
+
+#### Tabla Resumen de Comportamiento
+
+|  |  |  |
+|----------------|-------------------|--------------------------------------|
+| Regla ON DELETE | **¿Tiene registros relacionados?** | **Acción al hacer DELETE FROM padre WHERE id = X** |
+| RESTRICT / NO ACTION | **No** | Se elimina el registro del padre sin problemas. |
+| RESTRICT / NO ACTION | **Sí** | **Error (Bloqueado).** No se elimina nada. |
+| CASCADE | **No** | Se elimina el registro del padre. |
+| CASCADE | **Sí** | Se elimina el padre **y todas sus filas asociadas en la tabla hija**. |
+| SET NULL | **No** | Se elimina el registro del padre. |
+| SET NULL | **Sí** | Se elimina el padre y la clave foránea en la tabla hija **pasa a ser `NULL`**. |
+
 # Transacciones en MySQL: `START TRANSACTION`, `COMMIT` y `ROLLBACK`
 
 ## ¿Qué es una Transacción?
@@ -365,7 +440,7 @@ El objetivo de las transacciones es garantizar la integridad de los datos siguie
 ## Sentencias de Control de Transacciones (TCL)
 
 |  |  |
-|------------------------------------|------------------------------------|
+|-------------------|-----------------------------------------------------|
 | **Comando** | **Descripción** |
 | **`START TRANSACTION`** (o `BEGIN`) | Inicia de forma explícita un bloque transaccional. |
 | **`COMMIT`** | Confirma y guarda permanentemente en la base de datos todos los cambios realizados desde el `START TRANSACTION`. |

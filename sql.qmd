@@ -169,8 +169,6 @@ Aunque existe un estándar internacional (**ANSI/ISO SQL**), la mayoría de los 
 
 ## Tipo de Dato Bit (`BIT`)
 
-### Descripción
-
 El tipo de dato `BIT` se utiliza para almacenar valores binarios o secuencias de bits (ceros y unos). A diferencia del booleano (que guarda una intención lógica de Verdadero/Falso), el tipo `BIT` está pensado para guardar números binarios o patrones de flags (banderas de estado).
 
 ### Límites y Valores Permitidos
@@ -196,7 +194,7 @@ SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
 ### Motores SQL donde existe
 
 |  |  |  |
-|--------------------|--------------------|---------------------------------|
+|--------------------|--------------------|--------------------------------|
 | **Motor SQL** | **Soporte** | **Observaciones** |
 | **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
 | **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
@@ -417,8 +415,6 @@ WHERE (dias_abierto & 64) > 0;
 
 ## Tipo de Dato Lógico (`BOOLEAN` / `BOOL`)
 
-### Descripción
-
 El tipo de dato lógico representa valores de verdad binarios. Sirve para almacenar estados afirmativos o negativos, como si un usuario está activo, si un pedido ha sido pagado o si una opción está habilitada.
 
 En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres estados: `TRUE` (Verdadero), `FALSE` (Falso) y `NULL` (Desconocido / Sin valor).
@@ -476,9 +472,7 @@ SELECT * FROM usuarios WHERE es_activo = TRUE;
 
 - **Eficiencia:** El tipo `BIT` en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo `BIT` en un solo byte físico.
 
-# Tipos de Datos Enteros (INTEGER)
-
-### Descripción
+## Tipos de Datos Enteros (INTEGER)
 
 Los tipos de datos enteros se utilizan para almacenar **números exactos sin parte decimal** (positivos, negativos o cero). Son los tipos de datos numéricos más eficientes a nivel de cómputo y almacenamiento en cualquier base de datos, por lo que se emplean como clave primaria (`PRIMARY KEY`), identificadores, contadores y claves foráneas (`FOREIGN KEY`).
 
@@ -498,13 +492,9 @@ Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*
 
 *(Nota: En MySQL/MariaDB existe también `MEDIUMINT` de 3 Bytes, de -8.388.608 a 8.388.607).*
 
-### La opción `UNSIGNED` (Sin Signo)
-
-#### ¿Qué es?
+#### La opción `UNSIGNED` (Sin Signo)
 
 `UNSIGNED` es un modificador que elimina la capacidad de almacenar números negativos y desplaza todo el rango hacia la zona positiva.
-
-#### ¿Para qué sirve?
 
 Al no tener que reservar un bit para el signo +/- (el bit más significativo o *sign bit*), **duplica el valor máximo positivo** que cabe en el mismo espacio físico de bytes.
 
@@ -552,11 +542,9 @@ VALUES ('Portátil Gaming', 150, 11, -500);
 -- INSERT INTO productos (nombre, stock) VALUES ('Error', -10);
 ```
 
-# Tipos de Datos Numéricos Decimales
+## Tipos de Datos Numéricos Decimales
 
-## Decimales Exactos (`DECIMAL` / `NUMERIC`)
-
-### Descripción
+### Decimales Exactos (`DECIMAL` / `NUMERIC`)
 
 El tipo de dato `DECIMAL` (o su alias equivalente `NUMERIC`) almacena valores numéricos con coma flotante **exacta** (coma fija). Al no realizar aproximaciones binarias, garantiza que el número guardado en disco sea exactamente el mismo que introdujo el usuario, lo que resulta fundamental para cálculos financieros, contabilidad o presupuestos.
 
@@ -574,7 +562,7 @@ Se define bajo la sintaxis **`DECIMAL(P, S)`**:
 >
 > - Máximo número entero permitido: $6 - 2 = 4$ dígitos enteros (hasta `9999.99`).
 
-### ¿Qué ocurre si intentas introducir un número distinto de decimales a los establecidos?
+**¿Qué ocurre si intentas introducir un número distinto de decimales a los establecidos?**
 
 1.  **Si pasas más decimales que la escala definida (**$S$):
 
@@ -608,8 +596,6 @@ Se define bajo la sintaxis **`DECIMAL(P, S)`**:
 
 ## Decimales Aproximados (`FLOAT`, `REAL` y `DOUBLE`)
 
-### Descripción
-
 Los datos en punto flotante (`FLOAT`, `REAL`, `DOUBLE PRECISION`) guardan una **aproximación** del número real mediante notación científica binaria basada en el estándar IEEE 754. Se utilizan para magnitudes físicas, mediciones de sensores o coordenadas geográficas donde se prima la rapidez de cómputo sobre la precisión exacta.
 
 ### Tipos y Subtipos
@@ -636,7 +622,7 @@ SELECT 0.1 + 0.2;
 -- En tipos FLOAT, el procesador puede devolver 0.30000000000000004
 ```
 
-## Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
+## Exactos vs aproximados ¿Cuándo elegir cada uno?
 
 |  |  |  |
 |------------------------|------------------------|------------------------|
@@ -673,9 +659,7 @@ Si te preguntan en clase por qué no se debe usar `FLOAT` en una tienda online, 
 
 Si sumas millones de transacciones pequeñas guardadas en `FLOAT` (como `0.01` € por clic), las pequeñas diferencias binarias en el último decimal se van acumulando. Al final del año, la contabilidad puede descuadrar por varios cientos o miles de euros. En finanzas **siempre se exige `DECIMAL` o almacenar los importes en céntimos como `INTEGER`**.
 
-# Tipos de Datos de Cadena de Texto (`CHAR`, `VARCHAR`, `TEXT`)
-
-## Cadenas de Longitud Fija (`CHAR`) vs Longitud Variable (`VARCHAR`)
+## Tipos de Datos de Cadena de Texto (`CHAR`, `VARCHAR`, `TEXT`)
 
 ### `CHAR(n)` – Longitud Fija
 
@@ -711,13 +695,11 @@ Si sumas millones de transacciones pequeñas guardadas en `FLOAT` (como `0.01` �
 
     - **Modo No Estricto:** Trunca el texto automáticamente cortando las letras sobrantes a partir del carácter $n$.
 
-## Textos Largos (`TEXT` / `CLOB`)
-
-### Descripción
+### Textos Largos (`TEXT` / `CLOB`)
 
 Diseñado para almacenar grandes volúmenes de texto no estructurado donde la longitud máxima no se conoce de antemano o supera los límites de un `VARCHAR`.
 
-### Subtipos en MySQL / MariaDB
+#### Subtipos en MySQL / MariaDB
 
 |  |  |  |
 |------------------------|------------------------|------------------------|
@@ -729,7 +711,7 @@ Diseñado para almacenar grandes volúmenes de texto no estructurado donde la lo
 
 *(Nota: En SQL Server se utiliza `VARCHAR(MAX)` y en PostgreSQL se usa `TEXT` de longitud ilimitada dinámicamente).*
 
-## Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
+### Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
 
 |  |  |  |  |
 |------------------|------------------|------------------|------------------|
@@ -739,9 +721,9 @@ Diseñado para almacenar grandes volúmenes de texto no estructurado donde la lo
 | **Indexación y Búsquedas** | Búsquedas muy rápidas. | Permite índices estándar. | Requiere **índices de texto completo (*Full-Text Index*)** para búsquedas eficientes. |
 | **Uso Típico** | Códigos de país (`CHAR(2)`), Hashes. | Nombres, Emails, URLs. | Artículos de blog, JSON en texto, descripciones. |
 
-## Motores SQL y la opción `NVARCHAR` / Unicode
+### Motores SQL y la opción `NVARCHAR` / Unicode
 
-### El prefijo `N` (`NCHAR`, `NVARCHAR`)
+#### El prefijo `N` (`NCHAR`, `NVARCHAR`)
 
 En motores como **SQL Server** o **Oracle**, las variantes que empiezan por `N` representan texto **Unicode (National Language Set)**.
 
@@ -754,7 +736,7 @@ En motores como **SQL Server** o **Oracle**, las variantes que empiezan por `N` 
 | **`VARCHAR(n)`** | 1 byte por carácter\* | Hasta **`n`** bytes | **`"Hola"`** → 4 bytes |
 | **`NVARCHAR(n)`** | 2 bytes por carácter\* | Hasta **`n`** caracteres | **`"Hola"`** → 8 bytes |
 
-### Ejemplo en SQL
+#### Ejemplo en SQL
 
 ``` sql
 CREATE TABLE publicaciones (
@@ -774,19 +756,15 @@ VALUES (
 );
 ```
 
-# Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
-
-## Descripción Resumida de Cada Tipo
+## Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
 
 |  |  |  |  |  |
-|----------|---------------|---------------|---------------|---------------|
+|---------------|---------------|---------------|---------------|---------------|
 | **Tipo de Dato** | **Format / Estructura Estándar** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
 | **`DATE`** | `YYYY-MM-DD` | `1000-01-01` a `9999-12-31` | **3 bytes** | Fechas de nacimiento, fechas de contratación, vencimientos sin hora. |
 | **`TIME`** | `HH:MM:SS` (o `HH:MM:SS.p`) | `-838:59:59` a `838:59:59` | **3 bytes** | Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido. |
 | **`DATETIME`** | `YYYY-MM-DD HH:MM:SS` | `1000-01-01 00:00:00` a `9999-12-31 23:59:59` | **5 a 8 bytes** | Reservas de hotel, eventos del calendario, citas programadas. |
 | **`TIMESTAMP`** | `YYYY-MM-DD HH:MM:SS` | `1970-01-01 00:00:01` UTC a `2038-01-19 03:14:07` UTC | **4 bytes** | Auditoría, marcas de tiempo de modificación, registros (*logs*). |
-
-## Detalle de Cada Tipo de Dato
 
 ### `DATE` (Solo Fecha)
 
@@ -802,7 +780,7 @@ VALUES (
 
 - **Peculiaridad:** En muchos SGBD (como MySQL), `TIME` no solo representa la hora del día (00:00:00 a 23:59:59), sino también **tiempo transcurrido o duraciones**. Por este motivo, su rango permite horas negativas y valores superiores a 24 horas (desde `-838:59:59` hasta `838:59:59`).
 
-## 3. La Gran Diferencia: `DATETIME` vs `TIMESTAMP`
+### La Gran Diferencia: `DATETIME` vs `TIMESTAMP`
 
 Aunque ambos almacenan tanto la fecha como la hora, existen diferencias críticas en el manejo de zonas horarias (*Time Zones*) y almacenamiento interno.
 
@@ -828,7 +806,7 @@ Aunque ambos almacenan tanto la fecha como la hora, existen diferencias crítica
 
 - **Limitación importante (El problema del año 2038):** Dado que muchos motores emplean un entero de 32 bits con signo para almacenar el `TIMESTAMP`, el valor máximo que puede registrar es el **19 de enero de 2038 a las 03:14:07 UTC**.
 
-## Tabla Comparativa Directa: `DATETIME` vs `TIMESTAMP`
+### Tabla Comparativa: `DATETIME` vs `TIMESTAMP`
 
 |  |  |  |
 |------------------------|------------------------|------------------------|
@@ -838,7 +816,7 @@ Aunque ambos almacenan tanto la fecha como la hora, existen diferencias crítica
 | **Almacenamiento** | 5 bytes (en versiones modernas) a 8 bytes. | **4 bytes fijo.** |
 | **Actualización Automática** | Opcional según la versión de SQL. | Muy común para columnas tipo `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`. |
 
-Sintaxis en SQL de Ejemplo
+**Sintaxis en SQL de Ejemplo**
 
 ``` sql
 CREATE TABLE registros_eventos (
@@ -865,15 +843,15 @@ INSERT INTO registros_eventos (fecha_nacimiento, hora_inicio, cita_programada)
 VALUES ('1992-04-15', '09:30:00', '2026-10-15 10:00:00');
 ```
 
-### Pregunta clave para la exposición: ¿Por qué en aplicaciones globales multi-región se prefiere `TIMESTAMP` o guardar en UTC?
+### ¿Por qué en aplicaciones globales multi-región se prefiere `TIMESTAMP` o guardar en UTC?
 
 Si la aplicación tiene usuarios en España, México y Japón, guardar fechas de compras en `DATETIME` sin zona horaria provocaría un caos analítico (no sabrías qué compra ocurrió antes que otra en tiempo absoluto).
 
 Usar `TIMESTAMP` garantiza que **todas las transacciones queden alineadas en un tiempo universal (UTC)**, mostrándose ajustadas a la hora local de cada usuario cuando abren la app.
 
-# Tipos de Datos LOB: Texto Largo (`CLOB` / `TEXT`) y Datos Binarios (`BLOB`)
+## Tipos de Datos LOB: Texto Largo (`CLOB` / `TEXT`) y Datos Binarios (`BLOB`)
 
-## Concepto de LOB (*Large Objects*)
+### Concepto de LOB (*Large Objects*)
 
 Los tipos de datos **LOB** (*Large Objects*) están diseñados para almacenar volúmenes masivos de datos no estructurados o semiestructurados que superan los límites habituales de las columnas convencionales.
 
@@ -882,8 +860,6 @@ Se dividen en dos categorías principales:
 1.  **`CLOB` / `TEXT` (*Character Large Object*):** Cadenas de caracteres de gran longitud donde la base de datos aplica reglas de codificación de caracteres (*collation*, UTF-8, etc.).
 
 2.  **`BLOB` (*Binary Large Object*):** Secuencias fijas de bytes binarios puros (secuencia de `0`s y `1`s) sin ninguna codificación de texto asociada.
-
-## Tipos y Subtipos de Datos
 
 ### Tipos `BLOB` (Datos Binarios)
 
@@ -911,7 +887,7 @@ Almacenan texto plano o marcado (HTML, XML, JSON en texto, código fuente) de gr
 | **`MEDIUMTEXT`** | 16,7 MB | Capítulos de libros, documentos HTML complejos |
 | **`LONGTEXT`** | 4 GB | Transcripciones completas, logs de sistema extensos |
 
-## ¿Cómo funcionan internamente? (*Off-Page Storage*)
+### ¿Cómo funcionan internamente? (*Off-Page Storage*)
 
 A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BLOB` y `TEXT` **no se guardan directamente dentro del bloque o página principal de la fila**:
 
@@ -921,7 +897,7 @@ A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BL
 
 > **Consecuencia en el rendimiento:** Hacer un `SELECT *` sobre una tabla que contiene columnas `BLOB` o `TEXT` obliga al motor a realizar lecturas adicionales en disco para seguir los punteros, ralentizando drásticamente la consulta.
 
-## Ventajas e Inconvenientes: ¿Cuándo usar `BLOB` y cuándo guardar la ruta en disco?
+### Ventajas e Inconvenientes: ¿Cuándo usar `BLOB` y cuándo guardar la ruta en disco?
 
 Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.
 
@@ -933,7 +909,7 @@ Esta es una de las preguntas de arquitectura más habituales en la administraci�
 | **Rendimiento de la Base de Datos** | **Degradado.** Aumenta el consumo de RAM (memoria de búfer) e I/O de disco. | **Óptimo.** La base de datos gestiona solo texto corto (`VARCHAR(255)`) con las rutas. |
 | **Seguridad / Control de Acceso** | **Alta.** Se aplican directamente los permisos de usuario de SQL. | **Media.** Depende del sistema de archivos o del almacenamiento en la nube (*Cloud Storage*). |
 
-Ejemplo de Sintaxis en SQL
+**Ejemplo de Sintaxis en SQL**
 
 ``` sql
 CREATE TABLE documentos_expediente (

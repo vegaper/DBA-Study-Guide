@@ -103,7 +103,7 @@ Existen diferentes tipos de restricciones que se pueden definir al crear o modif
 
 - **`FOREIGN KEY`**: Asegura la integridad referencial vinculando los datos de una columna con la clave primaria de otra tabla.
 
-###  `PRIMARY KEY` (Clave Primaria)
+### `PRIMARY KEY` (Clave Primaria)
 
 Garantiza que cada fila sea única e identificable. No permite valores `NULL`.
 
@@ -221,13 +221,51 @@ Asigna un valor automático a la columna si en el `INSERT` no se especifica ning
 CREATE TABLE pedidos (
     id_pedido INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     estado VARCHAR(20) DEFAULT 'Pendiente',
-    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    nombre VARCHAR(50)
 );
 ```
 
 ``` sql
 ALTER TABLE pedidos 
     ALTER COLUMN estado SET DEFAULT 'Pendiente';
+```
+
+El valor default se usará cuando no se introduzca un valor para esa columna:
+
+``` sql
+-- Correcto: Al no mencionar 'estado' ni 'fecha_creacion', aplican sus DEFAULT
+INSERT INTO pedidos (nombre) 
+VALUES 
+    ('Cliente 1'),
+    ('Cliente 2');
+```
+
+Al no haberse proporcionado ningún valor para las columnas que tienen default, se usuará ese valor.
+
+Si estás rellenando datos múltiples y tienes que incluir la columna, para aquellos registros en los que quieras que se rellene el valor predeterminado tendrás que pasar el valor DEFAULT, pasar NULL o '' no generará la inserción del valor por defecto.
+
+``` sql
+INSERT INTO pedidos (nombre, estado) 
+VALUES 
+    ('Cliente 3', 'Enviado'),   -- Valor personalizado
+    ('Cliente 4', DEFAULT);      -- Aplica 'Pendiente'
+```
+
+**Incorrecto enviar NULL:** Si la columna permite `NULL`, guardará un valor `NULL`. Si la columna tuviera la restricción `NOT NULL`, la base de datos devolverá un error (`Column 'estado' cannot be null`). En ningún caso aplicará `'Pendiente'`.
+
+``` sql
+-- Incorrecto (no aplicará 'Pendiente'):
+INSERT INTO pedidos (nombre, estado) 
+VALUES ('Cliente 5', NULL);
+```
+
+**Incorrecto enviar '':** Pasar una cadena vacía `''` esperando que aplique el `DEFAULT`:
+
+``` sql
+-- Incorrecto (no aplicará 'Pendiente'):
+INSERT INTO pedidos (nombre, estado) 
+VALUES ('Cliente 6', '');
 ```
 
 ## ¿Dónde se guardan las restricciones y cómo consultarlas?
@@ -284,7 +322,7 @@ Garantiza la **integridad referencial**: impide que se registre un alumno apunta
 Definen qué debe hacer MySQL cuando el registro de la tabla padre (`cursos`) se **modifica** (`ON UPDATE`) o se **elimina** (`ON DELETE`).
 
 |  |  |  |
-|---------------|---------------|------------------------------------------|
+|---------|---------------------------|-------------------------------|
 | **Opción** | **¿Qué hace al Borrar/Actualizar el Padre?** | **Ejemplo con tu código** |
 | **`RESTRICT`** *(Por defecto)* | **Bloquea la operación.** Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados. | Si intentas borrar un curso que tiene alumnos, MySQL lanza un error. |
 | **`CASCADE`** | **Propaga el cambio.** Borra o actualiza automáticamente los registros hijos asociados. | En tu código (`ON UPDATE CASCADE`): Si el `id_curso` `5` pasa a ser `10`, todos los alumnos con `id_curso = 5` cambian a `10` automáticamente. |
@@ -341,6 +379,35 @@ Cambia únicamente el nombre de la columna sin modificar su tipo de dato o restr
 ALTER TABLE cursos
     RENAME COLUMN horas TO duracion_horas;
 ```
+
+::: extra
+Aunque SQL no tiene un comando nativo único del tipo `RENAME ALL COLUMNS`, puedes lograrlo utilizando una combinación de sentencias
+
+### Generación automática de consultas desde `INFORMATION_SCHEMA`
+
+Consiste en consultar el diccionario de datos de MySQL (`INFORMATION_SCHEMA.COLUMNS`) para que la propia base de datos te genere todas las sentencias `ALTER TABLE` listas para copiar y ejecutar.
+
+``` sql
+SELECT CONCAT(
+    'ALTER TABLE `', TABLE_SCHEMA, '`.`', TABLE_NAME, '` ',
+    'RENAME COLUMN `', COLUMN_NAME, '` TO `', REPLACE(COLUMN_NAME, ' ', '_'), '`;'
+) AS script_renombrado
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'tu_base_de_datos'  -- Reemplaza por tu BD
+  AND TABLE_NAME = 'tu_tabla'             -- Reemplaza por tu tabla
+  AND COLUMN_NAME LIKE '% %';
+```
+
+**Resultado que devuelve MySQL:**
+
+``` sql
+ALTER TABLE `lab_relaciones`.`objetos` RENAME COLUMN `fecha inicio` TO `fecha_inicio`;
+ALTER TABLE `lab_relaciones`.`objetos` RENAME COLUMN `era inicio` TO `era_inicio`;
+ALTER TABLE `lab_relaciones`.`objetos` RENAME COLUMN `ubicacion actual` TO `ubicacion_actual`;
+```
+
+Solo ejecutas la consulta, copias los resultados generados y los lanzas en la consola.
+:::
 
 ## Renombrar la Tabla Completa (`RENAME TO`)
 

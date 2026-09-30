@@ -11,7 +11,7 @@ Para empezar, antes de usar un gestor de bases de datos vamos a usar la web <htt
 Nosotros en esta introducción a SQL vamos a trabajar con SQLite porque es muy amigable para una primera toma de contacto.
 
 ::: {.callout-note title="Nota sobre el Estándar SQL, los Dialectos y la Portabilidad"}
-### ¿Por qué lo que lees aquí puede variar según el motor de base de datos?
+**¿Por qué lo que lees aquí puede variar según el motor de base de datos?**
 
 El lenguaje SQL está regulado por un estándar internacional (ANSI/ISO SQL). Sin embargo, ningún motor de base de datos lo implementa al 100% de la misma manera. Cada motor (**SQLite, PostgreSQL, MySQL, SQL Server, Oracle**) añade sus propias funciones, optimizaciones o flexibilidades sintácticas. A estas variaciones las llamamos **dialectos de SQL**.
 
@@ -19,7 +19,7 @@ Durante el curso trabajaremos principalmente con **SQLite** por su sencillez y r
 
 ------------------------------------------------------------------------
 
-### Buenas prácticas para escribir SQL portable
+**Buenas prácticas para escribir SQL portable**
 
 1.  **Respeta el orden de ejecución lógico:** Aunque algunos motores (como SQLite) sean permisivos con ciertos atajos —por ejemplo, permitir alias de columnas en el `WHERE`—, acostúmbrate a seguir la norma general para evitar que tus consultas fallen en otros sistemas.
 2.  **Usa sintaxis explícita:** Prefiere siempre `JOIN ... ON` en lugar de relacionar tablas en la cláusula `WHERE`. Es la norma estándar y hace las consultas más legibles y mantenibles.
@@ -972,7 +972,7 @@ AND imdb_movies.title_year < 2012
 AND imdb_movies.gender LIKE '%Action%' ;
 ```
 
-## ![](images/2026-07-30-09-57-42.png)
+![](images/2026-07-30-09-57-42.png)
 
 ## EJERCICIO 9: Top 20 Películas por Presupuesto y Beneficio
 
@@ -1218,11 +1218,23 @@ FROM jamesbond
 WHERE actor= 'Sean Connery' ;
 ```
 
-| Utilizando la tabla fortune, |
-|:-----------------------------------------------------------------------|
-| Utilizando la tabla videogames_games: |
-| Crea una consulta que muestre el nombre del videojuego, su plataforma, sus ventas en Europa y una columna nueva llamada categoría_éxito usando las siguientes condiciones : -superventas si son mayores a 3.0 millones -exitoso si están entre 1.0 y 3.0millones -venta moderada si son menor de 1.0 millones muestra únicamente el top15 de juegos con mayor venta en Europabetw |
-| `sql select videogames_games.name , platform_code , eu_sales ,case WHEN eu_sales >3 THEN 'SUPERVENTAS' WHEN eu_sales BETWEEN 1 AND 3 THEN 'EXITOSO' WHEN eu_sales <1 THEN 'VENTA MODERADA' END as categoria_exito from videogames_games ORDER BY eu_sales DESC LIMIT 15` |
+ Utilizando la tabla fortune, 
+
+Utilizando la tabla videogames_games: 
+Crea una consulta que muestre el nombre del videojuego, su plataforma, sus ventas en Europa y una columna nueva llamada categoría_éxito usando las siguientes condiciones : -superventas si son mayores a 3.0 millones -exitoso si están entre 1.0 y 3.0millones -venta moderada si son menor de 1.0 millones muestra únicamente el top15 de juegos con mayor venta en Europabetw |
+
+```sql 
+select 
+videogames_games.name 
+, platform_code 
+, eu_sales 
+,case WHEN eu_sales >3 THEN 'SUPERVENTAS' 
+      WHEN eu_sales BETWEEN 1 AND 3 THEN 'EXITOSO' 
+      WHEN eu_sales <1 THEN 'VENTA MODERADA' 
+END as categoria_exito 
+from videogames_games 
+ORDER BY eu_sales DESC LIMIT 15
+``` |
 
 Utilizando la tabla videogames_games:
 
@@ -1401,7 +1413,7 @@ SELECT
     WHERE salario > ( SELECT AVG(salario) FROM empleados );
 ```
 
-![](paste-RGC9W5jyIBV4SKMG31aaD)
+![](images/paste-RGC9W5jyIBV4SKMG31aaD.png)
 
 ## Subconsultas en el select
 
