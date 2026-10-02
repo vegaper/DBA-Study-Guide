@@ -1,0 +1,1217 @@
+---
+title: "PRÁCTICA GUIADA: Aplicación web con Apache2, PHP y MySQL"
+subtitle: "Alta y consulta de objetos de museo 
+---
+
+# Entorno de referencia y Objetivos
+
+- **Entorno de referencia:** Ubuntu Server 26.04 + Apache2 + PHP + MySQL 8.4
+- **Objetivo de la práctica:** Crear una aplicación web sencilla que permita insertar datos en la tabla `Objetos` y recuperarlos posteriormente mediante `id_objeto` o `codigo_inventario`.
+
+## Objetivos de aprendizaje
+
+- Comprender la relación entre un formulario HTML, PHP y una base de datos MySQL.
+- Instalar y comprobar Apache2, PHP y el conector PDO para MySQL.
+- Crear un usuario de MySQL específico para la aplicación y asignarle solo los privilegios necesarios.
+- Insertar registros en la tabla `Objetos` mediante una consulta preparada.
+- Tratar correctamente los campos opcionales y almacenar `NULL` cuando el dato es desconocido.
+- Buscar un objeto por su clave primaria `id_objeto` o por su `codigo_inventario`.
+- Mostrar en el navegador los datos recuperados de MySQL.
+- Relacionar la práctica con conceptos ya estudiados: `PRIMARY KEY`, `UNIQUE`, `CHECK`, `ENUM`, `NULL`, `AUTO_INCREMENT`, `INSERT` y `SELECT`.
+
+------------------------------------------------------------------------
+
+# Idea general y arquitectura
+
+Podemos imaginar la aplicación como un intermediario entre el usuario y la base de datos. El navegador no se conecta directamente a MySQL: envía una petición a Apache2, Apache ejecuta el código PHP y PHP utiliza PDO para comunicarse con MySQL.
+
+```         
+Navegador
+   |
+   | HTTP
+   v
+Apache2
+   |
+   v
+  PHP
+   |
+   | PDO
+   v
+MySQL 8.4
+   |
+   v
+Base de datos museo
+Tabla Objetos
+```
+
+La aplicación permitirá realizar dos operaciones principales:
+
+1.  Registrar un nuevo objeto mediante un formulario web.
+2.  Buscar posteriormente un objeto mediante `id_objeto` o `codigo_inventario` y mostrar todos sus datos.
+
+------------------------------------------------------------------------
+
+# Entorno de partida
+
+Se parte de un servidor Ubuntu Server 26.04 ya instalado y accesible por red. MySQL 8.4 se ejecutará en el mismo servidor que Apache2 y PHP.
+
+::: callout-note
+**Verificar contra la versión instalada:** Los nombres exactos de los paquetes PHP disponibles pueden variar. En la guía se utilizan los metapaquetes `php` y `php-mysql` para evitar depender de un número concreto de versión.
+:::
+
+------------------------------------------------------------------------
+
+# Crear la base de datos y la tabla Objetos
+
+Primero creamos la base de datos `museo` y la seleccionamos:
+
+``` sql
+CREATE DATABASE museo
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_0900_ai_ci;
+
+USE museo;
+```
+
+A continuación creamos la tabla `Objetos`. Esta tabla permite almacenar una descripción de la datación histórica y, cuando se conoce, separar año, mes, día y era. De esta forma no dependemos del tipo `DATE` para fechas históricas anteriores al año 1000 o fechas a. C.
+
+``` sql
+CREATE TABLE Objetos (
+    id_objeto INT UNSIGNED AUTO_INCREMENT,
+    codigo_inventario VARCHAR(50) NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    categoria VARCHAR(100),
+    material VARCHAR(100),
+    autor VARCHAR(150),
+    fecha_datacion VARCHAR(100),
+    anio_inicio INT UNSIGNED,
+    mes_inicio TINYINT UNSIGNED,
+    dia_inicio TINYINT UNSIGNED,
+    era_inicio ENUM('a.C.', 'd.C.'),
+    anio_fin INT UNSIGNED,
+    mes_fin TINYINT UNSIGNED,
+    dia_fin TINYINT UNSIGNED,
+    era_fin ENUM('a.C.', 'd.C.'),
+    precision_datacion ENUM(
+        'Exacta',
+        'Año',
+        'Aproximada',
+        'Intervalo',
+        'Siglo',
+        'Desconocida'
+    ) NOT NULL DEFAULT 'Desconocida',
+    procedencia VARCHAR(255),
+    estado_conservacion VARCHAR(50),
+    ubicacion_actual VARCHAR(150),
+    fecha_ingreso DATE,
+    observaciones TEXT,
+    CONSTRAINT pk_objetos PRIMARY KEY (id_objeto),
+    CONSTRAINT uq_objetos_codigo UNIQUE (codigo_inventario),
+    CONSTRAINT ck_objetos_mes_inicio CHECK (mes_inicio IS NULL OR mes_inicio BETWEEN 1 AND 12),
+    CONSTRAINT ck_objetos_mes_fin CHECK (mes_fin IS NULL OR mes_fin BETWEEN 1 AND 12),
+    CONSTRAINT ck_objetos_dia_inicio CHECK (dia_inicio IS NULL OR dia_inicio BETWEEN 1 AND 31),
+    CONSTRAINT ck_objetos_dia_fin CHECK (dia_fin IS NULL OR dia_fin BETWEEN 1 AND 31)
+) ENGINE = InnoDB;
+```
+
+Comprobamos la definición real almacenada por MySQL:
+
+``` sql
+SHOW CREATE TABLE Objetos;
+```
+
+::: callout-warning
+**Importante:** Las restricciones `CHECK` de día solo comprueban el intervalo 1-31. No validan combinaciones como 31 de febrero. El objetivo aquí es practicar restricciones básicas, no construir todavía un calendario histórico completo.
+:::
+
+------------------------------------------------------------------------
+
+# Crear un usuario específico para la aplicación
+
+No utilizaremos la cuenta `root` desde PHP. Crearemos un usuario exclusivo para la aplicación web:
+
+``` sql
+CREATE USER 'museo_app'@'127.0.0.1' IDENTIFIED BY 'Museo_App#2026';
+```
+Explicación de la dirección del host (127.0.0.1)
+
+Al crear un usuario en MySQL con el formato 'usuario'@'host', el valor especificado tras la @ define desde qué dirección IP tiene permitido conectarse dicho usuario. 
+
+En la sentencia CREATE USER 'museo_app'@'127.0.0.1', la dirección 127.0.0.1 corresponde a la interfaz de loopback (o red local interna del propio servidor). Esto implica que:  
+-   Arquitectura monolítica (Apache + PHP + MySQL en la misma máquina): La aplicación PHP se conecta a MySQL a través de la interfaz local (127.0.0.1), por lo que la autenticación funcionará correctamente. Por motivos de seguridad, esta configuración impide que cualquier equipo externo intente iniciar sesión directamente con esta cuenta.   
+-   Arquitectura distribuida (Apache/PHP en un servidor distinto a MySQL): Si en el futuro se traslada la web a un servidor Apache dedicado (por ejemplo, con IP 192.168.1.50), se deberá sustituir 127.0.0.1 por la dirección IP real del servidor Apache desde el cual se originarán las peticiones a la base de datos (ej.: 'museo_app'@'192.168.1.50').   
+
+::: callout-note
+Nota de seguridad: Asignar una IP específica o restringir la conexión a 127.0.0.1 aplica el principio de mínimo privilegio en capa de red, evitando que el usuario sea accesible desde orígenes no autorizados.
+:::   
+
+En esta primera versión la aplicación solo necesita insertar objetos y consultarlos. Por tanto, concedemos únicamente `SELECT` e `INSERT`:
+
+``` sql
+GRANT SELECT, INSERT ON museo.Objetos TO 'museo_app'@'127.0.0.1';
+```
+
+*"Permite el acceso a este usuario solo cuando se conecte por TCP/IP a la loopback address (127.0.0.1)"*
+
+Comprobamos los privilegios concedidos:
+
+``` sql
+SHOW GRANTS FOR 'museo_app'@'127.0.0.1';
+```
+
+> **Buena práctica:** No utilizar `root` desde una aplicación. El usuario de la aplicación debe disponer solo de los privilegios necesarios para realizar su función.
+
+# Instalar Apache2 y PHP
+
+Actualizamos la información de los repositorios:
+
+``` bash
+sudo apt update
+```
+
+Instalamos Apache2:
+
+``` bash
+sudo apt install apache2 -y
+```
+
+Instalamos PHP, el módulo de Apache para PHP y el soporte de MySQL:
+
+``` bash
+sudo apt install php libapache2-mod-php php-mysql -y
+```
+
+Reiniciamos Apache2:
+
+``` bash
+sudo systemctl restart apache2
+```
+
+Comprobamos que Apache está activo:
+
+``` bash
+systemctl status apache2
+```
+
+Usa `q` para salir
+
+![](paste-oS-B6ZvbrJAREhjMdSxyY)
+
+phComprobamos la versión de PHP:
+
+``` bash
+php -v
+```
+
+![](paste-sLK6m4c37DSwqJv6LFCQj)
+
+Y verificamos que está disponible el controlador PDO para MySQL:
+
+``` bash
+php -m | grep -i pdo_mysql
+```
+
+- **`php -m`**: Genera la lista de todos los módulos instalados.
+
+- **`|` (pipe)**: Toma la salida del primer comando y se la pasa directamente al segundo.
+
+- **`grep -i pdo_mysql`**: Filtra esa lista y muestra únicamente las líneas que contengan la palabra "pdo_mysql" (sin importar mayúsculas o minúsculas).
+
+El resultado debe incluir una línea similar a:
+
+``` bash
+pdo_mysql
+```
+
+Si UFW está activo (POR DEFECTO NO LO ESTÁ), comprobamos su estado y, si es necesario, permitimos HTTP:
+
+``` bash
+sudo ufw status
+sudo ufw allow 80/tcp
+```
+
+------------------------------------------------------------------------
+
+# Comprobar Apache2 desde el navegador
+
+Consultamos la dirección IP del servidor:
+
+``` bash
+ip a
+```
+
+Si el servidor tiene, por ejemplo, la dirección `192.168.100.20`, desde un ordenador cliente abrimos:
+
+`http://192.168.100.20`
+
+El resultado esperado es la página inicial de Apache2.
+
+![](paste-x34weYhu6pusawdiYcDOE)
+
+Si no aparece, revisaremos la dirección IP, el servicio `apache2`, el cortafuegos y la conectividad entre cliente y servidor.
+
+------------------------------------------------------------------------
+
+# Crear la estructura de la aplicación
+
+La aplicación tendrá los siguientes ficheros:
+
+``` text
+/var/www/html/museo/
+|-- index.php
+|-- nuevo.php
+|-- guardar.php
+|-- buscar.php
+`-- estilos.css
+
+/etc/museo/
+`-- config.php
+```
+
+La configuración con las credenciales de MySQL se guardará fuera del directorio publicado por Apache.
+
+``` bash
+sudo mkdir -p /var/www/html/museo
+sudo mkdir -p /etc/museo
+sudo chown -R $USER:www-data /var/www/html/museo
+```
+
+`sudo mkdir -p /var/www/html/museo`
+
+- **`sudo`**: Ejecuta el comando con permisos de superusuario (administrador/root). Es necesario porque el directorio `/var/www/` suele pertenecer al sistema.
+
+- **`mkdir`**: Comando para crear nuevos directorios (*make directory*).
+
+- **`-p`** (*parents*): Crea la carpeta especificada y, si los directorios padres no existen, los crea automáticamente sin dar error. Además, si el directorio ya existe, evita que el sistema lance un aviso de fallo.
+
+- **Ruta**: Crea la carpeta `museo` donde se suelen alojar los archivos web (HTML, PHP, imágenes) para que el servidor web (como Apache o Nginx) los sirva.
+
+`sudo mkdir -p /etc/museo`
+
+- **`sudo mkdir -p`**: Realiza la misma acción descrita anteriormente (crea el directorio con permisos de superusuario y asegurando la ruta completa).
+
+- **Ruta**: Crea una carpeta dentro de `/etc/`. En Linux, el directorio `/etc` está destinado a guardar los **archivos de configuración** del sistema o de las aplicaciones. Esta carpeta suele usar para guardar configuraciones específicas de la aplicación `museo` (por ejemplo, credenciales de base de datos o parámetros del sitio).
+
+`sudo chown -R $USER:www-data /var/www/html/museo`
+
+- **`sudo`**: Otorga los permisos de administración requeridos para cambiar el propietario de un archivo o carpeta del sistema.
+
+- **`chown`**: Comando para cambiar el propietario y el grupo de un directorio o archivo (*change owner*).
+
+- **`-R`** (*recursive*): Aplica los cambios de forma recursiva, es decir, a la carpeta `museo` y a todos los archivos y subcarpetas que contenga o se creen dentro.
+
+- **`$USER:www-data`**:
+
+  - **`$USER`**: Variable de entorno que toma automáticamente el nombre de tu usuario actual de Linux. Se asigna como el **propietario**.
+
+  - **`www-data`**: Es el **grupo** predeterminado que utilizan los servidores web en sistemas Debian/Ubuntu (como Apache o Nginx).
+
+- **Objetivo**: Te otorga a ti permiso para editar, subir y modificar los archivos de la web con tu usuario habitual sin usar `sudo` cada vez, mientras le da acceso al servidor web (`www-data`) para que pueda leerlos y servirlos en Internet.
+
+# Crear la conexión con MySQL mediante PDO
+
+Creamos el fichero de configuración:
+
+``` bash
+sudo nano /etc/museo/config.php
+```
+
+Contenido:
+
+``` php
+<?php
+$dsn = 'mysql:host=127.0.0.1;dbname=museo;charset=utf8mb4';
+$usuario = 'museo_app';
+$password = 'Museo_App#2026';
+
+$opciones = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+$pdo = new PDO($dsn, $usuario, $password, $opciones);
+```
+
+PDO (*PHP Data Objects*) proporciona una interfaz para que PHP se comunique con distintos sistemas de bases de datos. En esta práctica se utiliza el controlador PDO de MySQL.
+
+**Explicación del parámetro host en la cadena DSN ($dsn)**
+En el archivo de configuración config.php, la variable $dsn (Data Source Name) define los parámetros de conexión que utilizará PDO para comunicarse con MySQL: `$dsn = 'mysql:host=127.0.0.1;dbname=museo;charset=utf8mb4';`
+
+El parámetro host=127.0.0.1 le indica al script PHP a qué servidor o dirección IP debe enviar la petición de conexión:   En nuestro entorno actual (local): Como Apache, PHP y MySQL conviven en la misma máquina, indicamos 127.0.0.1 (loopback). PHP buscará el servicio MySQL en el propio servidor local.   
+
+Entorno local (Apache + PHP + MySQL en el mismo servidor): Se utiliza 127.0.0.1 (loopback), indicándole a PHP que el servicio de MySQL se encuentra en esta misma máquina.   Entorno distribuido (Servidores independientes): Si MySQL estuviera instalado en un servidor distinto (por ejemplo, con la IP 192.168.1.100), en el DSN de PHP se especificará dicha IP: `$dsn = 'mysql:host=192.168.1.100;dbname=museo;charset=utf8mb4';`
+
+::: callout-note
+¿Por qué usamos 127.0.0.1 en lugar de localhost en el DSN?
+En PHP/PDO, usar localhost fuerza la conexión mediante un socket UNIX local del sistema de archivos, mientras que usar 127.0.0.1 fuerza una conexión TCP/IP a la interfaz de red. Al haber creado el usuario en MySQL como 'museo_app'@'127.0.0.1', usar la IP en el DSN garantiza que la conexión utilice TCP/IP y coincida exactamente con la regla de autenticación del usuario.
+:::
+
+Protegemos el fichero para que pueda leerlo Apache, pero no cualquier usuario del sistema:
+
+``` bash
+sudo chown root:www-data /etc/museo/config.php
+sudo chmod 640 /etc/museo/config.php
+```
+
+Estos dos comandos se utilizan para **asegurar la configuración y proteger datos sensibles** (como contraseñas de bases de datos o claves API) almacenados en la aplicación:
+
+`sudo chown root:www-data /etc/museo/config.php`
+
+- **`chown`**: Cambia el propietario y el grupo del archivo `config.php`.
+
+- **`root`**: Asigna al usuario administrador (**root**) como el **propietario** exclusivo del archivo.
+
+- **`www-data`**: Asigna al **grupo** del servidor web (Apache/Nginx) el acceso secundario.
+
+`sudo chmod 640 /etc/museo/config.php`
+
+- **`chmod 640`**: Establece los permisos de acceso al archivo usando notación octal:
+
+  - **`6` (Propietario - `root`)**: Permisos de **Lectura (4)** + **Escritura (2)**. *`root` puede leer y modificar el archivo.*
+
+  - **`4` (Grupo - `www-data`)**: Permisos de **Solo Lectura (4)**. *El servidor web puede leer la configuración para ejecutar la web, pero no modificarla.*
+
+  - **`0` (Otros usuarios)**: **Sin permisos (0)**. *Cualquier otro usuario del sistema tiene el acceso totalmente bloqueado.*
+
+**¿Por qué se combinan así?**
+
+Esta configuración sigue el principio de **menor privilegio**:
+
+1.  Evita que usuarios normales o no autorizados lean la configuración con contraseñas.
+
+2.  Evita que un atacante, incluso si logra comprometer el servidor web (`www-data`), pueda sobrescribir o alterar el archivo de configuración, ya que `www-data` solo tiene permiso de lectura.
+
+------------------------------------------------------------------------
+
+# Crear la página principal
+
+Creamos el fichero:
+
+``` bash
+nano /var/www/html/museo/index.php
+```
+
+Contenido:
+
+``` html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Museo - Gestión de objetos</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<div class="contenedor">
+    <h1>Gestión de objetos del museo</h1>
+    <p>
+        Aplicación de prueba para trabajar con la tabla
+        <strong>Objetos</strong> de MySQL.
+    </p>
+    <div class="menu">
+        <a href="nuevo.php">Registrar nuevo objeto</a>
+        <a href="buscar.php">Buscar objeto</a>
+    </div>
+</div>
+</body>
+</html>
+```
+
+------------------------------------------------------------------------
+
+# Crear el formulario de inserción
+
+Creamos:
+
+``` bash
+nano /var/www/html/museo/nuevo.php
+```
+
+El formulario utiliza el método `POST` y enviará los datos a `guardar.php`:
+
+``` html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar objeto</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<div class="contenedor">
+<h1>Registrar nuevo objeto</h1>
+<form action="" method="POST">
+    <fieldset>
+        <legend>Identificación</legend>
+        <label>
+            Código de inventario:
+            <input type="text" name="codigo_inventario" maxlength="50" required>
+        </label>
+        <label>
+            Nombre:
+            <input type="text" name="nombre" maxlength="150" required>
+        </label>
+        <label>
+            Descripción:
+            <textarea name="descripcion" rows="4"></textarea>
+        </label>
+        <label>
+            Categoría:
+            <input type="text" name="categoria" maxlength="100">
+        </label>
+        <label>
+            Material:
+            <input type="text" name="material" maxlength="100">
+        </label>
+        <label>
+            Autor / cultura:
+            <input type="text" name="autor" maxlength="150">
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Datación histórica</legend>
+        <label>
+            Descripción de la datación:
+            <input type="text" name="fecha_datacion" maxlength="100" placeholder="Ej.: Siglo III a. C.">
+        </label>
+        
+        <h3>Inicio de la datación</h3>
+        <label>
+            Año:
+            <input type="number" name="anio_inicio" min="0">
+        </label>
+        <label>
+            Mes:
+            <input type="number" name="mes_inicio" min="1" max="12">
+        </label>
+        <label>
+            Día:
+            <input type="number" name="dia_inicio" min="1" max="31">
+        </label>
+        <label>
+            Era:
+            <select name="era_inicio">
+                <option value="">Sin especificar</option>
+                <option value="a.C.">a.C.</option>
+                <option value="d.C.">d.C.</option>
+            </select>
+        </label>
+
+        <h3>Final de la datación</h3>
+        <label>
+            Año:
+            <input type="number" name="anio_fin" min="0">
+        </label>
+        <label>
+            Mes:
+            <input type="number" name="mes_fin" min="1" max="12">
+        </label>
+        <label>
+            Día:
+            <input type="number" name="dia_fin" min="1" max="31">
+        </label>
+        <label>
+            Era:
+            <select name="era_fin">
+                <option value="">Sin especificar</option>
+                <option value="a.C.">a.C.</option>
+                <option value="d.C.">d.C.</option>
+            </select>
+        </label>
+        <label>
+            Precisión de la datación:
+            <select name="precision_datacion">
+                <option value="Desconocida">Desconocida</option>
+                <option value="Exacta">Exacta</option>
+                <option value="Año">Año</option>
+                <option value="Aproximada">Aproximada</option>
+                <option value="Intervalo">Intervalo</option>
+                <option value="Siglo">Siglo</option>
+            </select>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Información del museo</legend>
+        <label>
+            Procedencia:
+            <input type="text" name="procedencia" maxlength="255">
+        </label>
+        <label>
+            Estado de conservación:
+            <input type="text" name="estado_conservacion" maxlength="50">
+        </label>
+        <label>
+            Ubicación actual:
+            <input type="text" name="ubicacion_actual" maxlength="150">
+        </label>
+        <label>
+            Fecha de ingreso:
+            <input type="date" name="fecha_ingreso">
+        </label>
+        <label>
+            Observaciones:
+            <textarea name="observaciones" rows="4"></textarea>
+        </label>
+    </fieldset>
+    <button type="submit">Guardar objeto</button>
+</form>
+<p><a href="index.php">Volver</a></p>
+</div>
+</body>
+</html>
+```
+
+::: callout-tip
+**Observación didáctica:** `fecha_ingreso` utiliza un control de fecha porque representa una fecha administrativa moderna. La datación histórica se almacena mediante los campos específicos de año, mes, día y era.
+:::
+
+------------------------------------------------------------------------
+
+# Programar la inserción en MySQL
+
+Creamos el fichero que recibirá los datos del formulario:
+
+``` bash
+nano /var/www/html/museo/guardar.php
+```
+
+Contenido:
+
+``` php
+<?php
+require '/etc/museo/config.php';
+
+function textoOpcional(string $campo): ?string
+{
+    $valor = trim($_POST[$campo] ?? '');
+    return $valor === '' ? null : $valor;
+}
+
+function enteroOpcional(string $campo): ?int
+{
+    $valor = trim($_POST[$campo] ?? '');
+    if ($valor === '') {
+        return null;
+    }
+    if (filter_var($valor, FILTER_VALIDATE_INT) === false) {
+        throw new RuntimeException("Valor numérico no válido: $campo");
+    }
+    return (int) $valor;
+}
+
+try {
+    $codigo = trim($_POST['codigo_inventario'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+
+    if ($codigo === '' || $nombre === '') {
+        throw new RuntimeException('Código y nombre son obligatorios.');
+    }
+
+    $descripcion        = textoOpcional('descripcion');
+    $categoria          = textoOpcional('categoria');
+    $material           = textoOpcional('material');
+    $autor              = textoOpcional('autor');
+    $fechaDatacion      = textoOpcional('fecha_datacion');
+    $anioInicio         = enteroOpcional('anio_inicio');
+    $mesInicio          = enteroOpcional('mes_inicio');
+    $diaInicio          = enteroOpcional('dia_inicio');
+    $eraInicio          = textoOpcional('era_inicio');
+    $anioFin            = enteroOpcional('anio_fin');
+    $mesFin             = enteroOpcional('mes_fin');
+    $diaFin             = enteroOpcional('dia_fin');
+    $eraFin             = textoOpcional('era_fin');
+    $precision          = $_POST['precision_datacion'] ?? 'Desconocida';
+    $procedencia        = textoOpcional('procedencia');
+    $estadoConservacion = textoOpcional('estado_conservacion');
+    $ubicacion          = textoOpcional('ubicacion_actual');
+    $fechaIngreso       = textoOpcional('fecha_ingreso');
+    $observaciones      = textoOpcional('observaciones');
+
+    if ($mesInicio !== null && ($mesInicio < 1 || $mesInicio > 12)) {
+        throw new RuntimeException('Mes de inicio incorrecto.');
+    }
+    if ($mesFin !== null && ($mesFin < 1 || $mesFin > 12)) {
+        throw new RuntimeException('Mes final incorrecto.');
+    }
+    if ($diaInicio !== null && ($diaInicio < 1 || $diaInicio > 31)) {
+        throw new RuntimeException('Día de inicio incorrecto.');
+    }
+    if ($diaFin !== null && ($diaFin < 1 || $diaFin > 31)) {
+        throw new RuntimeException('Día final incorrecto.');
+    }
+
+    $erasPermitidas = [null, 'a.C.', 'd.C.'];
+    if (!in_array($eraInicio, $erasPermitidas, true)) {
+        throw new RuntimeException('Era inicial incorrecta.');
+    }
+    if (!in_array($eraFin, $erasPermitidas, true)) {
+        throw new RuntimeException('Era final incorrecta.');
+    }
+
+    $precisionesPermitidas = ['Exacta', 'Año', 'Aproximada', 'Intervalo', 'Siglo', 'Desconocida'];
+    if (!in_array($precision, $precisionesPermitidas, true)) {
+        throw new RuntimeException('Precisión incorrecta.');
+    }
+
+    $sql = "
+    INSERT INTO Objetos (
+        codigo_inventario,
+        nombre,
+        descripcion,
+        categoria,
+        material,
+        autor,
+        fecha_datacion,
+        anio_inicio,
+        mes_inicio,
+        dia_inicio,
+        era_inicio,
+        anio_fin,
+        mes_fin,
+        dia_fin,
+        era_fin,
+        precision_datacion,
+        procedencia,
+        estado_conservacion,
+        ubicacion_actual,
+        fecha_ingreso,
+        observaciones
+    ) VALUES (
+        :codigo,
+        :nombre,
+        :descripcion,
+        :categoria,
+        :material,
+        :autor,
+        :fecha_datacion,
+        :anio_inicio,
+        :mes_inicio,
+        :dia_inicio,
+        :era_inicio,
+        :anio_fin,
+        :mes_fin,
+        :dia_fin,
+        :era_fin,
+        :precision,
+        :procedencia,
+        :estado,
+        :ubicacion,
+        :fecha_ingreso,
+        :observaciones
+    )";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        'codigo'         => $codigo,
+        'nombre'         => $nombre,
+        'descripcion'    => $descripcion,
+        'categoria'      => $categoria,
+        'material'       => $material,
+        'autor'          => $autor,
+        'fecha_datacion' => $fechaDatacion,
+        'anio_inicio'    => $anioInicio,
+        'mes_inicio'     => $mesInicio,
+        'dia_inicio'     => $diaInicio,
+        'era_inicio'     => $eraInicio,
+        'anio_fin'       => $anioFin,
+        'mes_fin'        => $mesFin,
+        'dia_fin'        => $diaFin,
+        'era_fin'        => $eraFin,
+        'precision'      => $precision,
+        'procedencia'    => $procedencia,
+        'estado'         => $estadoConservacion,
+        'ubicacion'      => $ubicacion,
+        'fecha_ingreso'  => $fechaIngreso,
+        'observaciones'  => $observaciones
+    ]);
+
+    $id = $pdo->lastInsertId();
+    header('Location: buscar.php?tipo=id&valor=' . urlencode($id) . '&creado=1');
+    exit;
+} catch (Throwable $e) {
+    error_log($e->getMessage());
+    echo '
+    <h1>No se pudo guardar el objeto</h1>
+    <p>Revise los datos introducidos.</p>
+    <p><a href="nuevo.php">Volver al formulario</a></p>
+    ';
+}
+```
+
+## ¿Qué hace guardar.php?
+
+- Carga la conexión almacenada en `/etc/museo/config.php`.
+- Comprueba los campos obligatorios `codigo_inventario` y `nombre`.
+- Convierte los campos opcionales vacíos en `NULL`.
+- Comprueba que los campos numéricos reciban enteros.
+- Valida rangos sencillos de meses y días.
+- Comprueba los valores permitidos para los campos `ENUM`.
+- Prepara un `INSERT` mediante `PDO::prepare()`.
+- Ejecuta la consulta pasando los valores mediante parámetros.
+- Recupera el `id_objeto` generado por `AUTO_INCREMENT`.
+- Redirige a la página de búsqueda para mostrar el objeto recién creado.
+
+::: callout-important
+**Muy importante:** Los valores recibidos desde el navegador no se concatenan directamente dentro de la sentencia SQL. Se utilizan parámetros en una consulta preparada.
+:::
+
+------------------------------------------------------------------------
+
+# Crear la página de búsqueda
+
+Creamos:
+
+``` bash
+nano /var/www/html/museo/buscar.php
+```
+
+La página permitirá elegir si buscamos por `id_objeto` o por `codigo_inventario`.
+
+``` php
+<?php
+require '/etc/museo/config.php';
+
+function e(?string $valor): string
+{
+    return htmlspecialchars($valor ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+function mostrar($valor): string
+{
+    if ($valor === null) {
+        return '<em>NULL</em>';
+    }
+    return e((string) $valor);
+}
+
+$objeto = null;
+$error  = null;
+$tipo   = $_GET['tipo'] ?? '';
+$valor  = trim($_GET['valor'] ?? '');
+
+if ($tipo !== '' && $valor !== '') {
+    try {
+        if ($tipo === 'id') {
+            if (filter_var($valor, FILTER_VALIDATE_INT) === false) {
+                throw new RuntimeException('El ID debe ser numérico.');
+            }
+            $sql = "SELECT * FROM Objetos WHERE id_objeto = :valor";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':valor', (int) $valor, PDO::PARAM_INT);
+        } elseif ($tipo === 'codigo') {
+            $sql = "SELECT * FROM Objetos WHERE codigo_inventario = :valor";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':valor', $valor, PDO::PARAM_STR);
+        } else {
+            throw new RuntimeException('Tipo de búsqueda incorrecto.');
+        }
+
+        $stmt->execute();
+        $objeto = $stmt->fetch();
+
+        if (!$objeto) {
+            $error = 'No se ha encontrado ningún objeto.';
+        }
+    } catch (Throwable $e) {
+        $error = 'No se pudo realizar la búsqueda.';
+        error_log($e->getMessage());
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Buscar objeto</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<div class="contenedor">
+<h1>Buscar objeto</h1>
+
+<?php if (isset($_GET['creado'])): ?>
+    <p class="correcto">Objeto registrado correctamente.</p>
+<?php endif; ?>
+
+<form method="GET" action="buscar.php">
+    <label>
+        Buscar por:
+        <select name="tipo">
+            <option value="id">ID del objeto</option>
+            <option value="codigo">Código de inventario</option>
+        </select>
+    </label>
+    <label>
+        Valor:
+        <input type="text" name="valor" required>
+    </label>
+    <button type="submit">Buscar</button>
+</form>
+
+<?php if ($error): ?>
+    <p class="error"><?= e($error) ?></p>
+<?php endif; ?>
+
+<?php if ($objeto): ?>
+<h2>Datos del objeto</h2>
+<table>
+<tr><th>ID</th> <td><?= mostrar($objeto['id_objeto']) ?></td></tr>
+<tr><th>Código</th> <td><?= mostrar($objeto['codigo_inventario']) ?></td></tr>
+<tr><th>Nombre</th> <td><?= mostrar($objeto['nombre']) ?></td></tr>
+<tr><th>Descripción</th> <td><?= mostrar($objeto['descripcion']) ?></td></tr>
+<tr><th>Categoría</th> <td><?= mostrar($objeto['categoria']) ?></td></tr>
+<tr><th>Material</th> <td><?= mostrar($objeto['material']) ?></td></tr>
+<tr><th>Autor / cultura</th> <td><?= mostrar($objeto['autor']) ?></td></tr>
+<tr><th>Datación</th> <td><?= mostrar($objeto['fecha_datacion']) ?></td></tr>
+<tr><th>Año inicial</th> <td><?= mostrar($objeto['anio_inicio']) ?></td></tr>
+<tr><th>Mes inicial</th> <td><?= mostrar($objeto['mes_inicio']) ?></td></tr>
+<tr><th>Día inicial</th> <td><?= mostrar($objeto['dia_inicio']) ?></td></tr>
+<tr><th>Era inicial</th> <td><?= mostrar($objeto['era_inicio']) ?></td></tr>
+<tr><th>Año final</th> <td><?= mostrar($objeto['anio_fin']) ?></td></tr>
+<tr><th>Mes final</th> <td><?= mostrar($objeto['mes_fin']) ?></td></tr>
+<tr><th>Día final</th> <td><?= mostrar($objeto['dia_fin']) ?></td></tr>
+<tr><th>Era final</th> <td><?= mostrar($objeto['era_fin']) ?></td></tr>
+<tr><th>Precisión</th> <td><?= mostrar($objeto['precision_datacion']) ?></td></tr>
+<tr><th>Procedencia</th> <td><?= mostrar($objeto['procedencia']) ?></td></tr>
+<tr><th>Estado de conservación</th> <td><?= mostrar($objeto['estado_conservacion']) ?></td></tr>
+<tr><th>Ubicación</th> <td><?= mostrar($objeto['ubicacion_actual']) ?></td></tr>
+<tr><th>Fecha de ingreso</th> <td><?= mostrar($objeto['fecha_ingreso']) ?></td></tr>
+<tr><th>Observaciones</th> <td><?= mostrar($objeto['observaciones']) ?></td></tr>
+</table>
+<?php endif; ?>
+
+<p><a href="index.php">Volver</a></p>
+</div>
+</body>
+</html>
+```
+
+## ¿Por qué usamos htmlspecialchars()?
+
+Los datos recuperados de la base de datos se van a mostrar dentro de una página HTML. `htmlspecialchars()` convierte caracteres con significado especial en HTML antes de mostrarlos en el navegador. La función `mostrar()` también permite representar de forma visible los valores `NULL`.
+
+------------------------------------------------------------------------
+
+# Añadir un estilo sencillo
+
+Creamos:
+
+``` bash
+nano /var/www/html/museo/estilos.css
+```
+
+Contenido:
+
+``` css
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f3f3;
+    margin: 0;
+}
+
+.contenedor {
+    max-width: 900px;
+    margin: 30px auto;
+    background: white;
+    padding: 30px;
+}
+
+h1, h2 {
+    margin-top: 0;
+}
+
+fieldset {
+    margin-bottom: 25px;
+    padding: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 15px;
+}
+
+input, select, textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+}
+
+button, .menu a {
+    display: inline-block;
+    padding: 10px 18px;
+    margin: 5px;
+    text-decoration: none;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    width: 220px;
+}
+
+.correcto {
+    padding: 12px;
+    background: #e8f5e9;
+}
+
+.error {
+    padding: 12px;
+    background: #ffebee;
+}
+```
+
+------------------------------------------------------------------------
+
+# Acceder a la aplicación
+
+Desde un ordenador cliente abrimos la dirección del servidor seguida de `/museo/`:
+
+`http://IP_DEL_SERVIDOR/museo/`
+
+Por ejemplo:
+
+`http://10.0.20.101/museo/`
+
+El resultado esperado es una página con dos opciones: **Registrar nuevo objeto** y **Buscar objeto**.
+
+![](paste-oHgR5nDEl-lGos4t012-d)
+
+------------------------------------------------------------------------
+
+# Pruebas de funcionamiento
+
+## Prueba 1: Registrar un objeto del año 997
+
+Entramos en **Registrar nuevo objeto** e introducimos estos valores de ejemplo:
+
+| Campo                      | Valor                      |
+|----------------------------|----------------------------|
+| Código                     | MED-0001                   |
+| Nombre                     | Manuscrito medieval        |
+| Descripción de la datación | 26 de octubre de 997 d. C. |
+| Año inicial                | 997                        |
+| Mes inicial                | 10                         |
+| Día inicial                | 26                         |
+| Era inicial                | d.C.                       |
+| Precisión                  | Exacta                     |
+| Estado de conservación     | Bueno                      |
+| Ubicación                  | Sala Medieval              |
+| Fecha de ingreso           | 2026-09-29                 |
+
+Pulsamos **Guardar objeto**. El flujo será:
+
+```         
+Formulario HTML -> $_POST -> PHP + PDO -> INSERT INTO Objetos -> MySQL
+```
+
+## Comprobar el registro directamente en MySQL
+
+Podemos verificar desde la consola que el dato realmente ha sido almacenado:
+
+``` sql
+mysql -u root -p
+USE museo;
+
+SELECT 
+    id_objeto, 
+    codigo_inventario, 
+    nombre, 
+    fecha_datacion, 
+    anio_inicio, 
+    era_inicio 
+FROM Objetos;
+```
+
+El resultado esperado contendrá una fila similar a la siguiente:
+
+- `id_objeto`: 1
+- `codigo_inventario`: MED-0001
+- `nombre`: Manuscrito medieval
+- `fecha_datacion`: 26 de octubre de 997 d. C.
+- `anio_inicio`: 997
+- `era_inicio`: d.C.
+
+## Probar la búsqueda por id_objeto
+
+Abrimos **Buscar objeto**, seleccionamos **ID del objeto** e introducimos `1`. La lógica SQL equivalente es:
+
+``` sql
+SELECT * FROM Objetos WHERE id_objeto = :valor;
+```
+
+El parámetro `:valor` recibirá el ID introducido por el usuario. Si el objeto existe, se mostrarán todos sus campos.
+
+## Probar la búsqueda por codigo_inventario
+
+Seleccionamos **Código de inventario** e introducimos `MED-0001`. La consulta preparada será:
+
+``` sql
+SELECT * FROM Objetos WHERE codigo_inventario = :valor;
+```
+
+Como `codigo_inventario` tiene una restricción `UNIQUE`, no deberían existir dos objetos con el mismo código.
+
+## Prueba 2: Comprobar el uso de NULL
+
+Registramos un segundo objeto con información histórica incompleta:
+
+- **Código:** EGI-0001
+- **Nombre:** Estatuilla egipcia
+- **Datación:** Aproximadamente 1350 a. C.
+- **Año:** 1350
+- **Mes:** \[vacío\]
+- **Día:** \[vacío\]
+- **Era:** a.C.
+- **Precisión:** Aproximada
+
+Las funciones `textoOpcional()` y `enteroOpcional()` convierten los campos opcionales vacíos en `NULL`. Por tanto, la fila almacenará:
+
+```         
+anio_inicio: 1350
+mes_inicio:  NULL
+dia_inicio:  NULL
+era_inicio:  a.C.
+```
+
+> **Idea clave:** Un dato desconocido no es lo mismo que `0` ni que una cadena vacía. En esta práctica utilizamos `NULL` para representar información que no conocemos.
+
+## Probar las restricciones definidas en MySQL
+
+La aplicación realiza algunas comprobaciones, pero las restricciones de la propia tabla siguen siendo la última línea de defensa de la integridad de los datos.
+
+Por ejemplo, intentamos introducir directamente un mes 18:
+
+``` sql
+INSERT INTO Objetos (codigo_inventario, nombre, mes_inicio) 
+VALUES ('PRUEBA-01', 'Objeto incorrecto', 18);
+```
+
+MySQL debe rechazarlo porque no cumple:
+
+``` sql
+CHECK (mes_inicio IS NULL OR mes_inicio BETWEEN 1 AND 12)
+```
+
+También podemos comprobar `UNIQUE` intentando registrar dos objetos con el mismo `codigo_inventario`.
+
+------------------------------------------------------------------------
+
+# Relación con los conceptos de bases de datos
+
+La práctica reúne varios conceptos que ya aparecen en la definición de tablas y en SQL básico:
+
+| Concepto | Dónde aparece | Función en la práctica |
+|------------------------|------------------------|------------------------|
+| `PRIMARY KEY` | `id_objeto` | Identifica de forma única cada objeto. |
+| `AUTO_INCREMENT` | `id_objeto` | Genera automáticamente el identificador. |
+| `UNIQUE` | `codigo_inventario` | Impide duplicar códigos de inventario. |
+| `CHECK` | `mes_inicio`, `mes_fin`, `día` | Rechaza valores fuera de los rangos establecidos. |
+| `ENUM` | `era` y `precision_datacion` | Limita los valores posibles a una lista cerrada. |
+| `NULL` | Campos opcionales | Representa información desconocida o no disponible. |
+| `INSERT` | `guardar.php` | Añade un objeto a la tabla. |
+| `SELECT` | `buscar.php` | Recupera un objeto por ID o código. |
+| `PDO` | PHP | Permite comunicar PHP con MySQL mediante consultas preparadas. |
+
+------------------------------------------------------------------------
+
+# Errores comunes y buenas prácticas
+
+1.  **Usar root desde PHP:** No es recomendable. La aplicación debe disponer de una cuenta propia con los permisos mínimos necesarios.
+2.  **Escribir las credenciales dentro del directorio web:** En la práctica `config.php` se almacena en `/etc/museo/`, fuera de `/var/www/html/`. Así evitamos dejar el fichero de configuración dentro del árbol publicado por Apache.
+3.  **Concatenar directamente datos del usuario en SQL:** Debe evitarse. Utilizamos `PDO::prepare()` y parámetros para separar la sentencia SQL de los valores recibidos.
+4.  **Confundir una cadena vacía con NULL:** Los campos opcionales vacíos se convierten explícitamente en `NULL` antes de enviar el `INSERT`.
+5.  **Confiar solo en la validación del formulario HTML:** Los atributos `min`, `max` y `required` mejoran el formulario, pero no sustituyen las comprobaciones de PHP ni las restricciones definidas en MySQL.
+6.  **Mostrar directamente contenido recibido o almacenado:** Al generar HTML usamos `htmlspecialchars()` para escapar caracteres especiales antes de mostrar datos recuperados de la base de datos.
+7.  **Dar permisos de escritura innecesarios a Apache:** Los ficheros PHP de la aplicación no necesitan ser modificados por el proceso de Apache. Durante la práctica los editamos con el usuario administrador del sistema y Apache solo necesita leerlos y ejecutarlos mediante PHP.
+
+------------------------------------------------------------------------
+
+# Resultado final esperado
+
+``` text
+Ubuntu Server
+|-- Apache2
+|   `-- /var/www/html/museo/
+|       |-- index.php
+|       |-- nuevo.php
+|       |-- guardar.php
+|       |-- buscar.php
+|       `-- estilos.css
+|-- PHP
+|   `-- PDO MYSQL
+|-- /etc/museo/
+|   `-- config.php
+`-- MySQL 8.4
+    `-- museo
+        `-- Objetos
+```
+
+Desde un ordenador cliente podremos acceder a la aplicación mediante:
+
+`http://IP_DEL_SERVIDOR/museo/`
+
+La aplicación permitirá registrar objetos y recuperarlos posteriormente por `id_objeto` o `codigo_inventario`.
+
+------------------------------------------------------------------------
+
+# Resumen de puntos clave
+
+- Apache2 recibe las peticiones HTTP del navegador.
+- PHP procesa los formularios y ejecuta la lógica de la aplicación.
+- PDO conecta PHP con MySQL y permite utilizar consultas preparadas.
+- El usuario `museo_app` evita utilizar `root` desde la aplicación.
+- `INSERT` permite registrar objetos y `SELECT` recuperarlos posteriormente.
+- `id_objeto` es la `PRIMARY KEY` y se genera mediante `AUTO_INCREMENT`.
+- `codigo_inventario` es `UNIQUE` y permite una segunda forma de localizar un objeto.
+- Los campos opcionales vacíos se transforman en `NULL`.
+- Las validaciones de PHP complementan, pero no sustituyen, las restricciones `CHECK`, `UNIQUE` y `ENUM` de MySQL.
+- La aplicación es deliberadamente sencilla: su finalidad principal es comprender cómo una interfaz web puede trabajar con una tabla MySQL.
+
+------------------------------------------------------------------------
+
+# Posibles ampliaciones
+
+Una vez terminada esta versión básica, se puede ampliar de forma progresiva con:
+
+- Listado completo de objetos.
+- Modificación mediante `UPDATE`.
+- Eliminación controlada mediante `DELETE`.
+- Carga de fotografías de las piezas.
+- Autenticación de usuarios.
+- Separación entre usuarios de consulta y usuarios con permisos de edición.
+- Registro de operaciones realizadas sobre los objetos.
+
+------------------------------------------------------------------------
+
+# Lista de comprobación final
+
+- [ ] Apache2 está activo.
+- [ ] PHP está instalado y `php -v` funciona.
+- [ ] `pdo_mysql` aparece entre los módulos de PHP.
+- [ ] La base de datos `museo` existe.
+- [ ] La tabla `Objetos` tiene las restricciones esperadas.
+- [ ] El usuario `museo_app` dispone de `SELECT` e `INSERT` sobre `museo.Objetos`.
+- [ ] `config.php` está en `/etc/museo/` y no dentro del directorio web.
+- [ ] La página principal abre desde otro equipo de la red.
+- [ ] Se puede registrar `MED-0001`.
+- [ ] Se puede localizar `MED-0001` por ID y por código.
+- [ ] Los campos opcionales vacíos se almacenan como `NULL`.
+- [ ] MySQL rechaza un mes fuera del intervalo 1-12.
+- [ ] MySQL rechaza un `codigo_inventario` duplicado.

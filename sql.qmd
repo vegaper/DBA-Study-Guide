@@ -3,7 +3,7 @@ title: "Introducción a los Lenguajes SQL y Bases de Datos Relacionales"
 format: html
 ---
 
-# Tipos de Datos: Estructurados, Semi-estructurados y No Estructurados
+# Datos Estructurados, Semi-estructurados y No Estructurados
 
 Antes de hablar de SQL, es fundamental entender cómo se organiza la información. No todos los datos se almacenan de la misma forma, y la elección del sistema depende del nivel de estructura que requieran.
 
@@ -594,11 +594,9 @@ Se define bajo la sintaxis **`DECIMAL(P, S)`**:
 
     - Precisión 29 a 38 dígitos: **17 bytes**.
 
-## Decimales Aproximados (`FLOAT`, `REAL` y `DOUBLE`)
+### Decimales Aproximados (`FLOAT`, `REAL` y `DOUBLE`)
 
 Los datos en punto flotante (`FLOAT`, `REAL`, `DOUBLE PRECISION`) guardan una **aproximación** del número real mediante notación científica binaria basada en el estándar IEEE 754. Se utilizan para magnitudes físicas, mediciones de sensores o coordenadas geográficas donde se prima la rapidez de cómputo sobre la precisión exacta.
-
-### Tipos y Subtipos
 
 - **`REAL` / `FLOAT(p)` (Precisión Simple):**
 
@@ -622,10 +620,10 @@ SELECT 0.1 + 0.2;
 -- En tipos FLOAT, el procesador puede devolver 0.30000000000000004
 ```
 
-## Exactos vs aproximados ¿Cuándo elegir cada uno?
+### Exactos vs aproximados ¿Cuándo elegir cada uno?
 
 |  |  |  |
-|------------------------|------------------------|------------------------|
+|-----------------|-----------------------|--------------------------------|
 | **Criterio** | **Exactos (DECIMAL / NUMERIC)** | **Aproximados (FLOAT / DOUBLE)** |
 | **Precisión** | **100% exacta.** Sin pérdidas ni redondeos impredecibles. | **Aproximada.** Puede acumular errores al sumar o multiplicar. |
 | **Rendimiento** | **Más lento.** Las operaciones aritméticas se procesan por software en la CPU. | **Extremadamente rápido.** La tarjeta gráfica y la CPU procesan punto flotante por hardware (FPU). |
@@ -759,8 +757,8 @@ VALUES (
 ## Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
 
 |  |  |  |  |  |
-|---------------|---------------|---------------|---------------|---------------|
-| **Tipo de Dato** | **Format / Estructura Estándar** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
+|--------------|--------------|--------------|--------------|-------------------|
+| **Tipo de Dato** | **Formato** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
 | **`DATE`** | `YYYY-MM-DD` | `1000-01-01` a `9999-12-31` | **3 bytes** | Fechas de nacimiento, fechas de contratación, vencimientos sin hora. |
 | **`TIME`** | `HH:MM:SS` (o `HH:MM:SS.p`) | `-838:59:59` a `838:59:59` | **3 bytes** | Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido. |
 | **`DATETIME`** | `YYYY-MM-DD HH:MM:SS` | `1000-01-01 00:00:00` a `9999-12-31 23:59:59` | **5 a 8 bytes** | Reservas de hotel, eventos del calendario, citas programadas. |
@@ -809,7 +807,7 @@ Aunque ambos almacenan tanto la fecha como la hora, existen diferencias crítica
 ### Tabla Comparativa: `DATETIME` vs `TIMESTAMP`
 
 |  |  |  |
-|------------------------|------------------------|------------------------|
+|------------------|------------------------|-------------------------------|
 | **Característica** | **DATETIME** | **TIMESTAMP** |
 | **Zona Horaria** | Ignora la zona horaria (almacena texto/número literal). | **Sensible a la zona horaria** (convierte a UTC internamente). |
 | **Rango de Fechas** | Amplio (`1000` a `9999`). | Reducido (`1970` a `2038`). |
@@ -902,7 +900,7 @@ A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BL
 Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.
 
 |  |  |  |
-|------------------------|------------------------|------------------------|
+|--------------------|------------------------|----------------------------|
 | **Criterio** | **Guardar el archivo en la BD (BLOB)** | **Guardar en servidor/S3 y la ruta en la BD (VARCHAR)** |
 | **Integridad Transaccional (ACID)** | **Excelente.** Si haces un `ROLLBACK`, el archivo se borra o restaura junto con el registro. | **Riesgo.** El archivo puede borrarse del disco y dejar un puntero "huérfano" en la base de datos. |
 | **Copias de Seguridad (*Backups*)** | **Cómodo pero pesado.** Todo el sistema se respalda en un único archivo de base de datos. | **Rápido.** La base de datos ocupa pocos megabytes; los archivos se respaldan por separado. |
@@ -941,3 +939,212 @@ VALUES (
 Si ejecutas `SELECT *` en una tabla con 100.000 registros que incluye una columna `LONGBLOB` con imágenes, el motor de la base de datos intentará cargar **todos esos megabytes/gigabytes de imágenes en la memoria RAM del servidor** para enviarlos por la red, colapsando el ancho de banda y la memoria caché (*buffer pool*).
 
 La regla de oro es consultar siempre explícitamente las columnas necesarias: `SELECT id, nombre_archivo FROM documentos_expediente;`
+
+## Tipo de Dato Enumerado (`ENUM`)
+
+El tipo de dato `ENUM` es un objeto de cadena cuyo valor se elige explícitamente de una lista de valores permitidos predefinidos durante la creación de la tabla. Permite restringir una columna a **un único valor** dentro de un conjunto cerrado de opciones explícitas.
+
+### Límites y Funcionamiento Interno
+
+- **Elección Única:** Cada fila solo puede almacenar **un único elemento** del conjunto (o `NULL` si la columna lo permite).
+
+- **Almacenamiento Numérico Interno:** A pesar de que los valores se definen como cadenas de texto, el motor los almacena internamente como **índices enteros (1, 2, 3...)**:
+
+  - `1` corresponde al primer elemento de la lista.
+
+  - `2` corresponde al segundo elemento, y así sucesivamente.
+
+  - El índice `0` se reserva para un valor de cadena vacía especial de error (`''`) que se guarda si se inserta un valor no válido en modo no estricto.
+
+  - `NULL` guarda su estado especial.
+
+- **Límites:** Un tipo `ENUM` puede tener hasta **65.535 elementos distintos**.
+
+### Espacio que Ocupa en la Base de Datos
+
+El uso de memoria depende directamente del número de elementos definidos en la lista del `ENUM`:
+
+- Hasta 255 miembros: Ocupa **1 byte** por fila.
+
+- Entre 256 y 65.535 miembros: Ocupa **2 bytes** por fila.
+
+### Motores SQL donde existe
+
+|  |  |  |
+|-------------|-----------------|-------------------------------------------|
+|  |  |  |
+| **Motor SQL** | **Soporte** | **Observaciones** |
+| **MySQL / MariaDB** | **Sí** (Nativo) | Muy utilizado para máquinas de estados, roles o niveles. |
+| **PostgreSQL** | **Sí** (Mediante `CREATE TYPE`) | Requiere definir el tipo previamente con `CREATE TYPE nombre AS ENUM (...)`. |
+| **SQL Server** | **No nativo** | Se simula usando `VARCHAR` + restricción `CHECK (col IN ('A', 'B', 'C'))`. |
+| **Oracle** | **No nativo** | Se simula con restricciones `CHECK`. |
+| **SQLite** | **No nativo** | Se simula con restricciones `CHECK`. |
+
+### Ejemplo en SQL
+
+``` sql
+-- Ejemplo en MySQL/MariaDB
+CREATE TABLE tareas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    prioridad ENUM('Baja', 'Media', 'Alta', 'Urgente') DEFAULT 'Media',
+    estado ENUM('Pendiente', 'En Proceso', 'Completada', 'Cancelada') DEFAULT 'Pendiente'
+);
+
+-- Insertar valores válidos
+INSERT INTO tareas (titulo, prioridad, estado)
+VALUES 
+('Corregir bug de login', 'Urgente', 'En Proceso'),
+('Documentar API', 'Baja', 'Pendiente');
+
+-- Ordenar por ENUM (se ordena según el índice entero del conjunto, no alfabéticamente)
+SELECT * FROM tareas ORDER BY prioridad DESC;
+```
+
+::: nota
+**Ordenación por ENUM:**
+
+Al hacer un `ORDER BY` sobre una columna `ENUM`, MySQL ordena los registros según el **índice numérico interno** de los elementos según fueron definidos, **no según el orden alfabético** del texto. En el ejemplo anterior, `'Baja'` (1) \< `'Media'` (2) \< `'Alta'` (3) \< `'Urgente'` (4).
+:::
+
+**Índices vs Cadenas en ENUM:**
+
+Si insertas un entero directamente en una columna `ENUM`, el motor lo interpretará como la **posición del índice**:
+
+``` sql
+-- Insertará 'Baja' porque ocupa el índice 1
+INSERT INTO tareas (titulo, prioridad) VALUES ('Revisar logs', 1);
+```
+
+## Tipo de Dato Conjunto (`SET`)
+
+El tipo de dato `SET` es un objeto de cadena que puede almacenar **cero, uno o múltiples valores** elegidos de una lista fija de valores permitidos definida al crear la tabla.
+
+### Límites y Funcionamiento Interno
+
+- **Selección Múltiple:** A diferencia de `ENUM`, una columna `SET` permite guardar **combinaciones de varios elementos** al mismo tiempo, separados por comas.
+
+- **Representación Binaria (*Bitmask*):** Cada elemento del conjunto corresponde a un **bit** en un mapa binario interno:
+
+  - Elemento 1 = Bit 1 (Valor $2^0 = 1$)
+
+  - Elemento 2 = Bit 2 (Valor $2^1 = 2$)
+
+  - Elemento 3 = Bit 3 (Valor $2^2 = 4$)
+
+  - Elemento 4 = Bit 4 (Valor $2^3 = 8$)
+
+- **Eliminación de Duplicados y Orden:** La base de datos elimina automáticamente duplicados e inserta los miembros guardándolos en el orden exacto en el que fueron definidos en la creación de la columna.
+
+- **Límites:** Un campo de tipo `SET` puede contener hasta **64 miembros individuales**.
+
+### Espacio que Ocupa en la Base de Datos
+
+El consumo de almacenamiento depende del número de miembros definidos en el conjunto ($N$):
+
+|                              |                       |
+|------------------------------|-----------------------|
+| **Número de Miembros (**$N$) | **Espacio que Ocupa** |
+| **1 a 8 miembros**           | **1 byte**            |
+| **9 a 16 miembros**          | **2 bytes**           |
+| **17 a 24 miembros**         | **3 bytes**           |
+| **25 a 32 miembros**         | **4 bytes**           |
+| **33 a 64 miembros**         | **8 bytes**           |
+
+### Motores SQL donde existe
+
+|  |  |  |
+|--------------|------------|-----------------------------------------------|
+| **Motor SQL** | **Soporte** | **Observaciones** |
+| **MySQL / MariaDB** | **Sí** (Nativo) | Tipo nativo específico de MySQL/MariaDB. |
+| **PostgreSQL** | **No nativo** | Se implementa utilizando **Arrays** (`TEXT[]`) o tipos `BIT`. |
+| **SQL Server** | **No nativo** | Se suele implementar mediante tablas intermedias relacionales (N:M) o máscaras de bits con `TINYINT`/`INT`. |
+| **Oracle** | **No nativo** | Se implementa mediante tablas anidadas, `VARRAY` o relaciones N:M. |
+| **SQLite** | **No nativo** | Se simula mediante textos separados por comas o enteros bitwise. |
+
+### Ejemplo en SQL
+
+``` sql
+-- Ejemplo en MySQL/MariaDB
+CREATE TABLE usuarios_preferencias (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    -- Definimos un SET con hasta 8 miembros (Ocupará 1 byte)
+    notificaciones SET('Email', 'SMS', 'Push', 'WhatsApp') DEFAULT 'Email'
+);
+
+-- Insertar combinaciones múltiples
+INSERT INTO usuarios_preferencias (nombre, notificaciones)
+VALUES 
+('Laura', 'Email,Push,WhatsApp'),
+('Pedro', 'SMS'),
+('Ana', ''); -- Conjunto vacío (0 bytes/bits activos)
+
+-- Búsqueda mediante la función FIND_IN_SET()
+SELECT nombre, notificaciones 
+FROM usuarios_preferencias 
+WHERE FIND_IN_SET('SMS', notificaciones) > 0;
+
+-- Búsqueda mediante operadores Bitwise (&)
+-- 'Email' (1) + 'SMS' (2) + 'Push' (4) + 'WhatsApp' (8)
+SELECT nombre, notificaciones 
+FROM usuarios_preferencias 
+WHERE notificaciones & 2; -- Busca los usuarios con 'SMS' activo
+```
+
+### Comparativa: `ENUM` vs `SET`
+
+|  |  |  |
+|----------------|----------------------------|----------------------------|
+| **Criterio** | **ENUM** | **SET** |
+| **Selección** | Exclusiva (**Exactamente 1 valor** del conjunto). | Inclusiva (**Cero, 1 o múltiples valores** combinados). |
+| **Almacenamiento Interno** | Índice entero consecutivo (`1, 2, 3...`). | Máscara de bits (*Bitmask*: `1, 2, 4, 8, 16...`). |
+| **Límite de Miembros** | Hasta 65.535 elementos. | Hasta 64 elementos. |
+| **Espacio de Memoria** | 1 a 2 bytes. | 1 a 8 bytes. |
+| **Casos de Uso Típicos** | Estado de un pedido, tipo de usuario, género, nivel de acceso. | Permisos de usuario, días de la semana, etiquetas/tags, preferencias de notificaciones. |
+
+::: nota
+**Inconveniente en la Normalización (1FN):**
+
+Aunque `ENUM` y `SET` son tipos prácticos y muy eficientes en consumo de espacio, **el uso de `SET` viola la Primera Forma Normal (1FN)** del modelo relacional al guardar múltiples valores atómicos dentro de una misma celda. Si el número de opciones es dinámico o cambia frecuentemente, la mejor práctica de diseño relacional es crear una tabla secundaria con una relación de Muchos a Muchos (N:M).
+:::
+
+CHECK CONSTRAINT vs ENUM
+
+Usar una columna `VARCHAR` con una restricción `CHECK` para limitar el conjunto de valores permitidos es un patrón muy común en diseño de bases de datos, especialmente como alternativa a los tipos nativos `ENUM` o a tablas maestras de referencia (lookup tables).
+
+A continuación se detallan las principales ventajas e inconvenientes de esta aproximación:
+
+### Ventajas
+
+- **Portabilidad entre SGBD:** La cláusula `CHECK` forma parte del estándar SQL ANSI. A diferencia del tipo de dato `ENUM` (que varía significativamente en implementación y sintaxis entre MySQL, PostgreSQL o SQL Server), un `VARCHAR` con `CHECK` funcionará de manera casi idéntica en cualquier sistema de gestión de bases de datos relacionales (RDBMS).
+
+- **Validación e integridad a nivel de base de datos:** Garantiza que ningún valor no permitido entre en la base de datos, independientemente de la aplicación o cliente SQL que intente insertar o actualizar los datos.
+
+- **Sencillez inicial:** Evita tener que crear tablas adicionales, definir claves foráneas (`FOREIGN KEY`) y realizar consultas con JOINs para validar o recuperar descripciones simples (por ejemplo: `estado VARCHAR(10) CHECK (estado IN ('PENDIENTE', 'PROCESANDO', 'COMPLETADO'))`).
+
+- **Facilidad de consumo en la capa de aplicación:** Los ORM y controladores leen el campo directamente como una cadena de texto sin necesidad de mapeos especiales, conversiones de tipos o consultas adicionales a tablas maestras.
+
+### Inconvenientes
+
+- **Mantenimiento y evolución de valores:** Si necesitas añadir, modificar o eliminar un valor permitido, debes alterar el esquema de la tabla modificando la restricción (`DROP CONSTRAINT` seguido de `ADD CONSTRAINT`). En tablas con un volumen masivo de datos, esto puede requerir bloqueos (*locks*) o inspecciones pesadas de filas según el motor de base de datos.
+
+- **Consumo de almacenamiento e índices:** Guardar cadenas de texto repetidas (`VARCHAR`) consume más espacio en disco y memoria RAM en los índices que utilizar tipos numéricos o claves primarias pequeñas (como `TINYINT` o `SMALLINT`) vinculadas a una tabla de referencia.
+
+- **Dificultad para añadir metadatos:** Si con el tiempo necesitas asociar más información a cada opción (como una descripción traducida, un orden de visualización, una marca de "activo/inactivo" o un color para la interfaz), una restricción `CHECK` se queda corta y requiere migrar la estructura a una tabla de referencia.
+
+- **Inconsistencia si se reutiliza en varias tablas:** Si el mismo conjunto de valores (por ejemplo, los estados de una transacción) se utiliza en múltiples tablas, la restricción `CHECK` debe duplicarse manualmente en cada una. Esto aumenta el riesgo de que las reglas de validación queden desincronizadas si se actualiza una tabla pero se olvida otra.
+
+### Alternativas comunes y cuándo usarlas
+
+1.  **Tabla de referencia + Clave foránea (`FOREIGN KEY`):**
+
+    - **Recomendada cuando:** Los valores cambian con frecuencia, se comparten entre varias tablas o requieren metadatos adicionales (ej. descripciones, traducciones, flags).
+
+    - **Ventaja:** Modificar los valores es un simple `INSERT` o `UPDATE` de datos, no una alteración del DDL/esquema.
+
+2.  **Tipo de dato `ENUM` (si el SGBD lo soporta):**
+
+    - **Recomendada cuando:** Se busca eficiencia máxima en almacenamiento en un motor específico (como PostgreSQL o MySQL).
+
+    - **Inconveniente:** Menor portabilidad y posibles complicaciones en migraciones de esquema complejas.
