@@ -1,23 +1,24 @@
 ---
-title: "PRÁCTICA GUIADA: Aplicación web con Apache2, PHP y MySQL"
-subtitle: "Alta y consulta de objetos de museo 
+title: "PRÁCTICA GUIADA Aplicación web con Apache2, PHP y MySQL"
+subtitle: "Alta y consulta de objetos de museo" 
+format: html
 ---
 
 # Entorno de referencia y Objetivos
 
-- **Entorno de referencia:** Ubuntu Server 26.04 + Apache2 + PHP + MySQL 8.4
-- **Objetivo de la práctica:** Crear una aplicación web sencilla que permita insertar datos en la tabla `Objetos` y recuperarlos posteriormente mediante `id_objeto` o `codigo_inventario`.
+-   **Entorno de referencia:** Ubuntu Server 26.04 + Apache2 + PHP + MySQL 8.4
+-   **Objetivo de la práctica:** Crear una aplicación web sencilla que permita insertar datos en la tabla `Objetos` y recuperarlos posteriormente mediante `id_objeto` o `codigo_inventario`.
 
 ## Objetivos de aprendizaje
 
-- Comprender la relación entre un formulario HTML, PHP y una base de datos MySQL.
-- Instalar y comprobar Apache2, PHP y el conector PDO para MySQL.
-- Crear un usuario de MySQL específico para la aplicación y asignarle solo los privilegios necesarios.
-- Insertar registros en la tabla `Objetos` mediante una consulta preparada.
-- Tratar correctamente los campos opcionales y almacenar `NULL` cuando el dato es desconocido.
-- Buscar un objeto por su clave primaria `id_objeto` o por su `codigo_inventario`.
-- Mostrar en el navegador los datos recuperados de MySQL.
-- Relacionar la práctica con conceptos ya estudiados: `PRIMARY KEY`, `UNIQUE`, `CHECK`, `ENUM`, `NULL`, `AUTO_INCREMENT`, `INSERT` y `SELECT`.
+-   Comprender la relación entre un formulario HTML, PHP y una base de datos MySQL.
+-   Instalar y comprobar Apache2, PHP y el conector PDO para MySQL.
+-   Crear un usuario de MySQL específico para la aplicación y asignarle solo los privilegios necesarios.
+-   Insertar registros en la tabla `Objetos` mediante una consulta preparada.
+-   Tratar correctamente los campos opcionales y almacenar `NULL` cuando el dato es desconocido.
+-   Buscar un objeto por su clave primaria `id_objeto` o por su `codigo_inventario`.
+-   Mostrar en el navegador los datos recuperados de MySQL.
+-   Relacionar la práctica con conceptos ya estudiados: `PRIMARY KEY`, `UNIQUE`, `CHECK`, `ENUM`, `NULL`, `AUTO_INCREMENT`, `INSERT` y `SELECT`.
 
 ------------------------------------------------------------------------
 
@@ -134,17 +135,18 @@ No utilizaremos la cuenta `root` desde PHP. Crearemos un usuario exclusivo para 
 ``` sql
 CREATE USER 'museo_app'@'127.0.0.1' IDENTIFIED BY 'Museo_App#2026';
 ```
+
 Explicación de la dirección del host (127.0.0.1)
 
-Al crear un usuario en MySQL con el formato 'usuario'@'host', el valor especificado tras la @ define desde qué dirección IP tiene permitido conectarse dicho usuario. 
+Al crear un usuario en MySQL con el formato 'usuario'\@'host', el valor especificado tras la \@ define desde qué dirección IP tiene permitido conectarse dicho usuario.
 
-En la sentencia CREATE USER 'museo_app'@'127.0.0.1', la dirección 127.0.0.1 corresponde a la interfaz de loopback (o red local interna del propio servidor). Esto implica que:  
--   Arquitectura monolítica (Apache + PHP + MySQL en la misma máquina): La aplicación PHP se conecta a MySQL a través de la interfaz local (127.0.0.1), por lo que la autenticación funcionará correctamente. Por motivos de seguridad, esta configuración impide que cualquier equipo externo intente iniciar sesión directamente con esta cuenta.   
--   Arquitectura distribuida (Apache/PHP en un servidor distinto a MySQL): Si en el futuro se traslada la web a un servidor Apache dedicado (por ejemplo, con IP 192.168.1.50), se deberá sustituir 127.0.0.1 por la dirección IP real del servidor Apache desde el cual se originarán las peticiones a la base de datos (ej.: 'museo_app'@'192.168.1.50').   
+En la sentencia CREATE USER 'museo_app'\@'127.0.0.1', la dirección 127.0.0.1 corresponde a la interfaz de loopback (o red local interna del propio servidor). Esto implica que:\
+- Arquitectura monolítica (Apache + PHP + MySQL en la misma máquina): La aplicación PHP se conecta a MySQL a través de la interfaz local (127.0.0.1), por lo que la autenticación funcionará correctamente. Por motivos de seguridad, esta configuración impide que cualquier equipo externo intente iniciar sesión directamente con esta cuenta.\
+- Arquitectura distribuida (Apache/PHP en un servidor distinto a MySQL): Si en el futuro se traslada la web a un servidor Apache dedicado (por ejemplo, con IP 192.168.1.50), se deberá sustituir 127.0.0.1 por la dirección IP real del servidor Apache desde el cual se originarán las peticiones a la base de datos (ej.: 'museo_app'\@'192.168.1.50').
 
 ::: callout-note
 Nota de seguridad: Asignar una IP específica o restringir la conexión a 127.0.0.1 aplica el principio de mínimo privilegio en capa de red, evitando que el usuario sea accesible desde orígenes no autorizados.
-:::   
+:::
 
 En esta primera versión la aplicación solo necesita insertar objetos y consultarlos. Por tanto, concedemos únicamente `SELECT` e `INSERT`:
 
@@ -212,11 +214,11 @@ Y verificamos que está disponible el controlador PDO para MySQL:
 php -m | grep -i pdo_mysql
 ```
 
-- **`php -m`**: Genera la lista de todos los módulos instalados.
+-   **`php -m`**: Genera la lista de todos los módulos instalados.
 
-- **`|` (pipe)**: Toma la salida del primer comando y se la pasa directamente al segundo.
+-   **`|` (pipe)**: Toma la salida del primer comando y se la pasa directamente al segundo.
 
-- **`grep -i pdo_mysql`**: Filtra esa lista y muestra únicamente las líneas que contengan la palabra "pdo_mysql" (sin importar mayúsculas o minúsculas).
+-   **`grep -i pdo_mysql`**: Filtra esa lista y muestra únicamente las líneas que contengan la palabra "pdo_mysql" (sin importar mayúsculas o minúsculas).
 
 El resultado debe incluir una línea similar a:
 
@@ -279,35 +281,35 @@ sudo chown -R $USER:www-data /var/www/html/museo
 
 `sudo mkdir -p /var/www/html/museo`
 
-- **`sudo`**: Ejecuta el comando con permisos de superusuario (administrador/root). Es necesario porque el directorio `/var/www/` suele pertenecer al sistema.
+-   **`sudo`**: Ejecuta el comando con permisos de superusuario (administrador/root). Es necesario porque el directorio `/var/www/` suele pertenecer al sistema.
 
-- **`mkdir`**: Comando para crear nuevos directorios (*make directory*).
+-   **`mkdir`**: Comando para crear nuevos directorios (*make directory*).
 
-- **`-p`** (*parents*): Crea la carpeta especificada y, si los directorios padres no existen, los crea automáticamente sin dar error. Además, si el directorio ya existe, evita que el sistema lance un aviso de fallo.
+-   **`-p`** (*parents*): Crea la carpeta especificada y, si los directorios padres no existen, los crea automáticamente sin dar error. Además, si el directorio ya existe, evita que el sistema lance un aviso de fallo.
 
-- **Ruta**: Crea la carpeta `museo` donde se suelen alojar los archivos web (HTML, PHP, imágenes) para que el servidor web (como Apache o Nginx) los sirva.
+-   **Ruta**: Crea la carpeta `museo` donde se suelen alojar los archivos web (HTML, PHP, imágenes) para que el servidor web (como Apache o Nginx) los sirva.
 
 `sudo mkdir -p /etc/museo`
 
-- **`sudo mkdir -p`**: Realiza la misma acción descrita anteriormente (crea el directorio con permisos de superusuario y asegurando la ruta completa).
+-   **`sudo mkdir -p`**: Realiza la misma acción descrita anteriormente (crea el directorio con permisos de superusuario y asegurando la ruta completa).
 
-- **Ruta**: Crea una carpeta dentro de `/etc/`. En Linux, el directorio `/etc` está destinado a guardar los **archivos de configuración** del sistema o de las aplicaciones. Esta carpeta suele usar para guardar configuraciones específicas de la aplicación `museo` (por ejemplo, credenciales de base de datos o parámetros del sitio).
+-   **Ruta**: Crea una carpeta dentro de `/etc/`. En Linux, el directorio `/etc` está destinado a guardar los **archivos de configuración** del sistema o de las aplicaciones. Esta carpeta suele usar para guardar configuraciones específicas de la aplicación `museo` (por ejemplo, credenciales de base de datos o parámetros del sitio).
 
 `sudo chown -R $USER:www-data /var/www/html/museo`
 
-- **`sudo`**: Otorga los permisos de administración requeridos para cambiar el propietario de un archivo o carpeta del sistema.
+-   **`sudo`**: Otorga los permisos de administración requeridos para cambiar el propietario de un archivo o carpeta del sistema.
 
-- **`chown`**: Comando para cambiar el propietario y el grupo de un directorio o archivo (*change owner*).
+-   **`chown`**: Comando para cambiar el propietario y el grupo de un directorio o archivo (*change owner*).
 
-- **`-R`** (*recursive*): Aplica los cambios de forma recursiva, es decir, a la carpeta `museo` y a todos los archivos y subcarpetas que contenga o se creen dentro.
+-   **`-R`** (*recursive*): Aplica los cambios de forma recursiva, es decir, a la carpeta `museo` y a todos los archivos y subcarpetas que contenga o se creen dentro.
 
-- **`$USER:www-data`**:
+-   **`$USER:www-data`**:
 
-  - **`$USER`**: Variable de entorno que toma automáticamente el nombre de tu usuario actual de Linux. Se asigna como el **propietario**.
+    -   **`$USER`**: Variable de entorno que toma automáticamente el nombre de tu usuario actual de Linux. Se asigna como el **propietario**.
 
-  - **`www-data`**: Es el **grupo** predeterminado que utilizan los servidores web en sistemas Debian/Ubuntu (como Apache o Nginx).
+    -   **`www-data`**: Es el **grupo** predeterminado que utilizan los servidores web en sistemas Debian/Ubuntu (como Apache o Nginx).
 
-- **Objetivo**: Te otorga a ti permiso para editar, subir y modificar los archivos de la web con tu usuario habitual sin usar `sudo` cada vez, mientras le da acceso al servidor web (`www-data`) para que pueda leerlos y servirlos en Internet.
+-   **Objetivo**: Te otorga a ti permiso para editar, subir y modificar los archivos de la web con tu usuario habitual sin usar `sudo` cada vez, mientras le da acceso al servidor web (`www-data`) para que pueda leerlos y servirlos en Internet.
 
 # Crear la conexión con MySQL mediante PDO
 
@@ -336,16 +338,14 @@ $pdo = new PDO($dsn, $usuario, $password, $opciones);
 
 PDO (*PHP Data Objects*) proporciona una interfaz para que PHP se comunique con distintos sistemas de bases de datos. En esta práctica se utiliza el controlador PDO de MySQL.
 
-**Explicación del parámetro host en la cadena DSN ($dsn)**
-En el archivo de configuración config.php, la variable $dsn (Data Source Name) define los parámetros de conexión que utilizará PDO para comunicarse con MySQL: `$dsn = 'mysql:host=127.0.0.1;dbname=museo;charset=utf8mb4';`
+**Explicación del parámetro host en la cadena DSN (\$dsn)** En el archivo de configuración config.php, la variable $dsn (Data Source Name) define los parámetros de conexión que utilizará PDO para comunicarse con MySQL: `$dsn = 'mysql:host=127.0.0.1;dbname=museo;charset=utf8mb4';\`
 
-El parámetro host=127.0.0.1 le indica al script PHP a qué servidor o dirección IP debe enviar la petición de conexión:   En nuestro entorno actual (local): Como Apache, PHP y MySQL conviven en la misma máquina, indicamos 127.0.0.1 (loopback). PHP buscará el servicio MySQL en el propio servidor local.   
+El parámetro host=127.0.0.1 le indica al script PHP a qué servidor o dirección IP debe enviar la petición de conexión: En nuestro entorno actual (local): Como Apache, PHP y MySQL conviven en la misma máquina, indicamos 127.0.0.1 (loopback). PHP buscará el servicio MySQL en el propio servidor local.
 
-Entorno local (Apache + PHP + MySQL en el mismo servidor): Se utiliza 127.0.0.1 (loopback), indicándole a PHP que el servicio de MySQL se encuentra en esta misma máquina.   Entorno distribuido (Servidores independientes): Si MySQL estuviera instalado en un servidor distinto (por ejemplo, con la IP 192.168.1.100), en el DSN de PHP se especificará dicha IP: `$dsn = 'mysql:host=192.168.1.100;dbname=museo;charset=utf8mb4';`
+Entorno local (Apache + PHP + MySQL en el mismo servidor): Se utiliza 127.0.0.1 (loopback), indicándole a PHP que el servicio de MySQL se encuentra en esta misma máquina. Entorno distribuido (Servidores independientes): Si MySQL estuviera instalado en un servidor distinto (por ejemplo, con la IP 192.168.1.100), en el DSN de PHP se especificará dicha IP: `$dsn = 'mysql:host=192.168.1.100;dbname=museo;charset=utf8mb4';`
 
 ::: callout-note
-¿Por qué usamos 127.0.0.1 en lugar de localhost en el DSN?
-En PHP/PDO, usar localhost fuerza la conexión mediante un socket UNIX local del sistema de archivos, mientras que usar 127.0.0.1 fuerza una conexión TCP/IP a la interfaz de red. Al haber creado el usuario en MySQL como 'museo_app'@'127.0.0.1', usar la IP en el DSN garantiza que la conexión utilice TCP/IP y coincida exactamente con la regla de autenticación del usuario.
+¿Por qué usamos 127.0.0.1 en lugar de localhost en el DSN? En PHP/PDO, usar localhost fuerza la conexión mediante un socket UNIX local del sistema de archivos, mientras que usar 127.0.0.1 fuerza una conexión TCP/IP a la interfaz de red. Al haber creado el usuario en MySQL como 'museo_app'\@'127.0.0.1', usar la IP en el DSN garantiza que la conexión utilice TCP/IP y coincida exactamente con la regla de autenticación del usuario.
 :::
 
 Protegemos el fichero para que pueda leerlo Apache, pero no cualquier usuario del sistema:
@@ -359,21 +359,21 @@ Estos dos comandos se utilizan para **asegurar la configuración y proteger dato
 
 `sudo chown root:www-data /etc/museo/config.php`
 
-- **`chown`**: Cambia el propietario y el grupo del archivo `config.php`.
+-   **`chown`**: Cambia el propietario y el grupo del archivo `config.php`.
 
-- **`root`**: Asigna al usuario administrador (**root**) como el **propietario** exclusivo del archivo.
+-   **`root`**: Asigna al usuario administrador (**root**) como el **propietario** exclusivo del archivo.
 
-- **`www-data`**: Asigna al **grupo** del servidor web (Apache/Nginx) el acceso secundario.
+-   **`www-data`**: Asigna al **grupo** del servidor web (Apache/Nginx) el acceso secundario.
 
 `sudo chmod 640 /etc/museo/config.php`
 
-- **`chmod 640`**: Establece los permisos de acceso al archivo usando notación octal:
+-   **`chmod 640`**: Establece los permisos de acceso al archivo usando notación octal:
 
-  - **`6` (Propietario - `root`)**: Permisos de **Lectura (4)** + **Escritura (2)**. *`root` puede leer y modificar el archivo.*
+    -   **`6` (Propietario - `root`)**: Permisos de **Lectura (4)** + **Escritura (2)**. *`root` puede leer y modificar el archivo.*
 
-  - **`4` (Grupo - `www-data`)**: Permisos de **Solo Lectura (4)**. *El servidor web puede leer la configuración para ejecutar la web, pero no modificarla.*
+    -   **`4` (Grupo - `www-data`)**: Permisos de **Solo Lectura (4)**. *El servidor web puede leer la configuración para ejecutar la web, pero no modificarla.*
 
-  - **`0` (Otros usuarios)**: **Sin permisos (0)**. *Cualquier otro usuario del sistema tiene el acceso totalmente bloqueado.*
+    -   **`0` (Otros usuarios)**: **Sin permisos (0)**. *Cualquier otro usuario del sistema tiene el acceso totalmente bloqueado.*
 
 **¿Por qué se combinan así?**
 
@@ -744,16 +744,16 @@ try {
 
 ## ¿Qué hace guardar.php?
 
-- Carga la conexión almacenada en `/etc/museo/config.php`.
-- Comprueba los campos obligatorios `codigo_inventario` y `nombre`.
-- Convierte los campos opcionales vacíos en `NULL`.
-- Comprueba que los campos numéricos reciban enteros.
-- Valida rangos sencillos de meses y días.
-- Comprueba los valores permitidos para los campos `ENUM`.
-- Prepara un `INSERT` mediante `PDO::prepare()`.
-- Ejecuta la consulta pasando los valores mediante parámetros.
-- Recupera el `id_objeto` generado por `AUTO_INCREMENT`.
-- Redirige a la página de búsqueda para mostrar el objeto recién creado.
+-   Carga la conexión almacenada en `/etc/museo/config.php`.
+-   Comprueba los campos obligatorios `codigo_inventario` y `nombre`.
+-   Convierte los campos opcionales vacíos en `NULL`.
+-   Comprueba que los campos numéricos reciban enteros.
+-   Valida rangos sencillos de meses y días.
+-   Comprueba los valores permitidos para los campos `ENUM`.
+-   Prepara un `INSERT` mediante `PDO::prepare()`.
+-   Ejecuta la consulta pasando los valores mediante parámetros.
+-   Recupera el `id_objeto` generado por `AUTO_INCREMENT`.
+-   Redirige a la página de búsqueda para mostrar el objeto recién creado.
 
 ::: callout-important
 **Muy importante:** Los valores recibidos desde el navegador no se concatenan directamente dentro de la sentencia SQL. Se utilizan parámetros en una consulta preparada.
@@ -1041,12 +1041,12 @@ FROM Objetos;
 
 El resultado esperado contendrá una fila similar a la siguiente:
 
-- `id_objeto`: 1
-- `codigo_inventario`: MED-0001
-- `nombre`: Manuscrito medieval
-- `fecha_datacion`: 26 de octubre de 997 d. C.
-- `anio_inicio`: 997
-- `era_inicio`: d.C.
+-   `id_objeto`: 1
+-   `codigo_inventario`: MED-0001
+-   `nombre`: Manuscrito medieval
+-   `fecha_datacion`: 26 de octubre de 997 d. C.
+-   `anio_inicio`: 997
+-   `era_inicio`: d.C.
 
 ## Probar la búsqueda por id_objeto
 
@@ -1072,14 +1072,14 @@ Como `codigo_inventario` tiene una restricción `UNIQUE`, no deberían existir d
 
 Registramos un segundo objeto con información histórica incompleta:
 
-- **Código:** EGI-0001
-- **Nombre:** Estatuilla egipcia
-- **Datación:** Aproximadamente 1350 a. C.
-- **Año:** 1350
-- **Mes:** \[vacío\]
-- **Día:** \[vacío\]
-- **Era:** a.C.
-- **Precisión:** Aproximada
+-   **Código:** EGI-0001
+-   **Nombre:** Estatuilla egipcia
+-   **Datación:** Aproximadamente 1350 a. C.
+-   **Año:** 1350
+-   **Mes:** \[vacío\]
+-   **Día:** \[vacío\]
+-   **Era:** a.C.
+-   **Precisión:** Aproximada
 
 Las funciones `textoOpcional()` y `enteroOpcional()` convierten los campos opcionales vacíos en `NULL`. Por tanto, la fila almacenará:
 
@@ -1173,16 +1173,16 @@ La aplicación permitirá registrar objetos y recuperarlos posteriormente por `i
 
 # Resumen de puntos clave
 
-- Apache2 recibe las peticiones HTTP del navegador.
-- PHP procesa los formularios y ejecuta la lógica de la aplicación.
-- PDO conecta PHP con MySQL y permite utilizar consultas preparadas.
-- El usuario `museo_app` evita utilizar `root` desde la aplicación.
-- `INSERT` permite registrar objetos y `SELECT` recuperarlos posteriormente.
-- `id_objeto` es la `PRIMARY KEY` y se genera mediante `AUTO_INCREMENT`.
-- `codigo_inventario` es `UNIQUE` y permite una segunda forma de localizar un objeto.
-- Los campos opcionales vacíos se transforman en `NULL`.
-- Las validaciones de PHP complementan, pero no sustituyen, las restricciones `CHECK`, `UNIQUE` y `ENUM` de MySQL.
-- La aplicación es deliberadamente sencilla: su finalidad principal es comprender cómo una interfaz web puede trabajar con una tabla MySQL.
+-   Apache2 recibe las peticiones HTTP del navegador.
+-   PHP procesa los formularios y ejecuta la lógica de la aplicación.
+-   PDO conecta PHP con MySQL y permite utilizar consultas preparadas.
+-   El usuario `museo_app` evita utilizar `root` desde la aplicación.
+-   `INSERT` permite registrar objetos y `SELECT` recuperarlos posteriormente.
+-   `id_objeto` es la `PRIMARY KEY` y se genera mediante `AUTO_INCREMENT`.
+-   `codigo_inventario` es `UNIQUE` y permite una segunda forma de localizar un objeto.
+-   Los campos opcionales vacíos se transforman en `NULL`.
+-   Las validaciones de PHP complementan, pero no sustituyen, las restricciones `CHECK`, `UNIQUE` y `ENUM` de MySQL.
+-   La aplicación es deliberadamente sencilla: su finalidad principal es comprender cómo una interfaz web puede trabajar con una tabla MySQL.
 
 ------------------------------------------------------------------------
 
@@ -1190,28 +1190,28 @@ La aplicación permitirá registrar objetos y recuperarlos posteriormente por `i
 
 Una vez terminada esta versión básica, se puede ampliar de forma progresiva con:
 
-- Listado completo de objetos.
-- Modificación mediante `UPDATE`.
-- Eliminación controlada mediante `DELETE`.
-- Carga de fotografías de las piezas.
-- Autenticación de usuarios.
-- Separación entre usuarios de consulta y usuarios con permisos de edición.
-- Registro de operaciones realizadas sobre los objetos.
+-   Listado completo de objetos.
+-   Modificación mediante `UPDATE`.
+-   Eliminación controlada mediante `DELETE`.
+-   Carga de fotografías de las piezas.
+-   Autenticación de usuarios.
+-   Separación entre usuarios de consulta y usuarios con permisos de edición.
+-   Registro de operaciones realizadas sobre los objetos.
 
 ------------------------------------------------------------------------
 
 # Lista de comprobación final
 
-- [ ] Apache2 está activo.
-- [ ] PHP está instalado y `php -v` funciona.
-- [ ] `pdo_mysql` aparece entre los módulos de PHP.
-- [ ] La base de datos `museo` existe.
-- [ ] La tabla `Objetos` tiene las restricciones esperadas.
-- [ ] El usuario `museo_app` dispone de `SELECT` e `INSERT` sobre `museo.Objetos`.
-- [ ] `config.php` está en `/etc/museo/` y no dentro del directorio web.
-- [ ] La página principal abre desde otro equipo de la red.
-- [ ] Se puede registrar `MED-0001`.
-- [ ] Se puede localizar `MED-0001` por ID y por código.
-- [ ] Los campos opcionales vacíos se almacenan como `NULL`.
-- [ ] MySQL rechaza un mes fuera del intervalo 1-12.
-- [ ] MySQL rechaza un `codigo_inventario` duplicado.
+-   [ ] Apache2 está activo.
+-   [ ] PHP está instalado y `php -v` funciona.
+-   [ ] `pdo_mysql` aparece entre los módulos de PHP.
+-   [ ] La base de datos `museo` existe.
+-   [ ] La tabla `Objetos` tiene las restricciones esperadas.
+-   [ ] El usuario `museo_app` dispone de `SELECT` e `INSERT` sobre `museo.Objetos`.
+-   [ ] `config.php` está en `/etc/museo/` y no dentro del directorio web.
+-   [ ] La página principal abre desde otro equipo de la red.
+-   [ ] Se puede registrar `MED-0001`.
+-   [ ] Se puede localizar `MED-0001` por ID y por código.
+-   [ ] Los campos opcionales vacíos se almacenan como `NULL`.
+-   [ ] MySQL rechaza un mes fuera del intervalo 1-12.
+-   [ ] MySQL rechaza un `codigo_inventario` duplicado.

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Normalización – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./normalizacion.html">Normalización</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SQL: Structured Query Language y sus variantes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sqlLanguage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a las Consultas Lenguajes SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Consultas_SQL_Empleados_Completo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_subconsultas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Subconsultas en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql_join.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de Join en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tipos_de_claves_tablas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de claves en tablas relacionales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./normalizacion.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Normalización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sgbd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de gestión de bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mysqlubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instalando y Configurando MySQL en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ddl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DDL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./dml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_guiada_aplicaci_n_web_mysql_php.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: Aplicación web con MySQL y PHP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#introducción-a-la-normalización-problemas-de-un-mal-diseño" id="toc-introducción-a-la-normalización-problemas-de-un-mal-diseño" class="nav-link active" data-scroll-target="#introducción-a-la-normalización-problemas-de-un-mal-diseño"><span class="header-section-number">1</span> Introducción a la Normalización: Problemas de un mal diseño</a>
+  <ul>
+  <li><a href="#redundancia-duplicidad-de-datos" id="toc-redundancia-duplicidad-de-datos" class="nav-link" data-scroll-target="#redundancia-duplicidad-de-datos"><span class="header-section-number">1.1</span> 1. Redundancia (Duplicidad de datos)</a></li>
+  <li><a href="#inconsistencia" id="toc-inconsistencia" class="nav-link" data-scroll-target="#inconsistencia"><span class="header-section-number">1.2</span> 2. Inconsistencia</a></li>
+  <li><a href="#anomalías-de-manipulación-de-datos" id="toc-anomalías-de-manipulación-de-datos" class="nav-link" data-scroll-target="#anomalías-de-manipulación-de-datos"><span class="header-section-number">1.3</span> 3. Anomalías de manipulación de datos</a>
+  <ul class="collapse">
+  <li><a href="#anomalía-de-actualización-update-anomaly" id="toc-anomalía-de-actualización-update-anomaly" class="nav-link" data-scroll-target="#anomalía-de-actualización-update-anomaly"><span class="header-section-number">1.3.1</span> Anomalía de Actualización (Update Anomaly)</a></li>
+  <li><a href="#anomalía-de-inserción-insert-anomaly" id="toc-anomalía-de-inserción-insert-anomaly" class="nav-link" data-scroll-target="#anomalía-de-inserción-insert-anomaly"><span class="header-section-number">1.3.2</span> Anomalía de Inserción (Insert Anomaly)</a></li>
+  <li><a href="#anomalía-de-borrado-delete-anomaly" id="toc-anomalía-de-borrado-delete-anomaly" class="nav-link" data-scroll-target="#anomalía-de-borrado-delete-anomaly"><span class="header-section-number">1.3.3</span> Anomalía de Borrado (Delete Anomaly)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#las-formas-normales" id="toc-las-formas-normales" class="nav-link" data-scroll-target="#las-formas-normales"><span class="header-section-number">2</span> Las formas normales</a>
+  <ul>
+  <li><a href="#el-concepto-de-dependencia." id="toc-el-concepto-de-dependencia." class="nav-link" data-scroll-target="#el-concepto-de-dependencia."><span class="header-section-number">2.1</span> El concepto de dependencia.</a></li>
+  <li><a href="#primera-forma-normal-1fn-atomicidad-y-unicidad" id="toc-primera-forma-normal-1fn-atomicidad-y-unicidad" class="nav-link" data-scroll-target="#primera-forma-normal-1fn-atomicidad-y-unicidad"><span class="header-section-number">2.2</span> Primera Forma Normal (1FN): Atomicidad y Unicidad</a>
+  <ul class="collapse">
+  <li><a href="#reglas-de-la-1fn" id="toc-reglas-de-la-1fn" class="nav-link" data-scroll-target="#reglas-de-la-1fn"><span class="header-section-number">2.2.1</span> Reglas de la 1FN:</a></li>
+  <li><a href="#ejemplo-de-violación-de-la-1fn" id="toc-ejemplo-de-violación-de-la-1fn" class="nav-link" data-scroll-target="#ejemplo-de-violación-de-la-1fn"><span class="header-section-number">2.2.2</span> Ejemplo de violación de la 1FN</a></li>
+  <li><a href="#solución-aplicando-1fn" id="toc-solución-aplicando-1fn" class="nav-link" data-scroll-target="#solución-aplicando-1fn"><span class="header-section-number">2.2.3</span> Solución (Aplicando 1FN)</a></li>
+  </ul></li>
+  <li><a href="#segunda-forma-normal-2fn-dependencia-funcional-completa" id="toc-segunda-forma-normal-2fn-dependencia-funcional-completa" class="nav-link" data-scroll-target="#segunda-forma-normal-2fn-dependencia-funcional-completa"><span class="header-section-number">2.3</span> Segunda Forma Normal (2FN): Dependencia Funcional Completa</a>
+  <ul class="collapse">
+  <li><a href="#regla-de-la-2fn" id="toc-regla-de-la-2fn" class="nav-link" data-scroll-target="#regla-de-la-2fn"><span class="header-section-number">2.3.1</span> Regla de la 2FN:</a></li>
+  <li><a href="#ejemplo-de-violación-de-la-2fn" id="toc-ejemplo-de-violación-de-la-2fn" class="nav-link" data-scroll-target="#ejemplo-de-violación-de-la-2fn"><span class="header-section-number">2.3.2</span> Ejemplo de violación de la 2FN</a></li>
+  <li><a href="#solución-aplicando-2fn" id="toc-solución-aplicando-2fn" class="nav-link" data-scroll-target="#solución-aplicando-2fn"><span class="header-section-number">2.3.3</span> Solución (Aplicando 2FN)</a></li>
+  </ul></li>
+  <li><a href="#tercera-forma-normal-3fn-eliminación-de-dependencias-transitivas" id="toc-tercera-forma-normal-3fn-eliminación-de-dependencias-transitivas" class="nav-link" data-scroll-target="#tercera-forma-normal-3fn-eliminación-de-dependencias-transitivas"><span class="header-section-number">2.4</span> Tercera Forma Normal (3FN): Eliminación de Dependencias Transitivas</a>
+  <ul class="collapse">
+  <li><a href="#regla-de-la-3fn" id="toc-regla-de-la-3fn" class="nav-link" data-scroll-target="#regla-de-la-3fn"><span class="header-section-number">2.4.1</span> Regla de la 3FN:</a></li>
+  <li><a href="#ejemplo-de-violación-de-la-3fn" id="toc-ejemplo-de-violación-de-la-3fn" class="nav-link" data-scroll-target="#ejemplo-de-violación-de-la-3fn"><span class="header-section-number">2.4.2</span> Ejemplo de violación de la 3FN</a></li>
+  <li><a href="#solución-aplicando-3fn" id="toc-solución-aplicando-3fn" class="nav-link" data-scroll-target="#solución-aplicando-3fn"><span class="header-section-number">2.4.3</span> Solución (Aplicando 3FN)</a></li>
+  </ul></li>
+  <li><a href="#resumen-de-las-3-formas-normales" id="toc-resumen-de-las-3-formas-normales" class="nav-link" data-scroll-target="#resumen-de-las-3-formas-normales"><span class="header-section-number">2.5</span> Resumen de las 3 Formas Normales</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./normalizacion.html">Normalización</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Normalización</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introducción-a-la-normalización-problemas-de-un-mal-diseño" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introducción a la Normalización: Problemas de un mal diseño</h1>
+<p>Antes de aplicar las reglas de normalización, es fundamental entender <strong>por qué</strong> son necesarias. Cuando diseñamos una base de datos agrupando toda la información en una única tabla gigante (diseño plano), generamos una serie de problemas estructurales graves que comprometen la integridad de los datos.</p>
+<p>Para ilustrar estos problemas, partiremos de tu ejemplo: una tabla única llamada <code>Empleados_Departamentos</code>.</p>
+<p><strong>Tabla: <code>Empleados_Departamentos</code></strong> * <code>id_empleado</code> (Clave Primaria) * <code>nombre</code> * <code>departamento</code> * <code>telefono_dpto</code> * <code>responsable_dpto</code></p>
+<p>El problema principal aquí es que <strong>mezclamos conceptos (entidades) distintos</strong>: datos que describen al empleado (<code>id_empleado</code>, <code>nombre</code>) con datos que describen al departamento (<code>telefono_dpto</code>, <code>responsable_dpto</code>).</p>
+<p>A partir de este mal diseño, surgen los siguientes problemas y anomalías:</p>
+<section id="redundancia-duplicidad-de-datos" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="redundancia-duplicidad-de-datos"><span class="header-section-number">1.1</span> 1. Redundancia (Duplicidad de datos)</h2>
+<p>La redundancia ocurre cuando el mismo dato se almacena innecesariamente múltiples veces.</p>
+<ul>
+<li><strong>En nuestro ejemplo:</strong> Si el departamento de “Ventas” tiene 500 empleados, el número de teléfono de Ventas y el nombre de su responsable se escribirán <strong>500 veces</strong> en la base de datos. Esto supone un desperdicio enorme de espacio de almacenamiento y ralentiza las consultas.</li>
+</ul>
+</section>
+<section id="inconsistencia" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="inconsistencia"><span class="header-section-number">1.2</span> 2. Inconsistencia</h2>
+<p>La inconsistencia es la consecuencia directa de la redundancia. Ocurre cuando existen diferentes valores para un dato que debería ser único y universal, provocando que la base de datos se contradiga a sí misma y deje de ser fiable.</p>
+<ul>
+<li><strong>En nuestro ejemplo:</strong> Si al registrar al empleado número 501 de Ventas alguien se equivoca al teclear el <code>telefono_dpto</code>, la base de datos dirá que el teléfono de Ventas es el “555-1000” en 500 registros, y “555-1001” en un registro. ¿Cuál es el verdadero? El sistema pierde su integridad.</li>
+</ul>
+<hr>
+</section>
+<section id="anomalías-de-manipulación-de-datos" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="anomalías-de-manipulación-de-datos"><span class="header-section-number">1.3</span> 3. Anomalías de manipulación de datos</h2>
+<p>Un mal diseño no solo ocupa más espacio, sino que hace que las operaciones básicas (Insertar, Actualizar, Borrar) tengan comportamientos indeseados o directamente fallen. A esto se le llama <strong>anomalías</strong>.</p>
+<section id="anomalía-de-actualización-update-anomaly" class="level3" data-number="1.3.1">
+<h3 data-number="1.3.1" class="anchored" data-anchor-id="anomalía-de-actualización-update-anomaly"><span class="header-section-number">1.3.1</span> Anomalía de Actualización (Update Anomaly)</h3>
+<p>Se produce cuando modificar un único dato del mundo real obliga a actualizar múltiples filas en la base de datos.</p>
+<ul>
+<li><strong>El problema:</strong> Si cambia el <code>responsable_dpto</code> de “Ventas”, el sistema tiene que buscar y actualizar las 500 filas de los empleados de Ventas.</li>
+<li><strong>El riesgo:</strong> Si el sistema falla a mitad del proceso o hay un error en la consulta, algunas filas tendrán al jefe nuevo y otras al jefe antiguo (generando, de nuevo, una inconsistencia).</li>
+</ul>
+</section>
+<section id="anomalía-de-inserción-insert-anomaly" class="level3" data-number="1.3.2">
+<h3 data-number="1.3.2" class="anchored" data-anchor-id="anomalía-de-inserción-insert-anomaly"><span class="header-section-number">1.3.2</span> Anomalía de Inserción (Insert Anomaly)</h3>
+<p>Se produce cuando el diseño de la tabla nos impide registrar cierta información a menos que inventemos datos ficticios para rellenar los campos obligatorios.</p>
+<ul>
+<li><strong>El problema:</strong> Imagina que la empresa crea el nuevo departamento de “Marketing”, le asigna un responsable y un teléfono, pero <strong>aún no ha contratado a ningún empleado</strong> para ese departamento.</li>
+<li><strong>El riesgo:</strong> Como la Clave Primaria de la tabla es <code>id_empleado</code> (que no puede ser nula), es imposible guardar los datos del nuevo departamento. Tendríamos que inventar un empleado ficticio (“Empleado 0”) solo para poder guardar el teléfono y el jefe de Marketing.</li>
+</ul>
+</section>
+<section id="anomalía-de-borrado-delete-anomaly" class="level3" data-number="1.3.3">
+<h3 data-number="1.3.3" class="anchored" data-anchor-id="anomalía-de-borrado-delete-anomaly"><span class="header-section-number">1.3.3</span> Anomalía de Borrado (Delete Anomaly)</h3>
+<p>Se produce cuando, al eliminar un registro que ya no necesitamos, borramos accidentalmente otra información valiosa que no queríamos perder.</p>
+<ul>
+<li><strong>El problema:</strong> Imagina que el departamento de “I+D” tiene un único empleado registrado en la base de datos. Si ese empleado renuncia y lo borramos de la tabla para darlo de baja, la fila entera desaparece.</li>
+<li><strong>El riesgo:</strong> Al borrar al empleado, <strong>perdemos toda la información del departamento de I+D</strong> (su teléfono y quién es su responsable). El departamento deja de existir en el sistema simplemente porque se quedó sin empleados temporalmente.</li>
+</ul>
+<hr>
+</section>
+</section>
+</section>
+<section id="las-formas-normales" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Las formas normales</h1>
+<p>El proceso de <strong>normalización</strong> consiste en aplicar una serie de reglas numéricas (Formas Normales) para descomponer tablas complejas en tablas más pequeñas y bien estructuradas, eliminando la redundancia y evitando las anomalías de actualización, inserción y borrado.</p>
+<ul>
+<li>1NF: Datos atómicos</li>
+<li>2NF: Depender de toda la clave</li>
+<li>3NF: Depender de nada más que la clave.</li>
+</ul>
+<p>Las Formas Normales son acumulativas: para alcanzar la 2FN, la tabla debe estar primero en 1FN; para la 3FN, debe estar en 2FN.</p>
+<section id="el-concepto-de-dependencia." class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="el-concepto-de-dependencia."><span class="header-section-number">2.1</span> El concepto de dependencia.</h2>
+<p>Se dice que B depende de A cuando conociendo un valor de A, se puede determinar un unico valor de B. Ejemplo DNI-nombre: Cada DNI identifica a una unica persona, conocer el dni determina el nombre, pero no viceversa. En ese ejemplo:<span class="math inline">\(A\)</span> es el DNI (el dato de origen, el que manda o determina).<span class="math inline">\(B\)</span> es el Nombre (el dato resultante, el que depende de <span class="math inline">\(A\)</span>).La notación en Bases de DatosEn bases de datos, este concepto se llama Dependencia Funcional y se escribe con una flecha:<span class="math display">\[A \rightarrow B \quad (\text{DNI} \rightarrow \text{Nombre})\]</span>Esta expresión se lee de dos formas equivalentes:“<span class="math inline">\(A\)</span> determina funcionalmente a <span class="math inline">\(B\)</span>” <span class="math inline">\(\rightarrow\)</span> El DNI determina el Nombre.”<span class="math inline">\(B\)</span> depende funcionalmente de <span class="math inline">\(A\)</span>” <span class="math inline">\(\rightarrow\)</span> El Nombre depende del DNI.</p>
+</section>
+<section id="primera-forma-normal-1fn-atomicidad-y-unicidad" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="primera-forma-normal-1fn-atomicidad-y-unicidad"><span class="header-section-number">2.2</span> Primera Forma Normal (1FN): Atomicidad y Unicidad</h2>
+<p>Una tabla está en <strong>1FN</strong> si <strong>cada columna contiene valores atómicos</strong> (indivisibles) y no existen grupos o columnas repetidas para el mismo tipo de información.</p>
+<section id="reglas-de-la-1fn" class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="reglas-de-la-1fn"><span class="header-section-number">2.2.1</span> Reglas de la 1FN:</h3>
+<ol type="1">
+<li><strong>Valores atómicos:</strong> Cada celda debe contener un único valor (no listas, no elementos separados por comas o guiones).</li>
+<li><strong>Sin atributos repetidos:</strong> No se deben usar columnas como <code>Telefono1</code>, <code>Telefono2</code>, <code>Telefono3</code>.</li>
+<li><strong>Clave Primaria:</strong> La tabla debe tener una clave primaria definida que identifique de forma única cada fila.</li>
+</ol>
+</section>
+<section id="ejemplo-de-violación-de-la-1fn" class="level3" data-number="2.2.2">
+<h3 data-number="2.2.2" class="anchored" data-anchor-id="ejemplo-de-violación-de-la-1fn"><span class="header-section-number">2.2.2</span> Ejemplo de violación de la 1FN</h3>
+<p>En la siguiente tabla, la columna <code>telefonos</code> contiene múltiples valores en una sola celda y los pedidos están agrupados en un array o texto:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_empleado</th>
+<th style="text-align: left;">nombre</th>
+<th style="text-align: left;">telefonos</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">Ana Gómez</td>
+<td style="text-align: left;">600111222, 600333444</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">102</td>
+<td style="text-align: left;">Carlos Ruiz</td>
+<td style="text-align: left;">655888999</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="solución-aplicando-1fn" class="level3" data-number="2.2.3">
+<h3 data-number="2.2.3" class="anchored" data-anchor-id="solución-aplicando-1fn"><span class="header-section-number">2.2.3</span> Solución (Aplicando 1FN)</h3>
+<p>Separamos los valores en filas independientes garantizando que cada registro tenga datos atómicos:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_empleado</th>
+<th style="text-align: left;">nombre</th>
+<th style="text-align: left;">telefono</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">Ana Gómez</td>
+<td style="text-align: left;">600111222</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">Ana Gómez</td>
+<td style="text-align: left;">600333444</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">102</td>
+<td style="text-align: left;">Carlos Ruiz</td>
+<td style="text-align: left;">655888999</td>
+</tr>
+</tbody>
+</table>
+<p><em>(O idealmente, extrayendo los teléfonos a una tabla independiente <code>Telefonos_Empleados</code> vinculada por <code>id_empleado</code>).</em></p>
+<p>Nota que en este caso hemos decidido que nombre es un campo definido por nombre y primer apellido y lo consideramos como una unidad, asi que no rompe la regla de la atomicidad.</p>
+<hr>
+</section>
+</section>
+<section id="segunda-forma-normal-2fn-dependencia-funcional-completa" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="segunda-forma-normal-2fn-dependencia-funcional-completa"><span class="header-section-number">2.3</span> Segunda Forma Normal (2FN): Dependencia Funcional Completa</h2>
+<p>Una tabla está en <strong>2FN</strong> si <strong>está en 1FN</strong> y <strong>todos los atributos que no son clave dependen por completo de la clave primaria</strong>.</p>
+<blockquote class="blockquote">
+<p><strong>Atención:</strong> Esta forma normal afecta principalmente a las tablas que tienen una <strong>Clave Primaria Compuesta</strong> (formada por 2 o más columnas). Si la clave primaria es simple (una sola columna), la tabla automáticamente cumple la 2FN.</p>
+</blockquote>
+<section id="regla-de-la-2fn" class="level3" data-number="2.3.1">
+<h3 data-number="2.3.1" class="anchored" data-anchor-id="regla-de-la-2fn"><span class="header-section-number">2.3.1</span> Regla de la 2FN:</h3>
+<ul>
+<li><strong>Eliminar dependencias parciales:</strong> Ninguna columna que no sea clave debe depender solo de <em>una parte</em> de la clave primaria compuesta.</li>
+</ul>
+</section>
+<section id="ejemplo-de-violación-de-la-2fn" class="level3" data-number="2.3.2">
+<h3 data-number="2.3.2" class="anchored" data-anchor-id="ejemplo-de-violación-de-la-2fn"><span class="header-section-number">2.3.2</span> Ejemplo de violación de la 2FN</h3>
+<p>Imagina una tabla de inscripciones a cursos donde la Clave Primaria Compuesta es <code>(id_estudiante, id_curso)</code>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_estudiante (PK)</th>
+<th style="text-align: left;">id_curso (PK)</th>
+<th style="text-align: left;">nombre_curso</th>
+<th style="text-align: left;">nota</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">SQL Básico</td>
+<td style="text-align: left;">8.5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">SQL Básico</td>
+<td style="text-align: left;">9.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">102</td>
+<td style="text-align: left;">Python Avanzado</td>
+<td style="text-align: left;">7.0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Problema:</strong> La columna <code>nota</code> depende de <em>ambos</em> (el estudiante y el curso que realizó). Pero la columna <code>nombre_curso</code> depende <strong>únicamente de <code>id_curso</code></strong> (una parte de la clave primaria). Si el nombre del curso cambia, habría que actualizarlo en múltiples filas.</li>
+</ul>
+</section>
+<section id="solución-aplicando-2fn" class="level3" data-number="2.3.3">
+<h3 data-number="2.3.3" class="anchored" data-anchor-id="solución-aplicando-2fn"><span class="header-section-number">2.3.3</span> Solución (Aplicando 2FN)</h3>
+<p>Dividimos la tabla en dos para eliminar la dependencia parcial:</p>
+<p><strong>Tabla 1: <code>Cursos</code></strong> <em>(Clave Primaria: <code>id_curso</code>)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_curso (PK)</th>
+<th style="text-align: left;">nombre_curso</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">SQL Básico</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">102</td>
+<td style="text-align: left;">Python Avanzado</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla 2: <code>Inscripciones</code></strong> <em>(Clave Primaria Compuesta: <code>id_estudiante</code>, <code>id_curso</code>)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_estudiante (PK)</th>
+<th style="text-align: left;">id_curso (PK, FK)</th>
+<th style="text-align: left;">nota</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">8.5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">101</td>
+<td style="text-align: left;">9.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">102</td>
+<td style="text-align: left;">7.0</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="tercera-forma-normal-3fn-eliminación-de-dependencias-transitivas" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="tercera-forma-normal-3fn-eliminación-de-dependencias-transitivas"><span class="header-section-number">2.4</span> Tercera Forma Normal (3FN): Eliminación de Dependencias Transitivas</h2>
+<p>Una tabla está en <strong>3FN</strong> si <strong>está en 2FN</strong> y <strong>no existe ninguna dependencia transitiva</strong> entre los atributos que no son clave.</p>
+<section id="regla-de-la-3fn" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="regla-de-la-3fn"><span class="header-section-number">2.4.1</span> Regla de la 3FN:</h3>
+<ul>
+<li><strong>Eliminar dependencias transitivas:</strong> Un atributo no clave <strong>no debe depender de otro atributo no clave</strong>. Todos los campos deben depender <em>directa y exclusivamente</em> de la clave primaria.</li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Regla nemotécnica famosa (Bill Kent):</strong> <em>“Cada atributo debe aportar un dato sobre la clave primaria, toda la clave primaria, y nada más que la clave primaria.”</em></p>
+</blockquote>
+</section>
+<section id="ejemplo-de-violación-de-la-3fn" class="level3" data-number="2.4.2">
+<h3 data-number="2.4.2" class="anchored" data-anchor-id="ejemplo-de-violación-de-la-3fn"><span class="header-section-number">2.4.2</span> Ejemplo de violación de la 3FN</h3>
+<p>Observa la tabla <code>Empleados</code> (Clave Primaria: <code>id_empleado</code>):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 18%">
+<col style="width: 24%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_empleado (PK)</th>
+<th style="text-align: left;">nombre</th>
+<th style="text-align: left;">id_departamento</th>
+<th style="text-align: left;">nombre_departamento</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Ana Gómez</td>
+<td style="text-align: left;">D01</td>
+<td style="text-align: left;">Ventas</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Carlos Ruiz</td>
+<td style="text-align: left;">D01</td>
+<td style="text-align: left;">Ventas</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">María López</td>
+<td style="text-align: left;">D02</td>
+<td style="text-align: left;">Marketing</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Problema:</strong>
+<ul>
+<li><code>nombre</code> e <code>id_departamento</code> dependen directamente de <code>id_empleado</code>.</li>
+<li>Sin embargo, <code>nombre_departamento</code> no depende de <code>id_empleado</code>, sino de <code>id_departamento</code> (un campo que no es clave).</li>
+<li>Hay una dependencia transitiva: <code>id_empleado</code> <span class="math inline">\(\rightarrow\)</span> <code>id_departamento</code> <span class="math inline">\(\rightarrow\)</span> <code>nombre_departamento</code>.</li>
+</ul></li>
+</ul>
+</section>
+<section id="solución-aplicando-3fn" class="level3" data-number="2.4.3">
+<h3 data-number="2.4.3" class="anchored" data-anchor-id="solución-aplicando-3fn"><span class="header-section-number">2.4.3</span> Solución (Aplicando 3FN)</h3>
+<p>Extraemos los datos del departamento a su propia tabla:</p>
+<p><strong>Tabla 1: <code>Departamentos</code></strong> <em>(Clave Primaria: <code>id_departamento</code>)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_departamento (PK)</th>
+<th style="text-align: left;">nombre_departamento</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">D01</td>
+<td style="text-align: left;">Ventas</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D02</td>
+<td style="text-align: left;">Marketing</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla 2: <code>Empleados</code></strong> <em>(Clave Primaria: <code>id_empleado</code>)</em></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">id_empleado (PK)</th>
+<th style="text-align: left;">nombre</th>
+<th style="text-align: left;">id_departamento (FK)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Ana Gómez</td>
+<td style="text-align: left;">D01</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Carlos Ruiz</td>
+<td style="text-align: left;">D01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">María López</td>
+<td style="text-align: left;">D02</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="resumen-de-las-3-formas-normales" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="resumen-de-las-3-formas-normales"><span class="header-section-number">2.5</span> Resumen de las 3 Formas Normales</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Forma Normal</th>
+<th style="text-align: left;">Requisito Principal</th>
+<th style="text-align: left;">¿Qué problema elimina?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><strong>1FN (Primera)</strong></td>
+<td style="text-align: left;">Datos atómicos en las celdas y sin columnas repetidas.</td>
+<td style="text-align: left;">Celdas con listas de valores o datos no estructurados.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><strong>2FN (Segunda)</strong></td>
+<td style="text-align: left;">Estar en 1FN y eliminar dependencias parciales de claves compuestas.</td>
+<td style="text-align: left;">Datos que solo dependen de una parte de la Clave Primaria.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><strong>3FN (Tercera)</strong></td>
+<td style="text-align: left;">Estar en 2FN y eliminar dependencias transitivas entre columnas no clave.</td>
+<td style="text-align: left;">Columnas no clave que dependen de otras columnas no clave.</td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

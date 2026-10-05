@@ -1,6 +1,7 @@
 ---
-title: "Laboratorio: Relaciones PK y FK en MySQL"
+title: "Laboratorio Relaciones PK y FK en MySQL"
 subtitle: "Gestión de un modelo Mini-ventas (Clientes → Pedidos → Líneas de Detalle)"
+format: html
 ---
 
 # Objetivo del Laboratorio
@@ -74,11 +75,11 @@ CREATE TABLE orders (
 
 > **Elementos clave a observar:**
 >
-> - **Clave Foránea (FK):** `orders.customer_id` referencia a `customers.customer_id`.
+> -   **Clave Foránea (FK):** `orders.customer_id` referencia a `customers.customer_id`.
 >
-> - **`ON UPDATE CASCADE`:** Si el código de un cliente cambia, sus pedidos se actualizarán automáticamente.
+> -   **`ON UPDATE CASCADE`:** Si el código de un cliente cambia, sus pedidos se actualizarán automáticamente.
 >
-> - **`ON DELETE RESTRICT`:** Impide borrar un cliente si este conserva pedidos registrados.
+> -   **`ON DELETE RESTRICT`:** Impide borrar un cliente si este conserva pedidos registrados.
 
 ------------------------------------------------------------------------
 
@@ -106,9 +107,9 @@ CREATE TABLE order_items (
 
 > **Elementos clave a observar:**
 >
-> - **Clave Primaria Compuesta (`order_id`, `line_no`):** Identifica de forma única cada elemento dentro de un mismo pedido.
+> -   **Clave Primaria Compuesta (`order_id`, `line_no`):** Identifica de forma única cada elemento dentro de un mismo pedido.
 >
-> - **`ON DELETE CASCADE`:** Al borrar un pedido, MySQL eliminará automáticamente todas sus líneas de detalle.
+> -   **`ON DELETE CASCADE`:** Al borrar un pedido, MySQL eliminará automáticamente todas sus líneas de detalle.
 
 ------------------------------------------------------------------------
 
@@ -150,7 +151,7 @@ VALUES
     ('Otra Ana', 'ana@demo.com');
 ```
 
-- **Resultado esperado:** Error de MySQL notificando la violación de la restricción `uq_customers_email` (`Duplicate entry 'ana@demo.com' for key 'uq_customers_email'`).
+-   **Resultado esperado:** Error de MySQL notificando la violación de la restricción `uq_customers_email` (`Duplicate entry 'ana@demo.com' for key 'uq_customers_email'`).
 
 ## Restricción `FOREIGN KEY`: Referenciar un cliente inexistente
 
@@ -160,9 +161,9 @@ INSERT INTO orders (customer_id, order_date, status)
 VALUES (999, '2026-02-03', 'NEW');
 ```
 
-- **Resultado esperado:** Error de integridad referencial provocado por `fk_orders_customer`
+-   **Resultado esperado:** Error de integridad referencial provocado por `fk_orders_customer`
 
-  `ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (lab_relaciones.orders, CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE)`
+    `ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (lab_relaciones.orders, CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE)`
 
 ## Restricción `CHECK`: Usar un estado no permitido
 
@@ -173,7 +174,7 @@ INSERT INTO orders
 VALUES (1, '2026-02-03', 'SHIPPED');
 ```
 
-- **Resultado esperado:** Error por violación del `CHECK` `chk_orders_status` (`ERROR 3819 (HY000): Check constraint 'chk_orders_status' is violated.`)
+-   **Resultado esperado:** Error por violación del `CHECK` `chk_orders_status` (`ERROR 3819 (HY000): Check constraint 'chk_orders_status' is violated.`)
 
 ------------------------------------------------------------------------
 
@@ -198,7 +199,7 @@ SELECT * FROM customers;
 SELECT * FROM orders;
 ```
 
-- **Resultado:** El `customer_id` del cliente 'Ana Ruiz' pasa a ser `101`, y la columna `customer_id` de sus pedidos asociados en la tabla `orders` se actualiza automáticamente a `101`.
+-   **Resultado:** El `customer_id` del cliente 'Ana Ruiz' pasa a ser `101`, y la columna `customer_id` de sus pedidos asociados en la tabla `orders` se actualiza automáticamente a `101`.
 
 ![](images/paste-Uskw_FrjtpO151dl01B17.png)
 
@@ -219,7 +220,7 @@ SELECT * FROM orders;
 SELECT * FROM order_items;
 ```
 
-- **Resultado:** Las líneas de detalle en `order_items` vinculadas originalmente al pedido `2` pasan a estar vinculadas al pedido `500`.
+-   **Resultado:** Las líneas de detalle en `order_items` vinculadas originalmente al pedido `2` pasan a estar vinculadas al pedido `500`.
 
 ![](images/paste-0YtWGA0US2sw-F_r8w0Ki.png)
 
@@ -242,9 +243,9 @@ SELECT * FROM orders;
 SELECT * FROM order_items;
 ```
 
-- **Resultado:** Al eliminar el pedido `1`, sus líneas correspondientes en `order_items` son eliminadas automáticamente por el motor.
+-   **Resultado:** Al eliminar el pedido `1`, sus líneas correspondientes en `order_items` son eliminadas automáticamente por el motor.
 
-  ![](images/paste-VBtwUvvXYjywccOevV7ei.png)
+    ![](images/paste-VBtwUvvXYjywccOevV7ei.png)
 
 ## `ON DELETE RESTRICT`: Bloqueo de eliminación de un registro padre
 
@@ -254,7 +255,7 @@ DELETE FROM customers
 WHERE customer_id = 2;
 ```
 
-- **Resultado esperado:** Inserción denegada por la regla `RESTRICT`. MySQL impide la eliminación porque el cliente conserva registros hijos vinculados. `ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (lab_relaciones.orders, CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE)`
+-   **Resultado esperado:** Inserción denegada por la regla `RESTRICT`. MySQL impide la eliminación porque el cliente conserva registros hijos vinculados. `ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (lab_relaciones.orders, CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE)`
 
 ------------------------------------------------------------------------
 
@@ -297,9 +298,9 @@ WHERE customer_id = 2;
 SELECT * FROM orders;
 ```
 
-- **Resultado:** El cliente es eliminado. El pedido `500` permanece en la base de datos, pero la columna `customer_id` pasa automáticamente a valor `NULL`.
+-   **Resultado:** El cliente es eliminado. El pedido `500` permanece en la base de datos, pero la columna `customer_id` pasa automáticamente a valor `NULL`.
 
-  ![](images/paste-tolrsLEuDXvoa0EIGLjvC.png)
+    ![](images/paste-tolrsLEuDXvoa0EIGLjvC.png)
 
 ------------------------------------------------------------------------
 
@@ -337,7 +338,7 @@ INSERT INTO order_items (order_id, line_no, product_name, qty, unit_price)
 VALUES (500, 2, 'Cable HDMI', 0, 8.00);
 ```
 
-- **Resultado esperado:** La inserción falla por violación de la nueva restricción `chk_items_qty`. `ERROR 3819 (HY000): Check constraint 'chk_items_qty' is violated.`
+-   **Resultado esperado:** La inserción falla por violación de la nueva restricción `chk_items_qty`. `ERROR 3819 (HY000): Check constraint 'chk_items_qty' is violated.`
 
 ------------------------------------------------------------------------
 
@@ -346,29 +347,29 @@ VALUES (500, 2, 'Cable HDMI', 0, 8.00);
 Resuelve las siguientes cuestiones aplicando los comandos estudiados:
 
 1.  **Nuevo Pedido y Detalle:** Crea un nuevo pedido para la clienta Ana Ruiz (cuyo `customer_id` actual es `101`) e inserta $2$ líneas de detalle.
-    - *Pista:* Debes ejecutar un `INSERT INTO orders` seguido de dos `INSERT INTO order_items`.
+    -   *Pista:* Debes ejecutar un `INSERT INTO orders` seguido de dos `INSERT INTO order_items`.
 
-    - ::: nota
-      El order_id autoasignado al nuevo pedido es 501, es decir, cuando cambiamos manualmente el order_id de 2 a 500 movimos el contador del auto_increment a ese nuevo máximo y los números intermedios quedarán vacios.
-      :::
+    -   ::: nota
+        El order_id autoasignado al nuevo pedido es 501, es decir, cuando cambiamos manualmente el order_id de 2 a 500 movimos el contador del auto_increment a ese nuevo máximo y los números intermedios quedarán vacios.
+        :::
 2.  **Actualización de Estado:** Modifica el estado del pedido recién creado para asignarle el valor `'PAID'`.
-    - *Pista:* Utiliza `UPDATE orders SET status = 'PAID' WHERE order_id = ...;`.
+    -   *Pista:* Utiliza `UPDATE orders SET status = 'PAID' WHERE order_id = ...;`.
 3.  **Verificación de Borrado en Cascada:** Elimina el pedido que acabas de crear y comprueba que sus líneas han sido eliminadas automáticamente.
-    - *Pista:* Utiliza `DELETE FROM orders ...` y realiza posteriormente una consulta `SELECT` sobre `order_items`.
+    -   *Pista:* Utiliza `DELETE FROM orders ...` y realiza posteriormente una consulta `SELECT` sobre `order_items`.
 4.  **Validación de Restricciones:** Intenta actualizar el estado de un pedido al valor `'DELIVERED'` y analiza el mensaje de error devuelto por la base de datos.
-    - *Pista:* Revisa los valores permitidos en la restricción `chk_orders_status`.
+    -   *Pista:* Revisa los valores permitidos en la restricción `chk_orders_status`.
 5.  **Reconfiguración de Clave Foránea:** Modifica la restricción `fk_orders_customer` para que vuelva a aplicar la regla `RESTRICT` mediante sentencias `ALTER TABLE`. Explica qué ocurriría si intentaras eliminar a Ana Ruiz tras este cambio.
 
 ------------------------------------------------------------------------
 
 # Resumen de Conceptos Clave
 
-- **Primary Key (PK):** Identificador único de cada fila. Impide duplicados y valores nulos.
-- **Foreign Key (FK):** Establece el vínculo hacia una clave primaria en otra tabla, asegurando que no existan registros huérfanos.
-- **`CONSTRAINT`:** Reglas de validación aplicadas a nivel de tabla (`UNIQUE`, `NOT NULL`, `CHECK`).
-- **`ON UPDATE CASCADE`:** Propaga los cambios de la clave primaria del registro padre hacia sus registros hijos.
-- **`ON DELETE RESTRICT`:** Impide eliminar un registro padre mientras conserve registros hijos asociados.
-- **`ON DELETE CASCADE`:** Elimina automáticamente los registros hijos al eliminar el registro padre.
-- **`ON DELETE SET NULL`:** Mantiene los registros hijos asignando el valor `NULL` a su clave foránea al eliminar el registro padre.
-- **`ALTER TABLE`:** Permite reestructurar la tabla (modificar columnas y restricciones) conservando los datos existentes.
-- **`UPDATE` vs `DELETE`:** `UPDATE` modifica el contenido de campos en filas existentes; `DELETE` elimina filas completas de la tabla.
+-   **Primary Key (PK):** Identificador único de cada fila. Impide duplicados y valores nulos.
+-   **Foreign Key (FK):** Establece el vínculo hacia una clave primaria en otra tabla, asegurando que no existan registros huérfanos.
+-   **`CONSTRAINT`:** Reglas de validación aplicadas a nivel de tabla (`UNIQUE`, `NOT NULL`, `CHECK`).
+-   **`ON UPDATE CASCADE`:** Propaga los cambios de la clave primaria del registro padre hacia sus registros hijos.
+-   **`ON DELETE RESTRICT`:** Impide eliminar un registro padre mientras conserve registros hijos asociados.
+-   **`ON DELETE CASCADE`:** Elimina automáticamente los registros hijos al eliminar el registro padre.
+-   **`ON DELETE SET NULL`:** Mantiene los registros hijos asignando el valor `NULL` a su clave foránea al eliminar el registro padre.
+-   **`ALTER TABLE`:** Permite reestructurar la tabla (modificar columnas y restricciones) conservando los datos existentes.
+-   **`UPDATE` vs `DELETE`:** `UPDATE` modifica el contenido de campos en filas existentes; `DELETE` elimina filas completas de la tabla.

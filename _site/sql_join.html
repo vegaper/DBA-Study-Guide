@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Tipos de Join en SQL – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./sql_join.html">Tipos de Join en SQL</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SQL: Structured Query Language y sus variantes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sqlLanguage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a las Consultas Lenguajes SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Consultas_SQL_Empleados_Completo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_subconsultas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Subconsultas en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql_join.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Tipos de Join en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tipos_de_claves_tablas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de claves en tablas relacionales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./normalizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Normalización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sgbd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de gestión de bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mysqlubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instalando y Configurando MySQL en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ddl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DDL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./dml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_guiada_aplicaci_n_web_mysql_php.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: Aplicación web con MySQL y PHP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#uniones-de-tablas-el-concepto-de-join" id="toc-uniones-de-tablas-el-concepto-de-join" class="nav-link active" data-scroll-target="#uniones-de-tablas-el-concepto-de-join"><span class="header-section-number">1</span> Uniones de Tablas: El Concepto de <code>JOIN</code></a>
+  <ul>
+  <li><a href="#conceptos-clave-antes-de-empezar" id="toc-conceptos-clave-antes-de-empezar" class="nav-link" data-scroll-target="#conceptos-clave-antes-de-empezar"><span class="header-section-number">1.1</span> Conceptos clave antes de empezar</a></li>
+  </ul></li>
+  <li><a href="#inner-join-la-intersección-las-coincidencias-exactas" id="toc-inner-join-la-intersección-las-coincidencias-exactas" class="nav-link" data-scroll-target="#inner-join-la-intersección-las-coincidencias-exactas"><span class="header-section-number">2</span> INNER JOIN (La intersección / “Las coincidencias exactas”)</a></li>
+  <li><a href="#left-join-unión-izquierda" id="toc-left-join-unión-izquierda" class="nav-link" data-scroll-target="#left-join-unión-izquierda"><span class="header-section-number">3</span> LEFT JOIN (Unión Izquierda)</a></li>
+  <li><a href="#right-join-unión-derecha" id="toc-right-join-unión-derecha" class="nav-link" data-scroll-target="#right-join-unión-derecha"><span class="header-section-number">4</span> RIGHT JOIN (Unión Derecha)</a></li>
+  <li><a href="#full-outer-join-unión-total-completa" id="toc-full-outer-join-unión-total-completa" class="nav-link" data-scroll-target="#full-outer-join-unión-total-completa"><span class="header-section-number">5</span> FULL OUTER JOIN (Unión Total / Completa)</a></li>
+  <li><a href="#cross-join-producto-cartesiano-combinación-total" id="toc-cross-join-producto-cartesiano-combinación-total" class="nav-link" data-scroll-target="#cross-join-producto-cartesiano-combinación-total"><span class="header-section-number">6</span> CROSS JOIN (Producto Cartesiano / Combinación Total)</a></li>
+  <li><a href="#self-join-unirse-a-sí-mismo" id="toc-self-join-unirse-a-sí-mismo" class="nav-link" data-scroll-target="#self-join-unirse-a-sí-mismo"><span class="header-section-number">7</span> SELF JOIN (Unirse a sí mismo)</a></li>
+  <li><a href="#resumen" id="toc-resumen" class="nav-link" data-scroll-target="#resumen"><span class="header-section-number">8</span> Resumen</a></li>
+  <li><a href="#operadores-de-conjuntos-en-sql" id="toc-operadores-de-conjuntos-en-sql" class="nav-link" data-scroll-target="#operadores-de-conjuntos-en-sql"><span class="header-section-number">9</span> Operadores de Conjuntos en SQL</a>
+  <ul>
+  <li><a href="#union" id="toc-union" class="nav-link" data-scroll-target="#union"><span class="header-section-number">9.1</span> UNION</a>
+  <ul class="collapse">
+  <li><a href="#sintaxis-y-ejemplo" id="toc-sintaxis-y-ejemplo" class="nav-link" data-scroll-target="#sintaxis-y-ejemplo"><span class="header-section-number">9.1.1</span> Sintaxis y Ejemplo</a></li>
+  </ul></li>
+  <li><a href="#resumen-de-diferencias-clave" id="toc-resumen-de-diferencias-clave" class="nav-link" data-scroll-target="#resumen-de-diferencias-clave"><span class="header-section-number">9.2</span> Resumen de diferencias clave</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./sql_join.html">Tipos de Join en SQL</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Tipos de Join en SQL</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="uniones-de-tablas-el-concepto-de-join" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Uniones de Tablas: El Concepto de <code>JOIN</code></h1>
+<p>En una base de datos relacional, la información <strong>no se guarda en una sola tabla gigante</strong>, sino que se divide en varias tablas pequeñas organizadas por tema para no repetir datos.</p>
+<p>Un <strong><code>JOIN</code></strong> es la herramienta que nos permite <strong>volver a juntar la información de dos o más tablas</strong> en una sola vista, usando una relación o “puente” que existe entre ellas.</p>
+<section id="conceptos-clave-antes-de-empezar" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="conceptos-clave-antes-de-empezar"><span class="header-section-number">1.1</span> Conceptos clave antes de empezar</h2>
+<p>Para unir tablas, necesitamos entender dos piezas clave:</p>
+<ol type="1">
+<li><p><strong>Clave Primaria (Primary Key / PK):</strong> Es el identificador único de cada fila en una tabla (como el DNI/cédula de una persona o el ID de un cliente). Nunca se repite.</p></li>
+<li><p><strong>Clave Foránea (Foreign Key / FK):</strong> Es una columna en <em>otra</em> tabla que hace referencia a la Clave Primaria de la primera tabla. Es el “hilo” que conecta ambas tablas.</p></li>
+</ol>
+<p>Un JOIN combina filas de dos o más tablas basándose en una condición relacinada entre ellas.</p>
+<p>La condición más común es la igualdad entre una clave primaria y una clave foránea.</p>
+</section>
+</section>
+<section id="inner-join-la-intersección-las-coincidencias-exactas" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> INNER JOIN (La intersección / “Las coincidencias exactas”)</h1>
+<p>El <code>INNER JOIN</code> (Unión Interna) compara dos tablas y <strong>devuelve únicamente las filas que tienen coincidencia en AMBAS tablas</strong>.</p>
+<p>Si un registro de la Tabla A no tiene su “pareja” correspondiente en la Tabla B (o viceversa), <strong>queda completamente fuera del resultado</strong>.</p>
+<p>Analogía del mundo real: La Fiesta de Disfraces con Invitación</p>
+<p>Imagina que tienes:</p>
+<ul>
+<li><p><strong>Tabla A:</strong> Lista de personas invitadas a una fiesta.</p></li>
+<li><p><strong>Tabla B:</strong> Lista de personas que efectivamente llegaron y entraron.</p></li>
+</ul>
+<p>Un <code>INNER JOIN</code> te daría únicamente la lista de <strong>las personas que estaban invitadas Y que además asistieron a la fiesta</strong>. Si alguien fue invitado pero no fue, no aparece. Si alguien entró colado sin invitación, tampoco aparece.</p>
+<p><strong>Ejemplo práctico explicativo</strong></p>
+<p>Imaginemos que tenemos dos tablas en nuestra tienda online:</p>
+<p><strong>Tabla: <code>CLIENTES</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id (PK)</strong></td>
+<td><strong>nombre</strong></td>
+</tr>
+<tr class="even">
+<td><strong>1</strong></td>
+<td>Ana</td>
+</tr>
+<tr class="odd">
+<td><strong>2</strong></td>
+<td>Carlos</td>
+</tr>
+<tr class="even">
+<td><strong>3</strong></td>
+<td>María</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla: <code>PEDIDOS</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id</strong></td>
+<td><strong>cliente_id (FK)</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>101</td>
+<td><strong>1</strong></td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>102</td>
+<td><strong>1</strong></td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td>103</td>
+<td><strong>2</strong></td>
+<td>$120</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p>📌 <strong>Fíjate en esto:</strong> María (ID 3) no ha hecho ningún pedido todavía. Y no hay ningún pedido asociado a un cliente que no exista.</p>
+</blockquote>
+<p><strong>La Consulta SQL</strong></p>
+<pre class="sqk"><code>SELECT 
+    clientes.nombre, 
+    pedidos.total
+FROM clientes
+INNER JOIN pedidos
+    ON clientes.id = pedidos.cliente_id;</code></pre>
+<p><strong>Desglose paso a paso de la sintaxis:</strong></p>
+<ul>
+<li><p><strong><code>SELECT clientes.nombre, pedidos.total</code></strong></p>
+<p>Le decimos qué columnas queremos ver. Como vienen de tablas distintas, ponemos <code>tabla.columna</code> para evitar confusiones.</p></li>
+<li><p><strong><code>FROM clientes</code></strong></p>
+<p>Especificamos la primera tabla (Tabla Principal / Izquierda).</p></li>
+<li><p><strong><code>INNER JOIN pedidos</code></strong></p>
+<p>Indicamos la segunda tabla que queremos conectar (Tabla Secundaria / Derecha).</p></li>
+<li><p><strong><code>ON clientes.id = pedidos.cliente_id</code></strong></p>
+<p><strong>¡La condición del puente!</strong> Le explicamos a la base de datos cómo se relacionan: <em>“Busca dónde el <code>id</code> de la tabla <code>clientes</code> sea exactamente igual al <code>cliente_id</code> de la tabla <code>pedidos</code>”</em>.</p></li>
+</ul>
+<p><strong>Resultado de la consulta:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>nombre</th>
+<th>total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ana</td>
+<td>$50</td>
+</tr>
+<tr class="even">
+<td>Ana</td>
+<td>$30</td>
+</tr>
+<tr class="odd">
+<td>Carlos</td>
+<td>$120</td>
+</tr>
+</tbody>
+</table>
+<p><strong>¿Por qué este resultado?</strong></p>
+<ul>
+<li><p><strong>Ana</strong> aparece 2 veces porque hizo 2 compras.</p></li>
+<li><p><strong>Carlos</strong> aparece 1 vez porque hizo 1 compra.</p></li>
+<li><p><strong>María NO aparece en el resultado</strong> porque no tiene ninguna coincidencia en la tabla de <code>pedidos</code>. El <code>INNER JOIN</code> la descarta por no tener pareja.</p></li>
+</ul>
+<p>¡Perfecto! Vamos a ampliar la familia de los <code>JOIN</code> con el <strong><code>LEFT JOIN</code></strong> (o <code>LEFT OUTER JOIN</code>), que es uno de los más utilizados en la vida real.</p>
+</section>
+<section id="left-join-unión-izquierda" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> LEFT JOIN (Unión Izquierda)</h1>
+<p><strong>¿Qué hace?</strong></p>
+<p>El <code>LEFT JOIN</code> toma <strong>TODOS los datos de la primera tabla</strong> (la tabla de la izquierda, la que pones en el <code>FROM</code>), y trae los datos de la segunda tabla (la de la derecha) <strong>solo cuando hay coincidencia</strong>.</p>
+<p>Si un registro de la tabla de la izquierda <strong>no tiene pareja</strong> en la tabla de la derecha, <strong>NO se elimina</strong>. En su lugar, la base de datos rellena los datos de la segunda tabla con valores vacíos (<strong><code>NULL</code></strong>).</p>
+<p><strong>Analogía del mundo real: La Lista de Asistencia de un Colegio</strong></p>
+<p>Imagina que eres profesor:</p>
+<ul>
+<li><p><strong>Tabla Izquierda (<code>FROM</code>):</strong> La lista oficial de <strong>todos los alumnos</strong> matriculados en la clase.</p></li>
+<li><p><strong>Tabla Derecha (<code>JOIN</code>):</strong> La lista de alumnos que <strong>entregaron la tarea</strong> hoy.</p></li>
+</ul>
+<p>Si haces un <code>LEFT JOIN</code>, el resultado será tu <strong>lista completa de alumnos</strong>. Al lado de los que entregaron, verás su nota. Al lado de los que <strong>NO</strong> entregaron la tarea, verás un espacio en blanco (<code>NULL</code>).</p>
+<blockquote class="blockquote">
+<p>🎯 <em>Diferencia clave:</em> El <code>INNER JOIN</code> habría borrado de la lista a los alumnos que no entregaron nada. El <code>LEFT JOIN</code> te los muestra a todos para que sepas quiénes faltan.</p>
+</blockquote>
+<p><strong>Ejemplo práctico explicativo</strong></p>
+<p>Volvamos a nuestras tablas de la tienda online:</p>
+<p><strong>Tabla Izquierda: <code>CLIENTES</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id (PK)</strong></td>
+<td><strong>nombre</strong></td>
+</tr>
+<tr class="even">
+<td><strong>1</strong></td>
+<td>Ana</td>
+</tr>
+<tr class="odd">
+<td><strong>2</strong></td>
+<td>Carlos</td>
+</tr>
+<tr class="even">
+<td><strong>3</strong></td>
+<td>María</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla Derecha: <code>PEDIDOS</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id</strong></td>
+<td><strong>cliente_id (FK)</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>101</td>
+<td><strong>1</strong></td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>102</td>
+<td><strong>1</strong></td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td>103</td>
+<td><strong>2</strong></td>
+<td>$120</td>
+</tr>
+</tbody>
+</table>
+<p>📌 <strong>Recuerda:</strong> María (ID 3) es una clienta registrada, pero <strong>nunca ha comprado nada</strong>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>SQL</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    clientes.nombre, </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    pedidos.total</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> clientes              <span class="co">-- 👈 ESTA es la tabla de la IZQUIERDA (LEFT)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">LEFT</span> <span class="kw">JOIN</span> pedidos          <span class="co">-- 👈 ESTA es la tabla de la DERECHA</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> clientes.<span class="kw">id</span> <span class="op">=</span> pedidos.cliente_id;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado de la consulta:</strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>nombre</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>Ana</td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>Ana</td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td>Carlos</td>
+<td>$120</td>
+</tr>
+<tr class="odd">
+<td><strong>María</strong></td>
+<td><strong><code>NULL</code></strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>¿Por qué sale este resultado?</strong></p>
+<ul>
+<li><p><strong>Ana</strong> y <strong>Carlos</strong> aparecen con sus compras normales porque coinciden en ambas tablas.</p></li>
+<li><p><strong>María APARECE en el resultado</strong> porque está en la tabla de la izquierda (<code>clientes</code>). Como no tiene ningún pedido en la tabla de la derecha, PostgreSQL pone un <strong><code>NULL</code></strong> (un valor nulo o vacío) en la columna <code>total</code>.</p></li>
+</ul>
+<p><strong>¿Para qué sirve esto en la vida real? (El superpoder del <code>LEFT JOIN</code>)</strong></p>
+<p>El <code>LEFT JOIN</code> es la mejor herramienta para <strong>encontrar cosas que NO han ocurrido</strong> o detectar inactividad.</p>
+<p>Si quieres saber: <em>“¿Qué clientes registrados jamás han realizado una compra?”</em></p>
+<p>Solo tienes que añadir un <code>WHERE</code> buscando los valores nulos:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> clientes.nombre</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> clientes</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">LEFT</span> <span class="kw">JOIN</span> pedidos </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> clientes.<span class="kw">id</span> <span class="op">=</span> pedidos.cliente_id</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> pedidos.cliente_id <span class="kw">IS</span> <span class="kw">NULL</span>;  <span class="co">-- Filtra solo las filas donde no hubo coincidencia</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="right-join-unión-derecha" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> RIGHT JOIN (Unión Derecha)</h1>
+<p><strong>¿Qué hace?</strong></p>
+<p>El <code>RIGHT JOIN</code> toma <strong>TODOS los datos de la segunda tabla</strong> (la tabla de la derecha, la que pones después de la palabra <code>JOIN</code>), y trae los datos de la primera tabla (la de la izquierda) <strong>solo cuando hay coincidencia</strong>.</p>
+<p>Si un registro de la tabla de la derecha <strong>no tiene pareja</strong> en la tabla de la izquierda, la base de datos conserva esa fila y rellena las columnas de la tabla izquierda con valores vacíos (<strong><code>NULL</code></strong>).</p>
+<p><strong>Analogía del mundo real: El Ticket de Compra y los Productos</strong></p>
+<p>Imagina una tienda física:</p>
+<ul>
+<li><p><strong>Tabla Izquierda (<code>FROM</code>):</strong> La lista de <strong>clientes registrados</strong> en el club de fidelidad.</p></li>
+<li><p><strong>Tabla Derecha (<code>JOIN</code>):</strong> Todos los <strong>tickets de venta</strong> cobrados en caja hoy.</p></li>
+</ul>
+<p>Si haces un <code>RIGHT JOIN</code>, el resultado te mostrará <strong>TODOS los tickets cobrados en el día</strong>.</p>
+<ul>
+<li><p>Si el ticket pertenece a un cliente registrado, verás el nombre del cliente.</p></li>
+<li><p>Si la compra la hizo un cliente anónimo (sin tarjeta de fidelidad), el ticket aparecerá de todos modos, pero en la columna del cliente verás un <strong><code>NULL</code></strong>.</p></li>
+</ul>
+<p><strong>Ejemplo práctico explicativo</strong></p>
+<p>Cambiemos ligeramente nuestro ejemplo para ver el efecto real:</p>
+<p><strong>Tabla Izquierda: <code>CLIENTES</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id (PK)</strong></td>
+<td><strong>nombre</strong></td>
+</tr>
+<tr class="even">
+<td><strong>1</strong></td>
+<td>Ana</td>
+</tr>
+<tr class="odd">
+<td><strong>2</strong></td>
+<td>Carlos</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla Derecha: <code>PEDIDOS</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id</strong></td>
+<td><strong>cliente_id (FK)</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>101</td>
+<td><strong>1</strong></td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>102</td>
+<td><strong>1</strong></td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td>103</td>
+<td><strong>99</strong></td>
+<td>$200</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p>📌 <strong>Atención aquí:</strong> El pedido 103 tiene un <code>cliente_id = 99</code> (alguien que compró como invitado/anónimo y no existe en la tabla de <code>clientes</code>).</p>
+</blockquote>
+<p><strong>La Consulta SQL</strong></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    clientes.nombre, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    pedidos.<span class="kw">id</span> <span class="kw">AS</span> pedido_id,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    pedidos.total</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> clientes              <span class="co">-- 👈 Tabla de la IZQUIERDA</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">RIGHT</span> <span class="kw">JOIN</span> pedidos         <span class="co">-- 👈 ESTA es la tabla de la DERECHA (RIGHT)</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> clientes.<span class="kw">id</span> <span class="op">=</span> pedidos.cliente_id;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado de la consulta:</strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>nombre</strong></td>
+<td><strong>pedido_id</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>Ana</td>
+<td>101</td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>Ana</td>
+<td>102</td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td><strong><code>NULL</code></strong></td>
+<td><strong>103</strong></td>
+<td><strong>$200</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>¿Por qué sale este resultado?</strong></p>
+<ul>
+<li><p>Los pedidos <strong>101</strong> y <strong>102</strong> encuentran su pareja con Ana.</p></li>
+<li><p>El pedido <strong>103 APARECE SÍ O SÍ</strong> porque pertenece a la tabla de la derecha (<code>pedidos</code>). Como su <code>cliente_id</code> (99) no coincide con ningún cliente registrado, la columna <code>nombre</code> se rellena con <strong><code>NULL</code></strong>.</p></li>
+</ul>
+<p><strong>¿Por qué casi nadie usa <code>RIGHT JOIN</code>?</strong></p>
+<p>En el trabajo diario con bases de datos, <strong>el 95% de los desarrolladores evita usar <code>RIGHT JOIN</code></strong>.</p>
+<p>¿Por qué? Porque cambiar el orden de lectura de izquierda a derecha vuelve las consultas complejas más difíciles de leer.</p>
+<p>Cualquier <code>RIGHT JOIN</code> se puede escribir como un <code>LEFT JOIN</code> simplemente invirtiendo el orden de las tablas en la consulta</p>
+</section>
+<section id="full-outer-join-unión-total-completa" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> FULL OUTER JOIN (Unión Total / Completa)</h1>
+<p><strong>¿Qué hace?</strong></p>
+<p>El <code>FULL OUTER JOIN</code> combina los resultados de un <code>LEFT JOIN</code> y un <code>RIGHT JOIN</code> al mismo tiempo.</p>
+<p>Devuelve <strong>TODAS las filas de AMBAS tablas</strong>:</p>
+<ul>
+<li><p>Si hay coincidencia entre filas, las une.</p></li>
+<li><p>Si una fila de la izquierda <strong>no tiene pareja</strong> a la derecha, se muestra y rellena la derecha con <strong><code>NULL</code></strong>.</p></li>
+<li><p>Si una fila de la derecha <strong>no tiene pareja</strong> a la izquierda, se muestra y rellena la izquierda con <strong><code>NULL</code></strong>.</p></li>
+</ul>
+<p><strong>Analogía del mundo real: La Fiesta de Encuentro de Exalumnos</strong></p>
+<p>Imagina dos listas:</p>
+<ul>
+<li><p><strong>Tabla Izquierda (<code>FROM</code>):</strong> Lista de alumnos que cursaron la Educación Primaria.</p></li>
+<li><p><strong>Tabla Derecha (<code>JOIN</code>):</strong> Lista de alumnos que cursaron la Educación Secundaria.</p></li>
+</ul>
+<p>Un <code>FULL OUTER JOIN</code> creará una lista general con <strong>todos los estudiantes que hayan pasado por el colegio alguna vez</strong>:</p>
+<ul>
+<li><p>Verás a los que hicieron Primaria Y Secundaria juntos (coincidencia).</p></li>
+<li><p>Verás a los que solo hicieron Primaria y luego se cambiaron de colegio (espacio en blanco / <code>NULL</code> en Secundaria).</p></li>
+<li><p>Verás a los que entraron nuevos en Secundaria (espacio en blanco / <code>NULL</code> en Primaria).</p></li>
+</ul>
+<p><strong>Ejemplo práctico explicativo</strong></p>
+<p>Usemos nuestras dos tablas con casos sin pareja en ambos lados:</p>
+<p><strong>Tabla Izquierda: <code>CLIENTES</code></strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>id (PK)</strong></td>
+<td><strong>nombre</strong></td>
+</tr>
+<tr class="even">
+<td><strong>1</strong></td>
+<td>Ana</td>
+</tr>
+<tr class="odd">
+<td><strong>2</strong></td>
+<td>Carlos</td>
+</tr>
+<tr class="even">
+<td><strong>3</strong></td>
+<td><strong>María</strong> <em>(Sin pedidos)</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tabla Derecha: <code>PEDIDOS</code></strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 29%">
+<col style="width: 59%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>id</strong></td>
+<td><strong>cliente_id (FK)</strong></td>
+<td><strong>total</strong></td>
+</tr>
+<tr class="even">
+<td>101</td>
+<td><strong>1</strong></td>
+<td>$50</td>
+</tr>
+<tr class="odd">
+<td>102</td>
+<td><strong>1</strong></td>
+<td>$30</td>
+</tr>
+<tr class="even">
+<td>103</td>
+<td><strong>2</strong></td>
+<td>$120</td>
+</tr>
+<tr class="odd">
+<td>104</td>
+<td><strong>99</strong></td>
+<td><strong>$200</strong> <em>(Pedido anónimo, sin cliente)</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>La Consulta SQL</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    clientes.nombre, </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    pedidos.<span class="kw">id</span> <span class="kw">AS</span> pedido_id,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    pedidos.total</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> clientes</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">FULL</span> <span class="kw">OUTER</span> <span class="kw">JOIN</span> pedidos</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> clientes.<span class="kw">id</span> <span class="op">=</span> pedidos.cliente_id;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado de la consulta:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>nombre</strong></td>
+<td><strong>pedido_id</strong></td>
+<td><strong>total</strong></td>
+<td><strong>¿De dónde sale?</strong></td>
+</tr>
+<tr class="even">
+<td>Ana</td>
+<td>101</td>
+<td>$50</td>
+<td>Coincidencia en ambas</td>
+</tr>
+<tr class="odd">
+<td>Ana</td>
+<td>102</td>
+<td>$30</td>
+<td>Coincidencia en ambas</td>
+</tr>
+<tr class="even">
+<td>Carlos</td>
+<td>103</td>
+<td>$120</td>
+<td>Coincidencia en ambas</td>
+</tr>
+<tr class="odd">
+<td><strong>María</strong></td>
+<td><strong><code>NULL</code></strong></td>
+<td><strong><code>NULL</code></strong></td>
+<td>Viene solo de <code>CLIENTES</code> (Izquierda)</td>
+</tr>
+<tr class="even">
+<td><strong><code>NULL</code></strong></td>
+<td><strong>104</strong></td>
+<td><strong>$200</strong></td>
+<td>Viene solo de <code>PEDIDOS</code> (Derecha)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>¿Para qué sirve en la vida real?</strong></p>
+<p>Es ideal para <strong>auditorías o limpieza de datos</strong>, cuando necesitas detectar inconsistencias en ambos lados a la vez:</p>
+<ol type="1">
+<li><p>Ver qué clientes no han comprado nada.</p></li>
+<li><p>Ver qué pedidos existen en el sistema sin un cliente asignado (errores de sistema).</p></li>
+</ol>
+</section>
+<section id="cross-join-producto-cartesiano-combinación-total" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> CROSS JOIN (Producto Cartesiano / Combinación Total)</h1>
+<p><strong>¿Qué hace?</strong></p>
+<p>A diferencia de todos los anteriores (<code>INNER</code>, <code>LEFT</code>, <code>RIGHT</code>, <code>FULL</code>), este JOIN <strong>no utiliza la cláusula <code>ON</code></strong> porque no busca coincidencias.</p>
+<p>El <code>CROSS JOIN</code> toma <strong>cada una de las filas de la primera tabla</strong> y la combina con <strong>cada una de las filas de la segunda tabla</strong>.</p>
+<p>Produce una lista con <strong>todas las combinaciones posibles</strong> entre ambas tablas.</p>
+<blockquote class="blockquote">
+<p>L<strong>a regla matemática:</strong></p>
+<p>Si la Tabla A tiene <strong>3 filas</strong> y la Tabla B tiene <strong>4 filas</strong>, el resultado del <code>CROSS JOIN</code> tendrá <strong>3 × 4 = 12 filas</strong>.</p>
+</blockquote>
+<p><strong>Analogía del mundo real: Combinar Ropa o Crear un Menú</strong></p>
+<p>Imagina que vas a vestirte por la mañana:</p>
+<ul>
+<li><p><strong>Tabla A (Camisetas):</strong> Roja, Azul. (2 filas)</p></li>
+<li><p><strong>Tabla B (Pantalones):</strong> Vaquero, Negro, Blanco. (3 filas)</p></li>
+</ul>
+<p>Un <code>CROSS JOIN</code> te dará <strong>todas las combinaciones de outfits posibles</strong> que puedes hacer (2 × 3 = 6 combinaciones):</p>
+<ol type="1">
+<li><p>Roja + Vaquero</p></li>
+<li><p>Roja + Negro</p></li>
+<li><p>Roja + Blanco</p></li>
+<li><p>Azul + Vaquero</p></li>
+<li><p>Azul + Negro</p></li>
+<li><p>Azul + Blanco</p></li>
+</ol>
+<p><strong>Ejemplo práctico explicativo</strong></p>
+<p>Imaginemos una tienda de comida rápida:</p>
+<p>Tabla: <code>PLATOS</code></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>plato</strong></td>
+</tr>
+<tr class="even">
+<td>Hamburguesa</td>
+</tr>
+<tr class="odd">
+<td>Tacos</td>
+</tr>
+</tbody>
+</table>
+<p>Tabla: <code>BEBIDAS</code></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>bebida</strong></td>
+</tr>
+<tr class="even">
+<td>Refresco</td>
+</tr>
+<tr class="odd">
+<td>Agua</td>
+</tr>
+<tr class="even">
+<td>Cerveza</td>
+</tr>
+</tbody>
+</table>
+<p><strong>La Consulta SQL</strong></p>
+<p>Sintácticamente es el JOIN más sencillo porque <strong>no lleva la condición <code>ON</code></strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    platos.plato, </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    bebidas.bebida</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> platos</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">CROSS</span> <span class="kw">JOIN</span> bebidas;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>(Nota: También existe una sintaxis antigua que hace exactamente lo mismo: <code>SELECT * FROM platos, bebidas;</code>)</em></p>
+<p><strong>Resultado de la consulta (2 platos × 3 bebidas = 6 combinaciones):</strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>plato</strong></td>
+<td><strong>bebida</strong></td>
+</tr>
+<tr class="even">
+<td>Hamburguesa</td>
+<td>Refresco</td>
+</tr>
+<tr class="odd">
+<td>Hamburguesa</td>
+<td>Agua</td>
+</tr>
+<tr class="even">
+<td>Hamburguesa</td>
+<td>Cerveza</td>
+</tr>
+<tr class="odd">
+<td>Tacos</td>
+<td>Refresco</td>
+</tr>
+<tr class="even">
+<td>Tacos</td>
+<td>Agua</td>
+</tr>
+<tr class="odd">
+<td>Tacos</td>
+<td>Cerveza</td>
+</tr>
+</tbody>
+</table>
+<p><strong>¡Cuidado en la vida real! (El peligro del <code>CROSS JOIN</code>)</strong></p>
+<p>En entornos de producción, el <code>CROSS JOIN</code> debe usarse con <strong>mucha precaución</strong>.</p>
+<p>Si haces un <code>CROSS JOIN</code> accidentalmente entre dos tablas medianas, por ejemplo:</p>
+<ul>
+<li><p>Una tabla de <strong>10,000 clientes</strong></p></li>
+<li><p>Una tabla de <strong>5,000 productos</strong></p></li>
+</ul>
+<p>La base de datos intentará generar <strong>¡50,000,000 de filas!</strong> Esto puede colgar o ralentizar gravemente el servidor de la empresa.</p>
+<p><strong>¿Para qué sirve realmente en la práctica?</strong></p>
+<p>Aunque parece peligroso, tiene casos de uso muy específicos y potentes:</p>
+<ol type="1">
+<li><p><strong>Generar catálogos o combinaciones de productos:</strong> Crear todas las combinaciones de tallas (S, M, L, XL) y colores (Rojo, Verde, Azul) para una nueva prenda.</p></li>
+<li><p><strong>Matrices de reporte:</strong> Generar una fila para cada mes del año por cada departamento de la empresa, para asegurar que el informe muestre los 12 meses aunque no haya habido ventas en alguno.</p></li>
+</ol>
+<p>Para cerrar el bloque de uniones con broche de oro, falta un caso especial que no es un comando nuevo, sino un “truco” de uso: el <strong><code>SELF JOIN</code></strong>.</p>
+</section>
+<section id="self-join-unirse-a-sí-mismo" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> SELF JOIN (Unirse a sí mismo)</h1>
+<p><strong>¿Qué es?</strong></p>
+<p>Un <code>SELF JOIN</code> no es una palabra clave nueva en SQL (no escribes <code>SELF JOIN</code>). Consiste simplemente en <strong>unir una tabla consigo misma</strong> usando un <code>INNER JOIN</code> o un <code>LEFT JOIN</code>.</p>
+<p>Para que la base de datos no se confunda, le asignamos <strong>dos apodos (alias) distintos</strong> a la misma tabla dentro de la consulta, como si fueran dos tablas separadas.</p>
+<p><strong>Analogía del mundo real: La Estructura Jerárquica</strong></p>
+<p>Imagina una tabla de empleados donde cada trabajador tiene un <code>jefe_id</code> que apunta al <code>id</code> de otro empleado dentro de la misma lista:</p>
+<ul>
+<li><p><strong>Tabla <code>EMPLEADOS</code> (Visto como Empleado):</strong> Juan (ID 1, jefe_id: 2)</p></li>
+<li><p><strong>Tabla <code>EMPLEADOS</code> (Visto como Jefe):</strong> María (ID 2, jefe_id: NULL)</p></li>
+</ul>
+<p>Si quieres ver en una misma línea el nombre del empleado <strong>y el nombre de su jefe</strong>, tienes que cruzar la tabla de empleados contra sí misma.</p>
+<p><strong>Ejemplo rápido de consulta SQL</strong></p>
+<p>SQL</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    e.nombre <span class="kw">AS</span> empleado,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    j.nombre <span class="kw">AS</span> jefe</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> empleados e                  <span class="co">-- 'e' representa la vista de Empleados</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">LEFT</span> <span class="kw">JOIN</span> empleados j             <span class="co">-- 'j' representa la vista de Jefes (misma tabla)</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> e.jefe_id <span class="op">=</span> j.<span class="kw">id</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado:</strong></p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>empleado</strong></td>
+<td><strong>jefe</strong></td>
+</tr>
+<tr class="even">
+<td>Juan</td>
+<td>María</td>
+</tr>
+<tr class="odd">
+<td>María</td>
+<td><code>NULL</code> <em>(No tiene jefe, es la directora)</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Casos de uso principales</strong></p>
+<ol type="1">
+<li><p><strong>Jerarquías:</strong> Empleados y Jefes, Categorías y Subcategorías.</p></li>
+<li><p><strong>Comparación entre filas:</strong> Comparar las ventas de un cliente hoy con sus ventas de ayer dentro del mismo historial.</p></li>
+</ol>
+</section>
+<section id="resumen" class="level1" data-number="8">
+<h1 data-number="8"><span class="header-section-number">8</span> Resumen</h1>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 24%">
+<col style="width: 24%">
+<col style="width: 50%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Tipo de JOIN</strong></td>
+<td><strong>¿Lleva cláusula ON?</strong></td>
+<td><strong>¿Qué devuelve?</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>INNER JOIN</code></strong></td>
+<td><strong>SÍ</strong></td>
+<td>Solo filas con coincidencia en ambas tablas.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>LEFT JOIN</code></strong></td>
+<td><strong>SÍ</strong></td>
+<td>Todo lo de la izquierda + coincidencias de la derecha.</td>
+</tr>
+<tr class="even">
+<td><strong><code>RIGHT JOIN</code></strong></td>
+<td><strong>SÍ</strong></td>
+<td>Todo lo de la derecha + coincidencias de la izquierda.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>FULL JOIN</code></strong></td>
+<td><strong>SÍ</strong></td>
+<td>Absolutamente todo lo de ambas tablas.</td>
+</tr>
+<tr class="even">
+<td><strong><code>CROSS JOIN</code></strong></td>
+<td><strong>NO</strong></td>
+<td><strong>Todas las combinaciones posibles</strong> (Producto cartesiano).</td>
+</tr>
+<tr class="odd">
+<td><code>SELF JOIN</code></td>
+<td><strong>SÍ</strong></td>
+<td>Relaciones de una tabla consigo misma.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="operadores-de-conjuntos-en-sql" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Operadores de Conjuntos en SQL</h1>
+<p>Los operadores <code>UNION</code> y <code>UNION ALL</code> se utilizan para combinar los conjuntos de resultados de dos o más consultas <code>SELECT</code> en una única tabla de resultados.</p>
+<p>Para poder utilizar cualquiera de estos operadores, las consultas combinadas deben cumplir <strong>tres reglas estrictas</strong>: 1. <strong>Mismo número de columnas:</strong> Todas las consultas <code>SELECT</code> deben devolver exactamente la misma cantidad de columnas. 2. <strong>Tipos de datos compatibles:</strong> Las columnas en las posiciones correspondientes deben tener tipos de datos iguales o compatibles (por ejemplo, no puedes mezclar una columna de texto con una de fecha). 3. <strong>Mismo orden:</strong> Las columnas deben estar en el mismo orden en todas las consultas <code>SELECT</code>.</p>
+<hr>
+<section id="union" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="union"><span class="header-section-number">9.1</span> UNION</h2>
+<p>El operador <code>UNION</code> combina los resultados de las consultas y <strong>elimina las filas duplicadas</strong>. Si una fila exacta aparece en los resultados de la primera consulta y también en la segunda, solo se mostrará una vez en el resultado final.</p>
+<p>Debido a que el motor de base de datos debe buscar y eliminar los duplicados, <code>UNION</code> requiere más recursos y tiempo de procesamiento que <code>UNION ALL</code>.</p>
+<section id="sintaxis-y-ejemplo" class="level3" data-number="9.1.1">
+<h3 data-number="9.1.1" class="anchored" data-anchor-id="sintaxis-y-ejemplo"><span class="header-section-number">9.1.1</span> Sintaxis y Ejemplo</h3>
+<p>Imagina que tenemos dos tablas: <code>Empleados_Madrid</code> y <code>Empleados_Barcelona</code>. Queremos una lista única de todos los puestos de trabajo que existen en la empresa, sin importar la ciudad.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> puesto</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Empleados_Madrid</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> puesto</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Empleados_Barcelona;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Resultado: Si el puesto “Desarrollador” está en ambas ciudades, aparecerá solo una vez en el listado final.</p>
+<p>UNION ALL El operador UNION ALL también combina los resultados de las consultas, pero mantiene todas las filas, incluyendo los duplicados.</p>
+<p>Como el motor de base de datos simplemente anexa los resultados de la segunda consulta a los de la primera sin evaluar si existen repeticiones, <strong>UNION ALL es mucho más rápido y eficiente que UNION</strong>.</p>
+<p>Sintaxis y Ejemplo Siguiendo el ejemplo anterior, si queremos saber el volumen total de contratos por puesto en ambas ciudades, necesitamos conservar cada registro individual.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, apellidos, puesto</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Empleados_Madrid</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, apellidos, puesto</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> Empleados_Barcelona;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado:</strong> Si hay 5 desarrolladores en Madrid y 3 en Barcelona, el listado final tendrá 8 filas con el puesto “Desarrollador”.</p>
+</section>
+</section>
+<section id="resumen-de-diferencias-clave" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="resumen-de-diferencias-clave"><span class="header-section-number">9.2</span> Resumen de diferencias clave</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 37%">
+<col style="width: 37%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Característica</strong></td>
+<td><strong>UNION</strong></td>
+<td><strong>UNION ALL</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Tratamiento de duplicados</strong></td>
+<td>Los elimina (muestra valores únicos).</td>
+<td>Los conserva (muestra todos los registros).</td>
+</tr>
+<tr class="odd">
+<td><strong>Rendimiento</strong></td>
+<td>Más lento (requiere procesar y filtrar duplicados).</td>
+<td>Más rápido (simplemente concatena los resultados).</td>
+</tr>
+<tr class="even">
+<td><strong>Cuándo usarlo</strong></td>
+<td>Cuando necesites una lista limpia de valores distintos procedentes de varias tablas.</td>
+<td>Cuando necesites el volumen total de datos o estés seguro de que no hay duplicados entre las tablas.</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Nota sobre el ordenamiento (ORDER BY):</strong> Si necesitas ordenar los resultados combinados, la cláusula <code>ORDER BY</code> solo se debe escribir una vez, al final de la última consulta <code>SELECT</code>. Se aplicará a todo el conjunto de resultados unido.</p>
+</blockquote>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

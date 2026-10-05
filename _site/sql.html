@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Introducción a los Lenguajes SQL y Bases de Datos Relacionales – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./sql.html">SQL: Structured Query Language y sus variantes</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">SQL: Structured Query Language y sus variantes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sqlLanguage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a las Consultas Lenguajes SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Consultas_SQL_Empleados_Completo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_subconsultas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Subconsultas en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql_join.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de Join en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tipos_de_claves_tablas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de claves en tablas relacionales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./normalizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Normalización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sgbd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de gestión de bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mysqlubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instalando y Configurando MySQL en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ddl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DDL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./dml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_guiada_aplicaci_n_web_mysql_php.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: Aplicación web con MySQL y PHP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#datos-estructurados-semi-estructurados-y-no-estructurados" id="toc-datos-estructurados-semi-estructurados-y-no-estructurados" class="nav-link active" data-scroll-target="#datos-estructurados-semi-estructurados-y-no-estructurados"><span class="header-section-number">1</span> Datos Estructurados, Semi-estructurados y No Estructurados</a>
+  <ul>
+  <li><a href="#ventajas-e-inconvenientes-de-los-datos-estructurados" id="toc-ventajas-e-inconvenientes-de-los-datos-estructurados" class="nav-link" data-scroll-target="#ventajas-e-inconvenientes-de-los-datos-estructurados"><span class="header-section-number">1.1</span> Ventajas e Inconvenientes de los Datos Estructurados</a></li>
+  </ul></li>
+  <li><a href="#cómo-funciona-una-base-de-datos-relacional-rdbms" id="toc-cómo-funciona-una-base-de-datos-relacional-rdbms" class="nav-link" data-scroll-target="#cómo-funciona-una-base-de-datos-relacional-rdbms"><span class="header-section-number">2</span> ¿Cómo funciona una Base de Datos Relacional (RDBMS)?</a>
+  <ul>
+  <li><a href="#componentes-clave" id="toc-componentes-clave" class="nav-link" data-scroll-target="#componentes-clave"><span class="header-section-number">2.1</span> Componentes Clave</a></li>
+  </ul></li>
+  <li><a href="#categorías-del-lenguaje-sql" id="toc-categorías-del-lenguaje-sql" class="nav-link" data-scroll-target="#categorías-del-lenguaje-sql"><span class="header-section-number">3</span> Categorías del Lenguaje SQL</a>
+  <ul>
+  <li><a href="#ddl-data-definition-language" id="toc-ddl-data-definition-language" class="nav-link" data-scroll-target="#ddl-data-definition-language"><span class="header-section-number">3.1</span> DDL (Data Definition Language)</a></li>
+  <li><a href="#dml-data-manipulation-language" id="toc-dml-data-manipulation-language" class="nav-link" data-scroll-target="#dml-data-manipulation-language"><span class="header-section-number">3.2</span> DML (Data Manipulation Language)</a></li>
+  <li><a href="#dcl-data-control-language" id="toc-dcl-data-control-language" class="nav-link" data-scroll-target="#dcl-data-control-language"><span class="header-section-number">3.3</span> DCL (Data Control Language)</a></li>
+  <li><a href="#tcl-transaction-control-language" id="toc-tcl-transaction-control-language" class="nav-link" data-scroll-target="#tcl-transaction-control-language"><span class="header-section-number">3.4</span> TCL (Transaction Control Language)</a></li>
+  </ul></li>
+  <li><a href="#principales-sistemas-rdbms-y-dialectos-sql" id="toc-principales-sistemas-rdbms-y-dialectos-sql" class="nav-link" data-scroll-target="#principales-sistemas-rdbms-y-dialectos-sql"><span class="header-section-number">4</span> Principales Sistemas RDBMS y Dialectos SQL</a>
+  <ul>
+  <li><a href="#puntos-en-común" id="toc-puntos-en-común" class="nav-link" data-scroll-target="#puntos-en-común"><span class="header-section-number">4.1</span> Puntos en Común</a></li>
+  <li><a href="#diferencias-y-principales-motores" id="toc-diferencias-y-principales-motores" class="nav-link" data-scroll-target="#diferencias-y-principales-motores"><span class="header-section-number">4.2</span> Diferencias y Principales Motores</a></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos" id="toc-tipos-de-datos" class="nav-link" data-scroll-target="#tipos-de-datos"><span class="header-section-number">5</span> Tipos de datos</a>
+  <ul>
+  <li><a href="#tipo-de-dato-bit-bit" id="toc-tipo-de-dato-bit-bit" class="nav-link" data-scroll-target="#tipo-de-dato-bit-bit"><span class="header-section-number">5.1</span> Tipo de Dato Bit (<code>BIT</code>)</a>
+  <ul class="collapse">
+  <li><a href="#límites-y-valores-permitidos" id="toc-límites-y-valores-permitidos" class="nav-link" data-scroll-target="#límites-y-valores-permitidos"><span class="header-section-number">5.1.1</span> Límites y Valores Permitidos</a></li>
+  <li><a href="#motores-sql-donde-existe" id="toc-motores-sql-donde-existe" class="nav-link" data-scroll-target="#motores-sql-donde-existe"><span class="header-section-number">5.1.2</span> Motores SQL donde existe</a></li>
+  </ul></li>
+  <li><a href="#bitm" id="toc-bitm" class="nav-link" data-scroll-target="#bitm"><span class="header-section-number">5.2</span> BIT(M):</a>
+  <ul class="collapse">
+  <li><a href="#espacio-que-ocupa-en-la-base-de-datos" id="toc-espacio-que-ocupa-en-la-base-de-datos" class="nav-link" data-scroll-target="#espacio-que-ocupa-en-la-base-de-datos"><span class="header-section-number">5.2.1</span> Espacio que ocupa en la Base de Datos</a></li>
+  <li><a href="#el-tipo-de-dato-bit-y-los-operadores" id="toc-el-tipo-de-dato-bit-y-los-operadores" class="nav-link" data-scroll-target="#el-tipo-de-dato-bit-y-los-operadores"><span class="header-section-number">5.2.2</span> El tipo de dato <code>BIT</code> y los operadores <code>&amp;</code></a></li>
+  </ul></li>
+  <li><a href="#tipo-de-dato-lógico-boolean-bool" id="toc-tipo-de-dato-lógico-boolean-bool" class="nav-link" data-scroll-target="#tipo-de-dato-lógico-boolean-bool"><span class="header-section-number">5.3</span> Tipo de Dato Lógico (<code>BOOLEAN</code> / <code>BOOL</code>)</a>
+  <ul class="collapse">
+  <li><a href="#límites-y-valores-permitidos-1" id="toc-límites-y-valores-permitidos-1" class="nav-link" data-scroll-target="#límites-y-valores-permitidos-1"><span class="header-section-number">5.3.1</span> Límites y Valores Permitidos</a></li>
+  <li><a href="#espacio-que-ocupa-en-la-base-de-datos-1" id="toc-espacio-que-ocupa-en-la-base-de-datos-1" class="nav-link" data-scroll-target="#espacio-que-ocupa-en-la-base-de-datos-1"><span class="header-section-number">5.3.2</span> Espacio que ocupa en la Base de Datos</a></li>
+  <li><a href="#motores-sql-donde-existe-1" id="toc-motores-sql-donde-existe-1" class="nav-link" data-scroll-target="#motores-sql-donde-existe-1"><span class="header-section-number">5.3.3</span> Motores SQL donde existe</a></li>
+  <li><a href="#ejemplo-en-sql" id="toc-ejemplo-en-sql" class="nav-link" data-scroll-target="#ejemplo-en-sql"><span class="header-section-number">5.3.4</span> Ejemplo en SQL</a></li>
+  <li><a href="#resumen-puntos-clave" id="toc-resumen-puntos-clave" class="nav-link" data-scroll-target="#resumen-puntos-clave"><span class="header-section-number">5.3.5</span> Resumen (Puntos clave)</a></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos-enteros-integer" id="toc-tipos-de-datos-enteros-integer" class="nav-link" data-scroll-target="#tipos-de-datos-enteros-integer"><span class="header-section-number">5.4</span> Tipos de Datos Enteros (INTEGER)</a>
+  <ul class="collapse">
+  <li><a href="#clasificación-y-rangos-con-signo-signed" id="toc-clasificación-y-rangos-con-signo-signed" class="nav-link" data-scroll-target="#clasificación-y-rangos-con-signo-signed"><span class="header-section-number">5.4.1</span> Clasificación y Rangos (Con signo / <em>Signed</em>)</a>
+  <ul class="collapse">
+  <li><a href="#la-opción-unsigned-sin-signo" id="toc-la-opción-unsigned-sin-signo" class="nav-link" data-scroll-target="#la-opción-unsigned-sin-signo"><span class="header-section-number">5.4.1.1</span> La opción <code>UNSIGNED</code> (Sin Signo)</a></li>
+  </ul></li>
+  <li><a href="#motores-sql-donde-existe-2" id="toc-motores-sql-donde-existe-2" class="nav-link" data-scroll-target="#motores-sql-donde-existe-2"><span class="header-section-number">5.4.2</span> Motores SQL donde existe</a></li>
+  <li><a href="#ejemplo-en-sql-1" id="toc-ejemplo-en-sql-1" class="nav-link" data-scroll-target="#ejemplo-en-sql-1"><span class="header-section-number">5.4.3</span> Ejemplo en SQL</a></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos-numéricos-decimales" id="toc-tipos-de-datos-numéricos-decimales" class="nav-link" data-scroll-target="#tipos-de-datos-numéricos-decimales"><span class="header-section-number">5.5</span> Tipos de Datos Numéricos Decimales</a>
+  <ul class="collapse">
+  <li><a href="#decimales-exactos-decimal-numeric" id="toc-decimales-exactos-decimal-numeric" class="nav-link" data-scroll-target="#decimales-exactos-decimal-numeric"><span class="header-section-number">5.5.1</span> Decimales Exactos (<code>DECIMAL</code> / <code>NUMERIC</code>)</a></li>
+  <li><a href="#límites-y-espacio-de-almacenamiento" id="toc-límites-y-espacio-de-almacenamiento" class="nav-link" data-scroll-target="#límites-y-espacio-de-almacenamiento"><span class="header-section-number">5.5.2</span> Límites y Espacio de Almacenamiento</a></li>
+  <li><a href="#decimales-aproximados-float-real-y-double" id="toc-decimales-aproximados-float-real-y-double" class="nav-link" data-scroll-target="#decimales-aproximados-float-real-y-double"><span class="header-section-number">5.5.3</span> Decimales Aproximados (<code>FLOAT</code>, <code>REAL</code> y <code>DOUBLE</code>)</a></li>
+  <li><a href="#el-problema-de-la-aproximación" id="toc-el-problema-de-la-aproximación" class="nav-link" data-scroll-target="#el-problema-de-la-aproximación"><span class="header-section-number">5.5.4</span> El problema de la aproximación</a></li>
+  <li><a href="#exactos-vs-aproximados-cuándo-elegir-cada-uno" id="toc-exactos-vs-aproximados-cuándo-elegir-cada-uno" class="nav-link" data-scroll-target="#exactos-vs-aproximados-cuándo-elegir-cada-uno"><span class="header-section-number">5.5.5</span> Exactos vs aproximados ¿Cuándo elegir cada uno?</a></li>
+  <li><a href="#por-qué-nunca-usar-float-para-dinero" id="toc-por-qué-nunca-usar-float-para-dinero" class="nav-link" data-scroll-target="#por-qué-nunca-usar-float-para-dinero"><span class="header-section-number">5.5.6</span> ¿Por qué NUNCA usar <code>FLOAT</code> para dinero?</a></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos-de-cadena-de-texto-char-varchar-text" id="toc-tipos-de-datos-de-cadena-de-texto-char-varchar-text" class="nav-link" data-scroll-target="#tipos-de-datos-de-cadena-de-texto-char-varchar-text"><span class="header-section-number">5.6</span> Tipos de Datos de Cadena de Texto (<code>CHAR</code>, <code>VARCHAR</code>, <code>TEXT</code>)</a>
+  <ul class="collapse">
+  <li><a href="#charn-longitud-fija" id="toc-charn-longitud-fija" class="nav-link" data-scroll-target="#charn-longitud-fija"><span class="header-section-number">5.6.1</span> <code>CHAR(n)</code> – Longitud Fija</a></li>
+  <li><a href="#varcharn-longitud-variable" id="toc-varcharn-longitud-variable" class="nav-link" data-scroll-target="#varcharn-longitud-variable"><span class="header-section-number">5.6.2</span> <code>VARCHAR(n)</code> – Longitud Variable</a></li>
+  <li><a href="#qué-ocurre-si-intentas-introducir-un-texto-distinto-a-la-longitud-establecida" id="toc-qué-ocurre-si-intentas-introducir-un-texto-distinto-a-la-longitud-establecida" class="nav-link" data-scroll-target="#qué-ocurre-si-intentas-introducir-un-texto-distinto-a-la-longitud-establecida"><span class="header-section-number">5.6.3</span> ¿Qué ocurre si intentas introducir un texto distinto a la longitud establecida?</a></li>
+  <li><a href="#textos-largos-text-clob" id="toc-textos-largos-text-clob" class="nav-link" data-scroll-target="#textos-largos-text-clob"><span class="header-section-number">5.6.4</span> Textos Largos (<code>TEXT</code> / <code>CLOB</code>)</a>
+  <ul class="collapse">
+  <li><a href="#subtipos-en-mysql-mariadb" id="toc-subtipos-en-mysql-mariadb" class="nav-link" data-scroll-target="#subtipos-en-mysql-mariadb"><span class="header-section-number">5.6.4.1</span> Subtipos en MySQL / MariaDB</a></li>
+  </ul></li>
+  <li><a href="#ventajas-e-inconvenientes-cuándo-elegir-cada-uno" id="toc-ventajas-e-inconvenientes-cuándo-elegir-cada-uno" class="nav-link" data-scroll-target="#ventajas-e-inconvenientes-cuándo-elegir-cada-uno"><span class="header-section-number">5.6.5</span> Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?</a></li>
+  <li><a href="#motores-sql-y-la-opción-nvarchar-unicode" id="toc-motores-sql-y-la-opción-nvarchar-unicode" class="nav-link" data-scroll-target="#motores-sql-y-la-opción-nvarchar-unicode"><span class="header-section-number">5.6.6</span> Motores SQL y la opción <code>NVARCHAR</code> / Unicode</a>
+  <ul class="collapse">
+  <li><a href="#el-prefijo-n-nchar-nvarchar" id="toc-el-prefijo-n-nchar-nvarchar" class="nav-link" data-scroll-target="#el-prefijo-n-nchar-nvarchar"><span class="header-section-number">5.6.6.1</span> El prefijo <code>N</code> (<code>NCHAR</code>, <code>NVARCHAR</code>)</a></li>
+  <li><a href="#ejemplo-en-sql-2" id="toc-ejemplo-en-sql-2" class="nav-link" data-scroll-target="#ejemplo-en-sql-2"><span class="header-section-number">5.6.6.2</span> Ejemplo en SQL</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos-de-fecha-y-hora-en-sql-date-time-datetime-y-timestamp" id="toc-tipos-de-datos-de-fecha-y-hora-en-sql-date-time-datetime-y-timestamp" class="nav-link" data-scroll-target="#tipos-de-datos-de-fecha-y-hora-en-sql-date-time-datetime-y-timestamp"><span class="header-section-number">5.7</span> Tipos de Datos de Fecha y Hora en SQL (<code>DATE</code>, <code>TIME</code>, <code>DATETIME</code> y <code>TIMESTAMP</code>)</a>
+  <ul class="collapse">
+  <li><a href="#date-solo-fecha" id="toc-date-solo-fecha" class="nav-link" data-scroll-target="#date-solo-fecha"><span class="header-section-number">5.7.1</span> <code>DATE</code> (Solo Fecha)</a></li>
+  <li><a href="#time-solo-hora-o-intervalo" id="toc-time-solo-hora-o-intervalo" class="nav-link" data-scroll-target="#time-solo-hora-o-intervalo"><span class="header-section-number">5.7.2</span> <code>TIME</code> (Solo Hora o Intervalo)</a></li>
+  <li><a href="#la-gran-diferencia-datetime-vs-timestamp" id="toc-la-gran-diferencia-datetime-vs-timestamp" class="nav-link" data-scroll-target="#la-gran-diferencia-datetime-vs-timestamp"><span class="header-section-number">5.7.3</span> La Gran Diferencia: <code>DATETIME</code> vs <code>TIMESTAMP</code></a></li>
+  <li><a href="#datetime-constante-e-independiente" id="toc-datetime-constante-e-independiente" class="nav-link" data-scroll-target="#datetime-constante-e-independiente"><span class="header-section-number">5.7.4</span> <code>DATETIME</code> (Constante e Independiente)</a></li>
+  <li><a href="#timestamp-dinámico-y-basado-en-utc" id="toc-timestamp-dinámico-y-basado-en-utc" class="nav-link" data-scroll-target="#timestamp-dinámico-y-basado-en-utc"><span class="header-section-number">5.7.5</span> <code>TIMESTAMP</code> (Dinámico y Basado en UTC)</a></li>
+  <li><a href="#tabla-comparativa-datetime-vs-timestamp" id="toc-tabla-comparativa-datetime-vs-timestamp" class="nav-link" data-scroll-target="#tabla-comparativa-datetime-vs-timestamp"><span class="header-section-number">5.7.6</span> Tabla Comparativa: <code>DATETIME</code> vs <code>TIMESTAMP</code></a></li>
+  <li><a href="#por-qué-en-aplicaciones-globales-multi-región-se-prefiere-timestamp-o-guardar-en-utc" id="toc-por-qué-en-aplicaciones-globales-multi-región-se-prefiere-timestamp-o-guardar-en-utc" class="nav-link" data-scroll-target="#por-qué-en-aplicaciones-globales-multi-región-se-prefiere-timestamp-o-guardar-en-utc"><span class="header-section-number">5.7.7</span> ¿Por qué en aplicaciones globales multi-región se prefiere <code>TIMESTAMP</code> o guardar en UTC?</a></li>
+  </ul></li>
+  <li><a href="#tipos-de-datos-lob-texto-largo-clob-text-y-datos-binarios-blob" id="toc-tipos-de-datos-lob-texto-largo-clob-text-y-datos-binarios-blob" class="nav-link" data-scroll-target="#tipos-de-datos-lob-texto-largo-clob-text-y-datos-binarios-blob"><span class="header-section-number">5.8</span> Tipos de Datos LOB: Texto Largo (<code>CLOB</code> / <code>TEXT</code>) y Datos Binarios (<code>BLOB</code>)</a>
+  <ul class="collapse">
+  <li><a href="#concepto-de-lob-large-objects" id="toc-concepto-de-lob-large-objects" class="nav-link" data-scroll-target="#concepto-de-lob-large-objects"><span class="header-section-number">5.8.1</span> Concepto de LOB (<em>Large Objects</em>)</a></li>
+  <li><a href="#tipos-blob-datos-binarios" id="toc-tipos-blob-datos-binarios" class="nav-link" data-scroll-target="#tipos-blob-datos-binarios"><span class="header-section-number">5.8.2</span> Tipos <code>BLOB</code> (Datos Binarios)</a></li>
+  <li><a href="#tipos-text-clob-texto-largo" id="toc-tipos-text-clob-texto-largo" class="nav-link" data-scroll-target="#tipos-text-clob-texto-largo"><span class="header-section-number">5.8.3</span> Tipos <code>TEXT</code> / <code>CLOB</code> (Texto Largo)</a></li>
+  <li><a href="#cómo-funcionan-internamente-off-page-storage" id="toc-cómo-funcionan-internamente-off-page-storage" class="nav-link" data-scroll-target="#cómo-funcionan-internamente-off-page-storage"><span class="header-section-number">5.8.4</span> ¿Cómo funcionan internamente? (<em>Off-Page Storage</em>)</a></li>
+  <li><a href="#ventajas-e-inconvenientes-cuándo-usar-blob-y-cuándo-guardar-la-ruta-en-disco" id="toc-ventajas-e-inconvenientes-cuándo-usar-blob-y-cuándo-guardar-la-ruta-en-disco" class="nav-link" data-scroll-target="#ventajas-e-inconvenientes-cuándo-usar-blob-y-cuándo-guardar-la-ruta-en-disco"><span class="header-section-number">5.8.5</span> Ventajas e Inconvenientes: ¿Cuándo usar <code>BLOB</code> y cuándo guardar la ruta en disco?</a></li>
+  <li><a href="#por-qué-nunca-se-debe-hacer-select-en-una-tabla-con-columnas-blob-o-longtext" id="toc-por-qué-nunca-se-debe-hacer-select-en-una-tabla-con-columnas-blob-o-longtext" class="nav-link" data-scroll-target="#por-qué-nunca-se-debe-hacer-select-en-una-tabla-con-columnas-blob-o-longtext"><span class="header-section-number">5.8.6</span> ¿Por qué NUNCA se debe hacer <code>SELECT *</code> en una tabla con columnas <code>BLOB</code> o <code>LONGTEXT</code>?</a></li>
+  </ul></li>
+  <li><a href="#tipo-de-dato-enumerado-enum" id="toc-tipo-de-dato-enumerado-enum" class="nav-link" data-scroll-target="#tipo-de-dato-enumerado-enum"><span class="header-section-number">5.9</span> Tipo de Dato Enumerado (<code>ENUM</code>)</a>
+  <ul class="collapse">
+  <li><a href="#límites-y-funcionamiento-interno" id="toc-límites-y-funcionamiento-interno" class="nav-link" data-scroll-target="#límites-y-funcionamiento-interno"><span class="header-section-number">5.9.1</span> Límites y Funcionamiento Interno</a></li>
+  <li><a href="#espacio-que-ocupa-en-la-base-de-datos-2" id="toc-espacio-que-ocupa-en-la-base-de-datos-2" class="nav-link" data-scroll-target="#espacio-que-ocupa-en-la-base-de-datos-2"><span class="header-section-number">5.9.2</span> Espacio que Ocupa en la Base de Datos</a></li>
+  <li><a href="#motores-sql-donde-existe-3" id="toc-motores-sql-donde-existe-3" class="nav-link" data-scroll-target="#motores-sql-donde-existe-3"><span class="header-section-number">5.9.3</span> Motores SQL donde existe</a></li>
+  <li><a href="#ejemplo-en-sql-3" id="toc-ejemplo-en-sql-3" class="nav-link" data-scroll-target="#ejemplo-en-sql-3"><span class="header-section-number">5.9.4</span> Ejemplo en SQL</a></li>
+  </ul></li>
+  <li><a href="#tipo-de-dato-conjunto-set" id="toc-tipo-de-dato-conjunto-set" class="nav-link" data-scroll-target="#tipo-de-dato-conjunto-set"><span class="header-section-number">5.10</span> Tipo de Dato Conjunto (<code>SET</code>)</a>
+  <ul class="collapse">
+  <li><a href="#límites-y-funcionamiento-interno-1" id="toc-límites-y-funcionamiento-interno-1" class="nav-link" data-scroll-target="#límites-y-funcionamiento-interno-1"><span class="header-section-number">5.10.1</span> Límites y Funcionamiento Interno</a></li>
+  <li><a href="#espacio-que-ocupa-en-la-base-de-datos-3" id="toc-espacio-que-ocupa-en-la-base-de-datos-3" class="nav-link" data-scroll-target="#espacio-que-ocupa-en-la-base-de-datos-3"><span class="header-section-number">5.10.2</span> Espacio que Ocupa en la Base de Datos</a></li>
+  <li><a href="#motores-sql-donde-existe-4" id="toc-motores-sql-donde-existe-4" class="nav-link" data-scroll-target="#motores-sql-donde-existe-4"><span class="header-section-number">5.10.3</span> Motores SQL donde existe</a></li>
+  <li><a href="#ejemplo-en-sql-4" id="toc-ejemplo-en-sql-4" class="nav-link" data-scroll-target="#ejemplo-en-sql-4"><span class="header-section-number">5.10.4</span> Ejemplo en SQL</a></li>
+  <li><a href="#comparativa-enum-vs-set" id="toc-comparativa-enum-vs-set" class="nav-link" data-scroll-target="#comparativa-enum-vs-set"><span class="header-section-number">5.10.5</span> Comparativa: <code>ENUM</code> vs <code>SET</code></a></li>
+  <li><a href="#ventajas" id="toc-ventajas" class="nav-link" data-scroll-target="#ventajas"><span class="header-section-number">5.10.6</span> Ventajas</a></li>
+  <li><a href="#inconvenientes" id="toc-inconvenientes" class="nav-link" data-scroll-target="#inconvenientes"><span class="header-section-number">5.10.7</span> Inconvenientes</a></li>
+  <li><a href="#alternativas-comunes-y-cuándo-usarlas" id="toc-alternativas-comunes-y-cuándo-usarlas" class="nav-link" data-scroll-target="#alternativas-comunes-y-cuándo-usarlas"><span class="header-section-number">5.10.8</span> Alternativas comunes y cuándo usarlas</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./sql.html">SQL: Structured Query Language y sus variantes</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Introducción a los Lenguajes SQL y Bases de Datos Relacionales</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="datos-estructurados-semi-estructurados-y-no-estructurados" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Datos Estructurados, Semi-estructurados y No Estructurados</h1>
+<p>Antes de hablar de SQL, es fundamental entender cómo se organiza la información. No todos los datos se almacenan de la misma forma, y la elección del sistema depende del nivel de estructura que requieran.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>Datos Estructurados</strong></td>
+<td><strong>Datos Semi-estructurados</strong></td>
+<td><strong>Datos No Estructurados</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Modelo</strong></td>
+<td>Rígido (Tablar: filas y columnas)</td>
+<td>Flexible (Etiquetas y jerarquías)</td>
+<td>Sin modelo predefinido</td>
+</tr>
+<tr class="odd">
+<td><strong>Esquema</strong></td>
+<td><em>Schema-on-Write</em> (se define antes)</td>
+<td><em>Schema-on-Read</em> (se interpreta al leer)</td>
+<td>Sin esquema explícito</td>
+</tr>
+<tr class="even">
+<td><strong>Ejemplos</strong></td>
+<td>Tablas de SQL, hojas de cálculo</td>
+<td>Archivos JSON, XML, YAML</td>
+<td>Documentos PDF, audio, imagen, video</td>
+</tr>
+<tr class="odd">
+<td><strong>Consulta</strong></td>
+<td>Lenguajes formales (SQL)</td>
+<td>Rutas/Campos (XPath, JSON path)</td>
+<td>Búsqueda indexada, NLP, Machine Learning</td>
+</tr>
+</tbody>
+</table>
+<section id="ventajas-e-inconvenientes-de-los-datos-estructurados" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="ventajas-e-inconvenientes-de-los-datos-estructurados"><span class="header-section-number">1.1</span> Ventajas e Inconvenientes de los Datos Estructurados</h2>
+<ul>
+<li><p><strong>Ventajas:</strong></p>
+<ul>
+<li><p><strong>Consistencia y Calidad:</strong> Al requerir un esquema previo, se evitan datos duplicados, inconsistentes o mal formados.</p></li>
+<li><p><strong>Integridad de Negocio:</strong> Permiten aplicar reglas estrictas (restricciones de tipo, claves primarias, claves foráneas).</p></li>
+<li><p><strong>Rendimiento Predictible:</strong> Las búsquedas sobre índices estructurados son extremadamente rápidas y eficientes.</p></li>
+</ul></li>
+<li><p><strong>Inconvenientes:</strong></p>
+<ul>
+<li><p><strong>Poca Flexibilidad:</strong> Cambiar la estructura de una base de datos en producción (modificar tablas, añadir columnas) requiere migraciones planificadas.</p></li>
+<li><p><strong>Escalabilidad Horizontal Compleja:</strong> Escalar una base de datos relacional en múltiples servidores distribuidos es más difícil que en sistemas NoSQL.</p></li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="cómo-funciona-una-base-de-datos-relacional-rdbms" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> ¿Cómo funciona una Base de Datos Relacional (RDBMS)?</h1>
+<p>Un <strong>RDBMS</strong> (<em>Relational Database Management System</em>) es un software diseñado para crear, mantener y consultar bases de datos relacionales basadas en el modelo relacional.</p>
+<pre><code>           [ Cliente / Aplicación ]
+                      │
+               ▼ (Consulta SQL)
+┌─────────────────────────────────────────────────────────┐
+│                      Motor RDBMS                        │
+│  1. Parser / Analizador  ────► Verifica sintaxis        │
+│  2. Optimizador          ────► Elige la ruta más rápida │
+│  3. Motor de Ejecución   ────► Procesa los datos        │
+└────────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+                    [ Storage Engine ]
+                             │
+                             ▼
+                   [ Disco / Memoria ]</code></pre>
+<section id="componentes-clave" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="componentes-clave"><span class="header-section-number">2.1</span> Componentes Clave</h2>
+<ul>
+<li><p><strong>Tablas (Relaciones):</strong> La información se organiza en tablas compuestas por <strong>filas (tuplas)</strong> que representan registros concretos y <strong>columnas (atributos)</strong> que representan los campos de información.</p></li>
+<li><p><strong>Claves (Keys):</strong></p>
+<ul>
+<li><p><strong>Clave Primaria (<em>Primary Key</em>):</strong> Identificador único e irrepetible para cada fila de una tabla.</p></li>
+<li><p><strong>Clave Foránea (<em>Foreign Key</em>):</strong> Campo que conecta una fila de una tabla con la clave primaria de otra, estableciendo relaciones físicas entre datos.</p></li>
+</ul></li>
+<li><p><strong>Garantía ACID (Propiedades Transaccionales):</strong></p>
+<ul>
+<li><p><strong>A - Atomicidad:</strong> La transacción ocurre por completo o no ocurre en absoluto (todo o nada).</p></li>
+<li><p><strong>C - Consistencia:</strong> La base de datos pasa de un estado válido a otro estado válido, respetando todas las reglas.</p></li>
+<li><p><strong>I - Aislamiento (<em>Isolation</em>):</strong> Las transacciones concurrentes no interfieren entre sí.</p></li>
+<li><p><strong>D - Durabilidad:</strong> Una vez confirmados los cambios, estos persisten incluso tras un fallo del sistema.</p></li>
+</ul></li>
+</ul>
+</section>
+</section>
+<section id="categorías-del-lenguaje-sql" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Categorías del Lenguaje SQL</h1>
+<p>El lenguaje <strong>SQL</strong> (<em>Structured Query Language</em>) no es un único bloque monolítico; se divide en <strong>cuatro grandes categorías</strong> según la función que realiza cada instrucción sobre la base de datos:</p>
+<pre><code>                  ┌─────────────────────────────────────────┐
+                  │              Lenguaje SQL               │
+                  └────┬───────────┬───────────┬────────────┘
+                       │           │           │
+           ┌───────────┘           │           └───────────┐
+           ▼                       ▼                       ▼
+        ┌─────┐                 ┌─────┐                 ┌─────┐
+        │ DDL │                 │ DML │                 │ DCL │
+        └─────┘                 └─────┘                 └─────┘
+           │                       │                       │
+Estructura (CREATE...)   Datos (SELECT...)        Permisos (GRANT...)
+           │
+           └───────────────────────┐
+                                   ▼
+                                ┌─────┐
+                                │ TCL │
+                                └─────┘
+                         Transacciones (COMMIT...)</code></pre>
+<section id="ddl-data-definition-language" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="ddl-data-definition-language"><span class="header-section-number">3.1</span> DDL (Data Definition Language)</h2>
+<p>Se utiliza para <strong>definir, alterar o eliminar la estructura</strong> de los objetos de la base de datos (tablas, índices, vistas, esquemas).</p>
+<ul>
+<li><p><code>CREATE</code>: Crea nuevos objetos (tablas, bases de datos).</p></li>
+<li><p><code>ALTER</code>: Modifica la estructura de objetos existentes.</p></li>
+<li><p><code>DROP</code>: Elimina objetos de forma permanente.</p></li>
+<li><p><code>TRUNCATE</code>: Vacía completamente el contenido de una tabla conservando su estructura.</p></li>
+</ul>
+</section>
+<section id="dml-data-manipulation-language" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="dml-data-manipulation-language"><span class="header-section-number">3.2</span> DML (Data Manipulation Language)</h2>
+<p>Se encarga de la <strong>manipulación y consulta de los datos</strong> contenidos dentro de las estructuras previamente creadas.</p>
+<ul>
+<li><p><code>SELECT</code>: Recupera y consulta datos almacenados.</p></li>
+<li><p><code>INSERT</code>: Inserta nuevos registros en una tabla.</p></li>
+<li><p><code>UPDATE</code>: Modifica registros existentes.</p></li>
+<li><p><code>DELETE</code>: Elimina registros específicos bajo ciertas condiciones.</p></li>
+</ul>
+</section>
+<section id="dcl-data-control-language" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="dcl-data-control-language"><span class="header-section-number">3.3</span> DCL (Data Control Language)</h2>
+<p>Gestiona la <strong>seguridad, permisos y niveles de acceso</strong> de los usuarios a los objetos de la base de datos.</p>
+<ul>
+<li><p><code>GRANT</code>: Otorga privilegios o permisos a usuarios o roles.</p></li>
+<li><p><code>REVOKE</code>: Retira privilegios previamente concedidos.</p></li>
+</ul>
+</section>
+<section id="tcl-transaction-control-language" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="tcl-transaction-control-language"><span class="header-section-number">3.4</span> TCL (Transaction Control Language)</h2>
+<p>Administra los <strong>cambios generados por las sentencias DML</strong>, agrupándolos en transacciones para garantizar la integridad (propiedades ACID). <em>(A veces denominado TQL en algunos entornos).</em></p>
+<ul>
+<li><p><code>COMMIT</code>: Guarda de forma permanente todos los cambios de la transacción actual.</p></li>
+<li><p><code>ROLLBACK</code>: Revierte los cambios realizados en la transacción actual devolviendo la base de datos a su estado anterior.</p></li>
+<li><p><code>SAVEPOINT</code>: Establece un punto de restauración intermedio dentro de una transacción.</p></li>
+</ul>
+</section>
+</section>
+<section id="principales-sistemas-rdbms-y-dialectos-sql" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Principales Sistemas RDBMS y Dialectos SQL</h1>
+<p>Aunque existe un estándar internacional (<strong>ANSI/ISO SQL</strong>), la mayoría de los motores de bases de datos implementan su propio <strong>dialecto</strong> con funciones, extensiones y particularidades sintácticas.</p>
+<section id="puntos-en-común" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="puntos-en-común"><span class="header-section-number">4.1</span> Puntos en Común</h2>
+<ul>
+<li><p>Utilizan el mismo modelo relacional basado en tablas, claves primarias y foráneas.</p></li>
+<li><p>Soportan las instrucciones sintácticas fundamentales (<code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>WHERE</code>, <code>JOIN</code>).</p></li>
+<li><p>Implementan mecanismos de integridad referencial y propiedades ACID.</p></li>
+</ul>
+</section>
+<section id="diferencias-y-principales-motores" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="diferencias-y-principales-motores"><span class="header-section-number">4.2</span> Diferencias y Principales Motores</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor RDBMS</strong></td>
+<td><strong>Tipo / Licencia</strong></td>
+<td><strong>Características Destacadas</strong></td>
+<td><strong>Dialecto / Extensión</strong></td>
+</tr>
+<tr class="even">
+<td><strong>PostgreSQL</strong></td>
+<td>Código abierto (Permisivo)</td>
+<td>Cumplimiento estricto de estándares, excelente manejo de JSON, tipos de datos avanzados y extensibilidad.</td>
+<td>PL/pgSQL</td>
+</tr>
+<tr class="odd">
+<td><strong>MySQL / MariaDB</strong></td>
+<td>Código abierto (GPL / Dual)</td>
+<td>Muy popular en desarrollo web (WordPress, LAMP stack), gran velocidad de lectura y facilidad de despliegue.</td>
+<td>SQL Estándar / MariaDB SQL</td>
+</tr>
+<tr class="even">
+<td><strong>Microsoft SQL Server</strong></td>
+<td>Propietario (Enterprise)</td>
+<td>Excelente integración con el ecosistema de Microsoft (.NET, Azure), herramientas potentes de Business Intelligence.</td>
+<td>T-SQL (Transact-SQL)</td>
+</tr>
+<tr class="odd">
+<td><strong>Oracle Database</strong></td>
+<td>Propietario (Enterprise)</td>
+<td>Dominante en grandes corporaciones, alta disponibilidad, particionamiento avanzado y gran volumen de datos.</td>
+<td>PL/SQL</td>
+</tr>
+<tr class="even">
+<td><strong>SQLite</strong></td>
+<td>Código abierto (Dominio público)</td>
+<td>Base de datos embebida, sin servidor (<em>serverless</em>), almacena toda la base de datos en un único archivo.</td>
+<td>SQLite Dialect</td>
+</tr>
+</tbody>
+</table>
+<blockquote class="blockquote">
+<p><strong>Nota sobre compatibilidad:</strong> Escribir código SQL estándar (ANSI SQL) garantiza que tus consultas funcionen en casi cualquier motor con mínimos ajustes. Sin embargo, aprovechar las funciones nativas del dialecto de cada motor (como funciones de fecha, manipulación de texto o procedimientos almacenados) permite optimizar el rendimiento al máximo.</p>
+</blockquote>
+</section>
+</section>
+<section id="tipos-de-datos" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Tipos de datos</h1>
+<section id="tipo-de-dato-bit-bit" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="tipo-de-dato-bit-bit"><span class="header-section-number">5.1</span> Tipo de Dato Bit (<code>BIT</code>)</h2>
+<p>El tipo de dato <code>BIT</code> se utiliza para almacenar valores binarios o secuencias de bits (ceros y unos). A diferencia del booleano (que guarda una intención lógica de Verdadero/Falso), el tipo <code>BIT</code> está pensado para guardar números binarios o patrones de flags (banderas de estado).</p>
+<section id="límites-y-valores-permitidos" class="level3" data-number="5.1.1">
+<h3 data-number="5.1.1" class="anchored" data-anchor-id="límites-y-valores-permitidos"><span class="header-section-number">5.1.1</span> Límites y Valores Permitidos</h3>
+<ul>
+<li><strong>BIT(1):</strong> Almacena un solo bit: <code>0</code> o <code>1</code> (y <code>NULL</code> si la columna lo permite).</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo en SQL Server / MySQL </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> dispositivos (</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    encendido BIT</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertar valores binarios</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> dispositivos (<span class="kw">id</span>, nombre, encendido)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="dv">1</span>, <span class="st">'Sensor Temperatura'</span>, <span class="dv">1</span>);</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- Consulta</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, encendido <span class="kw">FROM</span> dispositivos <span class="kw">WHERE</span> encendido <span class="op">=</span> <span class="dv">1</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="motores-sql-donde-existe" class="level3" data-number="5.1.2">
+<h3 data-number="5.1.2" class="anchored" data-anchor-id="motores-sql-donde-existe"><span class="header-section-number">5.1.2</span> Motores SQL donde existe</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 27%">
+<col style="width: 44%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor SQL</strong></td>
+<td><strong>Soporte</strong></td>
+<td><strong>Observaciones</strong></td>
+</tr>
+<tr class="even">
+<td><strong>SQL Server</strong></td>
+<td>Sí</td>
+<td>Se utiliza comunmente en lugar del tipo <code>BOOLEAN</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>MySQL / MariaDB</strong></td>
+<td>Sí</td>
+<td>Permite definir <code>BIT(M)</code> de 1 a 64 bits.</td>
+</tr>
+<tr class="even">
+<td><strong>PostgreSQL</strong></td>
+<td>Sí</td>
+<td>Permite cadenas de bits de longitud fija <code>BIT(n)</code> o variable <code>BIT VARYING(n)</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>Oracle</strong></td>
+<td>No nativo</td>
+<td>Se suelen usar tipos numéricos <code>NUMBER(1)</code> o tipos RAW.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="bitm" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="bitm"><span class="header-section-number">5.2</span> BIT(M):</h2>
+<p>En motores como MySQL, <span class="math inline">\(M\)</span> representa la longitud en bits. <span class="math inline">\(M\)</span> suele ir de <strong>1 a 64 bits</strong>.</p>
+<p>Piensa en la <span class="math inline">\(M\)</span> como la <strong>“cantidad de casillas o interruptores”</strong> que quieres reservar dentro de la misma columna.</p>
+<p>Si solo pones un bit: <code>BIT(1)</code></p>
+<p>Es <strong>1 sola casilla</strong>. Solo cabe un <code>0</code> o un <code>1</code>.</p>
+<ul>
+<li>Es decir, la columna almacena solo: <code>0</code> o <code>1</code>. Si pones varios bits: BIT(4) o BIT(8)Estás reservando una tira de ceros y unos. La <span class="math inline">\(M\)</span> indica cuántos ceros/unos exactos puedes meter alineados.</li>
+</ul>
+<p>Un ejemplo: Días de la semana que abre un restaurante</p>
+<p>Imagina que estás diseñando una base de datos para restaurantes y quieres guardar qué días de la semana abre cada lugar (de Lunes a Domingo = 7 días).</p>
+<p>En lugar de crear 7 columnas distintas (abre_lunes, abre_martes, …), creas una sola columna llamada dias_abierto usando BIT(7):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>SQL </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> restaurantes </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    ( <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    , nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    , dias_abierto BIT(<span class="dv">7</span>) <span class="co">-- Reserva 7 casillas (1 por cada día de la semana) ); </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INSERT</span> <span class="kw">INTO</span> restaurantes</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>           (<span class="kw">id</span>, nombre, dias_abierto) </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">VALUES</span> (<span class="dv">2</span>, <span class="st">'Brunch del Domingo'</span>, b<span class="st">'0000011'</span>);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">--- encontrar restaurantes abiertos los domingos</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, BIN(dias_abierto) <span class="kw">AS</span> dias </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> (dias_abierto &amp; b<span class="st">'0000001'</span>) <span class="op">&gt;</span> <span class="dv">0</span>;</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co">--- encontrar restaurantes que cierren los lunes</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, BIN(dias_abierto) <span class="kw">AS</span> dias </span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a> <span class="kw">WHERE</span> (dias_abierto &amp; b<span class="st">'1000000'</span>) <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">--- encontrar restaurantes que cierran SOLO los lunes</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, BIN(dias_abierto) <span class="kw">AS</span> dias </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> dias_abierto <span class="op">=</span> b<span class="st">'0111111'</span>;</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">---- encontrar restaurantes que abran SOLO los fines de semana</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, BIN(dias_abierto) <span class="kw">AS</span> dias </span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> dias_abierto <span class="op">=</span> b<span class="st">'0000011'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Cada posición de la tira representa un día (Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo):</p>
+<ul>
+<li><p>Restaurante 1 (Abre todos los días): Guardas: b’1111111’ (7 unos).</p></li>
+<li><p>Restaurante 2 (Solo abre fines de semana): Guardas: b’0000011’ (5 ceros para entre semana, 2 unos para Sábado y Domingo).</p></li>
+<li><p>Restaurante 3 (Cierra los Lunes): Guardas: b’0111111’ (0 el lunes, 1 el resto).</p></li>
+</ul>
+<p>El máximo permitido es 64 (BIT(64)), que te daría una cadena de 64 ceros y unos seguidos.</p>
+<div class="nota">
+<p>¿Qué ganas usando esto?</p>
+<p>Ahorro de espacio enorme: En lugar de gastar mucho espacio con 7 campos separados, guardas 7 opciones dentro de un espacio minúsculo en memoria.</p>
+<p>Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener que procesar múltiples campos.</p>
+</div>
+<section id="espacio-que-ocupa-en-la-base-de-datos" class="level3" data-number="5.2.1">
+<h3 data-number="5.2.1" class="anchored" data-anchor-id="espacio-que-ocupa-en-la-base-de-datos"><span class="header-section-number">5.2.1</span> Espacio que ocupa en la Base de Datos</h3>
+<ul>
+<li><p><strong>SQL Server:</strong> Optimiza el espacio agrupando columnas <code>BIT</code>.</p>
+<ul>
+<li><p>De 1 a 8 columnas de tipo <code>BIT</code> en una misma tabla ocupan <strong>1 byte</strong> en total.</p></li>
+<li><p>De 9 a 16 columnas <code>BIT</code> ocupan <strong>2 bytes</strong>, y así sucesivamente.</p></li>
+</ul></li>
+<li><p><strong>MySQL / MariaDB:</strong> Ocupa aproximadamente <code>(M + 7) / 8</code> bytes. Para un <code>BIT(1)</code>, se reserva 1 byte de almacenamiento por fila.</p></li>
+<li><p><strong>PostgreSQL:</strong> Soporta <code>BIT(n)</code> y <code>BIT VARYING(n)</code>. Ocupa 1 byte por cada 8 bits completos, más un pequeño costo de cabecera (<em>overhead</em>).</p></li>
+</ul>
+</section>
+<section id="el-tipo-de-dato-bit-y-los-operadores" class="level3" data-number="5.2.2">
+<h3 data-number="5.2.2" class="anchored" data-anchor-id="el-tipo-de-dato-bit-y-los-operadores"><span class="header-section-number">5.2.2</span> El tipo de dato <code>BIT</code> y los operadores <code>&amp;</code></h3>
+<p>El tipo de dato <code>BIT</code> y las operaciones a nivel de bit (<code>&amp;</code>, <code>|</code>, <code>~</code>) <strong>están permitidos en casi todos los SGBD principales</strong>, aunque con diferencias en cómo lo manejan:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor SQL</strong></td>
+<td><strong>¿Soporta BIT?</strong></td>
+<td><strong>¿Soporta cadenas como BIT(7) o b’1111111’?</strong></td>
+<td><strong>¿Soporta el operador &amp;?</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Microsoft SQL Server</strong></td>
+<td><strong>Sí</strong>, pero es solo <code>BIT</code> (1 bit: <code>0</code> o <code>1</code>).</td>
+<td>No admite longitud <code>BIT(M)</code> ni literales <code>b'111'</code>.</td>
+<td><strong>Sí</strong>, soporta <code>&amp;</code>, `</td>
+</tr>
+<tr class="odd">
+<td><strong>MySQL / MariaDB</strong></td>
+<td><strong>Sí</strong>, soporta <code>BIT(M)</code> de 1 a 64 bits.</td>
+<td><strong>Sí</strong>, admite <code>b'1010101'</code>.</td>
+<td><strong>Sí</strong>, soporta <code>&amp;</code>, `</td>
+</tr>
+<tr class="even">
+<td><strong>PostgreSQL</strong></td>
+<td><strong>Sí</strong>, soporta <code>BIT(n)</code> y <code>BIT VARYING(n)</code>.</td>
+<td><strong>Sí</strong>, pero la sintaxis es <code>B'1010101'</code> (con <strong>B</strong> mayúscula).</td>
+<td><strong>Sí</strong>, soporta <code>&amp;</code>, `</td>
+</tr>
+<tr class="odd">
+<td><strong>SQLite</strong></td>
+<td><strong>No</strong> existe el tipo <code>BIT</code> explícito (usa enteros).</td>
+<td>No admite sintaxis <code>BIT(M)</code>.</td>
+<td><strong>Sí</strong>, el operador <code>&amp;</code> funciona con enteros (<code>INTEGER</code>).</td>
+</tr>
+<tr class="even">
+<td><strong>Oracle</strong></td>
+<td><strong>No</strong> existe el tipo <code>BIT</code> explícito (usa <code>NUMBER(1)</code> o <code>RAW</code>).</td>
+<td>No admite sintaxis <code>BIT(M)</code>.</td>
+<td>Usa funciones como <code>BITAND(a, b)</code> en lugar de <code>&amp;</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="extra">
+<p>El operador &amp; (BITWISE AND) en motores con BIT(n) En motores como MySQL y PostgreSQL, el operador &amp; realiza una comparación posición por posición entre dos cadenas de bits de igual longitud.</p>
+<p>Regla de evaluación Compara los dígitos alineados bajo la regla lógica de la puerta AND: solo mantiene un 1 si ambos bits en la misma posición son 1. Si cualquiera es 0, el resultado en esa posición pasa a ser 0.</p>
+<pre><code>  1 &amp; 1 = 1   (Solo esta combinación da 1)
+  1 &amp; 0 = 0
+  0 &amp; 1 = 0
+  0 &amp; 0 = 0</code></pre>
+<p>Concepto de “Máscara de Bits” El operador &amp; se utiliza junto con una máscara (una tira binaria donde ponemos un 1 en el bit que nos interesa evaluar y 0 en todos los demás). Esto permite aislar y comprobar un estado concreto sin importar qué contengan los otros bits.</p>
+<p>Ejemplo práctico con BIT(7) (Días de la semana) Queremos evaluar si el restaurante abre el Domingo usando la máscara del Domingo (b’0000001’):</p>
+<pre><code>  1 1 1 1 1 1 1  (Abre todos los días)
+&amp; 0 0 0 0 0 0 1  (Máscara del Domingo)
+-----------------
+  0 0 0 0 0 0 1  =&gt; Resultado &gt; 0 (Cumple la condición)</code></pre>
+<pre><code>  1 1 1 1 1 0 0  (Cierra Sábado y Domingo)
+&amp; 0 0 0 0 0 0 1  (Máscara del Domingo)
+-----------------
+  0 0 0 0 0 0 0  =&gt; Resultado = 0 (No cumple la condición)</code></pre>
+<p>Resumen de condiciones en consultas SQL Para comprobar si un bit está encendido (1): (columna &amp; mascara) &gt; 0</p>
+<p>Para comprobar si un bit está apagado (0): (columna &amp; mascara) = 0</p>
+</div>
+<div class="extra">
+<p>Como funciona en motores que no admiten bit(n) pero admiten el operador &amp;?</p>
+<p>En SQL Server usas el tipo <strong><code>TINYINT</code></strong> (que es un entero pequeño de 1 byte = 8 bits):</p>
+<p><strong>Traduces los días a su equivalente en número entero</strong></p>
+<p>Cada día de la semana corresponde a una potencia de 2 en binario:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Día</strong></td>
+<td><strong>Posición binaria</strong></td>
+<td><strong>Valor en Binario</strong></td>
+<td><strong>Valor Decimal a guardar</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Domingo</strong></td>
+<td>Posición 1</td>
+<td><code>0000001</code></td>
+<td><strong>1</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Sábado</strong></td>
+<td>Posición 2</td>
+<td><code>0000010</code></td>
+<td><strong>2</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Viernes</strong></td>
+<td>Posición 3</td>
+<td><code>0000100</code></td>
+<td><strong>4</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Jueves</strong></td>
+<td>Posición 4</td>
+<td><code>0000000</code></td>
+<td><strong>8</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Miércoles</strong></td>
+<td>Posición 5</td>
+<td><code>0001000</code></td>
+<td><strong>16</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Martes</strong></td>
+<td>Posición 6</td>
+<td><code>0010000</code></td>
+<td><strong>32</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Lunes</strong></td>
+<td>Posición 7</td>
+<td><code>0100000</code></td>
+<td><strong>64</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Insertar registros usando números enteros</strong></p>
+<p>Sumas los valores decimales de los días que abren:</p>
+<ul>
+<li><p><strong>Pizzería (Abre todos los días):</strong> <span class="math inline">\(64 + 32 + 16 + 8 + 4 + 2 + 1 =\)</span> <strong>127</strong></p></li>
+<li><p><strong>Brunch (Solo Sábado y Domingo):</strong> <span class="math inline">\(2 + 1 =\)</span> <strong>3</strong></p></li>
+<li><p><strong>Menú Ejecutivo (Lunes a Viernes):</strong> <span class="math inline">\(64 + 32 + 16 + 8 + 4 =\)</span> <strong>124</strong></p></li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> restaurantes (<span class="kw">id</span>, nombre, dias_abierto)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>(<span class="dv">1</span>, <span class="st">'Pizzería Napoletana'</span>, <span class="dv">127</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>(<span class="dv">2</span>, <span class="st">'Brunch del Domingo'</span>, <span class="dv">3</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>(<span class="dv">3</span>, <span class="st">'Menú Ejecutivo'</span>, <span class="dv">124</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>La consulta con el operador <code>&amp;</code> en SQL Server</strong> La consulta funciona <strong>exactamente igual que en MySQL</strong>, pero en lugar de usar <code>b'0000001'</code> usas su número entero <strong><code>1</code></strong> (que representa al Domingo):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Crear tabla en SQL Server</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> restaurantes (</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    dias_abierto TINYINT <span class="co">-- Guarda el patrón de 7 días como un número entero (0 a 255)</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertar datos</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> restaurantes (<span class="kw">id</span>, nombre, dias_abierto) </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>(<span class="dv">1</span>, <span class="st">'Pizzería Napoletana'</span>, <span class="dv">127</span>), <span class="co">-- Todos los días (64+32+16+8+4+2+1 = 127)</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>(<span class="dv">2</span>, <span class="st">'Brunch del Domingo'</span>, <span class="dv">3</span>),     <span class="co">-- Solo Sábado y Domingo (2+1 = 3)</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>(<span class="dv">3</span>, <span class="st">'Menú Ejecutivo'</span>, <span class="dv">124</span>),       <span class="co">-- Lunes a Viernes (64+32+16+8+4 = 124)</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>(<span class="dv">4</span>, <span class="st">'Bar Trattoria'</span>, <span class="dv">63</span>);         <span class="co">-- Cierra solo el Lunes (32+16+8+4+2+1 = 63)</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Restaurantes abiertos los domingos</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, dias_abierto </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> (dias_abierto &amp; <span class="dv">1</span>) <span class="op">&gt;</span> <span class="dv">0</span>;</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="co">--- restaurantes que cierren los lunes</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, dias_abierto </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> (dias_abierto &amp; <span class="dv">64</span>) <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="co">--- restaurantes que cierren SOLO los lunes</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="co">--- Comparar directamente con la suma exacta de Martes a Domingo (32+16+8+4+2+1 = 63)</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, dias_abierto </span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> dias_abierto <span class="op">=</span> <span class="dv">63</span>;</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="co">-- restaurantes que abran los lunes</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, dias_abierto </span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> restaurantes </span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> (dias_abierto &amp; <span class="dv">64</span>) <span class="op">&gt;</span> <span class="dv">0</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="tipo-de-dato-lógico-boolean-bool" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="tipo-de-dato-lógico-boolean-bool"><span class="header-section-number">5.3</span> Tipo de Dato Lógico (<code>BOOLEAN</code> / <code>BOOL</code>)</h2>
+<p>El tipo de dato lógico representa valores de verdad binarios. Sirve para almacenar estados afirmativos o negativos, como si un usuario está activo, si un pedido ha sido pagado o si una opción está habilitada.</p>
+<p>En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres estados: <code>TRUE</code> (Verdadero), <code>FALSE</code> (Falso) y <code>NULL</code> (Desconocido / Sin valor).</p>
+<section id="límites-y-valores-permitidos-1" class="level3" data-number="5.3.1">
+<h3 data-number="5.3.1" class="anchored" data-anchor-id="límites-y-valores-permitidos-1"><span class="header-section-number">5.3.1</span> Límites y Valores Permitidos</h3>
+<ul>
+<li><p><code>TRUE</code> <code>1</code></p></li>
+<li><p><code>FALSE</code> <code>0</code></p></li>
+<li><p><code>NULL</code></p></li>
+</ul>
+</section>
+<section id="espacio-que-ocupa-en-la-base-de-datos-1" class="level3" data-number="5.3.2">
+<h3 data-number="5.3.2" class="anchored" data-anchor-id="espacio-que-ocupa-en-la-base-de-datos-1"><span class="header-section-number">5.3.2</span> Espacio que ocupa en la Base de Datos</h3>
+<ul>
+<li><p><strong>PostgreSQL:</strong> Ocupa <strong>1 byte</strong> por cada valor.</p></li>
+<li><p><strong>MySQL / MariaDB:</strong> Internamente no tiene un tipo booleano puro nativo; <code>BOOLEAN</code> es un alias de <code>TINYINT(1)</code>, por lo que ocupa <strong>1 byte</strong> (valores del <code>-128</code> al <code>127</code> o <code>0</code>/<code>1</code>).</p></li>
+<li><p><strong>SQL Server:</strong> No tiene tipo <code>BOOLEAN</code>. Utiliza <code>BIT</code> para cumplir esta función (ocupa de 1 a 8 bits por grupo en disco).</p></li>
+</ul>
+</section>
+<section id="motores-sql-donde-existe-1" class="level3" data-number="5.3.3">
+<h3 data-number="5.3.3" class="anchored" data-anchor-id="motores-sql-donde-existe-1"><span class="header-section-number">5.3.3</span> Motores SQL donde existe</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 27%">
+<col style="width: 45%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor SQL</strong></td>
+<td><strong>Soporte</strong></td>
+<td><strong>Tipo Interno / Nota</strong></td>
+</tr>
+<tr class="even">
+<td><strong>PostgreSQL</strong></td>
+<td>Sí (Nativo)</td>
+<td><code>BOOLEAN</code> o <code>BOOL</code></td>
+</tr>
+<tr class="odd">
+<td><strong>MySQL / MariaDB</strong></td>
+<td>Sí (Como alias)</td>
+<td>Se convierte a <code>TINYINT(1)</code></td>
+</tr>
+<tr class="even">
+<td><strong>SQLite</strong></td>
+<td>No nativo</td>
+<td>Usa enteros (<code>1</code> para TRUE, <code>0</code> para FALSE)</td>
+</tr>
+<tr class="odd">
+<td><strong>SQL Server</strong></td>
+<td>No nativo</td>
+<td>Se sustituye por el tipo <code>BIT</code></td>
+</tr>
+<tr class="even">
+<td><strong>Oracle Database</strong></td>
+<td>Sí (A partir de 23c)</td>
+<td>En versiones anteriores se usaba <code>NUMBER(1)</code> o <code>VARCHAR2(1)</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-en-sql" class="level3" data-number="5.3.4">
+<h3 data-number="5.3.4" class="anchored" data-anchor-id="ejemplo-en-sql"><span class="header-section-number">5.3.4</span> Ejemplo en SQL</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Crear tabla de usuarios con estado activo (Booleano)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> usuarios (</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    es_activo <span class="dt">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="kw">TRUE</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertar valores</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> usuarios (<span class="kw">id</span>, nombre, es_activo) </span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="dv">1</span>, <span class="st">'Ana'</span>, <span class="kw">TRUE</span>), (<span class="dv">2</span>, <span class="st">'Carlos'</span>, <span class="kw">FALSE</span>);</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- Consulta filtrando por el campo lógico</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> usuarios <span class="kw">WHERE</span> es_activo <span class="op">=</span> <span class="kw">TRUE</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="resumen-puntos-clave" class="level3" data-number="5.3.5">
+<h3 data-number="5.3.5" class="anchored" data-anchor-id="resumen-puntos-clave"><span class="header-section-number">5.3.5</span> Resumen (Puntos clave)</h3>
+<ul>
+<li><p><strong>Diferencia principal:</strong> <code>BOOLEAN</code> está pensado para la lógica del negocio (<code>TRUE</code>/<code>FALSE</code>), mientras que <code>BIT</code> está pensado para almacenamiento binario compacto o un solo dígito binario (<code>0</code>/<code>1</code>).</p></li>
+<li><p><strong>Inconsistencia entre motores:</strong> SQL Server no admite <code>BOOLEAN</code> y usa <code>BIT</code> en su lugar; MySQL admite <code>BOOLEAN</code> pero por dentro lo convierte a un número entero pequeño (<code>TINYINT</code>).</p></li>
+<li><p><strong>Eficiencia:</strong> El tipo <code>BIT</code> en motores como SQL Server es muy eficiente porque agrupa hasta 8 columnas distintas de tipo <code>BIT</code> en un solo byte físico.</p></li>
+</ul>
+</section>
+</section>
+<section id="tipos-de-datos-enteros-integer" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="tipos-de-datos-enteros-integer"><span class="header-section-number">5.4</span> Tipos de Datos Enteros (INTEGER)</h2>
+<p>Los tipos de datos enteros se utilizan para almacenar <strong>números exactos sin parte decimal</strong> (positivos, negativos o cero). Son los tipos de datos numéricos más eficientes a nivel de cómputo y almacenamiento en cualquier base de datos, por lo que se emplean como clave primaria (<code>PRIMARY KEY</code>), identificadores, contadores y claves foráneas (<code>FOREIGN KEY</code>).</p>
+<p>Existen varios subtipos que varían principalmente en la <strong>cantidad de bytes que ocupan</strong> y, por tanto, en el <strong>rango de números que pueden almacenar</strong>.</p>
+<section id="clasificación-y-rangos-con-signo-signed" class="level3" data-number="5.4.1">
+<h3 data-number="5.4.1" class="anchored" data-anchor-id="clasificación-y-rangos-con-signo-signed"><span class="header-section-number">5.4.1</span> Clasificación y Rangos (Con signo / <em>Signed</em>)</h3>
+<p>Por defecto, los enteros en SQL permiten valores positivos y negativos (<em>Signed</em>).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Tipo de Dato</strong></td>
+<td><strong>Espacio</strong></td>
+<td><strong>Rango con Signo (Signed)</strong></td>
+<td><strong>Caso de Uso Típico</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>TINYINT</code></strong></td>
+<td><strong>1 Byte</strong> (8 bits)</td>
+<td>-128 a 127</td>
+<td>Estados, meses (1-12), edades, días de la semana.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>SMALLINT</code></strong></td>
+<td><strong>2 Bytes</strong> (16 bits)</td>
+<td>-32.768 a 32.767</td>
+<td>Años, recuentos pequeños, códigos postales cortos.</td>
+</tr>
+<tr class="even">
+<td><strong><code>INT</code> / <code>INTEGER</code></strong></td>
+<td><strong>4 Bytes</strong> (32 bits)</td>
+<td>-2.147.483.648 a 2.147.483.647 (<span class="math inline">\(\approx \pm 2,14\)</span> mil millones)</td>
+<td>IDs estándar de tablas, contadores de usuarios, stocks.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>BIGINT</code></strong></td>
+<td><strong>8 Bytes</strong> (64 bits)</td>
+<td>-9.223.372.036.854.775.808 a 9.223.372.036.854.775.807</td>
+<td>Transacciones financieras, clicks de la web, datos masivos (<em>Big Data</em>).</td>
+</tr>
+</tbody>
+</table>
+<p><em>(Nota: En MySQL/MariaDB existe también <code>MEDIUMINT</code> de 3 Bytes, de -8.388.608 a 8.388.607).</em></p>
+<section id="la-opción-unsigned-sin-signo" class="level4" data-number="5.4.1.1">
+<h4 data-number="5.4.1.1" class="anchored" data-anchor-id="la-opción-unsigned-sin-signo"><span class="header-section-number">5.4.1.1</span> La opción <code>UNSIGNED</code> (Sin Signo)</h4>
+<p><code>UNSIGNED</code> es un modificador que elimina la capacidad de almacenar números negativos y desplaza todo el rango hacia la zona positiva.</p>
+<p>Al no tener que reservar un bit para el signo +/- (el bit más significativo o <em>sign bit</em>), <strong>duplica el valor máximo positivo</strong> que cabe en el mismo espacio físico de bytes.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Tipo de Dato</strong></td>
+<td><strong>Rango Con Signo (Signed)</strong></td>
+<td><strong>Rango Sin Signo (UNSIGNED)</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>TINYINT</code></strong></td>
+<td>-128 a 127</td>
+<td><strong>0 a 255</strong></td>
+</tr>
+<tr class="odd">
+<td><strong><code>SMALLINT</code></strong></td>
+<td>-32.768 a 32.767</td>
+<td><strong>0 a 65.535</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>INT</code></strong></td>
+<td>-2.147.483.648 a 2.147.483.647</td>
+<td><strong>0 a 4.294.967.295</strong> (<span class="math inline">\(\approx 4,29\)</span> mil millones)</td>
+</tr>
+<tr class="odd">
+<td><strong><code>BIGINT</code></strong></td>
+<td><span class="math inline">\(-9,22 \times 10^{18}\)</span> a <span class="math inline">\(9,22 \times 10^{18}\)</span></td>
+<td><strong>0 a 18.446.744.073.709.551.615</strong> (<span class="math inline">\(\approx 18,4\)</span> quintillones)</td>
+</tr>
+</tbody>
+</table>
+<div class="nota">
+<p><strong>¿Cuándo usar <code>UNSIGNED</code>?</strong></p>
+<p>Es ideal para columnas que por su naturaleza <strong>jamás pueden ser negativas</strong>, como por ejemplo: un <code>ID</code> autoincremental, el precio de un producto en céntimos, la edad de una persona o el stock de inventario.</p>
+</div>
+</section>
+</section>
+<section id="motores-sql-donde-existe-2" class="level3" data-number="5.4.2">
+<h3 data-number="5.4.2" class="anchored" data-anchor-id="motores-sql-donde-existe-2"><span class="header-section-number">5.4.2</span> Motores SQL donde existe</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor SQL</strong></td>
+<td><strong>Soporte de TINYINT, SMALLINT, INT, BIGINT</strong></td>
+<td><strong>Soporte de la opción UNSIGNED</strong></td>
+</tr>
+<tr class="even">
+<td><strong>MySQL / MariaDB</strong></td>
+<td><strong>Sí</strong>, soporta todos los tipos.</td>
+<td><strong>Sí</strong>, soporte completo para todos los enteros.</td>
+</tr>
+<tr class="odd">
+<td><strong>PostgreSQL</strong></td>
+<td>Soporta <code>SMALLINT</code>, <code>INT</code>, <code>BIGINT</code>. <strong>No</strong> tiene <code>TINYINT</code> nativo.</td>
+<td><strong>No</strong> soporta la palabra clave <code>UNSIGNED</code> (se usan restricciones <code>CHECK (col &gt;= 0)</code>).</td>
+</tr>
+<tr class="even">
+<td><strong>SQL Server</strong></td>
+<td>Soporta <code>BIGINT</code>, <code>INT</code>, <code>SMALLINT</code> y <code>TINYINT</code>.</td>
+<td><strong>No</strong> soporta la palabra clave <code>UNSIGNED</code>. <em>(Curiosidad: en SQL Server, <code>TINYINT</code> es <code>UNSIGNED</code> por defecto, de 0 a 255)</em>.</td>
+</tr>
+<tr class="odd">
+<td><strong>SQLite</strong></td>
+<td>Todos se convierten internamente al tipo dinámico <code>INTEGER</code> (1 a 8 bytes según el valor).</td>
+<td><strong>No</strong> soporta la sintaxis <code>UNSIGNED</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-en-sql-1" class="level3" data-number="5.4.3">
+<h3 data-number="5.4.3" class="anchored" data-anchor-id="ejemplo-en-sql-1"><span class="header-section-number">5.4.3</span> Ejemplo en SQL</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo de creación de tabla en MySQL/MariaDB</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> productos (</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> BIGINT UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>, <span class="co">-- Permite el doble de IDs positivos (hasta 4,29 mil mill.)</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    stock <span class="dt">INT</span> UNSIGNED <span class="kw">DEFAULT</span> <span class="dv">0</span>,                 <span class="co">-- El stock no puede ser negativo</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    mes_temporada TINYINT UNSIGNED,                <span class="co">-- Valores del 1 al 12 (1 byte de espacio)</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    codigo_categoria <span class="dt">SMALLINT</span>                     <span class="co">-- Admite categorías negativas si fuera necesario</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- Inserción de datos</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> productos (nombre, stock, mes_temporada, codigo_categoria)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'Portátil Gaming'</span>, <span class="dv">150</span>, <span class="dv">11</span>, <span class="op">-</span><span class="dv">500</span>);</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- Intentar insertar un valor fuera de rango o negativo en un UNSIGNED (Dará error)</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- INSERT INTO productos (nombre, stock) VALUES ('Error', -10);</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="tipos-de-datos-numéricos-decimales" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="tipos-de-datos-numéricos-decimales"><span class="header-section-number">5.5</span> Tipos de Datos Numéricos Decimales</h2>
+<section id="decimales-exactos-decimal-numeric" class="level3" data-number="5.5.1">
+<h3 data-number="5.5.1" class="anchored" data-anchor-id="decimales-exactos-decimal-numeric"><span class="header-section-number">5.5.1</span> Decimales Exactos (<code>DECIMAL</code> / <code>NUMERIC</code>)</h3>
+<p>El tipo de dato <code>DECIMAL</code> (o su alias equivalente <code>NUMERIC</code>) almacena valores numéricos con coma flotante <strong>exacta</strong> (coma fija). Al no realizar aproximaciones binarias, garantiza que el número guardado en disco sea exactamente el mismo que introdujo el usuario, lo que resulta fundamental para cálculos financieros, contabilidad o presupuestos.</p>
+<p>Se define bajo la sintaxis <strong><code>DECIMAL(P, S)</code></strong>:</p>
+<ul>
+<li><p><strong>Precisión (</strong><span class="math inline">\(P\)</span>): Cantidad <strong>total de dígitos</strong> que se pueden almacenar en el número (sumando los dígitos antes y después de la coma).</p></li>
+<li><p><strong>Escala (</strong><span class="math inline">\(S\)</span>): Cantidad de dígitos reservados <strong>a la derecha de la coma decimal</strong>.</p></li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Ejemplo:</strong> En un campo <code>DECIMAL(6, 2)</code>:</p>
+<ul>
+<li><p><span class="math inline">\(P = 6\)</span> (6 dígitos en total).</p></li>
+<li><p><span class="math inline">\(S = 2\)</span> (2 de esos dígitos son decimales).</p></li>
+<li><p>Máximo número entero permitido: <span class="math inline">\(6 - 2 = 4\)</span> dígitos enteros (hasta <code>9999.99</code>).</p></li>
+</ul>
+</blockquote>
+<p><strong>¿Qué ocurre si intentas introducir un número distinto de decimales a los establecidos?</strong></p>
+<ol type="1">
+<li><p><strong>Si pasas más decimales que la escala definida (</strong><span class="math inline">\(S\)</span>):</p>
+<p>El motor <strong>redondea el número automáticamente</strong> al número de decimales permitido.</p>
+<ul>
+<li><em>Ejemplo:</em> Si en <code>DECIMAL(5, 2)</code> insertas <code>123.456</code>, la base de datos guardará <code>123.46</code>.</li>
+</ul></li>
+<li><p><strong>Si pasas más dígitos enteros de los permitidos (</strong><span class="math inline">\(P - S\)</span>):</p>
+<p>Provoca un <strong>error de desbordamiento (<em>Overflow / Out of range</em>)</strong> y la consulta falla.</p>
+<ul>
+<li><em>Ejemplo:</em> Si en <code>DECIMAL(5, 2)</code> intentas guardar <code>1234.5</code> (4 enteros), el motor no puede alojarlo porque solo admite 3 enteros (<span class="math inline">\(5 - 2 = 3\)</span>).</li>
+</ul></li>
+</ol>
+</section>
+<section id="límites-y-espacio-de-almacenamiento" class="level3" data-number="5.5.2">
+<h3 data-number="5.5.2" class="anchored" data-anchor-id="límites-y-espacio-de-almacenamiento"><span class="header-section-number">5.5.2</span> Límites y Espacio de Almacenamiento</h3>
+<ul>
+<li><p><strong>Límites:</strong> La precisión máxima varía según el gestor. Por ejemplo, en MySQL y PostgreSQL el límite es de <strong>65 dígitos</strong>, mientras que en SQL Server el máximo es de <strong>38 dígitos</strong>.</p></li>
+<li><p><strong>Almacenamiento (Bytes):</strong> No utiliza un número fijo de bytes. La base de datos agrupa los dígitos en bloques para calcular el espacio consumido.</p>
+<ul>
+<li><p><strong>MySQL / MariaDB:</strong> Almacena cada 9 dígitos usando 4 bytes.</p></li>
+<li><p><strong>SQL Server:</strong></p>
+<ul>
+<li><p>Precisión 1 a 9 dígitos: <strong>5 bytes</strong>.</p></li>
+<li><p>Precisión 10 a 19 dígitos: <strong>9 bytes</strong>.</p></li>
+<li><p>Precisión 20 a 28 dígitos: <strong>13 bytes</strong>.</p></li>
+<li><p>Precisión 29 a 38 dígitos: <strong>17 bytes</strong>.</p></li>
+</ul></li>
+</ul></li>
+</ul>
+</section>
+<section id="decimales-aproximados-float-real-y-double" class="level3" data-number="5.5.3">
+<h3 data-number="5.5.3" class="anchored" data-anchor-id="decimales-aproximados-float-real-y-double"><span class="header-section-number">5.5.3</span> Decimales Aproximados (<code>FLOAT</code>, <code>REAL</code> y <code>DOUBLE</code>)</h3>
+<p>Los datos en punto flotante (<code>FLOAT</code>, <code>REAL</code>, <code>DOUBLE PRECISION</code>) guardan una <strong>aproximación</strong> del número real mediante notación científica binaria basada en el estándar IEEE 754. Se utilizan para magnitudes físicas, mediciones de sensores o coordenadas geográficas donde se prima la rapidez de cómputo sobre la precisión exacta.</p>
+<ul>
+<li><p><strong><code>REAL</code> / <code>FLOAT(p)</code> (Precisión Simple):</strong></p>
+<ul>
+<li><p><strong>Espacio:</strong> <strong>4 bytes</strong> (32 bits).</p></li>
+<li><p><strong>Precisión:</strong> Garantiza unos <strong>7 dígitos decimales</strong> de precisión.</p></li>
+</ul></li>
+<li><p><strong><code>DOUBLE</code> / <code>DOUBLE PRECISION</code> / <code>FLOAT</code> (Precisión Doble):</strong></p>
+<ul>
+<li><p><strong>Espacio:</strong> <strong>8 bytes</strong> (64 bits).</p></li>
+<li><p><strong>Precisión:</strong> Garantiza aproximadamente <strong>15 a 17 dígitos decimales</strong> de precisión.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="el-problema-de-la-aproximación" class="level3" data-number="5.5.4">
+<h3 data-number="5.5.4" class="anchored" data-anchor-id="el-problema-de-la-aproximación"><span class="header-section-number">5.5.4</span> El problema de la aproximación</h3>
+<p>Debido a que los ordenadores representan los números en base 2 (binario), ciertos números decimales periódicos en base 10 (como <code>0.1</code> o <code>0.2</code>) no pueden representarse de forma exacta en binario.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo típico de imprecisión en punto flotante</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fl">0.1</span> <span class="op">+</span> <span class="fl">0.2</span>; </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- En tipos FLOAT, el procesador puede devolver 0.30000000000000004</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="exactos-vs-aproximados-cuándo-elegir-cada-uno" class="level3" data-number="5.5.5">
+<h3 data-number="5.5.5" class="anchored" data-anchor-id="exactos-vs-aproximados-cuándo-elegir-cada-uno"><span class="header-section-number">5.5.5</span> Exactos vs aproximados ¿Cuándo elegir cada uno?</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 31%">
+<col style="width: 43%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>Exactos (DECIMAL / NUMERIC)</strong></td>
+<td><strong>Aproximados (FLOAT / DOUBLE)</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Precisión</strong></td>
+<td><strong>100% exacta.</strong> Sin pérdidas ni redondeos impredecibles.</td>
+<td><strong>Aproximada.</strong> Puede acumular errores al sumar o multiplicar.</td>
+</tr>
+<tr class="odd">
+<td><strong>Rendimiento</strong></td>
+<td><strong>Más lento.</strong> Las operaciones aritméticas se procesan por software en la CPU.</td>
+<td><strong>Extremadamente rápido.</strong> La tarjeta gráfica y la CPU procesan punto flotante por hardware (FPU).</td>
+</tr>
+<tr class="even">
+<td><strong>Almacenamiento</strong></td>
+<td>Variable y superior (de 5 a 17+ bytes).</td>
+<td>Fijo y compacto (4 u 8 bytes).</td>
+</tr>
+<tr class="odd">
+<td><strong>Uso Recomendado</strong></td>
+<td>Dinero, impuestos, transacciones bancarias, inventarios.</td>
+<td>Lecturas de sensores (temperatura, velocidad), física, astronomía, coordinadas GPS.</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> mediciones (</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Tipo Exacto: Precio máximo 999999.99 €</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    precio <span class="dt">DECIMAL</span>(<span class="dv">8</span>, <span class="dv">2</span>), </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Tipo Aproximado: Temperatura de un sensor con margen de precisión</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    temperatura_sensor <span class="dt">REAL</span>, </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Tipo Aproximado: Coordenada de alta precisión para cartografía</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    latitud <span class="dt">DOUBLE</span> <span class="dt">PRECISION</span> </span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Inserción demostrando el redondeo de DECIMAL(8,2)</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> mediciones (<span class="kw">id</span>, precio, temperatura_sensor, latitud)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="dv">1</span>, <span class="fl">19.999</span>, <span class="fl">36.6543</span>, <span class="fl">40.416775</span>);</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- En el campo precio se guardará 20.00 por el redondeo automático</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> precio <span class="kw">FROM</span> mediciones <span class="kw">WHERE</span> <span class="kw">id</span> <span class="op">=</span> <span class="dv">1</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="por-qué-nunca-usar-float-para-dinero" class="level3" data-number="5.5.6">
+<h3 data-number="5.5.6" class="anchored" data-anchor-id="por-qué-nunca-usar-float-para-dinero"><span class="header-section-number">5.5.6</span> ¿Por qué NUNCA usar <code>FLOAT</code> para dinero?</h3>
+<p>Si te preguntan en clase por qué no se debe usar <code>FLOAT</code> en una tienda online, la respuesta es el <strong>efecto de acumulación de error de redondeo</strong>:</p>
+<p>Si sumas millones de transacciones pequeñas guardadas en <code>FLOAT</code> (como <code>0.01</code> € por clic), las pequeñas diferencias binarias en el último decimal se van acumulando. Al final del año, la contabilidad puede descuadrar por varios cientos o miles de euros. En finanzas <strong>siempre se exige <code>DECIMAL</code> o almacenar los importes en céntimos como <code>INTEGER</code></strong>.</p>
+</section>
+</section>
+<section id="tipos-de-datos-de-cadena-de-texto-char-varchar-text" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="tipos-de-datos-de-cadena-de-texto-char-varchar-text"><span class="header-section-number">5.6</span> Tipos de Datos de Cadena de Texto (<code>CHAR</code>, <code>VARCHAR</code>, <code>TEXT</code>)</h2>
+<section id="charn-longitud-fija" class="level3" data-number="5.6.1">
+<h3 data-number="5.6.1" class="anchored" data-anchor-id="charn-longitud-fija"><span class="header-section-number">5.6.1</span> <code>CHAR(n)</code> – Longitud Fija</h3>
+<ul>
+<li><p><strong>Descripción:</strong> Almacena cadenas de texto de longitud constante definida por <span class="math inline">\(n\)</span>. Si el texto introducido es más corto que <span class="math inline">\(n\)</span>, la base de datos <strong>rellena el espacio restante con espacios en blanco a la derecha</strong> hasta completar los <span class="math inline">\(n\)</span> caracteres.</p></li>
+<li><p><strong>Límites:</strong> Normalmente <span class="math inline">\(n\)</span> va de <strong>1 a 255 caracteres</strong>.</p></li>
+<li><p><strong>Espacio que ocupa:</strong> Ocupa siempre <span class="math inline">\(n\)</span> bytes/caracteres fijos, sin importar el texto introducido.</p></li>
+<li><p><strong>Casos de uso:</strong> Datos con longitud estrictamente uniforme: códigos ISO de país (<code>ES</code>, <code>MX</code>), DNI/NIF, códigos hash MD5/SHA256, códigos postales fijos.</p></li>
+</ul>
+</section>
+<section id="varcharn-longitud-variable" class="level3" data-number="5.6.2">
+<h3 data-number="5.6.2" class="anchored" data-anchor-id="varcharn-longitud-variable"><span class="header-section-number">5.6.2</span> <code>VARCHAR(n)</code> – Longitud Variable</h3>
+<ul>
+<li><p><strong>Descripción:</strong> Almacena cadenas de texto de longitud variable hasta un máximo de <span class="math inline">\(n\)</span> caracteres. Solo consume el espacio equivalente a los caracteres realmente escritos, más un pequeño costo adicional para registrar la longitud del texto (<em>prefix length</em>).</p></li>
+<li><p><strong>Límites:</strong> Hasta <strong>65.535 bytes</strong> en MySQL/MariaDB o <strong>8.000 caracteres</strong> en SQL Server (<code>VARCHAR(8000)</code> o <code>VARCHAR(MAX)</code>).</p></li>
+<li><p><strong>Espacio que ocupa:</strong> <strong>Longitud del texto guardado + 1 o 2 bytes de cabecera</strong> (1 byte si la longitud máxima es menor que 255, 2 bytes si es mayor).</p></li>
+<li><p><strong>Casos de uso:</strong> Nombres de usuario, correos electrónicos, direcciones, títulos de artículos.</p></li>
+</ul>
+</section>
+<section id="qué-ocurre-si-intentas-introducir-un-texto-distinto-a-la-longitud-establecida" class="level3" data-number="5.6.3">
+<h3 data-number="5.6.3" class="anchored" data-anchor-id="qué-ocurre-si-intentas-introducir-un-texto-distinto-a-la-longitud-establecida"><span class="header-section-number">5.6.3</span> ¿Qué ocurre si intentas introducir un texto distinto a la longitud establecida?</h3>
+<ol type="1">
+<li><p><strong>Si el texto es más corto:</strong></p>
+<ul>
+<li><p>En <code>CHAR(10)</code>: Al guardar <code>'Hola'</code>, el motor guarda <code>'Hola      '</code> (4 letras + 6 espacios).</p></li>
+<li><p>En <code>VARCHAR(10)</code>: Al guardar <code>'Hola'</code>, el motor guarda <code>'Hola'</code> y registra que la longitud es de 4 caracteres.</p></li>
+</ul></li>
+<li><p><strong>Si el texto excede el límite</strong> <span class="math inline">\(n\)</span>:</p>
+<ul>
+<li><p><strong>Modo Estricto (Por defecto):</strong> Lanza un error de truncado (<em>Data too long for column</em>) y cancela la transacción.</p></li>
+<li><p><strong>Modo No Estricto:</strong> Trunca el texto automáticamente cortando las letras sobrantes a partir del carácter <span class="math inline">\(n\)</span>.</p></li>
+</ul></li>
+</ol>
+</section>
+<section id="textos-largos-text-clob" class="level3" data-number="5.6.4">
+<h3 data-number="5.6.4" class="anchored" data-anchor-id="textos-largos-text-clob"><span class="header-section-number">5.6.4</span> Textos Largos (<code>TEXT</code> / <code>CLOB</code>)</h3>
+<p>Diseñado para almacenar grandes volúmenes de texto no estructurado donde la longitud máxima no se conoce de antemano o supera los límites de un <code>VARCHAR</code>.</p>
+<section id="subtipos-en-mysql-mariadb" class="level4" data-number="5.6.4.1">
+<h4 data-number="5.6.4.1" class="anchored" data-anchor-id="subtipos-en-mysql-mariadb"><span class="header-section-number">5.6.4.1</span> Subtipos en MySQL / MariaDB</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Tipo</strong></td>
+<td><strong>Longitud Máxima en Bytes / Caracteres</strong></td>
+<td><strong>Espacio Real Consumido</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>TINYTEXT</code></strong></td>
+<td>Hasta 255 bytes</td>
+<td>Longitud real + 1 byte</td>
+</tr>
+<tr class="odd">
+<td><strong><code>TEXT</code></strong></td>
+<td>Hasta 65.535 bytes (<span class="math inline">\(\approx 65\)</span> KB)</td>
+<td>Longitud real + 2 bytes</td>
+</tr>
+<tr class="even">
+<td><strong><code>MEDIUMTEXT</code></strong></td>
+<td>Hasta 16.777.215 bytes (<span class="math inline">\(\approx 16\)</span> MB)</td>
+<td>Longitud real + 3 bytes</td>
+</tr>
+<tr class="odd">
+<td><strong><code>LONGTEXT</code></strong></td>
+<td>Hasta 4.294.967.295 bytes (<span class="math inline">\(\approx 4\)</span> GB)</td>
+<td>Longitud real + 4 bytes</td>
+</tr>
+</tbody>
+</table>
+<p><em>(Nota: En SQL Server se utiliza <code>VARCHAR(MAX)</code> y en PostgreSQL se usa <code>TEXT</code> de longitud ilimitada dinámicamente).</em></p>
+</section>
+</section>
+<section id="ventajas-e-inconvenientes-cuándo-elegir-cada-uno" class="level3" data-number="5.6.5">
+<h3 data-number="5.6.5" class="anchored" data-anchor-id="ventajas-e-inconvenientes-cuándo-elegir-cada-uno"><span class="header-section-number">5.6.5</span> Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>CHAR</strong></td>
+<td><strong>VARCHAR</strong></td>
+<td><strong>TEXT</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Velocidad / Rendimiento</strong></td>
+<td><strong>Más rápido.</strong> Al tener un tamaño fijo por fila, el motor calcula de forma directa la posición en memoria.</td>
+<td><strong>Moderado.</strong> Requiere leer la cabecera para determinar el fin de la cadena.</td>
+<td><strong>Más lento.</strong> Se almacena fuera del bloque principal de la fila (<em>Off-page storage</em>).</td>
+</tr>
+<tr class="odd">
+<td><strong>Uso de Espacio</strong></td>
+<td>Ineficiente si los datos varían mucho de tamaño.</td>
+<td><strong>Muy eficiente.</strong> No desperdicia espacio en blanco.</td>
+<td>Eficiente para grandes volúmenes, pero añade <em>overhead</em> de punteros.</td>
+</tr>
+<tr class="even">
+<td><strong>Indexación y Búsquedas</strong></td>
+<td>Búsquedas muy rápidas.</td>
+<td>Permite índices estándar.</td>
+<td>Requiere <strong>índices de texto completo (<em>Full-Text Index</em>)</strong> para búsquedas eficientes.</td>
+</tr>
+<tr class="odd">
+<td><strong>Uso Típico</strong></td>
+<td>Códigos de país (<code>CHAR(2)</code>), Hashes.</td>
+<td>Nombres, Emails, URLs.</td>
+<td>Artículos de blog, JSON en texto, descripciones.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="motores-sql-y-la-opción-nvarchar-unicode" class="level3" data-number="5.6.6">
+<h3 data-number="5.6.6" class="anchored" data-anchor-id="motores-sql-y-la-opción-nvarchar-unicode"><span class="header-section-number">5.6.6</span> Motores SQL y la opción <code>NVARCHAR</code> / Unicode</h3>
+<section id="el-prefijo-n-nchar-nvarchar" class="level4" data-number="5.6.6.1">
+<h4 data-number="5.6.6.1" class="anchored" data-anchor-id="el-prefijo-n-nchar-nvarchar"><span class="header-section-number">5.6.6.1</span> El prefijo <code>N</code> (<code>NCHAR</code>, <code>NVARCHAR</code>)</h4>
+<p>En motores como <strong>SQL Server</strong> o <strong>Oracle</strong>, las variantes que empiezan por <code>N</code> representan texto <strong>Unicode (National Language Set)</strong>.</p>
+<ul>
+<li><p><code>VARCHAR</code>: Usa codificación de 1 byte por carácter (no soporta ciertos alfabetos complejos sin configurar la página de códigos).</p></li>
+<li><p><code>NVARCHAR</code>: Usa codificación UTF-16 (<strong>2 bytes por carácter</strong>), permitiendo guardar cualquier alfabeto del mundo (chino, cirílico, árabe) y emojis.</p></li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th><strong>Tipo</strong></th>
+<th><strong>Almacenamiento</strong></th>
+<th><strong>Capacidad</strong></th>
+<th><strong>Ejemplo</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong><code>VARCHAR(n)</code></strong></td>
+<td>1 byte por carácter*</td>
+<td>Hasta <strong><code>n</code></strong> bytes</td>
+<td><strong><code>"Hola"</code></strong> → 4 bytes</td>
+</tr>
+<tr class="even">
+<td><strong><code>NVARCHAR(n)</code></strong></td>
+<td>2 bytes por carácter*</td>
+<td>Hasta <strong><code>n</code></strong> caracteres</td>
+<td><strong><code>"Hola"</code></strong> → 8 bytes</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-en-sql-2" class="level4" data-number="5.6.6.2">
+<h4 data-number="5.6.6.2" class="anchored" data-anchor-id="ejemplo-en-sql-2"><span class="header-section-number">5.6.6.2</span> Ejemplo en SQL</h4>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> publicaciones (</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    codigo_iso_pais <span class="dt">CHAR</span>(<span class="dv">2</span>),            <span class="co">-- Longitud fija siempre de 2 letras ('ES', 'MX')</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    titulo <span class="dt">VARCHAR</span>(<span class="dv">150</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,        <span class="co">-- Longitud variable hasta 150 caracteres</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    contenido TEXT,                      <span class="co">-- Texto largo de extensión variable</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    autor_soporte_multilenguaje <span class="dt">NVARCHAR</span>(<span class="dv">100</span>) <span class="co">-- Soporta caracteres internacionales</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> publicaciones (<span class="kw">id</span>, codigo_iso_pais, titulo, contenido)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>, </span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ES'</span>, </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Aprender SQL en 2026'</span>, </span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Este es el contenido detallado de la lección sobre tipos de datos...'</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+</section>
+<section id="tipos-de-datos-de-fecha-y-hora-en-sql-date-time-datetime-y-timestamp" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="tipos-de-datos-de-fecha-y-hora-en-sql-date-time-datetime-y-timestamp"><span class="header-section-number">5.7</span> Tipos de Datos de Fecha y Hora en SQL (<code>DATE</code>, <code>TIME</code>, <code>DATETIME</code> y <code>TIMESTAMP</code>)</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Tipo de Dato</strong></td>
+<td><strong>Formato</strong></td>
+<td><strong>Rango Típico (ej. MySQL/MariaDB)</strong></td>
+<td><strong>Tamaño en Disco</strong></td>
+<td><strong>Caso de Uso Principal</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>DATE</code></strong></td>
+<td><code>YYYY-MM-DD</code></td>
+<td><code>1000-01-01</code> a <code>9999-12-31</code></td>
+<td><strong>3 bytes</strong></td>
+<td>Fechas de nacimiento, fechas de contratación, vencimientos sin hora.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>TIME</code></strong></td>
+<td><code>HH:MM:SS</code> (o <code>HH:MM:SS.p</code>)</td>
+<td><code>-838:59:59</code> a <code>838:59:59</code></td>
+<td><strong>3 bytes</strong></td>
+<td>Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido.</td>
+</tr>
+<tr class="even">
+<td><strong><code>DATETIME</code></strong></td>
+<td><code>YYYY-MM-DD HH:MM:SS</code></td>
+<td><code>1000-01-01 00:00:00</code> a <code>9999-12-31 23:59:59</code></td>
+<td><strong>5 a 8 bytes</strong></td>
+<td>Reservas de hotel, eventos del calendario, citas programadas.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>TIMESTAMP</code></strong></td>
+<td><code>YYYY-MM-DD HH:MM:SS</code></td>
+<td><code>1970-01-01 00:00:01</code> UTC a <code>2038-01-19 03:14:07</code> UTC</td>
+<td><strong>4 bytes</strong></td>
+<td>Auditoría, marcas de tiempo de modificación, registros (<em>logs</em>).</td>
+</tr>
+</tbody>
+</table>
+<section id="date-solo-fecha" class="level3" data-number="5.7.1">
+<h3 data-number="5.7.1" class="anchored" data-anchor-id="date-solo-fecha"><span class="header-section-number">5.7.1</span> <code>DATE</code> (Solo Fecha)</h3>
+<ul>
+<li><p><strong>Formato estándar:</strong> <code>YYYY-MM-DD</code> (ej. <code>'2026-09-28'</code>).</p></li>
+<li><p><strong>Características:</strong> Ignora por completo cualquier componente de hora. Si intentas insertar una hora en un campo <code>DATE</code>, la parte temporal se descarta.</p></li>
+<li><p><strong>Almacenamiento:</strong> Consume solo 3 bytes por fila, lo que optimiza significativamente el espacio en grandes volúmenes de datos.</p></li>
+</ul>
+</section>
+<section id="time-solo-hora-o-intervalo" class="level3" data-number="5.7.2">
+<h3 data-number="5.7.2" class="anchored" data-anchor-id="time-solo-hora-o-intervalo"><span class="header-section-number">5.7.2</span> <code>TIME</code> (Solo Hora o Intervalo)</h3>
+<ul>
+<li><p><strong>Formato estándar:</strong> <code>HH:MM:SS</code> (opcionalmente con microsegundos <code>HH:MM:SS.ffffff</code>).</p></li>
+<li><p><strong>Peculiaridad:</strong> En muchos SGBD (como MySQL), <code>TIME</code> no solo representa la hora del día (00:00:00 a 23:59:59), sino también <strong>tiempo transcurrido o duraciones</strong>. Por este motivo, su rango permite horas negativas y valores superiores a 24 horas (desde <code>-838:59:59</code> hasta <code>838:59:59</code>).</p></li>
+</ul>
+</section>
+<section id="la-gran-diferencia-datetime-vs-timestamp" class="level3" data-number="5.7.3">
+<h3 data-number="5.7.3" class="anchored" data-anchor-id="la-gran-diferencia-datetime-vs-timestamp"><span class="header-section-number">5.7.3</span> La Gran Diferencia: <code>DATETIME</code> vs <code>TIMESTAMP</code></h3>
+<p>Aunque ambos almacenan tanto la fecha como la hora, existen diferencias críticas en el manejo de zonas horarias (<em>Time Zones</em>) y almacenamiento interno.</p>
+<p><img src="images/paste-PrVXDb6RMLZJBjZ9Cujia.png" class="img-fluid"></p>
+</section>
+<section id="datetime-constante-e-independiente" class="level3" data-number="5.7.4">
+<h3 data-number="5.7.4" class="anchored" data-anchor-id="datetime-constante-e-independiente"><span class="header-section-number">5.7.4</span> <code>DATETIME</code> (Constante e Independiente)</h3>
+<ul>
+<li><p><strong>Comportamiento:</strong> Guarda el valor exacto tal como se introduce. <strong>No realiza ninguna conversión de zona horaria.</strong></p></li>
+<li><p><strong>Ejemplo:</strong> Si guardas <code>'2026-05-10 14:00:00'</code> en Madrid y un usuario consulta esa fila desde Tokio, verá exactamente <code>'2026-05-10 14:00:00'</code>.</p></li>
+<li><p><strong>Ventaja:</strong> Ideal para eventos futuros programados donde la hora local no debe cambiar independientemente de la configuración del servidor.</p></li>
+</ul>
+</section>
+<section id="timestamp-dinámico-y-basado-en-utc" class="level3" data-number="5.7.5">
+<h3 data-number="5.7.5" class="anchored" data-anchor-id="timestamp-dinámico-y-basado-en-utc"><span class="header-section-number">5.7.5</span> <code>TIMESTAMP</code> (Dinámico y Basado en UTC)</h3>
+<ul>
+<li><p><strong>Comportamiento:</strong></p>
+<ol type="1">
+<li><p>Al <strong>insertar/escribir</strong>, convierte la fecha/hora de la zona horaria del servidor/sesión actual a <strong>UTC (Tiempo Universal Coordinado)</strong> y guarda el número de segundos desde la época Unix (<code>1970-01-01 00:00:00 UTC</code>).</p></li>
+<li><p>Al <strong>consultar/leer</strong>, convierte ese valor UTC de nuevo a la zona horaria de la sesión que realiza la consulta.</p></li>
+</ol></li>
+<li><p><strong>Ejemplo:</strong> Si un servidor en Madrid (UTC+2 en verano) guarda <code>'2026-06-01 12:00:00'</code>, se almacena como <code>10:00:00 UTC</code>. Si un cliente consulta la base de datos desde Londres (UTC+1 en verano), obtendrá automáticamente <code>'2026-06-01 11:00:00'</code>.</p></li>
+<li><p><strong>Limitación importante (El problema del año 2038):</strong> Dado que muchos motores emplean un entero de 32 bits con signo para almacenar el <code>TIMESTAMP</code>, el valor máximo que puede registrar es el <strong>19 de enero de 2038 a las 03:14:07 UTC</strong>.</p></li>
+</ul>
+</section>
+<section id="tabla-comparativa-datetime-vs-timestamp" class="level3" data-number="5.7.6">
+<h3 data-number="5.7.6" class="anchored" data-anchor-id="tabla-comparativa-datetime-vs-timestamp"><span class="header-section-number">5.7.6</span> Tabla Comparativa: <code>DATETIME</code> vs <code>TIMESTAMP</code></h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 33%">
+<col style="width: 41%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Característica</strong></td>
+<td><strong>DATETIME</strong></td>
+<td><strong>TIMESTAMP</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Zona Horaria</strong></td>
+<td>Ignora la zona horaria (almacena texto/número literal).</td>
+<td><strong>Sensible a la zona horaria</strong> (convierte a UTC internamente).</td>
+</tr>
+<tr class="odd">
+<td><strong>Rango de Fechas</strong></td>
+<td>Amplio (<code>1000</code> a <code>9999</code>).</td>
+<td>Reducido (<code>1970</code> a <code>2038</code>).</td>
+</tr>
+<tr class="even">
+<td><strong>Almacenamiento</strong></td>
+<td>5 bytes (en versiones modernas) a 8 bytes.</td>
+<td><strong>4 bytes fijo.</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Actualización Automática</strong></td>
+<td>Opcional según la versión de SQL.</td>
+<td>Muy común para columnas tipo <code>DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Sintaxis en SQL de Ejemplo</strong></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> registros_eventos (</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTO_INCREMENT,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Solo fecha de nacimiento</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    fecha_nacimiento <span class="dt">DATE</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Solo la hora de inicio de una reunión</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    hora_inicio <span class="dt">TIME</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Cita médica programada (debe permanecer fija a las 10:00 local)</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    cita_programada DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Auditar cuándo se insertó el registro (conversión automática con UTC)</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    fecha_creacion <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Auditar la última modificación del registro</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    fecha_actualizacion <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span> <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="fu">CURRENT_TIMESTAMP</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo de inserción</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> registros_eventos (fecha_nacimiento, hora_inicio, cita_programada)</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'1992-04-15'</span>, <span class="st">'09:30:00'</span>, <span class="st">'2026-10-15 10:00:00'</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="por-qué-en-aplicaciones-globales-multi-región-se-prefiere-timestamp-o-guardar-en-utc" class="level3" data-number="5.7.7">
+<h3 data-number="5.7.7" class="anchored" data-anchor-id="por-qué-en-aplicaciones-globales-multi-región-se-prefiere-timestamp-o-guardar-en-utc"><span class="header-section-number">5.7.7</span> ¿Por qué en aplicaciones globales multi-región se prefiere <code>TIMESTAMP</code> o guardar en UTC?</h3>
+<p>Si la aplicación tiene usuarios en España, México y Japón, guardar fechas de compras en <code>DATETIME</code> sin zona horaria provocaría un caos analítico (no sabrías qué compra ocurrió antes que otra en tiempo absoluto).</p>
+<p>Usar <code>TIMESTAMP</code> garantiza que <strong>todas las transacciones queden alineadas en un tiempo universal (UTC)</strong>, mostrándose ajustadas a la hora local de cada usuario cuando abren la app.</p>
+</section>
+</section>
+<section id="tipos-de-datos-lob-texto-largo-clob-text-y-datos-binarios-blob" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="tipos-de-datos-lob-texto-largo-clob-text-y-datos-binarios-blob"><span class="header-section-number">5.8</span> Tipos de Datos LOB: Texto Largo (<code>CLOB</code> / <code>TEXT</code>) y Datos Binarios (<code>BLOB</code>)</h2>
+<section id="concepto-de-lob-large-objects" class="level3" data-number="5.8.1">
+<h3 data-number="5.8.1" class="anchored" data-anchor-id="concepto-de-lob-large-objects"><span class="header-section-number">5.8.1</span> Concepto de LOB (<em>Large Objects</em>)</h3>
+<p>Los tipos de datos <strong>LOB</strong> (<em>Large Objects</em>) están diseñados para almacenar volúmenes masivos de datos no estructurados o semiestructurados que superan los límites habituales de las columnas convencionales.</p>
+<p>Se dividen en dos categorías principales:</p>
+<ol type="1">
+<li><p><strong><code>CLOB</code> / <code>TEXT</code> (<em>Character Large Object</em>):</strong> Cadenas de caracteres de gran longitud donde la base de datos aplica reglas de codificación de caracteres (<em>collation</em>, UTF-8, etc.).</p></li>
+<li><p><strong><code>BLOB</code> (<em>Binary Large Object</em>):</strong> Secuencias fijas de bytes binarios puros (secuencia de <code>0</code>s y <code>1</code>s) sin ninguna codificación de texto asociada.</p></li>
+</ol>
+</section>
+<section id="tipos-blob-datos-binarios" class="level3" data-number="5.8.2">
+<h3 data-number="5.8.2" class="anchored" data-anchor-id="tipos-blob-datos-binarios"><span class="header-section-number">5.8.2</span> Tipos <code>BLOB</code> (Datos Binarios)</h3>
+<p>Almacenan información en formato binario crudo. Son ideales para archivos como imágenes, audios, documentos PDF, ejecutables o claves cifradas.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Subtipo (MySQL / MariaDB)</strong></td>
+<td><strong>Capacidad Máxima</strong></td>
+<td><strong>Tamaño Típico de Ejemplo</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>TINYBLOB</code></strong></td>
+<td>255 bytes</td>
+<td>Pequeños iconos, firmas digitales cortas</td>
+</tr>
+<tr class="odd">
+<td><strong><code>BLOB</code></strong></td>
+<td>65.535 bytes (<span class="math inline">\(\approx 65\)</span> KB)</td>
+<td>Miniaturas (<em>thumbnails</em>), archivos de configuración</td>
+</tr>
+<tr class="even">
+<td><strong><code>MEDIUMBLOB</code></strong></td>
+<td>16.777.215 bytes (<span class="math inline">\(\approx 16\)</span> MB)</td>
+<td>Fotografías en alta resolución, canciones MP3</td>
+</tr>
+<tr class="odd">
+<td><strong><code>LONGBLOB</code></strong></td>
+<td>4.294.967.295 bytes (<span class="math inline">\(\approx 4\)</span> GB)</td>
+<td>Vídeos, instaladores de software, bases de datos integradas</td>
+</tr>
+</tbody>
+</table>
+<p><em>(Nota: En PostgreSQL el equivalente binario estándar se denomina <code>BYTEA</code> o <code>LARGE OBJECT</code>, mientras que en SQL Server se usa <code>VARBINARY(MAX)</code>).</em></p>
+</section>
+<section id="tipos-text-clob-texto-largo" class="level3" data-number="5.8.3">
+<h3 data-number="5.8.3" class="anchored" data-anchor-id="tipos-text-clob-texto-largo"><span class="header-section-number">5.8.3</span> Tipos <code>TEXT</code> / <code>CLOB</code> (Texto Largo)</h3>
+<p>Almacenan texto plano o marcado (HTML, XML, JSON en texto, código fuente) de gran extensión.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Subtipo (MySQL / MariaDB)</strong></td>
+<td><strong>Capacidad Máxima</strong></td>
+<td><strong>Casos de Uso</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>TINYTEXT</code></strong></td>
+<td>255 bytes</td>
+<td>Resúmenes breves, notas de una línea</td>
+</tr>
+<tr class="odd">
+<td><strong><code>TEXT</code></strong></td>
+<td>65.535 bytes (<span class="math inline">\(\approx 65\)</span> KB)</td>
+<td>Artículos de blog, descripciones de productos</td>
+</tr>
+<tr class="even">
+<td><strong><code>MEDIUMTEXT</code></strong></td>
+<td>16,7 MB</td>
+<td>Capítulos de libros, documentos HTML complejos</td>
+</tr>
+<tr class="odd">
+<td><strong><code>LONGTEXT</code></strong></td>
+<td>4 GB</td>
+<td>Transcripciones completas, logs de sistema extensos</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cómo-funcionan-internamente-off-page-storage" class="level3" data-number="5.8.4">
+<h3 data-number="5.8.4" class="anchored" data-anchor-id="cómo-funcionan-internamente-off-page-storage"><span class="header-section-number">5.8.4</span> ¿Cómo funcionan internamente? (<em>Off-Page Storage</em>)</h3>
+<p>A diferencia de los enteros, fechas o <code>VARCHAR</code> pequeños, los datos de tipo <code>BLOB</code> y <code>TEXT</code> <strong>no se guardan directamente dentro del bloque o página principal de la fila</strong>:</p>
+<ul>
+<li><p><strong>Puntero en la fila:</strong> La tabla principal solo almacena un <strong>puntero o dirección de memoria</strong> (de unos pocos bytes).</p></li>
+<li><p><strong>Página externa (<em>Off-page</em>):</strong> El contenido real de la imagen o del texto largo se escribe en páginas de disco secundarias reservadas.</p></li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Consecuencia en el rendimiento:</strong> Hacer un <code>SELECT *</code> sobre una tabla que contiene columnas <code>BLOB</code> o <code>TEXT</code> obliga al motor a realizar lecturas adicionales en disco para seguir los punteros, ralentizando drásticamente la consulta.</p>
+</blockquote>
+</section>
+<section id="ventajas-e-inconvenientes-cuándo-usar-blob-y-cuándo-guardar-la-ruta-en-disco" class="level3" data-number="5.8.5">
+<h3 data-number="5.8.5" class="anchored" data-anchor-id="ventajas-e-inconvenientes-cuándo-usar-blob-y-cuándo-guardar-la-ruta-en-disco"><span class="header-section-number">5.8.5</span> Ventajas e Inconvenientes: ¿Cuándo usar <code>BLOB</code> y cuándo guardar la ruta en disco?</h3>
+<p>Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 33%">
+<col style="width: 38%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>Guardar el archivo en la BD (BLOB)</strong></td>
+<td><strong>Guardar en servidor/S3 y la ruta en la BD (VARCHAR)</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Integridad Transaccional (ACID)</strong></td>
+<td><strong>Excelente.</strong> Si haces un <code>ROLLBACK</code>, el archivo se borra o restaura junto con el registro.</td>
+<td><strong>Riesgo.</strong> El archivo puede borrarse del disco y dejar un puntero “huérfano” en la base de datos.</td>
+</tr>
+<tr class="odd">
+<td><strong>Copias de Seguridad (<em>Backups</em>)</strong></td>
+<td><strong>Cómodo pero pesado.</strong> Todo el sistema se respalda en un único archivo de base de datos.</td>
+<td><strong>Rápido.</strong> La base de datos ocupa pocos megabytes; los archivos se respaldan por separado.</td>
+</tr>
+<tr class="even">
+<td><strong>Rendimiento de la Base de Datos</strong></td>
+<td><strong>Degradado.</strong> Aumenta el consumo de RAM (memoria de búfer) e I/O de disco.</td>
+<td><strong>Óptimo.</strong> La base de datos gestiona solo texto corto (<code>VARCHAR(255)</code>) con las rutas.</td>
+</tr>
+<tr class="odd">
+<td><strong>Seguridad / Control de Acceso</strong></td>
+<td><strong>Alta.</strong> Se aplican directamente los permisos de usuario de SQL.</td>
+<td><strong>Media.</strong> Depende del sistema de archivos o del almacenamiento en la nube (<em>Cloud Storage</em>).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ejemplo de Sintaxis en SQL</strong></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> documentos_expediente (</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTO_INCREMENT,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    nombre_archivo <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Texto largo para el contenido extraído del documento</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    transcripcion_texto LONGTEXT, </span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Datos binarios puros para almacenar el archivo PDF original</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    archivo_pdf_contenido LONGBLOB,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Buenas prácticas: Guardar también el hash para verificar integridad</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    hash_sha256 <span class="dt">CHAR</span>(<span class="dv">64</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo conceptual de inserción</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> documentos_expediente (nombre_archivo, transcripcion_texto, archivo_pdf_contenido)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'contrato_alquiler.pdf'</span>,</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'En la ciudad de Madrid, a 28 de septiembre...'</span>,</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- En MySQL se pueden cargar archivos locales binarios mediante LOAD_FILE</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    LOAD_FILE(<span class="st">'/var/lib/mysql-files/contrato_alquiler.pdf'</span>)</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="por-qué-nunca-se-debe-hacer-select-en-una-tabla-con-columnas-blob-o-longtext" class="level3" data-number="5.8.6">
+<h3 data-number="5.8.6" class="anchored" data-anchor-id="por-qué-nunca-se-debe-hacer-select-en-una-tabla-con-columnas-blob-o-longtext"><span class="header-section-number">5.8.6</span> ¿Por qué NUNCA se debe hacer <code>SELECT *</code> en una tabla con columnas <code>BLOB</code> o <code>LONGTEXT</code>?</h3>
+<p>Si ejecutas <code>SELECT *</code> en una tabla con 100.000 registros que incluye una columna <code>LONGBLOB</code> con imágenes, el motor de la base de datos intentará cargar <strong>todos esos megabytes/gigabytes de imágenes en la memoria RAM del servidor</strong> para enviarlos por la red, colapsando el ancho de banda y la memoria caché (<em>buffer pool</em>).</p>
+<p>La regla de oro es consultar siempre explícitamente las columnas necesarias: <code>SELECT id, nombre_archivo FROM documentos_expediente;</code></p>
+</section>
+</section>
+<section id="tipo-de-dato-enumerado-enum" class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="tipo-de-dato-enumerado-enum"><span class="header-section-number">5.9</span> Tipo de Dato Enumerado (<code>ENUM</code>)</h2>
+<p>El tipo de dato <code>ENUM</code> es un objeto de cadena cuyo valor se elige explícitamente de una lista de valores permitidos predefinidos durante la creación de la tabla. Permite restringir una columna a <strong>un único valor</strong> dentro de un conjunto cerrado de opciones explícitas.</p>
+<section id="límites-y-funcionamiento-interno" class="level3" data-number="5.9.1">
+<h3 data-number="5.9.1" class="anchored" data-anchor-id="límites-y-funcionamiento-interno"><span class="header-section-number">5.9.1</span> Límites y Funcionamiento Interno</h3>
+<ul>
+<li><p><strong>Elección Única:</strong> Cada fila solo puede almacenar <strong>un único elemento</strong> del conjunto (o <code>NULL</code> si la columna lo permite).</p></li>
+<li><p><strong>Almacenamiento Numérico Interno:</strong> A pesar de que los valores se definen como cadenas de texto, el motor los almacena internamente como <strong>índices enteros (1, 2, 3…)</strong>:</p>
+<ul>
+<li><p><code>1</code> corresponde al primer elemento de la lista.</p></li>
+<li><p><code>2</code> corresponde al segundo elemento, y así sucesivamente.</p></li>
+<li><p>El índice <code>0</code> se reserva para un valor de cadena vacía especial de error (<code>''</code>) que se guarda si se inserta un valor no válido en modo no estricto.</p></li>
+<li><p><code>NULL</code> guarda su estado especial.</p></li>
+</ul></li>
+<li><p><strong>Límites:</strong> Un tipo <code>ENUM</code> puede tener hasta <strong>65.535 elementos distintos</strong>.</p></li>
+</ul>
+</section>
+<section id="espacio-que-ocupa-en-la-base-de-datos-2" class="level3" data-number="5.9.2">
+<h3 data-number="5.9.2" class="anchored" data-anchor-id="espacio-que-ocupa-en-la-base-de-datos-2"><span class="header-section-number">5.9.2</span> Espacio que Ocupa en la Base de Datos</h3>
+<p>El uso de memoria depende directamente del número de elementos definidos en la lista del <code>ENUM</code>:</p>
+<ul>
+<li><p>Hasta 255 miembros: Ocupa <strong>1 byte</strong> por fila.</p></li>
+<li><p>Entre 256 y 65.535 miembros: Ocupa <strong>2 bytes</strong> por fila.</p></li>
+</ul>
+</section>
+<section id="motores-sql-donde-existe-3" class="level3" data-number="5.9.3">
+<h3 data-number="5.9.3" class="anchored" data-anchor-id="motores-sql-donde-existe-3"><span class="header-section-number">5.9.3</span> Motores SQL donde existe</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 54%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td><strong>Motor SQL</strong></td>
+<td><strong>Soporte</strong></td>
+<td><strong>Observaciones</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>MySQL / MariaDB</strong></td>
+<td><strong>Sí</strong> (Nativo)</td>
+<td>Muy utilizado para máquinas de estados, roles o niveles.</td>
+</tr>
+<tr class="even">
+<td><strong>PostgreSQL</strong></td>
+<td><strong>Sí</strong> (Mediante <code>CREATE TYPE</code>)</td>
+<td>Requiere definir el tipo previamente con <code>CREATE TYPE nombre AS ENUM (...)</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>SQL Server</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se simula usando <code>VARCHAR</code> + restricción <code>CHECK (col IN ('A', 'B', 'C'))</code>.</td>
+</tr>
+<tr class="even">
+<td><strong>Oracle</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se simula con restricciones <code>CHECK</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>SQLite</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se simula con restricciones <code>CHECK</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-en-sql-3" class="level3" data-number="5.9.4">
+<h3 data-number="5.9.4" class="anchored" data-anchor-id="ejemplo-en-sql-3"><span class="header-section-number">5.9.4</span> Ejemplo en SQL</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo en MySQL/MariaDB</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> tareas (</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTO_INCREMENT,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    titulo <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    prioridad ENUM(<span class="st">'Baja'</span>, <span class="st">'Media'</span>, <span class="st">'Alta'</span>, <span class="st">'Urgente'</span>) <span class="kw">DEFAULT</span> <span class="st">'Media'</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    estado ENUM(<span class="st">'Pendiente'</span>, <span class="st">'En Proceso'</span>, <span class="st">'Completada'</span>, <span class="st">'Cancelada'</span>) <span class="kw">DEFAULT</span> <span class="st">'Pendiente'</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertar valores válidos</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tareas (titulo, prioridad, estado)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>(<span class="st">'Corregir bug de login'</span>, <span class="st">'Urgente'</span>, <span class="st">'En Proceso'</span>),</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>(<span class="st">'Documentar API'</span>, <span class="st">'Baja'</span>, <span class="st">'Pendiente'</span>);</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ordenar por ENUM (se ordena según el índice entero del conjunto, no alfabéticamente)</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> tareas <span class="kw">ORDER</span> <span class="kw">BY</span> prioridad <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="nota">
+<p><strong>Ordenación por ENUM:</strong></p>
+<p>Al hacer un <code>ORDER BY</code> sobre una columna <code>ENUM</code>, MySQL ordena los registros según el <strong>índice numérico interno</strong> de los elementos según fueron definidos, <strong>no según el orden alfabético</strong> del texto. En el ejemplo anterior, <code>'Baja'</code> (1) &lt; <code>'Media'</code> (2) &lt; <code>'Alta'</code> (3) &lt; <code>'Urgente'</code> (4).</p>
+</div>
+<p><strong>Índices vs Cadenas en ENUM:</strong></p>
+<p>Si insertas un entero directamente en una columna <code>ENUM</code>, el motor lo interpretará como la <strong>posición del índice</strong>:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertará 'Baja' porque ocupa el índice 1</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tareas (titulo, prioridad) <span class="kw">VALUES</span> (<span class="st">'Revisar logs'</span>, <span class="dv">1</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="tipo-de-dato-conjunto-set" class="level2" data-number="5.10">
+<h2 data-number="5.10" class="anchored" data-anchor-id="tipo-de-dato-conjunto-set"><span class="header-section-number">5.10</span> Tipo de Dato Conjunto (<code>SET</code>)</h2>
+<p>El tipo de dato <code>SET</code> es un objeto de cadena que puede almacenar <strong>cero, uno o múltiples valores</strong> elegidos de una lista fija de valores permitidos definida al crear la tabla.</p>
+<section id="límites-y-funcionamiento-interno-1" class="level3" data-number="5.10.1">
+<h3 data-number="5.10.1" class="anchored" data-anchor-id="límites-y-funcionamiento-interno-1"><span class="header-section-number">5.10.1</span> Límites y Funcionamiento Interno</h3>
+<ul>
+<li><p><strong>Selección Múltiple:</strong> A diferencia de <code>ENUM</code>, una columna <code>SET</code> permite guardar <strong>combinaciones de varios elementos</strong> al mismo tiempo, separados por comas.</p></li>
+<li><p><strong>Representación Binaria (<em>Bitmask</em>):</strong> Cada elemento del conjunto corresponde a un <strong>bit</strong> en un mapa binario interno:</p>
+<ul>
+<li><p>Elemento 1 = Bit 1 (Valor <span class="math inline">\(2^0 = 1\)</span>)</p></li>
+<li><p>Elemento 2 = Bit 2 (Valor <span class="math inline">\(2^1 = 2\)</span>)</p></li>
+<li><p>Elemento 3 = Bit 3 (Valor <span class="math inline">\(2^2 = 4\)</span>)</p></li>
+<li><p>Elemento 4 = Bit 4 (Valor <span class="math inline">\(2^3 = 8\)</span>)</p></li>
+</ul></li>
+<li><p><strong>Eliminación de Duplicados y Orden:</strong> La base de datos elimina automáticamente duplicados e inserta los miembros guardándolos en el orden exacto en el que fueron definidos en la creación de la columna.</p></li>
+<li><p><strong>Límites:</strong> Un campo de tipo <code>SET</code> puede contener hasta <strong>64 miembros individuales</strong>.</p></li>
+</ul>
+</section>
+<section id="espacio-que-ocupa-en-la-base-de-datos-3" class="level3" data-number="5.10.2">
+<h3 data-number="5.10.2" class="anchored" data-anchor-id="espacio-que-ocupa-en-la-base-de-datos-3"><span class="header-section-number">5.10.2</span> Espacio que Ocupa en la Base de Datos</h3>
+<p>El consumo de almacenamiento depende del número de miembros definidos en el conjunto (<span class="math inline">\(N\)</span>):</p>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><strong>Número de Miembros (</strong><span class="math inline">\(N\)</span>)</td>
+<td><strong>Espacio que Ocupa</strong></td>
+</tr>
+<tr class="even">
+<td><strong>1 a 8 miembros</strong></td>
+<td><strong>1 byte</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>9 a 16 miembros</strong></td>
+<td><strong>2 bytes</strong></td>
+</tr>
+<tr class="even">
+<td><strong>17 a 24 miembros</strong></td>
+<td><strong>3 bytes</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>25 a 32 miembros</strong></td>
+<td><strong>4 bytes</strong></td>
+</tr>
+<tr class="even">
+<td><strong>33 a 64 miembros</strong></td>
+<td><strong>8 bytes</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="motores-sql-donde-existe-4" class="level3" data-number="5.10.3">
+<h3 data-number="5.10.3" class="anchored" data-anchor-id="motores-sql-donde-existe-4"><span class="header-section-number">5.10.3</span> Motores SQL donde existe</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 58%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Motor SQL</strong></td>
+<td><strong>Soporte</strong></td>
+<td><strong>Observaciones</strong></td>
+</tr>
+<tr class="even">
+<td><strong>MySQL / MariaDB</strong></td>
+<td><strong>Sí</strong> (Nativo)</td>
+<td>Tipo nativo específico de MySQL/MariaDB.</td>
+</tr>
+<tr class="odd">
+<td><strong>PostgreSQL</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se implementa utilizando <strong>Arrays</strong> (<code>TEXT[]</code>) o tipos <code>BIT</code>.</td>
+</tr>
+<tr class="even">
+<td><strong>SQL Server</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se suele implementar mediante tablas intermedias relacionales (N:M) o máscaras de bits con <code>TINYINT</code>/<code>INT</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>Oracle</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se implementa mediante tablas anidadas, <code>VARRAY</code> o relaciones N:M.</td>
+</tr>
+<tr class="even">
+<td><strong>SQLite</strong></td>
+<td><strong>No nativo</strong></td>
+<td>Se simula mediante textos separados por comas o enteros bitwise.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ejemplo-en-sql-4" class="level3" data-number="5.10.4">
+<h3 data-number="5.10.4" class="anchored" data-anchor-id="ejemplo-en-sql-4"><span class="header-section-number">5.10.4</span> Ejemplo en SQL</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo en MySQL/MariaDB</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> usuarios_preferencias (</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTO_INCREMENT,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Definimos un SET con hasta 8 miembros (Ocupará 1 byte)</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    notificaciones <span class="kw">SET</span>(<span class="st">'Email'</span>, <span class="st">'SMS'</span>, <span class="st">'Push'</span>, <span class="st">'WhatsApp'</span>) <span class="kw">DEFAULT</span> <span class="st">'Email'</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- Insertar combinaciones múltiples</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> usuarios_preferencias (nombre, notificaciones)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>(<span class="st">'Laura'</span>, <span class="st">'Email,Push,WhatsApp'</span>),</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>(<span class="st">'Pedro'</span>, <span class="st">'SMS'</span>),</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>(<span class="st">'Ana'</span>, <span class="st">''</span>); <span class="co">-- Conjunto vacío (0 bytes/bits activos)</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- Búsqueda mediante la función FIND_IN_SET()</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, notificaciones </span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> usuarios_preferencias </span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> FIND_IN_SET(<span class="st">'SMS'</span>, notificaciones) <span class="op">&gt;</span> <span class="dv">0</span>;</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a><span class="co">-- Búsqueda mediante operadores Bitwise (&amp;)</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a><span class="co">-- 'Email' (1) + 'SMS' (2) + 'Push' (4) + 'WhatsApp' (8)</span></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> nombre, notificaciones </span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> usuarios_preferencias </span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> notificaciones &amp; <span class="dv">2</span>; <span class="co">-- Busca los usuarios con 'SMS' activo</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="comparativa-enum-vs-set" class="level3" data-number="5.10.5">
+<h3 data-number="5.10.5" class="anchored" data-anchor-id="comparativa-enum-vs-set"><span class="header-section-number">5.10.5</span> Comparativa: <code>ENUM</code> vs <code>SET</code></h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 37%">
+<col style="width: 37%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>ENUM</strong></td>
+<td><strong>SET</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Selección</strong></td>
+<td>Exclusiva (<strong>Exactamente 1 valor</strong> del conjunto).</td>
+<td>Inclusiva (<strong>Cero, 1 o múltiples valores</strong> combinados).</td>
+</tr>
+<tr class="odd">
+<td><strong>Almacenamiento Interno</strong></td>
+<td>Índice entero consecutivo (<code>1, 2, 3...</code>).</td>
+<td>Máscara de bits (<em>Bitmask</em>: <code>1, 2, 4, 8, 16...</code>).</td>
+</tr>
+<tr class="even">
+<td><strong>Límite de Miembros</strong></td>
+<td>Hasta 65.535 elementos.</td>
+<td>Hasta 64 elementos.</td>
+</tr>
+<tr class="odd">
+<td><strong>Espacio de Memoria</strong></td>
+<td>1 a 2 bytes.</td>
+<td>1 a 8 bytes.</td>
+</tr>
+<tr class="even">
+<td><strong>Casos de Uso Típicos</strong></td>
+<td>Estado de un pedido, tipo de usuario, género, nivel de acceso.</td>
+<td>Permisos de usuario, días de la semana, etiquetas/tags, preferencias de notificaciones.</td>
+</tr>
+</tbody>
+</table>
+<div class="nota">
+<p><strong>Inconveniente en la Normalización (1FN):</strong></p>
+<p>Aunque <code>ENUM</code> y <code>SET</code> son tipos prácticos y muy eficientes en consumo de espacio, <strong>el uso de <code>SET</code> viola la Primera Forma Normal (1FN)</strong> del modelo relacional al guardar múltiples valores atómicos dentro de una misma celda. Si el número de opciones es dinámico o cambia frecuentemente, la mejor práctica de diseño relacional es crear una tabla secundaria con una relación de Muchos a Muchos (N:M).</p>
+</div>
+<p>CHECK CONSTRAINT vs ENUM</p>
+<p>Usar una columna <code>VARCHAR</code> con una restricción <code>CHECK</code> para limitar el conjunto de valores permitidos es un patrón muy común en diseño de bases de datos, especialmente como alternativa a los tipos nativos <code>ENUM</code> o a tablas maestras de referencia (lookup tables).</p>
+<p>A continuación se detallan las principales ventajas e inconvenientes de esta aproximación:</p>
+</section>
+<section id="ventajas" class="level3" data-number="5.10.6">
+<h3 data-number="5.10.6" class="anchored" data-anchor-id="ventajas"><span class="header-section-number">5.10.6</span> Ventajas</h3>
+<ul>
+<li><p><strong>Portabilidad entre SGBD:</strong> La cláusula <code>CHECK</code> forma parte del estándar SQL ANSI. A diferencia del tipo de dato <code>ENUM</code> (que varía significativamente en implementación y sintaxis entre MySQL, PostgreSQL o SQL Server), un <code>VARCHAR</code> con <code>CHECK</code> funcionará de manera casi idéntica en cualquier sistema de gestión de bases de datos relacionales (RDBMS).</p></li>
+<li><p><strong>Validación e integridad a nivel de base de datos:</strong> Garantiza que ningún valor no permitido entre en la base de datos, independientemente de la aplicación o cliente SQL que intente insertar o actualizar los datos.</p></li>
+<li><p><strong>Sencillez inicial:</strong> Evita tener que crear tablas adicionales, definir claves foráneas (<code>FOREIGN KEY</code>) y realizar consultas con JOINs para validar o recuperar descripciones simples (por ejemplo: <code>estado VARCHAR(10) CHECK (estado IN ('PENDIENTE', 'PROCESANDO', 'COMPLETADO'))</code>).</p></li>
+<li><p><strong>Facilidad de consumo en la capa de aplicación:</strong> Los ORM y controladores leen el campo directamente como una cadena de texto sin necesidad de mapeos especiales, conversiones de tipos o consultas adicionales a tablas maestras.</p></li>
+</ul>
+</section>
+<section id="inconvenientes" class="level3" data-number="5.10.7">
+<h3 data-number="5.10.7" class="anchored" data-anchor-id="inconvenientes"><span class="header-section-number">5.10.7</span> Inconvenientes</h3>
+<ul>
+<li><p><strong>Mantenimiento y evolución de valores:</strong> Si necesitas añadir, modificar o eliminar un valor permitido, debes alterar el esquema de la tabla modificando la restricción (<code>DROP CONSTRAINT</code> seguido de <code>ADD CONSTRAINT</code>). En tablas con un volumen masivo de datos, esto puede requerir bloqueos (<em>locks</em>) o inspecciones pesadas de filas según el motor de base de datos.</p></li>
+<li><p><strong>Consumo de almacenamiento e índices:</strong> Guardar cadenas de texto repetidas (<code>VARCHAR</code>) consume más espacio en disco y memoria RAM en los índices que utilizar tipos numéricos o claves primarias pequeñas (como <code>TINYINT</code> o <code>SMALLINT</code>) vinculadas a una tabla de referencia.</p></li>
+<li><p><strong>Dificultad para añadir metadatos:</strong> Si con el tiempo necesitas asociar más información a cada opción (como una descripción traducida, un orden de visualización, una marca de “activo/inactivo” o un color para la interfaz), una restricción <code>CHECK</code> se queda corta y requiere migrar la estructura a una tabla de referencia.</p></li>
+<li><p><strong>Inconsistencia si se reutiliza en varias tablas:</strong> Si el mismo conjunto de valores (por ejemplo, los estados de una transacción) se utiliza en múltiples tablas, la restricción <code>CHECK</code> debe duplicarse manualmente en cada una. Esto aumenta el riesgo de que las reglas de validación queden desincronizadas si se actualiza una tabla pero se olvida otra.</p></li>
+</ul>
+</section>
+<section id="alternativas-comunes-y-cuándo-usarlas" class="level3" data-number="5.10.8">
+<h3 data-number="5.10.8" class="anchored" data-anchor-id="alternativas-comunes-y-cuándo-usarlas"><span class="header-section-number">5.10.8</span> Alternativas comunes y cuándo usarlas</h3>
+<ol type="1">
+<li><p><strong>Tabla de referencia + Clave foránea (<code>FOREIGN KEY</code>):</strong></p>
+<ul>
+<li><p><strong>Recomendada cuando:</strong> Los valores cambian con frecuencia, se comparten entre varias tablas o requieren metadatos adicionales (ej. descripciones, traducciones, flags).</p></li>
+<li><p><strong>Ventaja:</strong> Modificar los valores es un simple <code>INSERT</code> o <code>UPDATE</code> de datos, no una alteración del DDL/esquema.</p></li>
+</ul></li>
+<li><p><strong>Tipo de dato <code>ENUM</code> (si el SGBD lo soporta):</strong></p>
+<ul>
+<li><p><strong>Recomendada cuando:</strong> Se busca eficiencia máxima en almacenamiento en un motor específico (como PostgreSQL o MySQL).</p></li>
+<li><p><strong>Inconveniente:</strong> Menor portabilidad y posibles complicaciones en migraciones de esquema complejas.</p></li>
+</ul></li>
+</ol>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

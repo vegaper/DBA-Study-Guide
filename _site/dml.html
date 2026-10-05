@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Comandos DML (Data Manipulation Language) – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./dml.html">Comandos DML</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SQL: Structured Query Language y sus variantes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sqlLanguage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a las Consultas Lenguajes SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Consultas_SQL_Empleados_Completo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_subconsultas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Subconsultas en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql_join.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de Join en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tipos_de_claves_tablas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de claves en tablas relacionales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./normalizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Normalización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sgbd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de gestión de bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mysqlubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instalando y Configurando MySQL en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ddl.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DDL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./dml.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Comandos DML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_guiada_aplicaci_n_web_mysql_php.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: Aplicación web con MySQL y PHP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#la-sentencia-insert-into" id="toc-la-sentencia-insert-into" class="nav-link active" data-scroll-target="#la-sentencia-insert-into"><span class="header-section-number">1</span> La Sentencia <code>INSERT INTO</code></a>
+  <ul>
+  <li><a href="#descripción-general" id="toc-descripción-general" class="nav-link" data-scroll-target="#descripción-general"><span class="header-section-number">1.1</span> Descripción General</a></li>
+  <li><a href="#sintaxis-y-formas-de-uso" id="toc-sintaxis-y-formas-de-uso" class="nav-link" data-scroll-target="#sintaxis-y-formas-de-uso"><span class="header-section-number">1.2</span> Sintaxis y Formas de Uso</a>
+  <ul class="collapse">
+  <li><a href="#inserción-indicando-las-columnas-forma-recomendada" id="toc-inserción-indicando-las-columnas-forma-recomendada" class="nav-link" data-scroll-target="#inserción-indicando-las-columnas-forma-recomendada"><span class="header-section-number">1.2.1</span> Inserción indicando las columnas (Forma Recomendada)</a></li>
+  <li><a href="#inserción-posicional-omite-el-nombre-de-las-columnas" id="toc-inserción-posicional-omite-el-nombre-de-las-columnas" class="nav-link" data-scroll-target="#inserción-posicional-omite-el-nombre-de-las-columnas"><span class="header-section-number">1.2.2</span> Inserción posicional (Omite el nombre de las columnas)</a></li>
+  <li><a href="#inserción-múltiple-bulk-insert" id="toc-inserción-múltiple-bulk-insert" class="nav-link" data-scroll-target="#inserción-múltiple-bulk-insert"><span class="header-section-number">1.2.3</span> Inserción múltiple (Bulk Insert)</a></li>
+  </ul></li>
+  <li><a href="#consideraciones-especiales-al-insertar-datos" id="toc-consideraciones-especiales-al-insertar-datos" class="nav-link" data-scroll-target="#consideraciones-especiales-al-insertar-datos"><span class="header-section-number">1.3</span> Consideraciones Especiales al Insertar Datos</a>
+  <ul class="collapse">
+  <li><a href="#campos-autoincrementales-auto_increment" id="toc-campos-autoincrementales-auto_increment" class="nav-link" data-scroll-target="#campos-autoincrementales-auto_increment"><span class="header-section-number">1.3.1</span> Campos Autoincrementales (<code>AUTO_INCREMENT</code>)</a></li>
+  <li><a href="#valores-nulos-null-y-valores-por-defecto-default" id="toc-valores-nulos-null-y-valores-por-defecto-default" class="nav-link" data-scroll-target="#valores-nulos-null-y-valores-por-defecto-default"><span class="header-section-number">1.3.2</span> Valores Nulos (<code>NULL</code>) y Valores por Defecto (<code>DEFAULT</code>)</a></li>
+  <li><a href="#tipos-de-datos-y-comillas" id="toc-tipos-de-datos-y-comillas" class="nav-link" data-scroll-target="#tipos-de-datos-y-comillas"><span class="header-section-number">1.3.3</span> Tipos de Datos y Comillas</a></li>
+  <li><a href="#restricciones-de-integridad-check-unique-foreign-key" id="toc-restricciones-de-integridad-check-unique-foreign-key" class="nav-link" data-scroll-target="#restricciones-de-integridad-check-unique-foreign-key"><span class="header-section-number">1.3.4</span> Restricciones de Integridad (<code>CHECK</code>, <code>UNIQUE</code>, <code>FOREIGN KEY</code>)</a></li>
+  </ul></li>
+  <li><a href="#resumen-comparativo-de-inserciones" id="toc-resumen-comparativo-de-inserciones" class="nav-link" data-scroll-target="#resumen-comparativo-de-inserciones"><span class="header-section-number">1.4</span> Resumen Comparativo de Inserciones</a></li>
+  </ul></li>
+  <li><a href="#la-sentencia-update" id="toc-la-sentencia-update" class="nav-link" data-scroll-target="#la-sentencia-update"><span class="header-section-number">2</span> La Sentencia <code>UPDATE</code></a>
+  <ul>
+  <li><a href="#descripción-general-1" id="toc-descripción-general-1" class="nav-link" data-scroll-target="#descripción-general-1"><span class="header-section-number">2.1</span> Descripción General</a></li>
+  <li><a href="#sintaxis-estándar" id="toc-sintaxis-estándar" class="nav-link" data-scroll-target="#sintaxis-estándar"><span class="header-section-number">2.2</span> Sintaxis Estándar</a></li>
+  <li><a href="#ejemplo-práctico" id="toc-ejemplo-práctico" class="nav-link" data-scroll-target="#ejemplo-práctico"><span class="header-section-number">2.3</span> Ejemplo Práctico</a></li>
+  <li><a href="#precauciones-cruciales-y-consideraciones-técnicas" id="toc-precauciones-cruciales-y-consideraciones-técnicas" class="nav-link" data-scroll-target="#precauciones-cruciales-y-consideraciones-técnicas"><span class="header-section-number">2.4</span> Precauciones Cruciales y Consideraciones Técnicas</a>
+  <ul class="collapse">
+  <li><a href="#el-peligro-del-update-sin-where" id="toc-el-peligro-del-update-sin-where" class="nav-link" data-scroll-target="#el-peligro-del-update-sin-where"><span class="header-section-number">2.4.1</span> El Peligro del <code>UPDATE</code> sin <code>WHERE</code></a></li>
+  <li><a href="#actualización-basada-en-valores-anteriores" id="toc-actualización-basada-en-valores-anteriores" class="nav-link" data-scroll-target="#actualización-basada-en-valores-anteriores"><span class="header-section-number">2.4.2</span> Actualización basada en valores anteriores</a></li>
+  <li><a href="#asignación-de-valores-null-y-default" id="toc-asignación-de-valores-null-y-default" class="nav-link" data-scroll-target="#asignación-de-valores-null-y-default"><span class="header-section-number">2.4.3</span> Asignación de valores <code>NULL</code> y <code>DEFAULT</code></a></li>
+  <li><a href="#evaluación-de-restricciones-en-tiempo-de-ejecución" id="toc-evaluación-de-restricciones-en-tiempo-de-ejecución" class="nav-link" data-scroll-target="#evaluación-de-restricciones-en-tiempo-de-ejecución"><span class="header-section-number">2.4.4</span> Evaluación de Restricciones en Tiempo de Ejecución</a></li>
+  </ul></li>
+  <li><a href="#resumen-de-buenas-prácticas" id="toc-resumen-de-buenas-prácticas" class="nav-link" data-scroll-target="#resumen-de-buenas-prácticas"><span class="header-section-number">2.5</span> Resumen de Buenas Prácticas</a></li>
+  </ul></li>
+  <li><a href="#la-sentencia-delete" id="toc-la-sentencia-delete" class="nav-link" data-scroll-target="#la-sentencia-delete"><span class="header-section-number">3</span> La Sentencia <code>DELETE</code></a>
+  <ul>
+  <li><a href="#descripción-general-2" id="toc-descripción-general-2" class="nav-link" data-scroll-target="#descripción-general-2"><span class="header-section-number">3.0.1</span> Descripción General</a></li>
+  <li><a href="#sintaxis-estándar-1" id="toc-sintaxis-estándar-1" class="nav-link" data-scroll-target="#sintaxis-estándar-1"><span class="header-section-number">3.0.2</span> Sintaxis Estándar</a></li>
+  <li><a href="#uso-de-nulo-en-las-condiciones-is-null" id="toc-uso-de-nulo-en-las-condiciones-is-null" class="nav-link" data-scroll-target="#uso-de-nulo-en-las-condiciones-is-null"><span class="header-section-number">3.0.3</span> Uso de nulo en las condiciones (<code>IS NULL</code>)</a></li>
+  <li><a href="#comprativa-de-errores-comunes-con-null" id="toc-comprativa-de-errores-comunes-con-null" class="nav-link" data-scroll-target="#comprativa-de-errores-comunes-con-null"><span class="header-section-number">3.1</span> Comprativa de Errores Comunes con <code>NULL</code></a>
+  <ul class="collapse">
+  <li><a href="#el-riesgo-de-delete-sin-where" id="toc-el-riesgo-de-delete-sin-where" class="nav-link" data-scroll-target="#el-riesgo-de-delete-sin-where"><span class="header-section-number">3.1.1</span> El Riesgo de <code>DELETE</code> sin <code>WHERE</code></a></li>
+  <li><a href="#uso-de-limit-en-mysql" id="toc-uso-de-limit-en-mysql" class="nav-link" data-scroll-target="#uso-de-limit-en-mysql"><span class="header-section-number">3.1.2</span> Uso de <code>LIMIT</code> en MySQL</a></li>
+  </ul></li>
+  <li><a href="#interacción-con-foreign-keys-y-constraints" id="toc-interacción-con-foreign-keys-y-constraints" class="nav-link" data-scroll-target="#interacción-con-foreign-keys-y-constraints"><span class="header-section-number">3.2</span> Interacción con Foreign Keys y Constraints</a>
+  <ul class="collapse">
+  <li><a href="#casuísticas-según-la-regla-definida" id="toc-casuísticas-según-la-regla-definida" class="nav-link" data-scroll-target="#casuísticas-según-la-regla-definida"><span class="header-section-number">3.2.1</span> Casuísticas según la regla definida</a>
+  <ul class="collapse">
+  <li><a href="#el-registro-padre-no-tiene-hijos-relacionados" id="toc-el-registro-padre-no-tiene-hijos-relacionados" class="nav-link" data-scroll-target="#el-registro-padre-no-tiene-hijos-relacionados"><span class="header-section-number">3.2.1.1</span> El registro padre NO tiene hijos relacionados</a></li>
+  <li><a href="#el-registro-padre-sí-tiene-hijos-relacionados" id="toc-el-registro-padre-sí-tiene-hijos-relacionados" class="nav-link" data-scroll-target="#el-registro-padre-sí-tiene-hijos-relacionados"><span class="header-section-number">3.2.1.2</span> El registro padre SÍ tiene hijos relacionados</a></li>
+  <li><a href="#tabla-resumen-de-comportamiento" id="toc-tabla-resumen-de-comportamiento" class="nav-link" data-scroll-target="#tabla-resumen-de-comportamiento"><span class="header-section-number">3.2.1.3</span> Tabla Resumen de Comportamiento</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#transacciones-en-mysql-start-transaction-commit-y-rollback" id="toc-transacciones-en-mysql-start-transaction-commit-y-rollback" class="nav-link" data-scroll-target="#transacciones-en-mysql-start-transaction-commit-y-rollback"><span class="header-section-number">4</span> Transacciones en MySQL: <code>START TRANSACTION</code>, <code>COMMIT</code> y <code>ROLLBACK</code></a>
+  <ul>
+  <li><a href="#qué-es-una-transacción" id="toc-qué-es-una-transacción" class="nav-link" data-scroll-target="#qué-es-una-transacción"><span class="header-section-number">4.1</span> ¿Qué es una Transacción?</a></li>
+  <li><a href="#sentencias-de-control-de-transacciones-tcl" id="toc-sentencias-de-control-de-transacciones-tcl" class="nav-link" data-scroll-target="#sentencias-de-control-de-transacciones-tcl"><span class="header-section-number">4.2</span> Sentencias de Control de Transacciones (TCL)</a></li>
+  <li><a href="#sintaxis-y-ejemplo-práctico" id="toc-sintaxis-y-ejemplo-práctico" class="nav-link" data-scroll-target="#sintaxis-y-ejemplo-práctico"><span class="header-section-number">4.3</span> Sintaxis y Ejemplo Práctico</a></li>
+  <li><a href="#dml-vs.-ddl-en-transacciones" id="toc-dml-vs.-ddl-en-transacciones" class="nav-link" data-scroll-target="#dml-vs.-ddl-en-transacciones"><span class="header-section-number">4.4</span> DML vs.&nbsp;DDL en Transacciones</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./dml.html">Comandos DML</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Comandos DML (Data Manipulation Language)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="la-sentencia-insert-into" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> La Sentencia <code>INSERT INTO</code></h1>
+<section id="descripción-general" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="descripción-general"><span class="header-section-number">1.1</span> Descripción General</h2>
+<p>La sentencia <code>INSERT INTO</code> pertenece al Lenguaje de Manipulación de Datos (<strong>DML</strong>). Se utiliza para <strong>añadir nuevos registros (filas)</strong> a una tabla existente dentro de la base de datos.</p>
+</section>
+<section id="sintaxis-y-formas-de-uso" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="sintaxis-y-formas-de-uso"><span class="header-section-number">1.2</span> Sintaxis y Formas de Uso</h2>
+<p>Existen principalmente tres formas de estructurar una instrucción <code>INSERT</code>:</p>
+<section id="inserción-indicando-las-columnas-forma-recomendada" class="level3" data-number="1.2.1">
+<h3 data-number="1.2.1" class="anchored" data-anchor-id="inserción-indicando-las-columnas-forma-recomendada"><span class="header-section-number">1.2.1</span> Inserción indicando las columnas (Forma Recomendada)</h3>
+<p>Es la práctica estándar en desarrollo. Se especifica de forma explícita el orden y nombre de las columnas en las que se insertarán datos.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> nombre_tabla (columna1, columna2, columna3)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (valor1, valor2, valor3);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="inserción-posicional-omite-el-nombre-de-las-columnas" class="level3" data-number="1.2.2">
+<h3 data-number="1.2.2" class="anchored" data-anchor-id="inserción-posicional-omite-el-nombre-de-las-columnas"><span class="header-section-number">1.2.2</span> Inserción posicional (Omite el nombre de las columnas)</h3>
+<p>Si no se enumeran las columnas, <strong>es obligatorio proporcionar valores para todas y cada una de las columnas de la tabla</strong>, respetando exactamente el mismo orden en el que fueron creadas en el esquema.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Riesgoso: si la estructura de la tabla cambia, este script fallará o insertará datos en campos incorrectos</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> nombre_tabla </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (valor1, valor2, valor3, valor4, <span class="op">..</span>.);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="inserción-múltiple-bulk-insert" class="level3" data-number="1.2.3">
+<h3 data-number="1.2.3" class="anchored" data-anchor-id="inserción-múltiple-bulk-insert"><span class="header-section-number">1.2.3</span> Inserción múltiple (Bulk Insert)</h3>
+<p>Permite registrar múltiples filas dentro de una única consulta SQL. Es mucho más eficiente a nivel de red y procesamiento que ejecutar varios <code>INSERT</code> individuales.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> objetos (codigo_inventario, nombre) </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'EGI-0001'</span>, <span class="st">'Sarcófago'</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'EGI-0002'</span>, <span class="st">'Amuleto Anubis'</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'EGI-0003'</span>, <span class="st">'Papiro de Khans'</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Ejemplo</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> objetos (</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    codigo_inventario, </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    nombre, </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    fecha_datacion, </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    anio_inicio, </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    era_inicio, </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    precision_datacion</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>) <span class="kw">VALUES</span> (</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ROM-0042'</span>, </span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Moneda de Julio César'</span>, </span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'44 a. C.'</span>, </span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="dv">44</span>, </span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'a.C.'</span>, </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Exacta'</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="consideraciones-especiales-al-insertar-datos" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="consideraciones-especiales-al-insertar-datos"><span class="header-section-number">1.3</span> Consideraciones Especiales al Insertar Datos</h2>
+<section id="campos-autoincrementales-auto_increment" class="level3" data-number="1.3.1">
+<h3 data-number="1.3.1" class="anchored" data-anchor-id="campos-autoincrementales-auto_increment"><span class="header-section-number">1.3.1</span> Campos Autoincrementales (<code>AUTO_INCREMENT</code>)</h3>
+<ul>
+<li>No es necesario incluir las columnas <code>AUTO_INCREMENT</code> (como <code>id_objeto</code>) en la lista de columnas del <code>INSERT</code>. El motor genera el valor secuencial automáticamente.</li>
+</ul>
+<p>Si decides incluir la columna en la consulta, puedes pasarle <code>NULL</code> o <code>0</code> y MySQL asignará de todos modos el siguiente identificador disponible.</p>
+<div class="nota">
+<p>El “Salto” de IDs en <code>AUTO_INCREMENT</code> tras un Error de Inserción</p>
+<p>Cuando ejecutas un <code>INSERT</code> (ya sea de una o de varias filas) y la transacción falla o se aborda porque se viola una regla (por ejemplo, un <code>CHECK</code> o un <code>UNIQUE</code> duplicado):</p>
+<ol type="1">
+<li><p>MySQL solicita y asigna los nuevos identificadores <code>AUTO_INCREMENT</code> <strong>antes</strong> de validar las restricciones de la tabla.</p></li>
+<li><p>Si la inserción falla, el motor <strong>no echa hacia atrás (no reutiliza) los IDs</strong> que ya había generado para esa operación fallida.</p></li>
+<li><p>El contador global de la tabla sigue avanzando. La siguiente inserción exitosa tomará el número disponible en el contador, <strong>dejando un hueco permanente en la secuencia numérica</strong> (ejemplo: del ID <code>4</code> pasa directamente al ID <code>8</code>).</p></li>
+</ol>
+<p>¿Por qué está diseñado así el motor (InnoDB)? Por motivos de rendimiento y concurrencia. Si MySQL tuviera que bloquear el contador o rebobinar los números cada vez que falla una inserción o se hace un ROLLBACK, provocaría cuellos de botella masivos cuando varios usuarios insertan datos al mismo tiempo.</p>
+<p>En las bases de datos relacionales profesionales, <strong>las claves primarias surrogate (<code>AUTO_INCREMENT</code>) sirven para garantizar unicidad e identificación, NO para contar elementos de forma correlativa</strong>. Es totalmente normal y correcto que existan “huecos” en la secuencia de IDs debido a inserciones fallidas o registros eliminados.</p>
+<p><strong>Cómo consultar y resetear el contador de AUTO_INCREMENT</strong></p>
+<p>Si durante la fase de desarrollo o pruebas has tenido errores y quieres limpiar o reajustar la secuencia de identificadores, puedes hacerlo con los siguientes métodos:</p>
+<p>A. Consultar cuál será el próximo ID</p>
+<p>Para saber en qué número se ha quedado el contador interno:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> AUTO_INCREMENT </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> information_schema.<span class="kw">TABLES</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> TABLE_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>() </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> TABLE_NAME <span class="op">=</span> <span class="st">'objetos'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Modificar manualmente el contador (<code>ALTER TABLE</code>)</strong></p>
+<p>Si has borrado los últimos registros de prueba y quieres que el contador vuelva a un número específico:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Cambia el próximo ID generado a 5 (debe ser mayor que el ID máximo actual en la tabla)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> objetos AUTO_INCREMENT <span class="op">=</span> <span class="dv">5</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Atención:</strong> En MySQL, no puedes establecer el <code>AUTO_INCREMENT</code> a un valor menor o igual que el <code>PRIMARY KEY</code> más alto que ya exista guardado en la tabla.</p>
+<p><strong>Reordenar los IDs existentes</strong></p>
+<p>Si la tabla <strong>no está siendo referenciada aún por claves foráneas (<code>FOREIGN KEY</code>)</strong> en otras tablas, puedes renumerar los valores de la clave primaria ejecutando una variable de sesión dentro de un <code>UPDATE</code> y reajustar el contador al final.<br>
+</p>
+<p>Paso 1: modificar el campo manualmente para los registros activos.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- 1. Inicializamos una variable en 0 y actualizamos la clave primaria en orden</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> @count <span class="op">=</span> <span class="dv">0</span>;</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> id_objeto <span class="op">=</span> (@count <span class="op">:=</span> @count <span class="op">+</span> <span class="dv">1</span>) </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> id_objeto;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Paso 2: Reajustar el contador <code>AUTO_INCREMENT</code></p>
+<p>Una vez que las filas tienen IDs del 1 al N de forma contigua, ajustas el contador para que la siguiente inserción sea <span class="math inline">\(N+1\)</span>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- 2. Fijamos el próximo AUTO_INCREMENT al número actual de filas + 1</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- Si la tabla tiene 5 filas, el próximo id_objeto será 6</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> objetos AUTO_INCREMENT <span class="op">=</span> <span class="dv">1</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="nota-importante">
+<p><u><strong>Advertencia Crucial antes de pasar a Producción</strong></u></p>
+<p>Aunque esto es genial durante la fase de preparación de la base de datos, debes tener en cuenta dos reglas de oro:</p>
+<ol type="1">
+<li><p><strong>Si ya existen Claves Foráneas (<code>FOREIGN KEY</code>):</strong></p>
+<p>Si la tabla <code>objetos</code> ya está enlazada con otra tabla (por ejemplo, <code>movimientos_almacen</code> o <code>exposiciones</code> mediante <code>id_objeto</code>), <strong>NO debes renumerar los IDs</strong>. Si cambias el <code>id_objeto</code> de <span class="math inline">\(10\)</span> a <span class="math inline">\(4\)</span>, romperás la relación referencial con los registros asociados de las otras tablas o provocarás errores de integridad.</p></li>
+<li><p><strong>En producción real, los huecos SON NORMALES:</strong></p>
+<p>Una vez que la aplicación esté lanzada a producción, <strong>nunca se reordenan los IDs</strong>. Las bases de datos relacionales están diseñadas para que las claves primarias autoincrementales sean identificadores únicos e inmutables, no contadores estéticos.</p></li>
+</ol>
+</div>
+</div>
+</section>
+<section id="valores-nulos-null-y-valores-por-defecto-default" class="level3" data-number="1.3.2">
+<h3 data-number="1.3.2" class="anchored" data-anchor-id="valores-nulos-null-y-valores-por-defecto-default"><span class="header-section-number">1.3.2</span> Valores Nulos (<code>NULL</code>) y Valores por Defecto (<code>DEFAULT</code>)</h3>
+<ul>
+<li><p><strong>Campos con <code>DEFAULT</code>:</strong> Si una columna no obligatoria tiene definido un valor por defecto (por ejemplo, <code>precision_datacion</code> con <code>DEFAULT 'Desconocida'</code>) y la omites en el <code>INSERT</code>, el motor le asignará automáticamente dicho valor.</p></li>
+<li><p><strong>Campos opcionales sin <code>DEFAULT</code>:</strong> Si no incluyes una columna opcional y no tiene valor por defecto expreso, se le asignará <code>NULL</code>.</p></li>
+<li><p><strong>Palabra clave <code>DEFAULT</code>:</strong> Puedes forzar el valor por defecto de forma explícita en la lista de valores:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> objetos (codigo_inventario, nombre, precision_datacion)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'GRE-0010'</span>, <span class="st">'Casco Corintio'</span>, <span class="kw">DEFAULT</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+</ul>
+</section>
+<section id="tipos-de-datos-y-comillas" class="level3" data-number="1.3.3">
+<h3 data-number="1.3.3" class="anchored" data-anchor-id="tipos-de-datos-y-comillas"><span class="header-section-number">1.3.3</span> Tipos de Datos y Comillas</h3>
+<ul>
+<li><p><strong>Cadenas de texto (<code>VARCHAR</code>, <code>TEXT</code>) y Fechas (<code>DATE</code>):</strong> Los valores deben encerrarse siempre entre comillas simples (<code>'texto'</code>).</p></li>
+<li><p><strong>Números (<code>INT</code>, <code>DECIMAL</code>):</strong> Se escriben directamente sin comillas (ej. <code>450</code>).</p></li>
+<li><p><strong>Fechas en formato ISO:</strong> Las columnas de tipo <code>DATE</code> deben recibir la cadena en formato <code>'YYYY-MM-DD'</code> (por ejemplo, <code>'2026-04-15'</code>).</p></li>
+</ul>
+</section>
+<section id="restricciones-de-integridad-check-unique-foreign-key" class="level3" data-number="1.3.4">
+<h3 data-number="1.3.4" class="anchored" data-anchor-id="restricciones-de-integridad-check-unique-foreign-key"><span class="header-section-number">1.3.4</span> Restricciones de Integridad (<code>CHECK</code>, <code>UNIQUE</code>, <code>FOREIGN KEY</code>)</h3>
+<ul>
+<li><p>Si un valor infringe un <code>CHECK</code> (ej. un <code>mes_inicio</code> igual a <code>13</code>), la inserción se <strong>cancela</strong> con un error.</p></li>
+<li><p>Si insertas un valor duplicado en una columna marcada como <code>UNIQUE</code> (ej. un <code>codigo_inventario</code> ya existente), MySQL abortará la operación indicando duplicidad de clave.</p></li>
+</ul>
+</section>
+</section>
+<section id="resumen-comparativo-de-inserciones" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="resumen-comparativo-de-inserciones"><span class="header-section-number">1.4</span> Resumen Comparativo de Inserciones</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 38%">
+<col style="width: 61%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Escenario</strong></td>
+<td><strong>Comportamiento en la Base de Datos</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Columna omitida con <code>AUTO_INCREMENT</code></strong></td>
+<td>Genera automáticamente el siguiente ID entero.</td>
+</tr>
+<tr class="odd">
+<td><strong>Columna omitida con <code>DEFAULT</code></strong></td>
+<td>Inserta el valor predefinido en la definición del campo.</td>
+</tr>
+<tr class="even">
+<td><strong>Columna omitida sin <code>DEFAULT</code> (Permite <code>NULL</code>)</strong></td>
+<td>Asigna <code>NULL</code> automáticamente.</td>
+</tr>
+<tr class="odd">
+<td><strong>Columna omitida con <code>NOT NULL</code> (Sin <code>DEFAULT</code>)</strong></td>
+<td><strong>Error:</strong> El campo no puede ser nulo.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="la-sentencia-update" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> La Sentencia <code>UPDATE</code></h1>
+<section id="descripción-general-1" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="descripción-general-1"><span class="header-section-number">2.1</span> Descripción General</h2>
+<p>La sentencia <code>UPDATE</code> se utiliza para <strong>modificar los valores de registros que ya existen</strong> dentro de una tabla. Permite actualizar desde una sola columna en una fila concreta hasta múltiples columnas en toda la tabla a la vez.</p>
+</section>
+<section id="sintaxis-estándar" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="sintaxis-estándar"><span class="header-section-number">2.2</span> Sintaxis Estándar</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> nombre_tabla</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    columna1 <span class="op">=</span> nuevo_valor1,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    columna2 <span class="op">=</span> nuevo_valor2</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> condicion;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="ejemplo-práctico" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="ejemplo-práctico"><span class="header-section-number">2.3</span> Ejemplo Práctico</h2>
+<p>Imaginemos que necesitamos actualizar la ubicación y el estado de conservación del objeto con código <code>'ROM-0001'</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    ubicacion_actual <span class="op">=</span> <span class="st">'Sala 3 - Vitrina B'</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    estado_conservacion <span class="op">=</span> <span class="st">'Bueno'</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> codigo_inventario <span class="op">=</span> <span class="st">'ROM-0001'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="precauciones-cruciales-y-consideraciones-técnicas" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="precauciones-cruciales-y-consideraciones-técnicas"><span class="header-section-number">2.4</span> Precauciones Cruciales y Consideraciones Técnicas</h2>
+<section id="el-peligro-del-update-sin-where" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="el-peligro-del-update-sin-where"><span class="header-section-number">2.4.1</span> El Peligro del <code>UPDATE</code> sin <code>WHERE</code></h3>
+<p>Si ejecutas un <code>UPDATE</code> omitiendo la cláusula <code>WHERE</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- ¡CUIDADO! Esto cambiaría la ubicación de TODOS los objetos del museo</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> ubicacion_actual <span class="op">=</span> <span class="st">'Almacén Central'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>El motor modificará <strong>absolutamente todos los registros de la tabla</strong>. Por seguridad en entornos de producción, es una buena práctica ejecutar primero un <code>SELECT</code> con el mismo <code>WHERE</code> para verificar qué filas se van a ver afectadas antes de lanzar el <code>UPDATE</code>.</p>
+</section>
+<section id="actualización-basada-en-valores-anteriores" class="level3" data-number="2.4.2">
+<h3 data-number="2.4.2" class="anchored" data-anchor-id="actualización-basada-en-valores-anteriores"><span class="header-section-number">2.4.2</span> Actualización basada en valores anteriores</h3>
+<p>Puedes calcular el nuevo valor tomando como referencia el dato que la columna ya contenía:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Ejemplo de incremento numérico</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> piezas_inventario</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> lecturas_contador <span class="op">=</span> lecturas_contador <span class="op">+</span> <span class="dv">1</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> id_objeto <span class="op">=</span> <span class="dv">12</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="asignación-de-valores-null-y-default" class="level3" data-number="2.4.3">
+<h3 data-number="2.4.3" class="anchored" data-anchor-id="asignación-de-valores-null-y-default"><span class="header-section-number">2.4.3</span> Asignación de valores <code>NULL</code> y <code>DEFAULT</code></h3>
+<p>Si la columna lo permite, puedes “limpiar” un campo asignándole <code>NULL</code> o restablecerlo a su valor predefinido usando la palabra clave <code>DEFAULT</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    observaciones <span class="op">=</span> <span class="kw">NULL</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    precision_datacion <span class="op">=</span> <span class="kw">DEFAULT</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> id_objeto <span class="op">=</span> <span class="dv">5</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="evaluación-de-restricciones-en-tiempo-de-ejecución" class="level3" data-number="2.4.4">
+<h3 data-number="2.4.4" class="anchored" data-anchor-id="evaluación-de-restricciones-en-tiempo-de-ejecución"><span class="header-section-number">2.4.4</span> Evaluación de Restricciones en Tiempo de Ejecución</h3>
+<p>Al ejecutar un <code>UPDATE</code>, MySQL valida inmediatamente todas las restricciones (<code>CHECK</code>, <code>UNIQUE</code>, <code>FOREIGN KEY</code>, <code>NOT NULL</code>):</p>
+<ul>
+<li><p>Si intentas cambiar un <code>codigo_inventario</code> por uno que ya existe, la consulta fallará por violación de restricción <code>UNIQUE</code>.</p></li>
+<li><p>Si cambias un <code>mes_inicio</code> a <code>15</code>, saltará el error de la restricción <code>CHECK</code>.</p></li>
+<li><p>En un <code>UPDATE</code> multirregistro, si una sola fila viola una restricción, <strong>toda la operación se cancela (rollback)</strong> y ninguna fila se modifica.</p></li>
+</ul>
+</section>
+</section>
+<section id="resumen-de-buenas-prácticas" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="resumen-de-buenas-prácticas"><span class="header-section-number">2.5</span> Resumen de Buenas Prácticas</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 36%">
+<col style="width: 63%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Acción</strong></td>
+<td><strong>Recomendación</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Antes de ejecutar un <code>UPDATE</code></strong></td>
+<td>Ejecuta un <code>SELECT * FROM tabla WHERE ...</code> con el mismo filtro para verificar las filas afectadas.</td>
+</tr>
+<tr class="odd">
+<td><strong>Modificar Claves Primarias</strong></td>
+<td><strong>Evitar.</strong> Las claves primarias autoincrementales (<code>id_objeto</code>) no deben modificarse salvo casos excepcionales.</td>
+</tr>
+<tr class="even">
+<td><strong>Uso de Cláusula <code>LIMIT</code></strong></td>
+<td>En MySQL puedes añadir <code>LIMIT n</code> al final del <code>UPDATE</code> para asegurarte de no modificar más de <span class="math inline">\(n\)</span> filas por accidente.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="la-sentencia-delete" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> La Sentencia <code>DELETE</code></h1>
+<section id="descripción-general-2" class="level3" data-number="3.0.1">
+<h3 data-number="3.0.1" class="anchored" data-anchor-id="descripción-general-2"><span class="header-section-number">3.0.1</span> Descripción General</h3>
+<p>La instrucción <code>DELETE</code> forma parte del Lenguaje de Manipulación de Datos (<strong>DML</strong>). Se utiliza para <strong>eliminar filas existentes</strong> de una tabla de forma selectiva (mediante una condición <code>WHERE</code>) o masiva.</p>
+</section>
+<section id="sintaxis-estándar-1" class="level3" data-number="3.0.2">
+<h3 data-number="3.0.2" class="anchored" data-anchor-id="sintaxis-estándar-1"><span class="header-section-number">3.0.2</span> Sintaxis Estándar</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> nombre_tabla</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> condicion;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Ejemplos Prácticos</strong></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- 1. Eliminar un registro específico</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> objetos </span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> codigo_inventario <span class="op">=</span> <span class="st">'ROM-0001'</span>;</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- 2. Eliminar un rango de registros basados en una condición</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> objetos </span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> anio_inicio <span class="op">&lt;</span> <span class="dv">500</span> <span class="kw">AND</span> era_inicio <span class="op">=</span> <span class="st">'a.C.'</span>;</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- 3. Eliminar TODOS los registros (¡Precaución!)</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> objetos;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="uso-de-nulo-en-las-condiciones-is-null" class="level3" data-number="3.0.3">
+<h3 data-number="3.0.3" class="anchored" data-anchor-id="uso-de-nulo-en-las-condiciones-is-null"><span class="header-section-number">3.0.3</span> Uso de nulo en las condiciones (<code>IS NULL</code>)</h3>
+<p>(Esto vale tanto para delete como para update)</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> objetos</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> fecha_ingreso <span class="kw">IS</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> objetos</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> ubicacion_actual <span class="kw">IS</span> <span class="kw">NOT</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="comprativa-de-errores-comunes-con-null" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="comprativa-de-errores-comunes-con-null"><span class="header-section-number">3.1</span> Comprativa de Errores Comunes con <code>NULL</code></h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 36%">
+<col style="width: 36%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Consulta SQL</strong></td>
+<td><strong>Resultado en MySQL</strong></td>
+<td><strong>Causa Técnica</strong></td>
+</tr>
+<tr class="even">
+<td><code>DELETE FROM objetos WHERE ubicacion_actual = NULL;</code></td>
+<td><strong>0 filas afectadas</strong> (Incorrecto)</td>
+<td><code>=</code> compara valores concretos; con <code>NULL</code> evalúa como <code>UNKNOWN</code>.</td>
+</tr>
+<tr class="odd">
+<td><code>DELETE FROM objetos WHERE ubicacion_actual != NULL;</code></td>
+<td><strong>0 filas afectadas</strong> (Incorrecto)</td>
+<td><code>!=</code> o <code>&lt;&gt;</code> tampoco funcionan con <code>NULL</code>.</td>
+</tr>
+<tr class="even">
+<td><code>DELETE FROM objetos WHERE ubicacion_actual IS NULL;</code></td>
+<td><strong>Elimina las filas de forma correcta</strong></td>
+<td><code>IS NULL</code> es el operador estándar en SQL para evaluar la ausencia de valor.</td>
+</tr>
+</tbody>
+</table>
+<section id="el-riesgo-de-delete-sin-where" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="el-riesgo-de-delete-sin-where"><span class="header-section-number">3.1.1</span> El Riesgo de <code>DELETE</code> sin <code>WHERE</code></h3>
+<p>Al igual que con <code>UPDATE</code>, si ejecutas <code>DELETE FROM tabla;</code> sin un filtro <code>WHERE</code>, borrarás todas las filas. A diferencia de <code>TRUNCATE</code>:</p>
+<ul>
+<li><p>Tardará más tiempo según el volumen de datos.</p></li>
+<li><p><strong>No reajustará el contador <code>AUTO_INCREMENT</code></strong>.</p></li>
+</ul>
+</section>
+<section id="uso-de-limit-en-mysql" class="level3" data-number="3.1.2">
+<h3 data-number="3.1.2" class="anchored" data-anchor-id="uso-de-limit-en-mysql"><span class="header-section-number">3.1.2</span> Uso de <code>LIMIT</code> en MySQL</h3>
+<p>En MySQL puedes restringir la cantidad de filas que un <code>DELETE</code> eliminará en una sola ejecución. Esto es ideal en producción para borrar lotes masivos sin bloquear la base de datos:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borra los registros antiguos en lotes de 1000 filas</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> registros_log </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> fecha_log <span class="op">&lt;</span> <span class="st">'2025-01-01'</span> </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">1000</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="interacción-con-foreign-keys-y-constraints" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="interacción-con-foreign-keys-y-constraints"><span class="header-section-number">3.2</span> Interacción con Foreign Keys y Constraints</h2>
+<p>Cuando intentas borrar un registro en una tabla padre (principal) que está relacionada mediante una clave foránea (<code>FOREIGN KEY</code>) con una tabla hija (secundaria), el resultado de la operación dependerá exclusivamente de dos factores:</p>
+<ol type="1">
+<li><p><strong>Si existen o no registros asociados en la tabla hija.</strong></p></li>
+<li><p><strong>La regla <code>ON DELETE</code> configurada en la <code>FOREIGN KEY</code>.</strong></p></li>
+</ol>
+<p>Imaginemos una tabla padre (<code>departamentos</code>) y una tabla hija (<code>empleados</code>):</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> departamentos (</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    id_dept <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> empleados (</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    id_empleado <span class="dt">INT</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>),</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    id_dept <span class="dt">INT</span>,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (id_dept) <span class="kw">REFERENCES</span> departamentos(id_dept)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Aquí se define la regla ON DELETE</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="casuísticas-según-la-regla-definida" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="casuísticas-según-la-regla-definida"><span class="header-section-number">3.2.1</span> Casuísticas según la regla definida</h3>
+<section id="el-registro-padre-no-tiene-hijos-relacionados" class="level4" data-number="3.2.1.1">
+<h4 data-number="3.2.1.1" class="anchored" data-anchor-id="el-registro-padre-no-tiene-hijos-relacionados"><span class="header-section-number">3.2.1.1</span> El registro padre NO tiene hijos relacionados</h4>
+<p>Independientemente de la regla configurada (<code>CASCADE</code>, <code>RESTRICT</code>, <code>SET NULL</code>, etc.), <strong>la fila de la tabla padre se eliminará directamente sin ningún problema</strong> porque no viola ninguna integridad referencial.</p>
+</section>
+<section id="el-registro-padre-sí-tiene-hijos-relacionados" class="level4" data-number="3.2.1.2">
+<h4 data-number="3.2.1.2" class="anchored" data-anchor-id="el-registro-padre-sí-tiene-hijos-relacionados"><span class="header-section-number">3.2.1.2</span> El registro padre SÍ tiene hijos relacionados</h4>
+<p>Cuando hay filas asociadas en la tabla secundaria, la regla <code>ON DELETE</code> determina la acción a tomar:</p>
+<section id="a.-on-delete-restrict-on-delete-no-action-comportamiento-por-defecto" class="level5" data-number="3.2.1.2.1">
+<h5 data-number="3.2.1.2.1" class="anchored" data-anchor-id="a.-on-delete-restrict-on-delete-no-action-comportamiento-por-defecto"><span class="header-section-number">3.2.1.2.1</span> A. <code>ON DELETE RESTRICT</code> / <code>ON DELETE NO ACTION</code> (Comportamiento por defecto)</h5>
+<ul>
+<li><p><strong>Qué hace:</strong> Bloquea la eliminación del registro padre para proteger la integridad referencial.</p></li>
+<li><p><strong>Resultado:</strong> MySQL devuelve un error de restricción de clave foránea (<code>Cannot delete or update a parent row: a foreign key constraint fails</code>).</p></li>
+<li><p><strong>Ejemplo:</strong> Intentar borrar el departamento con <code>id_dept = 1</code> cuando aún existen empleados en el departamento 1.</p></li>
+</ul>
+</section>
+<section id="b.-on-delete-cascade-eliminación-en-cascada" class="level5" data-number="3.2.1.2.2">
+<h5 data-number="3.2.1.2.2" class="anchored" data-anchor-id="b.-on-delete-cascade-eliminación-en-cascada"><span class="header-section-number">3.2.1.2.2</span> B. <code>ON DELETE CASCADE</code> (Eliminación en cascada)</h5>
+<ul>
+<li><p><strong>Qué hace:</strong> Elimina automáticamente el registro de la tabla padre <strong>Y TAMBIÉN</strong> elimina todas las filas asociadas en la tabla hija.</p></li>
+<li><p><strong>Resultado:</strong> Se borra el departamento y todos los empleados que pertenecían a dicho departamento se eliminan automáticamente.</p></li>
+<li><p><strong>¡Atención!</strong> Se debe usar con mucha precaución, ya que puede desencadenar borrados masivos involuntarios si hay varias tablas encadenadas.</p></li>
+</ul>
+</section>
+<section id="c.-on-delete-set-null" class="level5" data-number="3.2.1.2.3">
+<h5 data-number="3.2.1.2.3" class="anchored" data-anchor-id="c.-on-delete-set-null"><span class="header-section-number">3.2.1.2.3</span> C. <code>ON DELETE SET NULL</code></h5>
+<ul>
+<li><p><strong>Qué hace:</strong> Elimina el registro de la tabla padre y actualiza la columna de la clave foránea en la tabla hija asignándole <code>NULL</code>.</p></li>
+<li><p><strong>Resultado:</strong> Se borra el departamento y la columna <code>id_dept</code> de los empleados que pertenecían a él pasa a ser <code>NULL</code> (quedan “huérfanos” o sin departamento asignado).</p></li>
+<li><p><strong>Requisito:</strong> La columna en la tabla hija (<code>id_dept</code>) <strong>DEBE permitir valores nulos</strong> (<code>NULL</code>). Si está definida como <code>NOT NULL</code>, la creación de la restricción o la ejecución fallará.</p></li>
+</ul>
+</section>
+<section id="d.-on-delete-set-default-soportado-en-la-especificación-sql-limitado-en-innodb" class="level5" data-number="3.2.1.2.4">
+<h5 data-number="3.2.1.2.4" class="anchored" data-anchor-id="d.-on-delete-set-default-soportado-en-la-especificación-sql-limitado-en-innodb"><span class="header-section-number">3.2.1.2.4</span> D. <code>ON DELETE SET DEFAULT</code> <em>(Soportado en la especificación SQL, limitado en InnoDB)</em></h5>
+<ul>
+<li><strong>Qué hace:</strong> Elimina el registro padre y establece la clave foránea de la tabla hija al valor por defecto configurado (<code>DEFAULT</code>).</li>
+</ul>
+</section>
+</section>
+<section id="tabla-resumen-de-comportamiento" class="level4" data-number="3.2.1.3">
+<h4 data-number="3.2.1.3" class="anchored" data-anchor-id="tabla-resumen-de-comportamiento"><span class="header-section-number">3.2.1.3</span> Tabla Resumen de Comportamiento</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 49%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td>Regla ON DELETE</td>
+<td><strong>¿Tiene registros relacionados?</strong></td>
+<td><strong>Acción al hacer DELETE FROM padre WHERE id = X</strong></td>
+</tr>
+<tr class="even">
+<td>RESTRICT / NO ACTION</td>
+<td><strong>No</strong></td>
+<td>Se elimina el registro del padre sin problemas.</td>
+</tr>
+<tr class="odd">
+<td>RESTRICT / NO ACTION</td>
+<td><strong>Sí</strong></td>
+<td><strong>Error (Bloqueado).</strong> No se elimina nada.</td>
+</tr>
+<tr class="even">
+<td>CASCADE</td>
+<td><strong>No</strong></td>
+<td>Se elimina el registro del padre.</td>
+</tr>
+<tr class="odd">
+<td>CASCADE</td>
+<td><strong>Sí</strong></td>
+<td>Se elimina el padre <strong>y todas sus filas asociadas en la tabla hija</strong>.</td>
+</tr>
+<tr class="even">
+<td>SET NULL</td>
+<td><strong>No</strong></td>
+<td>Se elimina el registro del padre.</td>
+</tr>
+<tr class="odd">
+<td>SET NULL</td>
+<td><strong>Sí</strong></td>
+<td>Se elimina el padre y la clave foránea en la tabla hija <strong>pasa a ser <code>NULL</code></strong>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+</section>
+<section id="transacciones-en-mysql-start-transaction-commit-y-rollback" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Transacciones en MySQL: <code>START TRANSACTION</code>, <code>COMMIT</code> y <code>ROLLBACK</code></h1>
+<section id="qué-es-una-transacción" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="qué-es-una-transacción"><span class="header-section-number">4.1</span> ¿Qué es una Transacción?</h2>
+<p>Una <strong>transacción</strong> es un conjunto de una o más sentencias SQL (<strong>DML</strong>) que se ejecutan como una <strong>única unidad lógica de trabajo</strong>.</p>
+<p>Por defecto, MySQL opera en modo <strong><code>autocommit = 1</code></strong> (activado). Esto significa que cada sentencia DML (<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) ejecutada individualmente <strong>se confirma automáticamente como una transacción independiente</strong>.</p>
+<ul>
+<li><p>Para agrupar varias operaciones en una sola transacción, debes usar <strong><code>START TRANSACTION</code></strong>.</p></li>
+<li><p>También puedes desactivar el comportamiento automático para la sesión actual con:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> autocommit <span class="op">=</span> <span class="dv">0</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div></li>
+</ul>
+<p>El objetivo de las transacciones es garantizar la integridad de los datos siguiendo las propiedades <strong>ACID</strong> (Atomaticidad, Consistencia, Aislamiento y Durabilidad). En términos prácticos: <strong>o se aplican con éxito todas las operaciones del grupo, o no se aplica ninguna</strong>.</p>
+</section>
+<section id="sentencias-de-control-de-transacciones-tcl" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="sentencias-de-control-de-transacciones-tcl"><span class="header-section-number">4.2</span> Sentencias de Control de Transacciones (TCL)</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 70%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Comando</strong></td>
+<td><strong>Descripción</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>START TRANSACTION</code></strong> (o <code>BEGIN</code>)</td>
+<td>Inicia de forma explícita un bloque transaccional.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>COMMIT</code></strong></td>
+<td>Confirma y guarda permanentemente en la base de datos todos los cambios realizados desde el <code>START TRANSACTION</code>.</td>
+</tr>
+<tr class="even">
+<td><strong><code>ROLLBACK</code></strong></td>
+<td>Deshace y cancela todos los cambios realizados desde el <code>START TRANSACTION</code>, devolviendo la tabla a su estado inicial.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sintaxis-y-ejemplo-práctico" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="sintaxis-y-ejemplo-práctico"><span class="header-section-number">4.3</span> Sintaxis y Ejemplo Práctico</h2>
+<p>Imaginemos un proceso donde trasladamos un objeto de sala y registramos el movimiento en una tabla de auditoría:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- 1. Iniciamos la transacción</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="kw">START</span> <span class="kw">TRANSACTION</span>;</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- 2. Actualizamos la ubicación del objeto</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> ubicacion_actual <span class="op">=</span> <span class="st">'Sala 4 - Vitrina A'</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> codigo_inventario <span class="op">=</span> <span class="st">'ROM-0001'</span>;</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- 3. Insertamos el registro de auditoría</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> historial_movimientos (codigo_inventario, nueva_ubicacion, fecha)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'ROM-0001'</span>, <span class="st">'Sala 4 - Vitrina A'</span>, NOW());</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- 4. Si todo ha salido bien, confirmamos permanentemente los cambios</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Si durante el proceso se detecta un error o una validación falla:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Si algo falla antes del COMMIT, cancelamos todo:</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ROLLBACK</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="dml-vs.-ddl-en-transacciones" class="level2 nota-importante" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="dml-vs.-ddl-en-transacciones"><span class="header-section-number">4.4</span> DML vs.&nbsp;DDL en Transacciones</h2>
+<p>Las transacciones en MySQL están diseñadas principalmente para sentencias de manipulación de datos (<strong>DML</strong>).</p>
+<ul>
+<li><p><strong>Sentencias DML (<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>):</strong> Se pueden deshacer con un <code>ROLLBACK</code> si están dentro de un bloque de transacción.</p></li>
+<li><p><strong>Sentencias DDL (<code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, <code>TRUNCATE</code>):</strong> Provocan un <strong><code>COMMIT</code> implícito</strong>.</p></li>
+</ul>
+<blockquote class="blockquote">
+<p><strong>Advertencia:</strong> Si ejecutas un <code>CREATE TABLE</code> o un <code>TRUNCATE TABLE</code> en medio de una transacción, MySQL guardará automáticamente todo el trabajo DML anterior y cerrará la transacción activa. <strong>Un <code>ROLLBACK</code> posterior no podrá deshacer las sentencias DDL ni las DML anteriores a ella.</strong></p>
+</blockquote>
+<p>Ejemplo.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">START</span> <span class="kw">TRANSACTION</span>;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- 1. Esto es DML</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> objetos <span class="kw">SET</span> estado_conservacion <span class="op">=</span> <span class="st">'Malo'</span> <span class="kw">WHERE</span> id_objeto <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- 2. Al ejecutar esto (DDL), MySQL ejecuta un COMMIT automático de la línea anterior</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> objetos <span class="kw">ADD</span> <span class="kw">COLUMN</span> notas <span class="dt">VARCHAR</span>(<span class="dv">250</span>);</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- 3. Intentamos hacer ROLLBACK</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="kw">ROLLBACK</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Puedes hacer un <code>ALTER TABLE</code> dentro de una transacción y luego un <code>ROLLBACK</code></p>
+<p><strong>En MySQL (con el motor InnoDB), NO se puede.</strong></p>
+<p>En el momento exacto en que ejecutas un <code>ALTER TABLE</code> (o cualquier comando DDL):</p>
+<ol type="1">
+<li><p>MySQL detecta que vas a cambiar la estructura física de la base de datos.</p></li>
+<li><p>De forma automática e imperativa, ejecuta un <strong><code>COMMIT</code> implícito</strong> de todo lo que hayas hecho antes en la transacción.</p></li>
+<li><p>Aplica el cambio de estructura.</p></li>
+<li><p>Finaliza la transacción.</p></li>
+</ol>
+<p>Si ejecutas un <code>ROLLBACK</code> justo después del <code>ALTER TABLE</code>, <strong>ya no habrá transacción activa que deshacer</strong> (o solo deshará lo que hagas <em>después</em> del <code>ALTER</code>).</p>
+<ul>
+<li><p>El <code>UPDATE</code> <strong>NO</strong> se deshace (se guardó permanentemente por el <code>COMMIT</code> automático provocado por el <code>ALTER</code>).</p></li>
+<li><p>La nueva columna <code>notas</code> <strong>NO</strong> se elimina (los cambios DDL no son reversibles con <code>ROLLBACK</code> en MySQL).</p></li>
+</ul>
+<p>Aunque en <strong>MySQL</strong> las sentencias DDL hacen <code>COMMIT</code> implícito y rompen el <code>ROLLBACK</code>, existen otros motores de bases de datos como <strong>PostgreSQL</strong> o <strong>SQLite</strong> que sí soportan <em>Transactional DDL</em> (es decir, permiten meter un <code>ALTER TABLE</code> dentro de un <code>START TRANSACTION</code> y hacer <code>ROLLBACK</code> de la estructura). Pero en el estándar y comportamiento de <strong>MySQL / MariaDB</strong>, el DDL no es transaccional.</p>
+</section>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Comandos DDL (Data Definition Language) – Apuntes: Administración de Bases de Datos</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-9341LNVJM3"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Apuntes: Administración de Bases de Datos</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Inicio</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./ddl.html">Comandos DDL</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 1: Redes e Infraestructura</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redes y Protocolos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proxy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Servidores Proxy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./port_forwarding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Redirección de Puertos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ordenadores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conceptos de ordenadores y servidores</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_operativos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas Operativos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Virtualizacion</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Virtualizacion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_virtualizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía de Pruebas de Conectividad en Entornos de Virtualización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./servidor_linux_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_linux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: manejando un servidor Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_ssh.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Guía: Configuración de SSH en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./contenedores.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contenedores</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./procesos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Procesos, Servicios, Tareas y Procesos en Segundo Plano</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Monitorización de Sistemas</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth3 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./windows_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./system_monitor_grafana.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Extra: crear un monitor sencillo con grafana en Windows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./linux_monitoring.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de Sistemas Linux</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./monitor_Grafana_Ubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Crear un monitor sencillo con Grafana en Ubuntu Sever</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_monitorizacion_completa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización de tres máquinas virtuales mediante Prometheus y Grafana</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./zabbix.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Monitorización con Zabbix</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 2: Organización y Gestión de la información</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sistemas_archivos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de archivos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_NAS_RAID5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./proteccion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Políticas de Seguridad de la Información</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true">
+ <span class="menu-text">Bloque 3: Bases de Datos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a los datos y bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ejercicio_modelado_datos.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio: Modelado de Datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SQL: Structured Query Language y sus variantes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sqlLanguage.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introducción a las Consultas Lenguajes SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./Consultas_SQL_Empleados_Completo.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_subconsultas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Subconsultas en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sql_join.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de Join en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tipos_de_claves_tablas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tipos de claves en tablas relacionales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./normalizacion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Normalización</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./sgbd.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Sistemas de gestión de bases de datos</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mysqlubuntu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Instalando y Configurando MySQL en Ubuntu</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ddl.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Comandos DDL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./dml.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comandos DML</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_guiada_aplicaci_n_web_mysql_php.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica guiada: Aplicación web con MySQL y PHP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+ <span class="menu-text">Anexos</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ubuntu Cheat Sheet</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">En este tema</h2>
+   
+  <ul>
+  <li><a href="#crear-una-base-de-datos-create" id="toc-crear-una-base-de-datos-create" class="nav-link active" data-scroll-target="#crear-una-base-de-datos-create"><span class="header-section-number">1</span> Crear una base de datos (<code>CREATE</code>)</a>
+  <ul>
+  <li><a href="#ver-las-bases-de-datos-creadas-en-el-servidor" id="toc-ver-las-bases-de-datos-creadas-en-el-servidor" class="nav-link" data-scroll-target="#ver-las-bases-de-datos-creadas-en-el-servidor"><span class="header-section-number">1.1</span> Ver las bases de datos creadas en el servidor</a></li>
+  <li><a href="#entrar-en-la-base-de-datos" id="toc-entrar-en-la-base-de-datos" class="nav-link" data-scroll-target="#entrar-en-la-base-de-datos"><span class="header-section-number">1.2</span> Entrar en la base de datos</a></li>
+  <li><a href="#ver-en-qué-base-de-datos-estamos" id="toc-ver-en-qué-base-de-datos-estamos" class="nav-link" data-scroll-target="#ver-en-qué-base-de-datos-estamos"><span class="header-section-number">1.3</span> Ver en qué base de datos estamos</a></li>
+  </ul></li>
+  <li><a href="#crear-una-tabla-create" id="toc-crear-una-tabla-create" class="nav-link" data-scroll-target="#crear-una-tabla-create"><span class="header-section-number">2</span> Crear una tabla (<code>CREATE</code>)</a>
+  <ul>
+  <li><a href="#ver-las-tablas-de-la-base-de-datos-donde-estamos" id="toc-ver-las-tablas-de-la-base-de-datos-donde-estamos" class="nav-link" data-scroll-target="#ver-las-tablas-de-la-base-de-datos-donde-estamos"><span class="header-section-number">2.1</span> Ver las tablas de la base de datos donde estamos</a></li>
+  <li><a href="#ver-la-definición-de-la-tabla-que-acabamos-de-crear" id="toc-ver-la-definición-de-la-tabla-que-acabamos-de-crear" class="nav-link" data-scroll-target="#ver-la-definición-de-la-tabla-que-acabamos-de-crear"><span class="header-section-number">2.2</span> Ver la definición de la tabla que acabamos de crear:</a></li>
+  <li><a href="#ver-los-comandos-con-los-que-se-creo-la-tabla" id="toc-ver-los-comandos-con-los-que-se-creo-la-tabla" class="nav-link" data-scroll-target="#ver-los-comandos-con-los-que-se-creo-la-tabla"><span class="header-section-number">2.3</span> Ver los comandos con los que se creo la tabla</a></li>
+  </ul></li>
+  <li><a href="#restricciones-de-integridad-constraints" id="toc-restricciones-de-integridad-constraints" class="nav-link" data-scroll-target="#restricciones-de-integridad-constraints"><span class="header-section-number">3</span> Restricciones de Integridad (Constraints)</a>
+  <ul>
+  <li><a href="#tipos-de-restricciones" id="toc-tipos-de-restricciones" class="nav-link" data-scroll-target="#tipos-de-restricciones"><span class="header-section-number">3.1</span> Tipos de Restricciones</a>
+  <ul class="collapse">
+  <li><a href="#primary-key-clave-primaria" id="toc-primary-key-clave-primaria" class="nav-link" data-scroll-target="#primary-key-clave-primaria"><span class="header-section-number">3.1.1</span> <code>PRIMARY KEY</code> (Clave Primaria)</a></li>
+  <li><a href="#foreign-key-clave-foránea" id="toc-foreign-key-clave-foránea" class="nav-link" data-scroll-target="#foreign-key-clave-foránea"><span class="header-section-number">3.1.2</span> <code>FOREIGN KEY</code> (Clave Foránea)</a></li>
+  <li><a href="#unique-valor-único" id="toc-unique-valor-único" class="nav-link" data-scroll-target="#unique-valor-único"><span class="header-section-number">3.1.3</span> <code>UNIQUE</code> (Valor Único)</a></li>
+  <li><a href="#check-validación-condicional" id="toc-check-validación-condicional" class="nav-link" data-scroll-target="#check-validación-condicional"><span class="header-section-number">3.1.4</span> <code>CHECK</code> (Validación Condicional)</a></li>
+  <li><a href="#not-null-obligatoriedad" id="toc-not-null-obligatoriedad" class="nav-link" data-scroll-target="#not-null-obligatoriedad"><span class="header-section-number">3.1.5</span> <code>NOT NULL</code> (Obligatoriedad)</a></li>
+  <li><a href="#default-valor-por-defecto" id="toc-default-valor-por-defecto" class="nav-link" data-scroll-target="#default-valor-por-defecto"><span class="header-section-number">3.1.6</span> <code>DEFAULT</code> (Valor por Defecto)</a></li>
+  </ul></li>
+  <li><a href="#dónde-se-guardan-las-restricciones-y-cómo-consultarlas" id="toc-dónde-se-guardan-las-restricciones-y-cómo-consultarlas" class="nav-link" data-scroll-target="#dónde-se-guardan-las-restricciones-y-cómo-consultarlas"><span class="header-section-number">3.2</span> ¿Dónde se guardan las restricciones y cómo consultarlas?</a>
+  <ul class="collapse">
+  <li><a href="#consultar-restricciones-generales-claves-y-checks" id="toc-consultar-restricciones-generales-claves-y-checks" class="nav-link" data-scroll-target="#consultar-restricciones-generales-claves-y-checks"><span class="header-section-number">3.2.1</span> Consultar restricciones generales (Claves y Checks)</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#crear-una-tabla-relacionada" id="toc-crear-una-tabla-relacionada" class="nav-link" data-scroll-target="#crear-una-tabla-relacionada"><span class="header-section-number">4</span> Crear una tabla relacionada</a>
+  <ul>
+  <li><a href="#qué-es-una-clave-foránea-foreign-key" id="toc-qué-es-una-clave-foránea-foreign-key" class="nav-link" data-scroll-target="#qué-es-una-clave-foránea-foreign-key"><span class="header-section-number">4.1</span> ¿Qué es una Clave Foránea (<em>Foreign Key</em>)?</a></li>
+  <li><a href="#acciones-referenciales-on-delete-y-on-update" id="toc-acciones-referenciales-on-delete-y-on-update" class="nav-link" data-scroll-target="#acciones-referenciales-on-delete-y-on-update"><span class="header-section-number">4.2</span> Acciones Referenciales: <code>ON DELETE</code> y <code>ON UPDATE</code></a></li>
+  </ul></li>
+  <li><a href="#modificar-tablas-alter" id="toc-modificar-tablas-alter" class="nav-link" data-scroll-target="#modificar-tablas-alter"><span class="header-section-number">5</span> Modificar tablas (<code>ALTER</code>)</a>
+  <ul>
+  <li><a href="#modificar-el-tipo-de-datos" id="toc-modificar-el-tipo-de-datos" class="nav-link" data-scroll-target="#modificar-el-tipo-de-datos"><span class="header-section-number">5.1</span> Modificar el tipo de datos</a></li>
+  <li><a href="#añadir-columnas-add-column" id="toc-añadir-columnas-add-column" class="nav-link" data-scroll-target="#añadir-columnas-add-column"><span class="header-section-number">5.2</span> Añadir columnas (<code>ADD COLUMN</code>)</a></li>
+  <li><a href="#eliminar-columnas-drop-column" id="toc-eliminar-columnas-drop-column" class="nav-link" data-scroll-target="#eliminar-columnas-drop-column"><span class="header-section-number">5.3</span> Eliminar columnas (<code>DROP COLUMN</code>)</a></li>
+  <li><a href="#renombrar-columnas-rename-column" id="toc-renombrar-columnas-rename-column" class="nav-link" data-scroll-target="#renombrar-columnas-rename-column"><span class="header-section-number">5.4</span> Renombrar Columnas (<code>RENAME COLUMN</code>)</a></li>
+  <li><a href="#renombrar-la-tabla-completa-rename-to" id="toc-renombrar-la-tabla-completa-rename-to" class="nav-link" data-scroll-target="#renombrar-la-tabla-completa-rename-to"><span class="header-section-number">5.5</span> Renombrar la Tabla Completa (<code>RENAME TO</code>)</a></li>
+  <li><a href="#cambiar-nombre-y-tipo-de-dato-a-la-vez-change-column" id="toc-cambiar-nombre-y-tipo-de-dato-a-la-vez-change-column" class="nav-link" data-scroll-target="#cambiar-nombre-y-tipo-de-dato-a-la-vez-change-column"><span class="header-section-number">5.6</span> Cambiar Nombre y Tipo de Dato a la Vez (<code>CHANGE COLUMN</code>)</a></li>
+  <li><a href="#gestionar-valores-por-defecto-set-drop-default" id="toc-gestionar-valores-por-defecto-set-drop-default" class="nav-link" data-scroll-target="#gestionar-valores-por-defecto-set-drop-default"><span class="header-section-number">5.7</span> Gestionar Valores por Defecto (<code>SET / DROP DEFAULT</code>)</a></li>
+  <li><a href="#cambiar-restricciones" id="toc-cambiar-restricciones" class="nav-link" data-scroll-target="#cambiar-restricciones"><span class="header-section-number">5.8</span> Cambiar restricciones</a>
+  <ul class="collapse">
+  <li><a href="#añadir-restricciones-a-una-tabla-existente-add-constraint" id="toc-añadir-restricciones-a-una-tabla-existente-add-constraint" class="nav-link" data-scroll-target="#añadir-restricciones-a-una-tabla-existente-add-constraint"><span class="header-section-number">5.8.1</span> Añadir restricciones a una tabla existente (<code>ADD CONSTRAINT</code>)</a></li>
+  </ul></li>
+  <li><a href="#borrar-restricciones-drop-..." id="toc-borrar-restricciones-drop-..." class="nav-link" data-scroll-target="#borrar-restricciones-drop-..."><span class="header-section-number">5.9</span> Borrar restricciones (<code>DROP ...</code>)</a></li>
+  <li><a href="#modificar-restricciones" id="toc-modificar-restricciones" class="nav-link" data-scroll-target="#modificar-restricciones"><span class="header-section-number">5.10</span> ¿Modificar restricciones?</a>
+  <ul class="collapse">
+  <li><a href="#ver-todas-las-restricciones-de-la-base-de-datos-activa" id="toc-ver-todas-las-restricciones-de-la-base-de-datos-activa" class="nav-link" data-scroll-target="#ver-todas-las-restricciones-de-la-base-de-datos-activa"><span class="header-section-number">5.10.1</span> Ver todas las restricciones de la base de datos activa</a></li>
+  <li><a href="#ver-todas-las-restricciones-de-una-tabla" id="toc-ver-todas-las-restricciones-de-una-tabla" class="nav-link" data-scroll-target="#ver-todas-las-restricciones-de-una-tabla"><span class="header-section-number">5.10.2</span> Ver todas las restricciones de una tabla</a></li>
+  <li><a href="#qué-pasa-si-has-creado-la-restricción-sin-darle-un-nombre" id="toc-qué-pasa-si-has-creado-la-restricción-sin-darle-un-nombre" class="nav-link" data-scroll-target="#qué-pasa-si-has-creado-la-restricción-sin-darle-un-nombre"><span class="header-section-number">5.10.3</span> Qué pasa si has creado la restricción sin darle un nombre?</a></li>
+  <li><a href="#desactivar-restricciones" id="toc-desactivar-restricciones" class="nav-link" data-scroll-target="#desactivar-restricciones"><span class="header-section-number">5.10.4</span> Desactivar restricciones</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#eliminación-de-datos-y-estructuras" id="toc-eliminación-de-datos-y-estructuras" class="nav-link" data-scroll-target="#eliminación-de-datos-y-estructuras"><span class="header-section-number">6</span> Eliminación de datos y estructuras</a>
+  <ul>
+  <li><a href="#truncate" id="toc-truncate" class="nav-link" data-scroll-target="#truncate"><span class="header-section-number">6.1</span> <code>TRUNCATE</code></a>
+  <ul class="collapse">
+  <li><a href="#características" id="toc-características" class="nav-link" data-scroll-target="#características"><span class="header-section-number">6.1.1</span> Características</a></li>
+  </ul></li>
+  <li><a href="#drop" id="toc-drop" class="nav-link" data-scroll-target="#drop"><span class="header-section-number">6.2</span> <code>DROP</code></a>
+  <ul class="collapse">
+  <li><a href="#características-1" id="toc-características-1" class="nav-link" data-scroll-target="#características-1"><span class="header-section-number">6.2.1</span> Características</a></li>
+  </ul></li>
+  <li><a href="#delete-dml" id="toc-delete-dml" class="nav-link" data-scroll-target="#delete-dml"><span class="header-section-number">6.3</span> <code>DELETE</code> (DML)</a>
+  <ul class="collapse">
+  <li><a href="#características-2" id="toc-características-2" class="nav-link" data-scroll-target="#características-2"><span class="header-section-number">6.3.1</span> Características</a></li>
+  </ul></li>
+  <li><a href="#tabla-comparativa" id="toc-tabla-comparativa" class="nav-link" data-scroll-target="#tabla-comparativa"><span class="header-section-number">6.4</span> Tabla Comparativa</a></li>
+  <li><a href="#comportamiento-de-triggers-y-acciones-de-clave-foránea-durante-el-borrado" id="toc-comportamiento-de-triggers-y-acciones-de-clave-foránea-durante-el-borrado" class="nav-link" data-scroll-target="#comportamiento-de-triggers-y-acciones-de-clave-foránea-durante-el-borrado"><span class="header-section-number">6.5</span> Comportamiento de triggers y acciones de clave foránea durante el borrado</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./datos.html">Bloque 3: Bases de Datos</a></li><li class="breadcrumb-item"><a href="./ddl.html">Comandos DDL</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">Comandos DDL (Data Definition Language)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="crear-una-base-de-datos-create" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Crear una base de datos (<code>CREATE</code>)</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">DATABASE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> centro_formacion</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">DEFAULT</span> <span class="dt">CHARACTER</span> <span class="kw">SET</span> utf8mb4</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">DEFAULT</span> COLLATE utf8mb4_0900_ai_ci;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Donde centro_formacion es el nombre de la base de datos</p>
+<p><code>DEFAULT CHARACTER SET utf8mb4</code> significa que admite caracteres Unicode standard</p>
+<p><code>DEFAULT COLLATE utf8mb4_0900_ai_ci</code> define reglas de comparación y ordenación.</p>
+<ul>
+<li><p><code>ai</code> significa insensible a los acentos “accent insensitive” (Ej. María = Maria)</p></li>
+<li><p><code>ci</code> significa case insensitive, que es que es insensible a las mayusculas o minisculas (ej. MARIA = Maria)</p></li>
+</ul>
+<p>Estas definiciones de la base de datos serán la configuración por defecto para las tablas que se creen en ella, pero pueden sobreescribirse en las tablas.</p>
+<p>En cualquier momento podemos ver cómo se creó la base de datos usando el comando <code>SHOW CREATE DATABASE {nombre base de datos}</code></p>
+<p><img src="images/paste-fhdZaUM9uGdstOI3vWEmQ.png" class="img-fluid"></p>
+<section id="ver-las-bases-de-datos-creadas-en-el-servidor" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="ver-las-bases-de-datos-creadas-en-el-servidor"><span class="header-section-number">1.1</span> Ver las bases de datos creadas en el servidor</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>SHOW DATABASES;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><img src="images/paste-7L7_2_ac47IUfm-sBlSI0.png" class="img-fluid"></p>
+</section>
+<section id="entrar-en-la-base-de-datos" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="entrar-en-la-base-de-datos"><span class="header-section-number">1.2</span> Entrar en la base de datos</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">USE</span> centro_formacion;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="ver-en-qué-base-de-datos-estamos" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="ver-en-qué-base-de-datos-estamos"><span class="header-section-number">1.3</span> Ver en qué base de datos estamos</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="kw">DATABASE</span>();</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="crear-una-tabla-create" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Crear una tabla (<code>CREATE</code>)</h1>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> cursos (</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    id_curso <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    nombre_curso <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    modalidad <span class="dt">VARCHAR</span>(<span class="dv">20</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    activo <span class="dt">BOOLEAN</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="kw">TRUE</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> pk_cursos <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (id_curso),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> uq_cursos_nombre <span class="kw">UNIQUE</span> (nombre_curso)  </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><code>CONSTRAINT pk_cursos PRIMARY KEY (id_curso)</code> esto define la clave primaria bajo el nombre <code>pk_cursos</code></p>
+<p><code>CONSTRAINT uq_cursos_nombre UNIQUE (nombre_curso)</code> esto añade una restricción al campo nombre_curso para que no admita duplicados, guardamos esta regla bajo el nombre <code>uq_cursos_nombre</code></p>
+<section id="ver-las-tablas-de-la-base-de-datos-donde-estamos" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="ver-las-tablas-de-la-base-de-datos-donde-estamos"><span class="header-section-number">2.1</span> Ver las tablas de la base de datos donde estamos</h2>
+<p><code>SHOW TABLES;</code></p>
+<p><img src="images/paste-x3Gvf37sPFgTl8J9X364E.png" class="img-fluid"></p>
+</section>
+<section id="ver-la-definición-de-la-tabla-que-acabamos-de-crear" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="ver-la-definición-de-la-tabla-que-acabamos-de-crear"><span class="header-section-number">2.2</span> Ver la definición de la tabla que acabamos de crear:</h2>
+<p><code>DESCRIBE cursos;</code></p>
+<p><img src="images/paste-SnyGrjuDjtfFufRPjCs9x.png" class="img-fluid"></p>
+</section>
+<section id="ver-los-comandos-con-los-que-se-creo-la-tabla" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="ver-los-comandos-con-los-que-se-creo-la-tabla"><span class="header-section-number">2.3</span> Ver los comandos con los que se creo la tabla</h2>
+<p><code>SHOW CREATE TABLE cursos;</code></p>
+<p><img src="images/paste-bKtk8WUZZ2Nccztspwx07.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="restricciones-de-integridad-constraints" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Restricciones de Integridad (Constraints)</h1>
+<p>Las restricciones (<em>constraints</em>) son reglas aplicadas a las columnas o tablas de una base de datos para garantizar la precisión, fiabilidad e integridad de los datos. MySQL evalúa estas restricciones en tiempo de ejecución de manera inmediata al ejecutar sentencias como <code>INSERT</code> o <code>UPDATE</code>.</p>
+<p>Si en una operación que afecta a múltiples registros (como un <code>UPDATE</code> multirregistro) una sola fila viola una restricción, toda la operación se cancela automáticamente (<em>rollback</em>) y no se modifica ninguna fila.</p>
+<section id="tipos-de-restricciones" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="tipos-de-restricciones"><span class="header-section-number">3.1</span> Tipos de Restricciones</h2>
+<p>Existen diferentes tipos de restricciones que se pueden definir al crear o modificar una tabla:</p>
+<ul>
+<li><p><strong><code>NOT NULL</code></strong>: Obliga a que una columna siempre contenga un dato. Si en un <code>INSERT</code> se omite una columna definida como <code>NOT NULL</code> (y que no tiene un valor <code>DEFAULT</code>), MySQL lanzará un error indicando que el campo no puede ser nulo.</p></li>
+<li><p><strong><code>UNIQUE</code></strong>: Garantiza que todos los valores de una columna sean distintos. Si se intenta insertar un valor duplicado en una columna marcada como <code>UNIQUE</code>, MySQL abortará la operación por duplicidad de clave.</p></li>
+<li><p><strong><code>CHECK</code></strong>: Valida que los datos cumplan una condición lógica específica. Si un valor infringe un <code>CHECK</code> (por ejemplo, intentar guardar un <code>mes_inicio</code> igual a <code>13</code>), la inserción se cancela con un error.</p></li>
+<li><p><strong><code>PRIMARY KEY</code></strong>: Identifica de forma única cada fila de la tabla. Es el equivalente a combinar <code>NOT NULL</code> y <code>UNIQUE</code>.</p></li>
+<li><p><strong><code>FOREIGN KEY</code></strong>: Asegura la integridad referencial vinculando los datos de una columna con la clave primaria de otra tabla.</p></li>
+</ul>
+<section id="primary-key-clave-primaria" class="level3" data-number="3.1.1">
+<h3 data-number="3.1.1" class="anchored" data-anchor-id="primary-key-clave-primaria"><span class="header-section-number">3.1.1</span> <code>PRIMARY KEY</code> (Clave Primaria)</h3>
+<p>Garantiza que cada fila sea única e identificable. No permite valores <code>NULL</code>.</p>
+<p>Al crear la tabla:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> cursos (</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    id_curso <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Definición a nivel de tabla con nombre</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> pk_cursos <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (id_curso)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>En una tabla existente:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> pk_cursos <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (id_curso);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="foreign-key-clave-foránea" class="level3" data-number="3.1.2">
+<h3 data-number="3.1.2" class="anchored" data-anchor-id="foreign-key-clave-foránea"><span class="header-section-number">3.1.2</span> <code>FOREIGN KEY</code> (Clave Foránea)</h3>
+<p>Relaciona una columna con la clave primaria de otra tabla, garantizando la integridad referencial.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> alumnos (</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    id_alumno <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    id_curso <span class="dt">INT</span> UNSIGNED <span class="kw">NULL</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- Definición con regla de borrado</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> fk_alumnos_cursos </span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (id_curso) <span class="kw">REFERENCES</span> cursos(id_curso)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">SET</span> <span class="kw">NULL</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En una tabla existente</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> fk_alumnos_cursos </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (id_curso) <span class="kw">REFERENCES</span> cursos(id_curso);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="unique-valor-único" class="level3" data-number="3.1.3">
+<h3 data-number="3.1.3" class="anchored" data-anchor-id="unique-valor-único"><span class="header-section-number">3.1.3</span> <code>UNIQUE</code> (Valor Único)</h3>
+<p>Asegura que no existan dos filas con el mismo valor en esa columna (a excepción de los valores <code>NULL</code>, que sí pueden repetirse).</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> usuarios (</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    id_usuario <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    email <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> uq_usuarios_email <span class="kw">UNIQUE</span> (email)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En una tabla existente</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> usuarios </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> uq_usuarios_email <span class="kw">UNIQUE</span> (email);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="check-validación-condicional" class="level3" data-number="3.1.4">
+<h3 data-number="3.1.4" class="anchored" data-anchor-id="check-validación-condicional"><span class="header-section-number">3.1.4</span> <code>CHECK</code> (Validación Condicional)</h3>
+<p>Evalúa una condición lógica (<code>TRUE</code> / <code>FALSE</code>) antes de permitir insertar o actualizar un dato.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> empleados (</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    id_empleado <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    edad TINYINT UNSIGNED <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    dni <span class="dt">VARCHAR</span>(<span class="dv">20</span>) <span class="kw">NULL</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    pasaporte <span class="dt">VARCHAR</span>(<span class="dv">20</span>) <span class="kw">NULL</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- CHECK simple de rango</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> chk_empleados_edad <span class="kw">CHECK</span> (edad <span class="op">&gt;=</span> <span class="dv">18</span>),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- CHECK combinando múltiples columnas</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> chk_identificacion_obligatoria </span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">CHECK</span> (dni <span class="kw">IS</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">OR</span> pasaporte <span class="kw">IS</span> <span class="kw">NOT</span> <span class="kw">NULL</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En una tabla existente</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> empleados </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> chk_empleados_edad <span class="kw">CHECK</span> (edad <span class="op">&gt;=</span> <span class="dv">18</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="not-null-obligatoriedad" class="level3" data-number="3.1.5">
+<h3 data-number="3.1.5" class="anchored" data-anchor-id="not-null-obligatoriedad"><span class="header-section-number">3.1.5</span> <code>NOT NULL</code> (Obligatoriedad)</h3>
+<p>Obliga a que la columna contenga siempre un valor.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> categorias (</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    id_categoria <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="co">-- Definición a nivel de columna</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En una tabla existente</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- En MySQL, NOT NULL se añade redefiniendo la columna con MODIFY</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> categorias </span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">MODIFY</span> <span class="kw">COLUMN</span> nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="default-valor-por-defecto" class="level3" data-number="3.1.6">
+<h3 data-number="3.1.6" class="anchored" data-anchor-id="default-valor-por-defecto"><span class="header-section-number">3.1.6</span> <code>DEFAULT</code> (Valor por Defecto)</h3>
+<p>Asigna un valor automático a la columna si en el <code>INSERT</code> no se especifica ninguno.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> pedidos (</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    id_pedido <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    estado <span class="dt">VARCHAR</span>(<span class="dv">20</span>) <span class="kw">DEFAULT</span> <span class="st">'Pendiente'</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    fecha_creacion DATETIME <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> pedidos </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ALTER</span> <span class="kw">COLUMN</span> estado <span class="kw">SET</span> <span class="kw">DEFAULT</span> <span class="st">'Pendiente'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>El valor default se usará cuando no se introduzca un valor para esa columna:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Correcto: Al no mencionar 'estado' ni 'fecha_creacion', aplican sus DEFAULT</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> pedidos (nombre) </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'Cliente 1'</span>),</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'Cliente 2'</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Al no haberse proporcionado ningún valor para las columnas que tienen default, se usuará ese valor.</p>
+<p>Si estás rellenando datos múltiples y tienes que incluir la columna, para aquellos registros en los que quieras que se rellene el valor predeterminado tendrás que pasar el valor DEFAULT, pasar NULL o ’’ no generará la inserción del valor por defecto.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> pedidos (nombre, estado) </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'Cliente 3'</span>, <span class="st">'Enviado'</span>),   <span class="co">-- Valor personalizado</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    (<span class="st">'Cliente 4'</span>, <span class="kw">DEFAULT</span>);      <span class="co">-- Aplica 'Pendiente'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Incorrecto enviar NULL:</strong> Si la columna permite <code>NULL</code>, guardará un valor <code>NULL</code>. Si la columna tuviera la restricción <code>NOT NULL</code>, la base de datos devolverá un error (<code>Column 'estado' cannot be null</code>). En ningún caso aplicará <code>'Pendiente'</code>.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Incorrecto (no aplicará 'Pendiente'):</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> pedidos (nombre, estado) </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'Cliente 5'</span>, <span class="kw">NULL</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Incorrecto enviar ’’:</strong> Pasar una cadena vacía <code>''</code> esperando que aplique el <code>DEFAULT</code>:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Incorrecto (no aplicará 'Pendiente'):</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> pedidos (nombre, estado) </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">'Cliente 6'</span>, <span class="st">''</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="dónde-se-guardan-las-restricciones-y-cómo-consultarlas" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="dónde-se-guardan-las-restricciones-y-cómo-consultarlas"><span class="header-section-number">3.2</span> ¿Dónde se guardan las restricciones y cómo consultarlas?</h2>
+<p>Toda la información sobre la estructura de las bases de datos en MySQL se guarda en una base de datos del sistema llamada <strong><code>information_schema</code></strong>. Puedes usar vistas específicas dentro de este esquema para auditar qué restricciones existen en tus tablas.</p>
+<section id="consultar-restricciones-generales-claves-y-checks" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="consultar-restricciones-generales-claves-y-checks"><span class="header-section-number">3.2.1</span> Consultar restricciones generales (Claves y Checks)</h3>
+<p>La vista <code>TABLE_CONSTRAINTS</code> almacena un listado general de todas las restricciones aplicadas a las tablas (incluyendo <code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>FOREIGN KEY</code> y <code>CHECK</code>).</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    CONSTRAINT_NAME <span class="kw">AS</span> <span class="st">'Nombre de la Restricción'</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    CONSTRAINT_TYPE <span class="kw">AS</span> <span class="st">'Tipo'</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> information_schema.TABLE_CONSTRAINTS</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> TABLE_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>() </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> TABLE_NAME <span class="op">=</span> <span class="st">'identificaciones'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+</section>
+<section id="crear-una-tabla-relacionada" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Crear una tabla relacionada</h1>
+<div class="sourceCode" id="cb23"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> alumnos (</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    id_alumno <span class="dt">INT</span> UNSIGNED AUTO_INCREMENT,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    nombre <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    apellidos <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    id_curso <span class="dt">INT</span> UNSIGNED <span class="kw">NULL</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    estado <span class="dt">VARCHAR</span>(<span class="dv">20</span>) <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="st">'Activo'</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> pk_alumnos <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (id_alumno),</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> fk_alumnos_cursos</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (id_curso)</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">REFERENCES</span> cursos(id_curso)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">SET</span> <span class="kw">NULL</span>     </span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<ul>
+<li><p><strong><code>id_alumno INT UNSIGNED AUTO_INCREMENT</code>:</strong> Clave primaria única. <code>UNSIGNED</code> impide números negativos y <code>AUTO_INCREMENT</code> asigna un entero correlativo de forma automática.</p></li>
+<li><p><strong><code>id_curso INT UNSIGNED NULL</code>:</strong> Columna que actúa como clave foránea. Debe coincidir exactamente en tipo de dato (<code>INT UNSIGNED</code>) con la clave primaria de la tabla referenciada (<code>cursos</code>). Se define como <code>NULL</code> para permitir alumnos sin curso asignado.</p></li>
+<li><p><strong><code>CONSTRAINT pk_alumnos PRIMARY KEY (id_alumno)</code>:</strong> Define explícitamente la restricción de clave primaria dándole un nombre claro (<code>pk_alumnos</code>).</p></li>
+<li><p><strong><code>CONSTRAINT fk_alumnos_cursos</code>:</strong> Nombra la regla de clave foránea para poder modificarla o eliminarla con un <code>ALTER TABLE</code> en el futuro.</p></li>
+</ul>
+<section id="qué-es-una-clave-foránea-foreign-key" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="qué-es-una-clave-foránea-foreign-key"><span class="header-section-number">4.1</span> ¿Qué es una Clave Foránea (<em>Foreign Key</em>)?</h2>
+<p>Una <strong>Clave Foránea</strong> es un campo en una tabla (tabla hija: <code>alumnos</code>) que apunta a la clave primaria de otra tabla (tabla padre: <code>cursos</code>).</p>
+<p>Garantiza la <strong>integridad referencial</strong>: impide que se registre un alumno apuntando a un <code>id_curso</code> que no exista en la tabla <code>cursos</code>.</p>
+</section>
+<section id="acciones-referenciales-on-delete-y-on-update" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="acciones-referenciales-on-delete-y-on-update"><span class="header-section-number">4.2</span> Acciones Referenciales: <code>ON DELETE</code> y <code>ON UPDATE</code></h2>
+<p>Definen qué debe hacer MySQL cuando el registro de la tabla padre (<code>cursos</code>) se <strong>modifica</strong> (<code>ON UPDATE</code>) o se <strong>elimina</strong> (<code>ON DELETE</code>).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 36%">
+<col style="width: 41%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Opción</strong></td>
+<td><strong>¿Qué hace al Borrar/Actualizar el Padre?</strong></td>
+<td><strong>Ejemplo con tu código</strong></td>
+</tr>
+<tr class="even">
+<td><strong><code>RESTRICT</code></strong> <em>(Por defecto)</em></td>
+<td><strong>Bloquea la operación.</strong> Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados.</td>
+<td>Si intentas borrar un curso que tiene alumnos, MySQL lanza un error.</td>
+</tr>
+<tr class="odd">
+<td><strong><code>CASCADE</code></strong></td>
+<td><strong>Propaga el cambio.</strong> Borra o actualiza automáticamente los registros hijos asociados.</td>
+<td>En tu código (<code>ON UPDATE CASCADE</code>): Si el <code>id_curso</code> <code>5</code> pasa a ser <code>10</code>, todos los alumnos con <code>id_curso = 5</code> cambian a <code>10</code> automáticamente.</td>
+</tr>
+<tr class="even">
+<td><strong><code>SET NULL</code></strong></td>
+<td><strong>Pone a <code>NULL</code> la columna del hijo.</strong> Mantiene al registro hijo pero rompe el vínculo.</td>
+<td>En tu código (<code>ON DELETE SET NULL</code>): Si eliminas el curso <code>5</code>, los alumnos pertenecientes a ese curso pasan a tener <code>id_curso = NULL</code> (no se borra al alumno).</td>
+</tr>
+<tr class="odd">
+<td><strong><code>NO ACTION</code></strong></td>
+<td>Similar a <code>RESTRICT</code> en MySQL. Comprueba la integridad al final de la instrucción.</td>
+<td>Bloquea la eliminación/modificación si existen referencias activas.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><p><strong>Usa <code>ON DELETE CASCADE</code></strong> cuando el hijo no tenga sentido sin el padre (ejemplo: las líneas de detalle de una factura respecto a la cabecera de la factura; si se borra la factura, deben desaparecer sus líneas).</p></li>
+<li><p><strong>Usa <code>ON DELETE SET NULL</code></strong> cuando la entidad hija tenga valor propio independientemente del padre (ejemplo: un alumno sigue existiendo aunque el curso se cancele).</p></li>
+<li><p><strong>Usa <code>RESTRICT</code> (por defecto)</strong> cuando quieras proteger datos críticos e impedir borrados accidentales de entidades principales sin revisión previa.</p></li>
+</ul>
+</section>
+</section>
+<section id="modificar-tablas-alter" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Modificar tablas (<code>ALTER</code>)</h1>
+<p>ALTER TABLE cambia una tabla existente: añadir o eliminar columnas, modificar tipos y crear restricciones.</p>
+<section id="modificar-el-tipo-de-datos" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="modificar-el-tipo-de-datos"><span class="header-section-number">5.1</span> Modificar el tipo de datos</h2>
+<div class="sourceCode" id="cb24"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">MODIFY</span> <span class="kw">COLUMN</span> nombre_curso <span class="dt">VARCHAR</span>(<span class="dv">150</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="añadir-columnas-add-column" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="añadir-columnas-add-column"><span class="header-section-number">5.2</span> Añadir columnas (<code>ADD COLUMN</code>)</h2>
+<div class="sourceCode" id="cb25"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Añade la columna 'modalidad' al final de la tabla</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">COLUMN</span> modalidad <span class="dt">VARCHAR</span>(<span class="dv">30</span>) <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="st">'Presencial'</span>;</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Añade la columna 'email' justo después del campo 'apellidos'</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">COLUMN</span> email <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NULL</span> <span class="kw">AFTER</span> apellidos;</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- Añade una columna al principio de todo (primera posición)</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">COLUMN</span> codigo_curso <span class="dt">VARCHAR</span>(<span class="dv">10</span>) <span class="fu">FIRST</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="eliminar-columnas-drop-column" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="eliminar-columnas-drop-column"><span class="header-section-number">5.3</span> Eliminar columnas (<code>DROP COLUMN</code>)</h2>
+<div class="sourceCode" id="cb26"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Elimina la columna 'estado' de la tabla alumnos</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">DROP</span> <span class="kw">COLUMN</span> estado;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="renombrar-columnas-rename-column" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="renombrar-columnas-rename-column"><span class="header-section-number">5.4</span> Renombrar Columnas (<code>RENAME COLUMN</code>)</h2>
+<p>Cambia únicamente el nombre de la columna sin modificar su tipo de dato o restricciones.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Renombra 'horas' a 'duracion_horas' en la tabla cursos</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">RENAME</span> <span class="kw">COLUMN</span> horas <span class="kw">TO</span> duracion_horas;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="extra">
+<p>Aunque SQL no tiene un comando nativo único del tipo <code>RENAME ALL COLUMNS</code>, puedes lograrlo utilizando una combinación de sentencias</p>
+<section id="generación-automática-de-consultas-desde-information_schema" class="level3" data-number="5.4.1">
+<h3 data-number="5.4.1" class="anchored" data-anchor-id="generación-automática-de-consultas-desde-information_schema"><span class="header-section-number">5.4.1</span> Generación automática de consultas desde <code>INFORMATION_SCHEMA</code></h3>
+<p>Consiste en consultar el diccionario de datos de MySQL (<code>INFORMATION_SCHEMA.COLUMNS</code>) para que la propia base de datos te genere todas las sentencias <code>ALTER TABLE</code> listas para copiar y ejecutar.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="fu">CONCAT</span>(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ALTER TABLE `'</span>, TABLE_SCHEMA, <span class="st">'`.`'</span>, TABLE_NAME, <span class="st">'` '</span>,</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'RENAME COLUMN `'</span>, COLUMN_NAME, <span class="st">'` TO `'</span>, <span class="kw">REPLACE</span>(COLUMN_NAME, <span class="st">' '</span>, <span class="st">'_'</span>), <span class="st">'`;'</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>) <span class="kw">AS</span> script_renombrado</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> INFORMATION_SCHEMA.<span class="kw">COLUMNS</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> TABLE_SCHEMA <span class="op">=</span> <span class="st">'tu_base_de_datos'</span>  <span class="co">-- Reemplaza por tu BD</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> TABLE_NAME <span class="op">=</span> <span class="st">'tu_tabla'</span>             <span class="co">-- Reemplaza por tu tabla</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> COLUMN_NAME <span class="kw">LIKE</span> <span class="st">'% %'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><strong>Resultado que devuelve MySQL:</strong></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> `lab_relaciones`.`objetos` <span class="kw">RENAME</span> <span class="kw">COLUMN</span> `fecha inicio` <span class="kw">TO</span> `fecha_inicio`;</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> `lab_relaciones`.`objetos` <span class="kw">RENAME</span> <span class="kw">COLUMN</span> `era inicio` <span class="kw">TO</span> `era_inicio`;</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> `lab_relaciones`.`objetos` <span class="kw">RENAME</span> <span class="kw">COLUMN</span> `ubicacion actual` <span class="kw">TO</span> `ubicacion_actual`;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Solo ejecutas la consulta, copias los resultados generados y los lanzas en la consola.</p>
+</section>
+</div>
+</section>
+<section id="renombrar-la-tabla-completa-rename-to" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="renombrar-la-tabla-completa-rename-to"><span class="header-section-number">5.5</span> Renombrar la Tabla Completa (<code>RENAME TO</code>)</h2>
+<div class="sourceCode" id="cb30"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Cambia el nombre de la tabla 'cursos' a 'acciones_formativas'</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">RENAME</span> <span class="kw">TO</span> acciones_formativas;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="cambiar-nombre-y-tipo-de-dato-a-la-vez-change-column" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="cambiar-nombre-y-tipo-de-dato-a-la-vez-change-column"><span class="header-section-number">5.6</span> Cambiar Nombre y Tipo de Dato a la Vez (<code>CHANGE COLUMN</code>)</h2>
+<p>A diferencia de <code>MODIFY</code> (que solo cambia el tipo/atributos), <code>CHANGE</code> permite renombrar la columna y redefinir su tipo de dato en la misma instrucción.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Cambia la columna 'nombre' por 'nombre_completo' y amplia su tamaño a VARCHAR(100)</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CHANGE</span> <span class="kw">COLUMN</span> nombre nombre_completo <span class="dt">VARCHAR</span>(<span class="dv">100</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="gestionar-valores-por-defecto-set-drop-default" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="gestionar-valores-por-defecto-set-drop-default"><span class="header-section-number">5.7</span> Gestionar Valores por Defecto (<code>SET / DROP DEFAULT</code>)</h2>
+<p>Permite añadir o quitar un valor por defecto a una columna sin necesidad de redefinir su tipo de dato completo.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Establece un valor por defecto para la columna duracion_horas</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ALTER</span> <span class="kw">COLUMN</span> duracion_horas <span class="kw">SET</span> <span class="kw">DEFAULT</span> <span class="dv">50</span>;</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Quita el valor por defecto de una columna</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ALTER</span> <span class="kw">COLUMN</span> duracion_horas <span class="kw">DROP</span> <span class="kw">DEFAULT</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="cambiar-restricciones" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="cambiar-restricciones"><span class="header-section-number">5.8</span> Cambiar restricciones</h2>
+<section id="añadir-restricciones-a-una-tabla-existente-add-constraint" class="level3" data-number="5.8.1">
+<h3 data-number="5.8.1" class="anchored" data-anchor-id="añadir-restricciones-a-una-tabla-existente-add-constraint"><span class="header-section-number">5.8.1</span> Añadir restricciones a una tabla existente (<code>ADD CONSTRAINT</code>)</h3>
+<div class="sourceCode" id="cb33"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos  </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> chk_cursos_modalidad </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CHECK</span> (modalidad <span class="kw">IN</span>  (<span class="st">'Presencial'</span>,<span class="st">'Teleformación'</span>,<span class="st">'Mixta'</span>)     );</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Garantiza que no existan dos alumnos con el mismo email </span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos     </span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> uq_alumnos_email <span class="kw">UNIQUE</span> (email);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Vincula la columna id_curso de alumnos con la tabla cursos </span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos     </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> fk_alumnos_cursos    </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (id_curso) </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">REFERENCES</span> cursos(id_curso)     </span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">SET</span> <span class="kw">NULL</span>    </span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Elimina la restricción CHECK que creaste para la modalidad </span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos     </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">DROP</span> <span class="kw">CHECK</span> chk_cursos_modalidad;  </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Elimina la clave foránea en MySQL </span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos     </span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">DROP</span> <span class="kw">FOREIGN</span> <span class="kw">KEY</span> fk_alumnos_cursos;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="borrar-restricciones-drop-..." class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="borrar-restricciones-drop-..."><span class="header-section-number">5.9</span> Borrar restricciones (<code>DROP ...</code>)</h2>
+<div class="sourceCode" id="cb37"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En MySQL / MariaDB / PostgreSQL / SQL Server</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Eliminar un CHECK, UNIQUE o FOREIGN KEY (usando su nombre asignado)</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> empleados <span class="kw">DROP</span> <span class="kw">CHECK</span> chk_empleados_edad;</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> usuarios <span class="kw">DROP</span> <span class="kw">KEY</span> uq_usuarios_email;</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> alumnos <span class="kw">DROP</span> <span class="kw">FOREIGN</span> <span class="kw">KEY</span> fk_alumnos_cursos;</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- Eliminar PRIMARY KEY</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos <span class="kw">DROP</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>;</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- Quitar un DEFAULT</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> pedidos <span class="kw">ALTER</span> <span class="kw">COLUMN</span> estado <span class="kw">DROP</span> <span class="kw">DEFAULT</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modificar-restricciones" class="level2" data-number="5.10">
+<h2 data-number="5.10" class="anchored" data-anchor-id="modificar-restricciones"><span class="header-section-number">5.10</span> ¿Modificar restricciones?</h2>
+<section id="ver-todas-las-restricciones-de-la-base-de-datos-activa" class="level3" data-number="5.10.1">
+<h3 data-number="5.10.1" class="anchored" data-anchor-id="ver-todas-las-restricciones-de-la-base-de-datos-activa"><span class="header-section-number">5.10.1</span> Ver todas las restricciones de la base de datos activa</h3>
+<div class="sourceCode" id="cb38"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">select</span> <span class="op">*</span> </span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">from</span> information_schema.TABLE_CONSTRAINTS </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">WHERE</span> CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>();</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="ver-todas-las-restricciones-de-una-tabla" class="level3" data-number="5.10.2">
+<h3 data-number="5.10.2" class="anchored" data-anchor-id="ver-todas-las-restricciones-de-una-tabla"><span class="header-section-number">5.10.2</span> Ver todas las restricciones de una tabla</h3>
+<div class="sourceCode" id="cb39"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span>      </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    CONSTRAINT_NAME,      </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    CONSTRAINT_TYPE  </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> information_schema.TABLE_CONSTRAINTS  </span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span>  </span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    TABLE_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>()      </span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">AND</span> TABLE_NAME <span class="op">=</span> <span class="st">'alumnos'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>En la inmensa mayoría de los motores SQL (incluyendo MySQL, PostgreSQL y SQL Server), <strong>no existe un comando <code>ALTER CONSTRAINT</code> directo para modificar la lógica de una restricción</strong>.</p>
+<p>Para cambiar las reglas de una restricción existente, el procedimiento estándar siempre consta de dos pasos: <strong>eliminar la restricción antigua (<code>DROP</code>) y crear la nueva (<code>ADD</code>)</strong>.</p>
+<p>Imagina que quieres modificar la restricción <code>CHECK</code> de la columna <code>modalidad</code> en la tabla <code>cursos</code> para incluir una nueva opción llamada <code>'Online'</code>.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- En MySQL / MariaDB / PostgreSQL / SQL Server</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">DROP</span> <span class="kw">CHECK</span> chk_cursos_modalidad;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><em>(Si fuera una clave foránea en MySQL, la sintaxis sería <code>DROP FOREIGN KEY fk_alumnos_cursos</code>)</em>.</p>
+<p>Crear la nueva restricción con los cambios (<code>ADD</code>)</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> chk_cursos_modalidad</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CHECK</span> (modalidad <span class="kw">IN</span> (<span class="st">'Presencial'</span>, <span class="st">'Teleformación'</span>, <span class="st">'Mixta'</span>, <span class="st">'Online'</span>));</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>En MySQL/MariaDB puedes encadenar varias acciones dentro del mismo <code>ALTER TABLE</code> separándolas con comas. Esto resulta más eficiente porque el motor solo reestructura la tabla una vez:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Edición en un solo bloque (Recomendado)</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">DROP</span> <span class="kw">CHECK</span> chk_cursos_modalidad,</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ADD</span> <span class="kw">CONSTRAINT</span> chk_cursos_modalidad</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">CHECK</span> (modalidad <span class="kw">IN</span> (<span class="st">'Presencial'</span>, <span class="st">'Teleformación'</span>, <span class="st">'Mixta'</span>, <span class="st">'Online'</span>));</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>En la mayoría de gestores, lo único que puedes cambiar directamente <strong>sin borrar la restricción</strong> es el nombre de la restricción</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">ALTER</span> <span class="kw">TABLE</span> cursos</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">RENAME</span> <span class="kw">CONSTRAINT</span> chk_cursos_modalidad <span class="kw">TO</span> chk_cursos_tipo_modalidad;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="qué-pasa-si-has-creado-la-restricción-sin-darle-un-nombre" class="level3" data-number="5.10.3">
+<h3 data-number="5.10.3" class="anchored" data-anchor-id="qué-pasa-si-has-creado-la-restricción-sin-darle-un-nombre"><span class="header-section-number">5.10.3</span> Qué pasa si has creado la restricción sin darle un nombre?</h3>
+<p>Si creaste el <code>CHECK</code> en la misma línea de la columna (sin usar la palabra <code>CONSTRAINT</code>), MySQL le habrá asignado un nombre automático (por ejemplo, <code>objetos_chk_1</code> o <code>objetos_chk_2</code>).</p>
+<p>Para ver los nombres exactos de todas las constraints the tipo CHECK antes de borrar, ejecuta:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> CONSTRAINT_NAME, CHECK_CLAUSE </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> information_schema.CHECK_CONSTRAINTS </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>();</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p><img src="images/paste-_pZjj1H-QThs7nDA9Qt_Q.png" class="img-fluid"></p>
+<p>Una consulta un poco más compleja nos permite acceder a más información:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>    tc.TABLE_NAME <span class="kw">AS</span> <span class="st">'Tabla'</span>,</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    cc.CONSTRAINT_NAME <span class="kw">AS</span> <span class="st">'Nombre Restricción'</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    cc.CHECK_CLAUSE <span class="kw">AS</span> <span class="st">'Regla / Condición'</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> information_schema.CHECK_CONSTRAINTS cc</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> information_schema.TABLE_CONSTRAINTS tc</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">ON</span> cc.CONSTRAINT_NAME <span class="op">=</span> tc.CONSTRAINT_NAME</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">AND</span> cc.CONSTRAINT_SCHEMA <span class="op">=</span> tc.CONSTRAINT_SCHEMA</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> cc.CONSTRAINT_SCHEMA <span class="op">=</span> <span class="kw">DATABASE</span>();</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="desactivar-restricciones" class="level3" data-number="5.10.4">
+<h3 data-number="5.10.4" class="anchored" data-anchor-id="desactivar-restricciones"><span class="header-section-number">5.10.4</span> Desactivar restricciones</h3>
+<p><strong>El estado de activación (En PostgreSQL / Oracle / SQL Server):</strong> Puedes desactivarla temporalmente (<code>DISABLE CONSTRAINT</code>) y volver a activarla (<code>ENABLE CONSTRAINT</code>) sin tener que destruirla. <em>(MySQL no soporta desactivación temporal de restricciones CHECK de forma individual, solo permite definirlas como <code>NOT ENFORCED</code>)</em>.</p>
+</section>
+</section>
+</section>
+<section id="eliminación-de-datos-y-estructuras" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Eliminación de datos y estructuras</h1>
+<section id="truncate" class="level2" data-number="6.1">
+<h2 data-number="6.1" class="anchored" data-anchor-id="truncate"><span class="header-section-number">6.1</span> <code>TRUNCATE</code></h2>
+<p><strong>Vacía completamente una tabla</strong> destruyendo las páginas de datos y recreando la tabla con su estructura original vacía.</p>
+<section id="características" class="level3" data-number="6.1.1">
+<h3 data-number="6.1.1" class="anchored" data-anchor-id="características"><span class="header-section-number">6.1.1</span> Características</h3>
+<ul>
+<li><p><strong>Filtrado:</strong> <strong>NO admite la cláusula <code>WHERE</code></strong>. Siempre vacía la tabla completa.</p></li>
+<li><p><strong>Contador <code>AUTO_INCREMENT</code>:</strong> <strong>SÍ resetea el contador a su valor inicial</strong> (normalmente <code>1</code>).</p></li>
+<li><p><strong>Rendimiento:</strong> Extremadamente rápido. En lugar de borrar fila por fila, libera directamente las páginas de memoria reservadas.</p></li>
+<li><p><strong>Claves Foráneas:</strong> En MySQL/MariaDB, <strong>no permite ejecutar <code>TRUNCATE</code> si la tabla está referenciada por una <code>FOREIGN KEY</code> activa</strong>, incluso si la otra tabla está vacía. Hay que desactivar temporalmente la revisión de claves (<code>SET FOREIGN_KEY_CHECKS =0</code>) o usar <code>DELETE</code>.</p></li>
+<li><p><strong>Disparadores (<em>Triggers</em>):</strong> NO activa los <em>triggers</em> de tipo <code>DELETE</code>.</p></li>
+</ul>
+<div class="sourceCode" id="cb46"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Vacía la tabla alumnos y resetea el contador AUTO_INCREMENT a 1</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="kw">TRUNCATE</span> <span class="kw">TABLE</span> alumnos;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="drop" class="level2" data-number="6.2">
+<h2 data-number="6.2" class="anchored" data-anchor-id="drop"><span class="header-section-number">6.2</span> <code>DROP</code></h2>
+<p><strong>Elimina por completo el objeto</strong> (tabla, vista o base de datos) del sistema, borrando tanto su estructura como todos sus datos, índices, permisos y restricciones asociados.</p>
+<section id="características-1" class="level3" data-number="6.2.1">
+<h3 data-number="6.2.1" class="anchored" data-anchor-id="características-1"><span class="header-section-number">6.2.1</span> Características</h3>
+<ul>
+<li><p><strong>Efecto:</strong> La tabla deja de existir en el diccionario de datos (<code>information_schema</code>). Si intentas hacer un <code>SELECT</code> posterior, devolverá un error de <em>“Table doesn’t exist”</em>.</p></li>
+<li><p><strong>Cláusula de seguridad <code>IF EXISTS</code>:</strong> Evita que el script falle con un error crítico si la tabla o base de datos ya fue eliminada previamente.</p></li>
+</ul>
+<div class="sourceCode" id="cb47"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borrar tablas si existen (Atención al orden por las Foreign Keys)</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="kw">DROP</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> alumnos;</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="kw">DROP</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> cursos;</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borrar una base de datos completa con todas sus tablas</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="kw">DROP</span> <span class="kw">DATABASE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> centro_formacion;<span class="kw">DROP</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> alumnos;</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="kw">DROP</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> cursos;</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="kw">DROP</span> <span class="kw">DATABASE</span> <span class="cf">IF</span> <span class="kw">EXISTS</span> centro_formacion;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="delete-dml" class="level2" data-number="6.3">
+<h2 data-number="6.3" class="anchored" data-anchor-id="delete-dml"><span class="header-section-number">6.3</span> <code>DELETE</code> (DML)</h2>
+<p>Pertenece al lenguaje de manipulación de datos (<strong>DML</strong>), pero lo incluimos también aquí por su relación con TRUNCATE y DROP</p>
+<p>Elimina <strong>filas individuales o específicas</strong> de una tabla evaluando una condición mediante la cláusula <code>WHERE</code>.</p>
+<section id="características-2" class="level3" data-number="6.3.1">
+<h3 data-number="6.3.1" class="anchored" data-anchor-id="características-2"><span class="header-section-number">6.3.1</span> Características</h3>
+<ul>
+<li><p><strong>Filtrado:</strong> Admite la cláusula <code>WHERE</code>. Si se omite, elimina <strong>todas</strong> las filas de la tabla una a una.</p></li>
+<li><p><strong>Contador <code>AUTO_INCREMENT</code>:</strong> <strong>NO resetea el contador</strong>. Si borras el registro con <code>id = 10</code> y luego insertas uno nuevo, el nuevo registro tomará el <code>id = 11</code>.</p></li>
+<li><p><strong>Rendimiento:</strong> Más lento en tablas grandes. Genera un registro en el archivo de registro de transacciones (<em>transaction log</em>) por cada fila eliminada.</p></li>
+<li><p><strong>Transacciones (<code>ROLLBACK</code>):</strong> Al ser DML, se puede deshacer con un <code>ROLLBACK</code> si se ejecuta dentro de una transacción.</p></li>
+<li><p><strong>Disparadores (<em>Triggers</em>):</strong> Activa los <em>triggers</em> definidos para <code>ON DELETE</code>.</p></li>
+</ul>
+<div class="sourceCode" id="cb48"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borrado parcial (Recomendado)</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> alumnos </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> id_alumno <span class="op">=</span> <span class="dv">5</span>;</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borrado de todos los registros que cumplan una condición</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> alumnos </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> estado <span class="op">=</span> <span class="st">'Inactivo'</span>;</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- Borrado total de filas sin eliminar la tabla (NO resetea AUTO_INCREMENT)</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a><span class="kw">DELETE</span> <span class="kw">FROM</span> alumnos;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="tabla-comparativa" class="level2" data-number="6.4">
+<h2 data-number="6.4" class="anchored" data-anchor-id="tabla-comparativa"><span class="header-section-number">6.4</span> Tabla Comparativa</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Característica</strong></td>
+<td><strong>DELETE</strong></td>
+<td><strong>TRUNCATE</strong></td>
+<td><strong>DROP</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Categoría SQL</strong></td>
+<td><strong>DML</strong> (<em>Data Manipulation</em>)</td>
+<td><strong>DDL</strong> (<em>Data Definition</em>)</td>
+<td><strong>DDL</strong> (<em>Data Definition</em>)</td>
+</tr>
+<tr class="odd">
+<td><strong>¿Qué elimina?</strong></td>
+<td>Filas específicas o todas las filas.</td>
+<td>Todas las filas de la tabla.</td>
+<td><strong>La tabla completa + su estructura</strong>.</td>
+</tr>
+<tr class="even">
+<td><strong>Soporta <code>WHERE</code></strong></td>
+<td><strong>Sí</strong></td>
+<td><strong>No</strong></td>
+<td><strong>No</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Resetea <code>AUTO_INCREMENT</code></strong></td>
+<td><strong>No</strong></td>
+<td><strong>Sí</strong></td>
+<td>N/A (la tabla desaparece)</td>
+</tr>
+<tr class="even">
+<td><strong>Mantiene la estructura</strong></td>
+<td><strong>Sí</strong></td>
+<td><strong>Sí</strong></td>
+<td><strong>No</strong></td>
+</tr>
+<tr class="odd">
+<td><strong>Rendimiento</strong></td>
+<td>Lento (registro fila por fila).</td>
+<td><strong>Muy rápido</strong> (libera páginas).</td>
+<td><strong>Inmediato</strong>.</td>
+</tr>
+<tr class="even">
+<td><strong>Se puede hacer <code>ROLLBACK</code></strong></td>
+<td><strong>Sí</strong> (si está en transacción).</td>
+<td>Depende del motor (en MySQL no).</td>
+<td><strong>No</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="comportamiento-de-triggers-y-acciones-de-clave-foránea-durante-el-borrado" class="level2" data-number="6.5">
+<h2 data-number="6.5" class="anchored" data-anchor-id="comportamiento-de-triggers-y-acciones-de-clave-foránea-durante-el-borrado"><span class="header-section-number">6.5</span> Comportamiento de triggers y acciones de clave foránea durante el borrado</h2>
+<p>Es muy común confundirlos porque ambos provocan <strong>acciones automáticas</strong> dentro de la base de datos, pero operan en capas totalmente distintas del motor:</p>
+<ul>
+<li><p><strong>Acción Referencial de Clave Foránea (<code>ON DELETE</code> / <code>ON UPDATE</code>):</strong> Es una <strong>regla de integridad declarativa</strong>. Está integrada en el motor de almacenamiento (como InnoDB) para mantener la consistencia entre tablas relacionadas.</p></li>
+<li><p><strong>Disparador (<em>Trigger</em>):</strong> Es un <strong>bloque de código procedural</strong> (programado expresamente con un <code>CREATE TRIGGER</code>) que ejecuta lógica personalizada antes o después de una sentencia <code>INSERT</code>, <code>UPDATE</code> o <code>DELETE</code>.</p></li>
+</ul>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 36%">
+<col style="width: 38%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Criterio</strong></td>
+<td><strong>Clave Foránea (ON DELETE / ON UPDATE)</strong></td>
+<td><strong>Disparador (Trigger DML)</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Definición</strong></td>
+<td>Se declara en el <code>CREATE TABLE</code> o <code>ALTER TABLE</code>.</td>
+<td>Se crea de forma independiente mediante <code>CREATE TRIGGER</code>.</td>
+</tr>
+<tr class="odd">
+<td><strong>Propósito</strong></td>
+<td>Garantizar la <strong>integridad referencial</strong> entre dos tablas.</td>
+<td>Ejecutar <strong>lógica de negocio</strong>, auditorías, validaciones o cálculos complejos.</td>
+</tr>
+<tr class="even">
+<td><strong>Acciones posibles</strong></td>
+<td>Limitadas a 4 estándar: <code>RESTRICT</code>, <code>CASCADE</code>, <code>SET NULL</code>, <code>NO ACTION</code>.</td>
+<td>Cualquier código SQL (insertar registros en logs, enviar alertas, actualizar otras tablas, etc.).</td>
+</tr>
+<tr class="odd">
+<td><strong>Disparo con <code>DROP TABLE</code></strong></td>
+<td><strong>No se ejecuta.</strong> De hecho, bloquea el <code>DROP</code> de la tabla padre.</td>
+<td><strong>No se ejecuta.</strong> El trigger se destruye junto con la tabla sin dispararse.</td>
+</tr>
+<tr class="even">
+<td><strong>Efecto en Cascada (<code>CASCADE</code>)</strong></td>
+<td>Actualiza o borra en la tabla hija a nivel del motor interno.</td>
+<td>En la mayoría de versiones de MySQL, los cambios en cascada por FK <strong>no activan triggers en las tablas hijas</strong>.</td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
