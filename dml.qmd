@@ -68,7 +68,7 @@ INSERT INTO objetos (
 
 ### Campos Autoincrementales (`AUTO_INCREMENT`)
 
--   No es necesario incluir las columnas `AUTO_INCREMENT` (como `id_objeto`) en la lista de columnas del `INSERT`. El motor genera el valor secuencial automáticamente.
+- No es necesario incluir las columnas `AUTO_INCREMENT` (como `id_objeto`) en la lista de columnas del `INSERT`. El motor genera el valor secuencial automáticamente.
 
 Si decides incluir la columna en la consulta, puedes pasarle `NULL` o `0` y MySQL asignará de todos modos el siguiente identificador disponible.
 
@@ -155,30 +155,30 @@ Aunque esto es genial durante la fase de preparación de la base de datos, debes
 
 ### Valores Nulos (`NULL`) y Valores por Defecto (`DEFAULT`)
 
--   **Campos con `DEFAULT`:** Si una columna no obligatoria tiene definido un valor por defecto (por ejemplo, `precision_datacion` con `DEFAULT 'Desconocida'`) y la omites en el `INSERT`, el motor le asignará automáticamente dicho valor.
+- **Campos con `DEFAULT`:** Si una columna no obligatoria tiene definido un valor por defecto (por ejemplo, `precision_datacion` con `DEFAULT 'Desconocida'`) y la omites en el `INSERT`, el motor le asignará automáticamente dicho valor.
 
--   **Campos opcionales sin `DEFAULT`:** Si no incluyes una columna opcional y no tiene valor por defecto expreso, se le asignará `NULL`.
+- **Campos opcionales sin `DEFAULT`:** Si no incluyes una columna opcional y no tiene valor por defecto expreso, se le asignará `NULL`.
 
--   **Palabra clave `DEFAULT`:** Puedes forzar el valor por defecto de forma explícita en la lista de valores:
+- **Palabra clave `DEFAULT`:** Puedes forzar el valor por defecto de forma explícita en la lista de valores:
 
-    ``` sql
-    INSERT INTO objetos (codigo_inventario, nombre, precision_datacion)
-    VALUES ('GRE-0010', 'Casco Corintio', DEFAULT);
-    ```
+  ``` sql
+  INSERT INTO objetos (codigo_inventario, nombre, precision_datacion)
+  VALUES ('GRE-0010', 'Casco Corintio', DEFAULT);
+  ```
 
 ### Tipos de Datos y Comillas
 
--   **Cadenas de texto (`VARCHAR`, `TEXT`) y Fechas (`DATE`):** Los valores deben encerrarse siempre entre comillas simples (`'texto'`).
+- **Cadenas de texto (`VARCHAR`, `TEXT`) y Fechas (`DATE`):** Los valores deben encerrarse siempre entre comillas simples (`'texto'`).
 
--   **Números (`INT`, `DECIMAL`):** Se escriben directamente sin comillas (ej. `450`).
+- **Números (`INT`, `DECIMAL`):** Se escriben directamente sin comillas (ej. `450`).
 
--   **Fechas en formato ISO:** Las columnas de tipo `DATE` deben recibir la cadena en formato `'YYYY-MM-DD'` (por ejemplo, `'2026-04-15'`).
+- **Fechas en formato ISO:** Las columnas de tipo `DATE` deben recibir la cadena en formato `'YYYY-MM-DD'` (por ejemplo, `'2026-04-15'`).
 
 ### Restricciones de Integridad (`CHECK`, `UNIQUE`, `FOREIGN KEY`)
 
--   Si un valor infringe un `CHECK` (ej. un `mes_inicio` igual a `13`), la inserción se **cancela** con un error.
+- Si un valor infringe un `CHECK` (ej. un `mes_inicio` igual a `13`), la inserción se **cancela** con un error.
 
--   Si insertas un valor duplicado en una columna marcada como `UNIQUE` (ej. un `codigo_inventario` ya existente), MySQL abortará la operación indicando duplicidad de clave.
+- Si insertas un valor duplicado en una columna marcada como `UNIQUE` (ej. un `codigo_inventario` ya existente), MySQL abortará la operación indicando duplicidad de clave.
 
 ## Resumen Comparativo de Inserciones
 
@@ -259,11 +259,11 @@ WHERE id_objeto = 5;
 
 Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`CHECK`, `UNIQUE`, `FOREIGN KEY`, `NOT NULL`):
 
--   Si intentas cambiar un `codigo_inventario` por uno que ya existe, la consulta fallará por violación de restricción `UNIQUE`.
+- Si intentas cambiar un `codigo_inventario` por uno que ya existe, la consulta fallará por violación de restricción `UNIQUE`.
 
--   Si cambias un `mes_inicio` a `15`, saltará el error de la restricción `CHECK`.
+- Si cambias un `mes_inicio` a `15`, saltará el error de la restricción `CHECK`.
 
--   En un `UPDATE` multirregistro, si una sola fila viola una restricción, **toda la operación se cancela (rollback)** y ninguna fila se modifica.
+- En un `UPDATE` multirregistro, si una sola fila viola una restricción, **toda la operación se cancela (rollback)** y ninguna fila se modifica.
 
 ## Resumen de Buenas Prácticas
 
@@ -329,9 +329,9 @@ WHERE ubicacion_actual IS NOT NULL;
 
 Al igual que con `UPDATE`, si ejecutas `DELETE FROM tabla;` sin un filtro `WHERE`, borrarás todas las filas. A diferencia de `TRUNCATE`:
 
--   Tardará más tiempo según el volumen de datos.
+- Tardará más tiempo según el volumen de datos.
 
--   **No reajustará el contador `AUTO_INCREMENT`**.
+- **No reajustará el contador `AUTO_INCREMENT`**.
 
 ### Uso de `LIMIT` en MySQL
 
@@ -381,36 +381,36 @@ Cuando hay filas asociadas en la tabla secundaria, la regla `ON DELETE` determin
 
 ##### A. `ON DELETE RESTRICT` / `ON DELETE NO ACTION` (Comportamiento por defecto)
 
--   **Qué hace:** Bloquea la eliminación del registro padre para proteger la integridad referencial.
+- **Qué hace:** Bloquea la eliminación del registro padre para proteger la integridad referencial.
 
--   **Resultado:** MySQL devuelve un error de restricción de clave foránea (`Cannot delete or update a parent row: a foreign key constraint fails`).
+- **Resultado:** MySQL devuelve un error de restricción de clave foránea (`Cannot delete or update a parent row: a foreign key constraint fails`).
 
--   **Ejemplo:** Intentar borrar el departamento con `id_dept = 1` cuando aún existen empleados en el departamento 1.
+- **Ejemplo:** Intentar borrar el departamento con `id_dept = 1` cuando aún existen empleados en el departamento 1.
 
 ##### B. `ON DELETE CASCADE` (Eliminación en cascada)
 
--   **Qué hace:** Elimina automáticamente el registro de la tabla padre **Y TAMBIÉN** elimina todas las filas asociadas en la tabla hija.
+- **Qué hace:** Elimina automáticamente el registro de la tabla padre **Y TAMBIÉN** elimina todas las filas asociadas en la tabla hija.
 
--   **Resultado:** Se borra el departamento y todos los empleados que pertenecían a dicho departamento se eliminan automáticamente.
+- **Resultado:** Se borra el departamento y todos los empleados que pertenecían a dicho departamento se eliminan automáticamente.
 
--   **¡Atención!** Se debe usar con mucha precaución, ya que puede desencadenar borrados masivos involuntarios si hay varias tablas encadenadas.
+- **¡Atención!** Se debe usar con mucha precaución, ya que puede desencadenar borrados masivos involuntarios si hay varias tablas encadenadas.
 
 ##### C. `ON DELETE SET NULL`
 
--   **Qué hace:** Elimina el registro de la tabla padre y actualiza la columna de la clave foránea en la tabla hija asignándole `NULL`.
+- **Qué hace:** Elimina el registro de la tabla padre y actualiza la columna de la clave foránea en la tabla hija asignándole `NULL`.
 
--   **Resultado:** Se borra el departamento y la columna `id_dept` de los empleados que pertenecían a él pasa a ser `NULL` (quedan "huérfanos" o sin departamento asignado).
+- **Resultado:** Se borra el departamento y la columna `id_dept` de los empleados que pertenecían a él pasa a ser `NULL` (quedan "huérfanos" o sin departamento asignado).
 
--   **Requisito:** La columna en la tabla hija (`id_dept`) **DEBE permitir valores nulos** (`NULL`). Si está definida como `NOT NULL`, la creación de la restricción o la ejecución fallará.
+- **Requisito:** La columna en la tabla hija (`id_dept`) **DEBE permitir valores nulos** (`NULL`). Si está definida como `NOT NULL`, la creación de la restricción o la ejecución fallará.
 
 ##### D. `ON DELETE SET DEFAULT` *(Soportado en la especificación SQL, limitado en InnoDB)*
 
--   **Qué hace:** Elimina el registro padre y establece la clave foránea de la tabla hija al valor por defecto configurado (`DEFAULT`).
+- **Qué hace:** Elimina el registro padre y establece la clave foránea de la tabla hija al valor por defecto configurado (`DEFAULT`).
 
 #### Tabla Resumen de Comportamiento
 
 |  |  |  |
-|------------------|------------------|-----------------------------------|
+|-------------------|-------------------|-----------------------------------|
 | Regla ON DELETE | **¿Tiene registros relacionados?** | **Acción al hacer DELETE FROM padre WHERE id = X** |
 | RESTRICT / NO ACTION | **No** | Se elimina el registro del padre sin problemas. |
 | RESTRICT / NO ACTION | **Sí** | **Error (Bloqueado).** No se elimina nada. |
@@ -427,20 +427,20 @@ Una **transacción** es un conjunto de una o más sentencias SQL (**DML**) que s
 
 Por defecto, MySQL opera en modo **`autocommit = 1`** (activado). Esto significa que cada sentencia DML (`INSERT`, `UPDATE`, `DELETE`) ejecutada individualmente **se confirma automáticamente como una transacción independiente**.
 
--   Para agrupar varias operaciones en una sola transacción, debes usar **`START TRANSACTION`**.
+- Para agrupar varias operaciones en una sola transacción, debes usar **`START TRANSACTION`**.
 
--   También puedes desactivar el comportamiento automático para la sesión actual con:
+- También puedes desactivar el comportamiento automático para la sesión actual con:
 
-    ``` sql
-    SET autocommit = 0;
-    ```
+  ``` sql
+  SET autocommit = 0;
+  ```
 
 El objetivo de las transacciones es garantizar la integridad de los datos siguiendo las propiedades **ACID** (Atomaticidad, Consistencia, Aislamiento y Durabilidad). En términos prácticos: **o se aplican con éxito todas las operaciones del grupo, o no se aplica ninguna**.
 
 ## Sentencias de Control de Transacciones (TCL)
 
 |  |  |
-|---------------------|---------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | **Comando** | **Descripción** |
 | **`START TRANSACTION`** (o `BEGIN`) | Inicia de forma explícita un bloque transaccional. |
 | **`COMMIT`** | Confirma y guarda permanentemente en la base de datos todos los cambios realizados desde el `START TRANSACTION`. |
@@ -479,9 +479,9 @@ ROLLBACK;
 
 Las transacciones en MySQL están diseñadas principalmente para sentencias de manipulación de datos (**DML**).
 
--   **Sentencias DML (`INSERT`, `UPDATE`, `DELETE`):** Se pueden deshacer con un `ROLLBACK` si están dentro de un bloque de transacción.
+- **Sentencias DML (`INSERT`, `UPDATE`, `DELETE`):** Se pueden deshacer con un `ROLLBACK` si están dentro de un bloque de transacción.
 
--   **Sentencias DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`):** Provocan un **`COMMIT` implícito**.
+- **Sentencias DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`):** Provocan un **`COMMIT` implícito**.
 
 > **Advertencia:** Si ejecutas un `CREATE TABLE` o un `TRUNCATE TABLE` en medio de una transacción, MySQL guardará automáticamente todo el trabajo DML anterior y cerrará la transacción activa. **Un `ROLLBACK` posterior no podrá deshacer las sentencias DDL ni las DML anteriores a ella.**
 
@@ -516,9 +516,9 @@ En el momento exacto en que ejecutas un `ALTER TABLE` (o cualquier comando DDL):
 
 Si ejecutas un `ROLLBACK` justo después del `ALTER TABLE`, **ya no habrá transacción activa que deshacer** (o solo deshará lo que hagas *después* del `ALTER`).
 
--   El `UPDATE` **NO** se deshace (se guardó permanentemente por el `COMMIT` automático provocado por el `ALTER`).
+- El `UPDATE` **NO** se deshace (se guardó permanentemente por el `COMMIT` automático provocado por el `ALTER`).
 
--   La nueva columna `notas` **NO** se elimina (los cambios DDL no son reversibles con `ROLLBACK` en MySQL).
+- La nueva columna `notas` **NO** se elimina (los cambios DDL no son reversibles con `ROLLBACK` en MySQL).
 
 Aunque en **MySQL** las sentencias DDL hacen `COMMIT` implícito y rompen el `ROLLBACK`, existen otros motores de bases de datos como **PostgreSQL** o **SQLite** que sí soportan *Transactional DDL* (es decir, permiten meter un `ALTER TABLE` dentro de un `START TRANSACTION` y hacer `ROLLBACK` de la estructura). Pero en el estándar y comportamiento de **MySQL / MariaDB**, el DDL no es transaccional.
 :::

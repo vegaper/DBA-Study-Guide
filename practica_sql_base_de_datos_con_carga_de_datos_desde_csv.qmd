@@ -1,5 +1,5 @@
 ---
-title: "Práctica sql Base de datos con carga de datos desde csv"
+title: "Práctica sql con carga de datos desde csv"
 format: html
 ---
 
@@ -257,13 +257,13 @@ CREATE TABLE payments (
 ) ENGINE=InnoDB;
 ```
 
-## Vista de Totales `v_order_totals`
+## Vista de Totales `order_totals`
 
 Creación de vista para la consulta de totales agrupados por pedido:
 
 ``` sql
  
-CREATE OR REPLACE VIEW v_order_totals AS
+CREATE OR REPLACE VIEW order_totals AS
 SELECT 
     o.order_id,
     o.customer_id,
@@ -790,14 +790,45 @@ A continuación se presentan las 5 consultas propuestas para la explotación ana
 Obtiene los 5 clientes con mayor gasto acumulado en pedidos no cancelados.
 
 ``` sql
- 
+SELECT 
+    c.customer_id
+    ,c.company_name
+    , ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) as order_total
+from customers c 
+    inner join orders o 
+    on o.customer_id = c.customer_id
+    and o.status !='CANCELLED' 
+        inner join order_items oi 
+        on oi.order_id = o.order_id
+group by 
+c.customer_id
+,c.company_name
+order by order_total desc
+limit 5;
+```
+
+Opción B, creando una subconsulta *order_totals* para conseguir el importe de cada orden, agrupa por cliente y suma order_total.
+
+``` sql
+with order_totals as (
+  SELECT 
+      o.order_id,
+      o.customer_id,
+      o.sales_rep_emp_id,
+      o.order_date,
+      o.status,
+      ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+)    
 SELECT 
     c.customer_id,
     c.company_name,
-    SUM(vt.order_total) AS total_facturado
-FROM v_order_totals vt
-JOIN customers c ON vt.customer_id = c.customer_id
-WHERE vt.status != 'CANCELLED'
+    SUM(order_total) AS total_facturado
+FROM order_totals ot
+JOIN customers c ON ot.customer_id = c.customer_id
+WHERE ot.status != 'CANCELLED'
 GROUP BY c.customer_id, c.company_name
 ORDER BY total_facturado DESC
 LIMIT 5;
@@ -808,16 +839,27 @@ LIMIT 5;
 Agrupa el volumen total facturado por mes, departamento y empleado (solo para pedidos enviados/`SHIPPED`).
 
 ``` sql
- 
+with order_totals as (
+  SELECT 
+      o.order_id,
+      o.customer_id,
+      o.sales_rep_emp_id,
+      o.order_date,
+      o.status,
+      ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status
+)  
 SELECT 
-    DATE_FORMAT(vt.order_date, '%Y-%m') AS mes,
+    DATE_FORMAT(ot.order_date, '%Y-%m') AS mes,
     d.dept_name,
     CONCAT(e.first_name, ' ', e.last_name) AS comercial,
-    SUM(vt.order_total) AS total_ventas
-FROM v_order_totals vt
-JOIN employees e ON vt.sales_rep_emp_id = e.emp_id
+    SUM(ot.order_total) AS total_ventas
+FROM order_totals ot
+JOIN employees e ON ot.sales_rep_emp_id = e.emp_id
 JOIN departments d ON e.dept_id = d.dept_id
-WHERE vt.status = 'SHIPPED'
+WHERE ot.status = 'SHIPPED'
 GROUP BY mes, d.dept_name, comercial
 ORDER BY mes ASC, total_ventas DESC;
 ```
@@ -852,20 +894,31 @@ ORDER BY unidades_vendidas DESC;
 Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.
 
 ``` sql
- 
+with order_totals as (
+  SELECT 
+      o.order_id,
+      o.customer_id,
+      o.sales_rep_emp_id,
+      o.order_date,
+      o.status,
+      ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+) 
 SELECT 
     c.customer_id,
     c.company_name,
     COUNT(vt.order_id) AS num_pedidos,
     ROUND(AVG(vt.order_total), 2) AS ticket_medio_cliente
-FROM v_order_totals vt
-JOIN customers c ON vt.customer_id = c.customer_id
-WHERE vt.status != 'CANCELLED'
+FROM order_totals ot
+JOIN customers c ON ot.customer_id = c.customer_id
+WHERE ot.status != 'CANCELLED'
 GROUP BY c.customer_id, c.company_name
 HAVING num_pedidos >= 3 
    AND ticket_medio_cliente > (
        SELECT AVG(order_total) 
-       FROM v_order_totals 
+       FROM order_totals 
        WHERE status != 'CANCELLED'
    )
 ORDER BY ticket_medio_cliente DESC;
@@ -876,18 +929,29 @@ ORDER BY ticket_medio_cliente DESC;
 Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre `2025-12-31`.
 
 ``` sql
- 
+with order_totals as (
+  SELECT 
+      o.order_id,
+      o.customer_id,
+      o.sales_rep_emp_id,
+      o.order_date,
+      o.status,
+      ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+) 
 SELECT 
     o.order_id,
     o.order_date,
     c.company_name,
     pay.status AS estado_pago,
     pay.method AS metodo_pago,
-    vt.order_total
+    ot.order_total
 FROM orders o
 JOIN customers c ON o.customer_id = c.customer_id
 JOIN payments pay ON o.order_id = pay.order_id
-JOIN v_order_totals vt ON o.order_id = vt.order_id
+JOIN order_totals ot ON o.order_id = ot.order_id
 WHERE pay.status IN ('PENDING', 'FAILED')
   AND o.order_date <= '2025-12-31'
 ORDER BY o.order_date ASC;

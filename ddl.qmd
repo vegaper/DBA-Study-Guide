@@ -27,6 +27,44 @@ En cualquier momento podemos ver cómo se creó la base de datos usando el coman
 
 ![](images/paste-fhdZaUM9uGdstOI3vWEmQ.png)
 
+## Añadir o cambiar la configuración de una base de datos ya creada
+
+Para añadir o cambiar el juego de caracteres (*character set*) y la ordenación (*collation*) por defecto de una base de datos ya creada en MySQL, se utiliza la sentencia **`ALTER DATABASE`**.
+
+``` sql
+ALTER DATABASE centro_formacion
+DEFAULT CHARACTER SET utf8mb4
+DEFAULT COLLATE utf8mb4_0900_ai_ci;
+```
+
+### Puntos importantes a tener en cuenta
+
+1.  **Afecta solo a las tablas futuras:** Cambiar la configuración por defecto a nivel de base de datos **no modifica automáticamente las tablas existentes**. Solo se aplicará a las nuevas tablas que crees a partir de ese momento sin especificar su propio `CHARACTER SET` y `COLLATE`.
+
+2.  **Si ya tenías tablas creadas y quieres actualizar su codificación:** Tendrás que modificar cada tabla de forma explícita para convertir sus datos y columnas existentes al nuevo juego de caracteres:
+
+    SQL
+
+    ```         
+    ALTER TABLE nombre_tabla  
+    CONVERT TO CHARACTER SET utf8mb4  
+    COLLATE utf8mb4_0900_ai_ci;
+    ```
+
+### Cómo comprobar qué valores tiene actualmente la base de datos?
+
+Para verificar los valores por defecto que tiene configurados la base de datos `centro_formacion`, puedes ejecutar cualquiera de las siguientes consultas:
+
+``` sql
+SHOW CREATE DATABASE centro_formacion;
+```
+
+``` sql
+SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME
+FROM information_schema.SCHEMATA
+WHERE SCHEMA_NAME = 'centro_formacion';
+```
+
 ## Ver las bases de datos creadas en el servidor
 
 ``` sql
