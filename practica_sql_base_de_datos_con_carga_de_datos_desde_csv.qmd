@@ -1,0 +1,606 @@
+---
+title: "Práctica sql Base de datos con carga de datos desde csv"
+format: html
+
+---
+
+# Introducción y Objetivos
+
+Esta guía unifica la creación, gestión y diseño de una base de datos de tipo ERP/CRM en MySQL (`erpcrm_lab`), junto con los procedimientos prácticos para transferir archivos desde un entorno local (Windows) a un servidor remoto (Ubuntu) y cargarlos eficientemente utilizando archivos `.sql` y archivos `.csv`.
+
+------------------------------------------------------------------------
+
+# Transferencia de Archivos y Configuración Remota
+
+Antes de crear y poblar la base de datos, es necesario trasladar los ficheros desde el cliente local (por ejemplo, Windows) al servidor donde ejecuta MySQL (por ejemplo, Ubuntu).
+
+## Subir Archivos desde Windows a Ubuntu con SCP
+
+`scp` (Secure Copy Protocol) permite copiar archivos de forma segura mediante SSH. Los siguientes comandos se ejecutan en PowerShell o CMD en Windows.
+
+### Subir todos los archivos CSV de una carpeta
+
+``` bash
+
+scp C:\Users\nombre_usuario\Downloads\*.csv sysadmin@10.0.20.100:/home/sysadmin/
+```
+
+### Subir un archivo concreto
+
+``` bash
+
+scp C:\Users\nombre_usuario\Downloads\departments.csv sysadmin@10.0.20.100:/home/sysadmin/
+```
+
+### Subir una carpeta completa
+
+``` bash
+
+scp -r C:\Users\nombre_usuario\Downloads\datos sysadmin@10.0.20.100:/home/sysadmin/
+```
+
+En la terminal de Ubuntu se puede verificar la recepción de archivos con:
+
+``` bash
+
+ls -lh /home/sysadmin/
+```
+
+------------------------------------------------------------------------
+
+# Carga e Importación de Archivos SQL
+
+Un archivo `.sql` contiene instrucciones SQL estructuradas (`CREATE TABLE`, `INSERT`, `ALTER`, etc.).
+
+## Importar indicando la base de datos existente
+
+``` bash
+
+mysql -u root -p empresa < /home/sysadmin/datos.sql
+```
+
+## Importar un archivo que ya incluye `CREATE DATABASE` y `USE`
+
+``` bash
+
+mysql -u root -p < /home/sysadmin/datos.sql
+```
+
+## Ejecutar el archivo dentro de la consola interactiva de MySQL
+
+``` sql
+--| eval: false
+SOURCE /home/sysadmin/datos.sql;
+```
+
+------------------------------------------------------------------------
+
+# Creación de la Base de Datos y Usuarios
+
+A continuación se define la estructura inicial del entorno de base de datos `erpcrm_lab`.
+
+## Crear la Base de Datos
+
+``` sql
+--| eval: false
+CREATE DATABASE IF NOT EXISTS erpcrm_lab 
+  DEFAULT CHARACTER SET utf8mb4 
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+USE erpcrm_lab;
+```
+
+## Crear Usuario Administrador Específico
+
+Se crea un usuario administradores restringido únicamente a esta base de datos schema.
+
+``` sql
+--| eval: false
+CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'Cambia_Esta_Clave!2026';
+GRANT ALL PRIVILEGES ON erpcrm_lab.* TO 'admin'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+```
+
+------------------------------------------------------------------------
+
+# Definición del Esquema e Identificación de Tablas
+
+A continuación se detalla la creación de las 7 tablas InnoDB que conforman la arquitectura ERP/CRM.
+
+## Tabla `departments`
+
+Finalidad: Catálogo de departamentos de la organización.
+
+``` sql
+--| eval: false
+CREATE TABLE departments (
+    dept_id INT NOT NULL,
+    dept_name VARCHAR(50) NOT NULL,
+    PRIMARY KEY (dept_id),
+    UNIQUE (dept_name)
+) ENGINE=InnoDB;
+```
+
+## Tabla `employees`
+
+Finalidad: Registro de empleados internos y personal comercial.
+
+``` sql
+--| eval: false
+CREATE TABLE employees (
+    emp_id INT NOT NULL,
+    dept_id INT NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(120) NOT NULL,
+    hire_date DATE NOT NULL,
+    salary DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (emp_id),
+    UNIQUE (email),
+    CONSTRAINT fk_emp_dept 
+        FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+```
+
+## Tabla `customers`
+
+Finalidad: Datos de empresas y contactos de clientes.
+
+``` sql
+--| eval: false
+CREATE TABLE customers (
+    customer_id INT AUTO_INCREMENT NOT NULL,
+    company_name VARCHAR(40) NOT NULL,
+    contact_name VARCHAR(120) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    phone VARCHAR(30) NULL,
+    city VARCHAR(80) NOT NULL,
+    province VARCHAR(80) NOT NULL,
+    segment ENUM('SMB', 'MidMarket', 'Enterprise') NOT NULL,
+    created_at DATE NOT NULL,
+    PRIMARY KEY (customer_id),
+    UNIQUE (email),
+    INDEX idx_cust_province (province),
+    INDEX idx_cust_segment (segment)
+) ENGINE=InnoDB;
+```
+
+## Tabla `products`
+
+Finalidad: Catálogo de productos y servicios ofertados.
+
+``` sql
+--| eval: false
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT NOT NULL,
+    product_name VARCHAR(150) NOT NULL,
+    category ENUM('Hardware', 'Software', 'Service') NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    stock_qty INT NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (product_id),
+    INDEX idx_prod_category (category),
+    INDEX idx_prod_active (active)
+) ENGINE=InnoDB;
+```
+
+## Tabla `orders`
+
+Finalidad: Registro de cabeceras de pedidos.
+
+``` sql
+--| eval: false
+CREATE TABLE orders (
+    order_id INT AUTO_INCREMENT NOT NULL,
+    customer_id INT NOT NULL,
+    sales_rep_emp_id INT NOT NULL,
+    order_date DATE NOT NULL,
+    status ENUM('CONFIRMED', 'SHIPPED', 'CANCELLED') NOT NULL,
+    notes VARCHAR(255) NULL,
+    PRIMARY KEY (order_id),
+    CONSTRAINT fk_ord_customer 
+        FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_ord_employee 
+        FOREIGN KEY (sales_rep_emp_id) REFERENCES employees(emp_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    INDEX idx_ord_date (order_date),
+    INDEX idx_ord_status (status),
+    INDEX idx_ord_cust_date (customer_id, order_date)
+) ENGINE=InnoDB;
+```
+
+## Tabla `order_items`
+
+Finalidad: Detalle de líneas asociadas a cada pedido.
+
+``` sql
+--| eval: false
+CREATE TABLE order_items (
+    order_id INT NOT NULL,
+    line_no INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    discount_pct INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (order_id, line_no),
+    CONSTRAINT fk_oi_order 
+        FOREIGN KEY (order_id) REFERENCES orders(order_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_oi_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    INDEX idx_oi_product (product_id)
+) ENGINE=InnoDB;
+```
+
+## Tabla `payments`
+
+Finalidad: Registro de pagos por cada pedido (Relación 1:1 con `orders`).
+
+``` sql
+--| eval: false
+CREATE TABLE payments (
+    payment_id INT AUTO_INCREMENT NOT NULL,
+    order_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    method ENUM('card', 'transfer', 'paypal', 'cash') NOT NULL,
+    paid_at DATETIME NULL,
+    status ENUM('PAID', 'PENDING', 'FAILED', 'VOID', 'REFUNDED') NOT NULL,
+    PRIMARY KEY (payment_id),
+    UNIQUE (order_id),
+    CONSTRAINT fk_pay_order 
+        FOREIGN KEY (order_id) REFERENCES orders(order_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    INDEX idx_pay_status (status),
+    INDEX idx_pay_paid_at (paid_at)
+) ENGINE=InnoDB;
+```
+
+## Vista de Totales `v_order_totals`
+
+Creación de vista para la consulta de totales agrupados por pedido:
+
+``` sql
+--| eval: false
+CREATE OR REPLACE VIEW v_order_totals AS
+SELECT 
+    o.order_id,
+    o.customer_id,
+    o.sales_rep_emp_id,
+    o.order_date,
+    o.status,
+    ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+```
+
+------------------------------------------------------------------------
+
+# Estrategias para Carga masiva de CSV
+
+Existen dos métodos principales para cargar datos CSV en MySQL: `LOAD DATA INFILE` y `LOAD DATA LOCAL INFILE`.
+
+## Uso de `LOAD DATA INFILE` (Lectura del Servidor)
+
+En este modo, el proceso del servidor MySQL (\`mysqld\`) lee el archivo directamente desde el sistema de archivos del servidor. Por razones de seguridad, MySQL limita los directorios desde los que se pueden leer archivos mediante la variable `secure_file_priv`.
+
+Para comprobar el directorio autorizado:
+
+``` sql
+--| eval: false
+SHOW VARIABLES LIKE 'secure_file_priv';
+```
+
+Por defecto en sistemas Ubuntu, esta variable apunta al directorio `/var/lib/mysql-files/`, el cual pertenece al usuario de sistema \`mysql\`. Debido a estas restricciones de permisos, los usuarios del sistema deben copiar los archivos CSV desde su directorio personal a esta ubicación utilizando privilegios elevados:
+
+``` bash
+sudo cp /home/sysadmin/departments.csv /var/lib/mysql-files/
+```
+
+``` sql
+--| eval: false
+LOAD DATA INFILE '/var/lib/mysql-files/departments.csv'
+INTO TABLE departments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(dept_id, dept_name);
+```
+
+## Uso de `LOAD DATA LOCAL INFILE` (Lectura del Cliente)
+
+Permite que sea el cliente de MySQL (y no el servidor) quien lea el archivo directamente desde la carpeta del usuario (ej. `/home/sysadmin/`) y transfiera los datos. Requiere tener habilitada la opción `local_infile` en cliente y servidor.
+
+
+### Habilitar `LOCAL INFILE` en Servidor y Cliente
+
+Para utilizar el modificador `LOCAL`, ambas partes deben tener habilitada la característica:
+
+1.  **Verificar estado en el servidor:**
+
+``` sql
+--| eval: false
+SHOW VARIABLES LIKE 'local_infile';
+```
+
+2.  **Activar temporalmente en la sesión:**
+
+``` sql
+--| eval: false
+SET GLOBAL local_infile = 1;
+```
+
+3.  **Conectarse desde el cliente permitiendo archivos locales:**
+
+``` bash
+
+mysql --local-infile=1 -u admin -p
+```
+
+4.  **Habilitar permanentemente en `mysqld.cnf`:**
+
+Edite el fichero `/etc/mysql/mysql.conf.d/mysqld.cnf` y añada bajo la sección `[mysqld]`:
+
+``` ini
+[mysqld]
+local_infile=1
+```
+
+Reinicie el servicio MySQL:
+
+``` bash
+
+sudo systemctl restart mysql
+```
+
+``` sql
+--| eval: false
+LOAD DATA LOCAL INFILE '/home/sysadmin/departments.csv'
+INTO TABLE departments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(dept_id, dept_name);
+```
+
+## Comparativa Técnica
+
+| Comando | Quién lee el archivo | Consideración Principal |
+|:-----------------------|:-----------------------|:-----------------------|
+| `LOAD DATA INFILE` | Servidor MySQL (`mysqld`) | Sujeto a restricción por `secure_file_priv` |
+| `LOAD DATA LOCAL INFILE` | Cliente `mysql` | Requiere activación implícita en cliente y servidor |
+
+------------------------------------------------------------------------
+
+# Carga de Datos Completa del Laboratorio
+
+Procedimiento para cargar todos los ficheros de datos en el orden adecuado, desactivando la comprobación de integridad referencial durante el proceso.
+Usamos `SET FOREIGN_KEY_CHECKS = 0;` para desactivar temporalmente la verificación de claves foráneas, lo que permite insertar datos en cualquier orden sin restricciones de integridad referencial. Una vez completada la carga, se reactiva la verificación con `SET FOREIGN_KEY_CHECKS = 1;`.
+
+::: nota
+Al ejecutar `SET FOREIGN_KEY_CHECKS = 1;` MySQL no valida retroactivamente los datos que ya han sido insertados mientras la comprobación estaba desactivada. Solo afecta a operaciones futuras: A partir del momento en que ejecutas `SET FOREIGN_KEY_CHECKS = 1`;, MySQL empezará a verificar la integridad referencial para cualquier instrucción INSERT, UPDATE o DELETE que se intente realizar después.
+
+Los datos existentes no se comprueban automáticamente: Si durante la carga del CSV se insertó una fila en orders que hace referencia a un customer_id inexistente, esa fila permanecerá en la base de datos sin generar ningún error al reactivar el check.
+
+Comportamiento ante modificaciones: Si más adelante intentas modificar (UPDATE) o eliminar (DELETE) un registro huérfano o una fila padre relacionada, MySQL aplicará las reglas de clave foránea (RESTRICT, CASCADE, etc.) a partir de ese momento.
+
+Precisamente por esta razón, es una buena práctica ejecutar consultas de verificación de integridad justo después de reactivar las claves foráneas, haciendo joins con checkeo de nulls. 
+:::
+
+``` sql
+--| eval: false
+USE erpcrm_lab;
+
+-- 1. Desactivar temporalmente la verificación de Foreign Keys
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- 2. Carga de archivos CSV
+LOAD DATA LOCAL INFILE '/home/sysadmin/departments.csv'
+INTO TABLE departments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/employees.csv'
+INTO TABLE employees
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/customers.csv'
+INTO TABLE customers
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/products.csv'
+INTO TABLE products
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/orders.csv'
+INTO TABLE orders
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/order_items.csv'
+INTO TABLE order_items
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/home/sysadmin/payments.csv'
+INTO TABLE payments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(payment_id, order_id, amount, method, @paid_at, status); --dice el orden en el que va a encontrar los campos en el csv, hay que usar los nombres del campo de la tabla, no los del csv. Si el csv tiene un campo que no está en la tabla, o necesitamos modificarlo, se puede usar una variable de usuario (@paid_at) para capturarlo y luego hacer un SET para asignarlo al campo correspondiente.
+SET paid_at = NULLIF(@paid_at, ''); -- Si el campo está vacío, se asigna NULL
+
+-- 3. Reactivar la verificación de Foreign Keys
+SET FOREIGN_KEY_CHECKS = 1;
+```
+
+------------------------------------------------------------------------
+
+# Verificación e Integridad de la Base de Datos
+
+## Checklist de Verificación de Estructura
+
+Ejecute las siguientes sentencias para validar la declaración de esquemas e índices:
+
+``` sql
+--| eval: false
+DESCRIBE departments;
+SHOW CREATE TABLE employees\G;
+SHOW INDEX FROM orders;
+SHOW TABLES; -- Debe retornar las 7 tablas del sistema
+```
+
+## Verificación de Conteo de Registros
+
+Compruebe la correcta inserción comparando los recuentos esperados:
+
+``` sql
+--| eval: false
+SELECT 'departments' AS Tabla, COUNT(*) AS Registros FROM departments
+UNION ALL SELECT 'employees', COUNT(*) FROM employees
+UNION ALL SELECT 'customers', COUNT(*) FROM customers
+UNION ALL SELECT 'products', COUNT(*) FROM products
+UNION ALL SELECT 'orders', COUNT(*) FROM orders
+UNION ALL SELECT 'order_items', COUNT(*) FROM order_items
+UNION ALL SELECT 'payments', COUNT(*) FROM payments;
+```
+
+*Registros esperados:* `departments` (8), `employees` (20), `customers` (80), `products` (40), `orders` (220), `order_items` (655), `payments` (220).
+
+## Comprobación de Integridad Referencial
+
+La siguiente consulta evalúa huérfanos entre la tabla de detalles e inventario. **Debe devolver 0 filas**.
+
+``` sql
+--| eval: false
+SELECT oi.*
+FROM order_items oi
+LEFT JOIN products p ON p.product_id = oi.product_id
+WHERE p.product_id IS NULL;
+```
+
+------------------------------------------------------------------------
+
+# Consultas de Análisis de Datos
+
+A continuación se presentan las 5 consultas propuestas para la explotación analítica de la base de datos.
+
+## Consulta 1: Top 5 Clientes por Facturación
+
+Obtiene los 5 clientes con mayor gasto acumulado en pedidos no cancelados.
+
+``` sql
+--| eval: false
+SELECT 
+    c.customer_id,
+    c.company_name,
+    SUM(vt.order_total) AS total_facturado
+FROM v_order_totals vt
+JOIN customers c ON vt.customer_id = c.customer_id
+WHERE vt.status != 'CANCELLED'
+GROUP BY c.customer_id, c.company_name
+ORDER BY total_facturado DESC
+LIMIT 5;
+```
+
+## Consulta 2: Ventas Mensuales por Comercial y Departamento
+
+Agrupa el volumen total facturado por mes, departamento y empleado (solo para pedidos enviados/`SHIPPED`).
+
+``` sql
+--| eval: false
+SELECT 
+    DATE_FORMAT(vt.order_date, '%Y-%m') AS mes,
+    d.dept_name,
+    CONCAT(e.first_name, ' ', e.last_name) AS comercial,
+    SUM(vt.order_total) AS total_ventas
+FROM v_order_totals vt
+JOIN employees e ON vt.sales_rep_emp_id = e.emp_id
+JOIN departments d ON e.dept_id = d.dept_id
+WHERE vt.status = 'SHIPPED'
+GROUP BY mes, d.dept_name, comercial
+ORDER BY mes ASC, total_ventas DESC;
+```
+
+## Consulta 3: Productos más Vendidos y Alerta de Stock
+
+Calcula las unidades vendidas e importe acumulado (excluyendo cancelados), emitiendo una alerta `'REORDER'` si el stock es menor a 20 unidades para productos físicos.
+
+``` sql
+--| eval: false
+SELECT 
+    p.product_id,
+    p.product_name,
+    p.category,
+    p.stock_qty,
+    SUM(oi.quantity) AS unidades_vendidas,
+    ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS facturacion_total,
+    CASE 
+        WHEN p.category != 'Service' AND p.stock_qty < 20 THEN 'REORDER'
+        ELSE 'OK'
+    END AS estado_stock
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.status != 'CANCELLED'
+GROUP BY p.product_id, p.product_name, p.category, p.stock_qty
+ORDER BY unidades_vendidas DESC;
+```
+
+## Consulta 4: Clientes con Ticket Medio Superior a la Media Global
+
+Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.
+
+``` sql
+--| eval: false
+SELECT 
+    c.customer_id,
+    c.company_name,
+    COUNT(vt.order_id) AS num_pedidos,
+    ROUND(AVG(vt.order_total), 2) AS ticket_medio_cliente
+FROM v_order_totals vt
+JOIN customers c ON vt.customer_id = c.customer_id
+WHERE vt.status != 'CANCELLED'
+GROUP BY c.customer_id, c.company_name
+HAVING num_pedidos >= 3 
+   AND ticket_medio_cliente > (
+       SELECT AVG(order_total) 
+       FROM v_order_totals 
+       WHERE status != 'CANCELLED'
+   )
+ORDER BY ticket_medio_cliente DESC;
+```
+
+## Consulta 5: Pedidos con Pago Pendiente o Fallido
+
+Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre `2025-12-31`.
+
+``` sql
+--| eval: false
+SELECT 
+    o.order_id,
+    o.order_date,
+    c.company_name,
+    pay.status AS estado_pago,
+    pay.method AS metodo_pago,
+    vt.order_total
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN payments pay ON o.order_id = pay.order_id
+JOIN v_order_totals vt ON o.order_id = vt.order_id
+WHERE pay.status IN ('PENDING', 'FAILED')
+  AND o.order_date <= '2025-12-31'
+ORDER BY o.order_date ASC;
+```
