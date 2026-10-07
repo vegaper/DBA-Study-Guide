@@ -1,7 +1,6 @@
 ---
 title: "Práctica sql Base de datos con carga de datos desde csv"
 format: html
-
 ---
 
 # Introducción y Objetivos
@@ -69,7 +68,7 @@ mysql -u root -p < /home/sysadmin/datos.sql
 ## Ejecutar el archivo dentro de la consola interactiva de MySQL
 
 ``` sql
---| eval: false
+ 
 SOURCE /home/sysadmin/datos.sql;
 ```
 
@@ -82,7 +81,7 @@ A continuación se define la estructura inicial del entorno de base de datos `er
 ## Crear la Base de Datos
 
 ``` sql
---| eval: false
+ 
 CREATE DATABASE IF NOT EXISTS erpcrm_lab 
   DEFAULT CHARACTER SET utf8mb4 
   DEFAULT COLLATE utf8mb4_unicode_ci;
@@ -95,7 +94,7 @@ USE erpcrm_lab;
 Se crea un usuario administradores restringido únicamente a esta base de datos schema.
 
 ``` sql
---| eval: false
+ 
 CREATE USER IF NOT EXISTS 'admin'@'localhost' IDENTIFIED BY 'Cambia_Esta_Clave!2026';
 GRANT ALL PRIVILEGES ON erpcrm_lab.* TO 'admin'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
@@ -112,7 +111,7 @@ A continuación se detalla la creación de las 7 tablas InnoDB que conforman la 
 Finalidad: Catálogo de departamentos de la organización.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE departments (
     dept_id INT NOT NULL,
     dept_name VARCHAR(50) NOT NULL,
@@ -126,7 +125,7 @@ CREATE TABLE departments (
 Finalidad: Registro de empleados internos y personal comercial.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE employees (
     emp_id INT NOT NULL,
     dept_id INT NOT NULL,
@@ -148,7 +147,7 @@ CREATE TABLE employees (
 Finalidad: Datos de empresas y contactos de clientes.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE customers (
     customer_id INT AUTO_INCREMENT NOT NULL,
     company_name VARCHAR(40) NOT NULL,
@@ -171,7 +170,7 @@ CREATE TABLE customers (
 Finalidad: Catálogo de productos y servicios ofertados.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT NOT NULL,
     product_name VARCHAR(150) NOT NULL,
@@ -190,7 +189,7 @@ CREATE TABLE products (
 Finalidad: Registro de cabeceras de pedidos.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE orders (
     order_id INT AUTO_INCREMENT NOT NULL,
     customer_id INT NOT NULL,
@@ -216,7 +215,7 @@ CREATE TABLE orders (
 Finalidad: Detalle de líneas asociadas a cada pedido.
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE order_items (
     order_id INT NOT NULL,
     line_no INT NOT NULL,
@@ -240,7 +239,7 @@ CREATE TABLE order_items (
 Finalidad: Registro de pagos por cada pedido (Relación 1:1 con `orders`).
 
 ``` sql
---| eval: false
+ 
 CREATE TABLE payments (
     payment_id INT AUTO_INCREMENT NOT NULL,
     order_id INT NOT NULL,
@@ -263,7 +262,7 @@ CREATE TABLE payments (
 Creación de vista para la consulta de totales agrupados por pedido:
 
 ``` sql
---| eval: false
+ 
 CREATE OR REPLACE VIEW v_order_totals AS
 SELECT 
     o.order_id,
@@ -290,7 +289,7 @@ En este modo, el proceso del servidor MySQL (\`mysqld\`) lee el archivo directam
 Para comprobar el directorio autorizado:
 
 ``` sql
---| eval: false
+ 
 SHOW VARIABLES LIKE 'secure_file_priv';
 ```
 
@@ -301,7 +300,7 @@ sudo cp /home/sysadmin/departments.csv /var/lib/mysql-files/
 ```
 
 ``` sql
---| eval: false
+ 
 LOAD DATA INFILE '/var/lib/mysql-files/departments.csv'
 INTO TABLE departments
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY '"'
@@ -310,26 +309,139 @@ IGNORE 1 LINES
 (dept_id, dept_name);
 ```
 
+::: extra
+### Explicación de los parámetros
+
+#### `FIELDS TERMINATED BY ','`
+
+- **¿Qué hace?:** Define el **delimitador de campo** o separador de columnas.
+
+- **En tu caso:** Le indica a MySQL que cada columna está separada de la siguiente por una coma (`,`).
+
+#### `ENCLOSED BY '"'`
+
+- **¿Qué hace?:** Define el **carácter de envoltura** o delimitador de texto.
+
+- **En tu caso:** Indica que los valores de las columnas están entre comillas dobles (`"valor"`). Sirve para que, si un texto contiene una coma internamente (por ejemplo `"Recursos Humanos, Madrid"`), MySQL no lo interprete como una separación de columna.
+
+#### `ESCAPED BY '"'`
+
+- **¿Qué hace?:** Define el **carácter de escape** que se usa dentro de los datos para indicar que un carácter especial (como la propia comilla) debe tratarse como texto literal.
+
+- **En tu caso:** Al poner `ESCAPED BY '"'`, se especifica la convención estándar de archivos CSV de RFC 4180 donde las comillas dobles se escapan duplicándolas (`""`).
+
+- *Nota:* Por defecto en MySQL el carácter de escape suele ser la barra invertida `\` (`ESCAPED BY '\\'`).
+
+#### `LINES TERMINATED BY '\r\n'`
+
+- **¿Qué hace?:** Define el **salto de línea** (delimitador de filas).
+
+- **En tu caso:** `\r\n` es la secuencia de salto de línea estándar de Windows (Carriage Return + Line Feed).
+
+### Otras opciones y variantes comunes
+
+#### Variaciones para la terminación de líneas (`LINES TERMINATED BY`)
+
+- **`LINES TERMINATED BY '\n'`**: Salto de línea estándar de sistemas **Linux** y **macOS** modernos (Line Feed).
+
+- **`LINES TERMINATED BY '\r'`**: Salto de línea de sistemas macOS antiguos (Carriage Return).
+
+  ::: nota
+  Cuando creas o editas un archivo con `nano` directamente en Linux, el editor guarda las líneas con el salto de línea estándar de **Linux/Unix (`\n` - Line Feed)**.
+
+  Sin embargo, si en tu sentencia `LOAD DATA` mantuviste la configuración típica de Windows: `LINES TERMINATED BY '\r\n'` MySQL estará buscando la combinación `\r\n` (Carriage Return + Line Feed). Al no encontrar ningún retorno de carro `\r` en el archivo creado con `nano`, **tratará todo el archivo CSV como si fuera una única línea gigante**. Esto suele provocar que no cargue ninguna fila o lance errores de formato.
+
+  Para verificar la estructura exacta y los caracteres invisibles del archivo que creaste en Linux, puedes ejecutar este comando en la terminal de Ubuntu: \`cat -A tu_archivo.csv\`
+
+  - Si al final de cada línea ves `$`, el salto de línea es de **Linux (`\n`)** $\rightarrow$ usa `LINES TERMINATED BY '\n'`.
+
+  - Si ves `^M$`, el salto de línea es de **Windows (`\r\n`)** $\rightarrow$ usa `LINES TERMINATED BY '\r\n'`.
+
+  Si necesitas cargar ficheros creados en ambos sistemas tendrás que usar un truco:
+
+  **Solución 1: Usar `LINES TERMINATED BY '\n'` + Limpiar `\r` con `SET` (La más recomendada)**
+
+  Tanto los archivos de Linux (`\n`) como los de Windows (`\r\n`) comparten el carácter `\n` al final de la línea. Si le dices a MySQL que la línea termina en `\n`, procesará correctamente las filas en ambos casos, pero en los archivos de Windows dejará un retorno de carro impredecible (`\r`) al final del último campo de cada fila.
+
+  Puedes eliminar ese `\r` dinámicamente usando la función `REPLACE()` o `TRIM()` en la cláusula `SET`:
+
+  ``` sql
+  LOAD DATA LOCAL INFILE '/home/sysadmin/archivo.csv'
+  INTO TABLE mi_tabla
+  FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY ''
+  LINES TERMINATED BY '\n' -- Acepta filas de Linux y Windows
+  IGNORE 1 LINES
+  (columna1, columna2, @v_ultima_columna)
+  SET ultima_columna = REPLACE(@v_ultima_columna, '\r', '');
+  ```
+
+  - **Si el archivo es de Linux (`\n`):** `@v_ultima_columna` no tiene `\r`, por lo que `REPLACE` no modifica nada y se guarda tal cual.
+
+  - **Si el archivo es de Windows (`\r\n`):** `@v_ultima_columna` captura el texto con el `\r` al final. `REPLACE` lo limpia antes de insertarlo en la tabla.
+
+  **Solución 2: Normalizar los saltos de línea en el sistema operativo antes de cargar**
+
+  Si trabajas en la terminal de Linux, la mejor práctica es homogeneizar el archivo a formato Unix/Linux antes de ejecutar el `LOAD DATA`.
+
+  Puedes hacerlo al vuelo con la herramienta `dos2unix` o con `tr`:
+
+  ``` bash
+  # Opción A: Convertir el archivo directamente con dos2unix
+  dos2unix /home/sysadmin/archivo.csv
+
+  # Opción B: Eliminar los caracteres \r usando tr
+  tr -d '\r' < /home/sysadmin/archivo.csv > /home/sysadmin/archivo_linux.csv
+  ```
+
+  Una vez normalizado el archivo a formato Linux, puedes ejecutar tu `LOAD DATA` con `LINES TERMINATED BY '\n'` con total seguridad de que no fallará.
+  :::
+
+#### Variaciones para delimitadores de campos (`FIELDS TERMINATED BY`)
+
+- **`FIELDS TERMINATED BY ';'`**: Muy habitual en países europeos (incluida España), donde Excel exporta CSVs usando punto y coma para no confundirlo con la coma decimal.
+
+- **`FIELDS TERMINATED BY '\t'`**: Para archivos delimitados por tabulaciones (archivos `.tsv` o `.txt`).
+
+- **`FIELDS TERMINATED BY '|'`**: Usado habitualmente en ficheros *pipe-delimited*.
+
+#### Variaciones para la envoltura (`ENCLOSED BY`)
+
+- **`OPTIONALLY ENCLOSED BY '"'`**: Es una de las más utilizadas en la práctica. Indica que los campos *pueden* estar envueltos entre comillas (por ejemplo, textos), pero no es obligatorio que todos lo estén (por ejemplo, números sin comillas).
+
+- **`FIELDS ENCLOSED BY ''`**: Indica que ningún campo está envuelto en comillas.
+
+#### Manejo de caracteres de escape (`ESCAPED BY`)
+
+- **`ESCAPED BY '\\'`**: La opción por defecto de MySQL, donde el carácter de escape es `\`. Si en un texto aparece `\"`, la comilla se interpreta como literal.
+
+- **`ESCAPED BY ''`**: Desactiva completamente el carácter de escape. Se suele usar cuando los datos contienen barras invertidas literales (como rutas de Windows `C:\Users\...`) que no deben interpretarse como secuencias de escape.
+
+#### Ignorar o seleccionar líneas (`IGNORE`)
+
+- **`IGNORE 1 LINES`**: Salta la primera fila del archivo (habitualmente el encabezado con los nombres de las columnas).
+
+- **`IGNORE N LINES`**: Permite saltar las primeras $N$ filas si el archivo incluye metadatos o varias líneas de comentarios iniciales.
+:::
+
 ## Uso de `LOAD DATA LOCAL INFILE` (Lectura del Cliente)
 
 Permite que sea el cliente de MySQL (y no el servidor) quien lea el archivo directamente desde la carpeta del usuario (ej. `/home/sysadmin/`) y transfiera los datos. Requiere tener habilitada la opción `local_infile` en cliente y servidor.
-
 
 ### Habilitar `LOCAL INFILE` en Servidor y Cliente
 
 Para utilizar el modificador `LOCAL`, ambas partes deben tener habilitada la característica:
 
-1.  **Verificar estado en el servidor:**
+1.  **Verificar estado en el servdor:**
 
 ``` sql
---| eval: false
+ 
 SHOW VARIABLES LIKE 'local_infile';
 ```
 
 2.  **Activar temporalmente en la sesión:**
 
 ``` sql
---| eval: false
+ 
 SET GLOBAL local_infile = 1;
 ```
 
@@ -342,14 +454,14 @@ mysql --local-infile=1 -u admin -p
 
 4.  **Habilitar permanentemente en `mysqld.cnf`:**
 
-Edite el fichero `/etc/mysql/mysql.conf.d/mysqld.cnf` y añada bajo la sección `[mysqld]`:
+Edita el fichero `/etc/mysql/mysql.conf.d/mysqld.cnf` y añada bajo la seción `[msqld]`:
 
 ``` ini
 [mysqld]
 local_infile=1
 ```
 
-Reinicie el servicio MySQL:
+Reinicia el servicio MySQL:
 
 ``` bash
 
@@ -357,7 +469,7 @@ sudo systemctl restart mysql
 ```
 
 ``` sql
---| eval: false
+ 
 LOAD DATA LOCAL INFILE '/home/sysadmin/departments.csv'
 INTO TABLE departments
 FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY '"'
@@ -377,8 +489,7 @@ IGNORE 1 LINES
 
 # Carga de Datos Completa del Laboratorio
 
-Procedimiento para cargar todos los ficheros de datos en el orden adecuado, desactivando la comprobación de integridad referencial durante el proceso.
-Usamos `SET FOREIGN_KEY_CHECKS = 0;` para desactivar temporalmente la verificación de claves foráneas, lo que permite insertar datos en cualquier orden sin restricciones de integridad referencial. Una vez completada la carga, se reactiva la verificación con `SET FOREIGN_KEY_CHECKS = 1;`.
+Procedimiento para cargar todos los ficheros de datos en el orden adecuado, desactivando la comprobación de integridad referencial durante el proceso. Usamos `SET FOREIGN_KEY_CHECKS = 0;` para desactivar temporalmente la verificación de claves foráneas, lo que permite insertar datos en cualquier orden sin restricciones de integridad referencial. Una vez completada la carga, se reactiva la verificación con `SET FOREIGN_KEY_CHECKS = 1;`.
 
 ::: nota
 Al ejecutar `SET FOREIGN_KEY_CHECKS = 1;` MySQL no valida retroactivamente los datos que ya han sido insertados mientras la comprobación estaba desactivada. Solo afecta a operaciones futuras: A partir del momento en que ejecutas `SET FOREIGN_KEY_CHECKS = 1`;, MySQL empezará a verificar la integridad referencial para cualquier instrucción INSERT, UPDATE o DELETE que se intente realizar después.
@@ -387,11 +498,11 @@ Los datos existentes no se comprueban automáticamente: Si durante la carga del 
 
 Comportamiento ante modificaciones: Si más adelante intentas modificar (UPDATE) o eliminar (DELETE) un registro huérfano o una fila padre relacionada, MySQL aplicará las reglas de clave foránea (RESTRICT, CASCADE, etc.) a partir de ese momento.
 
-Precisamente por esta razón, es una buena práctica ejecutar consultas de verificación de integridad justo después de reactivar las claves foráneas, haciendo joins con checkeo de nulls. 
+Precisamente por esta razón, es una buena práctica ejecutar consultas de verificación de integridad justo después de reactivar las claves foráneas, haciendo joins con checkeo de nulls.
 :::
 
 ``` sql
---| eval: false
+ 
 USE erpcrm_lab;
 
 -- 1. Desactivar temporalmente la verificación de Foreign Keys
@@ -455,7 +566,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 Ejecute las siguientes sentencias para validar la declaración de esquemas e índices:
 
 ``` sql
---| eval: false
+ 
 DESCRIBE departments;
 SHOW CREATE TABLE employees\G;
 SHOW INDEX FROM orders;
@@ -467,7 +578,7 @@ SHOW TABLES; -- Debe retornar las 7 tablas del sistema
 Compruebe la correcta inserción comparando los recuentos esperados:
 
 ``` sql
---| eval: false
+ 
 SELECT 'departments' AS Tabla, COUNT(*) AS Registros FROM departments
 UNION ALL SELECT 'employees', COUNT(*) FROM employees
 UNION ALL SELECT 'customers', COUNT(*) FROM customers
@@ -484,12 +595,189 @@ UNION ALL SELECT 'payments', COUNT(*) FROM payments;
 La siguiente consulta evalúa huérfanos entre la tabla de detalles e inventario. **Debe devolver 0 filas**.
 
 ``` sql
---| eval: false
+ 
 SELECT oi.*
 FROM order_items oi
 LEFT JOIN products p ON p.product_id = oi.product_id
 WHERE p.product_id IS NULL;
 ```
+
+:::: extra
+## Manejando diferencias entre el csv y el esquema de la tabla
+
+Cuando la estructura de un archivo CSV no coincide exactamente con las columnas de la tabla de destino en MySQL, **`LOAD DATA INFILE`** (o `LOAD DATA LOCAL INFILE`) ofrece mecanismos para mapear, ignorar, transformar o calcular valores al vuelo.
+
+### El CSV tiene MÁS columnas que la tabla
+
+Si el archivo CSV contiene campos extra que no existen en la tabla o que no te interesa guardar, se utilizan **variables de usuario** (identificadas con el prefijo `@`) para capturar y descartar los datos que no necesitas.
+
+**Ejemplo**
+
+Imagina que la tabla `departments` solo tiene `dept_id` y `dept_name`, pero el CSV incluye una tercera columna con la ubicación (`location`):
+
+SQL
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/departments.csv'
+INTO TABLE departments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(dept_id, dept_name, @columna_descartada);
+```
+
+- Se enumeran las columnas en el orden exacto en que vienen en el CSV.
+
+- Las columnas del CSV que coinciden con la tabla se asignan directamente.
+
+- La columna sobrante del CSV se captura en `@columna_descartada`. Como no se vuelve a hacer referencia a esa variable en la sentencia, MySQL simplemente desecha ese valor.
+
+Cuando el CSV contiene columnas intermedias que **no existen en la tabla** (o que no quieres importar), debes **mapear absolutamente todas las columnas del CSV** en el orden en que vienen, utilizando **variables de usuario en blanco/descartables** (`@dummy`, `@ignorar`, `@tmp`, etc.) para los campos que quieras saltarte.
+
+**Ejemplo práctico**
+
+Tu CSV tiene las siguientes **6 columnas**:
+
+1.  `fabricante` *(descartar)*
+
+2.  `product_name` *(guardar en tabla)*
+
+3.  `fecha_fabricacion` *(descartar)*
+
+4.  `category` *(guardar en tabla)*
+
+5.  `especificaciones` *(descartar)*
+
+6.  `unit_price` *(guardar en tabla)*
+
+Y quieres importar solo `product_name`, `category` y `unit_price` a la tabla `products`.
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/products.csv'
+INTO TABLE products
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(
+  @fabricante,       -- 1ª col CSV: se lee en variable temporal y se ignora
+  product_name,      -- 2ª col CSV: se asigna a la columna de la tabla
+  @fecha_fab,        -- 3ª col CSV: se lee en variable temporal y se ignora
+  category,          -- 4ª col CSV: se asigna a la columna de la tabla
+  @especificaciones, -- 5ª col CSV: se lee en variable temporal y se ignora
+  unit_price         -- 6ª col CSV: se asigna a la columna de la tabla
+);
+```
+
+**¿Cómo funciona internamente?**
+
+1.  **Lectura por posición:** MySQL lee el CSV línea a línea, posición por posición (de izquierda a derecha). No sabe de nombres de cabecera ni de significados; solo sabe la posición (1ª, 2ª, 3ª...).
+
+2.  **Uso de variables `@`:** Al poner una variable como `@fabricante` o `@dummy` en la posición 1, le indicas a MySQL: *"Toma el valor de la 1ª columna y guárdalo en la memoria temporal `@fabricante`"*.
+
+3.  **Descarte automático:** Como no utilizas la cláusula `SET` para hacer nada con esas variables temporales (`@fabricante`, `@fecha_fab`, `@especificaciones`), cuando MySQL pasa a la siguiente línea del CSV, los valores anteriores simplemente se desechan y no se insertan en la base de datos.
+
+4.  **Columnas restates de la tabla:** Las columnas de la tabla que no hayan sido mencionadas en el paréntesis (por ejemplo, `product_id`, `stock_qty`, `active`) tomarán automáticamente su valor por defecto (`DEFAULT`), se autoincrementarán (`AUTO_INCREMENT`) o quedarán en `NULL`, según como esté definida la tabla.
+
+::: nota
+**La lista de columnas dentro del paréntesis `(...)` de un `LOAD DATA` debe coincidir en NÚMERO Y ORDEN EXACTO con la estructura del archivo CSV, no con la estructura de la tabla de la base de datos, pero el nombre de las columnas debe ser el de la columna de la tabla que va a recibir ese dato.**
+
+> - Si una columna del CSV va a la tabla $\rightarrow$ pones el **nombre del campo de la tabla**.
+>
+> - Si una columna del CSV NO va a la tabla $\rightarrow$ pones una **variable temporal** (ej. `@dummy`).
+:::
+
+### El CSV tiene MENOS columnas que la tabla
+
+Si el archivo CSV no contiene todas las columnas de la tabla, existen dos escenarios posibles según la definición de la tabla:
+
+#### Escenario A: Las columnas faltantes admiten `NULL` o tienen un `DEFAULT`
+
+Si las columnas que faltan en el CSV están definidas con un valor por defecto (`DEFAULT 'valor'`), auto-incremento (`AUTO_INCREMENT`) o permiten valores nulos (`NULL`), basta con mapear solo las columnas presentes en el archivo.
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/products.csv'
+INTO TABLE products
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(product_name, category, unit_price);
+```
+
+#### Escenario B: Las columnas faltantes son `NOT NULL` sin valor por defecto
+
+Si la columna que falta no puede ser nula y no tiene un valor predeterminado, la carga fallará o asignará el valor implícito según el modo SQL (`sql_mode`):
+
+- En modo estricto (*strict mode*), lanzará un error y abortará la carga.
+
+- Para solucionarlo, debes asignar un valor calculado o estático en la cláusula `SET` (ver Sección 4).
+
+### Las columnas están en UN ORDEN DIFERENTE
+
+Si el orden de los campos en el CSV no coincide con la definición de la tabla en MySQL, la solución es listar las columnas entre paréntesis al final de la sentencia en el **orden en el que aparecen en el CSV**.
+
+**Ejemplo**
+
+La tabla `employees` está definida como `(emp_id, dept_id, first_name, last_name, email...)`, pero en el CSV las columnas `first_name` y `last_name` están invertidas:
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/employees.csv'
+INTO TABLE employees
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(emp_id, dept_id, last_name, first_name, email, hire_date, salary);
+```
+
+MySQL mapeará cada valor del CSV a la columna correspondiente especificada en la lista, independientemente del orden interno de la tabla.
+
+### Necesitas TRANSFORMAR o LIMPIAR datos durante la carga
+
+A veces los formatos de datos del CSV no coinciden con los tipos de datos de MySQL (por ejemplo, textos vacíos en vez de `NULL`, fechas en formato `DD/MM/YYYY` en lugar de `YYYY-MM-DD`, o precios con símbolo `$`).
+
+Para esto se combinan **variables de usuario** y la cláusula **`SET`**.
+
+#### **Ejemplo 1: Convertir cadenas vacías en `NULL`**
+
+Como se vio en el archivo de pagos, si la fecha `paid_at` viene vacía `""` en el CSV y se intenta insertar directamente en un campo `DATETIME`, lanzará error o guardará un valor de fecha inválido (`0000-00-00`):
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/payments.csv'
+INTO TABLE payments
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(payment_id, order_id, amount, method, @v_paid_at, status)
+SET paid_at = NULLIF(@v_paid_at, '');
+```
+
+#### Ejemplo 2: Reformatizar fechas o transformar tipos
+
+Si en el CSV la fecha viene como `'31/12/2025'` y en MySQL la columna es de tipo `DATE` (que requiere `'2025-12-31'`):
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/orders.csv'
+INTO TABLE orders
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(order_id, customer_id, sales_rep_emp_id, @v_order_date, status, notes)
+SET order_date = STR_TO_DATE(@v_order_date, '%d/%m/%Y');
+```
+
+#### Ejemplo 3: Calcular valores derivados
+
+Si la tabla requiere guardar el precio con IVA incluido, pero el CSV trae el precio base:
+
+``` sql
+LOAD DATA LOCAL INFILE '/home/sysadmin/products.csv'
+INTO TABLE products
+FIELDS TERMINATED BY ',' ENCLOSED BY '"' ESCAPED BY ''
+LINES TERMINATED BY '\r\n'
+IGNORE 1 LINES
+(product_name, category, @v_base_price, stock_qty)
+SET unit_price = @v_base_price * 1.21;
+```
+::::
 
 ------------------------------------------------------------------------
 
@@ -502,7 +790,7 @@ A continuación se presentan las 5 consultas propuestas para la explotación ana
 Obtiene los 5 clientes con mayor gasto acumulado en pedidos no cancelados.
 
 ``` sql
---| eval: false
+ 
 SELECT 
     c.customer_id,
     c.company_name,
@@ -520,7 +808,7 @@ LIMIT 5;
 Agrupa el volumen total facturado por mes, departamento y empleado (solo para pedidos enviados/`SHIPPED`).
 
 ``` sql
---| eval: false
+ 
 SELECT 
     DATE_FORMAT(vt.order_date, '%Y-%m') AS mes,
     d.dept_name,
@@ -539,7 +827,7 @@ ORDER BY mes ASC, total_ventas DESC;
 Calcula las unidades vendidas e importe acumulado (excluyendo cancelados), emitiendo una alerta `'REORDER'` si el stock es menor a 20 unidades para productos físicos.
 
 ``` sql
---| eval: false
+ 
 SELECT 
     p.product_id,
     p.product_name,
@@ -564,7 +852,7 @@ ORDER BY unidades_vendidas DESC;
 Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.
 
 ``` sql
---| eval: false
+ 
 SELECT 
     c.customer_id,
     c.company_name,
@@ -588,7 +876,7 @@ ORDER BY ticket_medio_cliente DESC;
 Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre `2025-12-31`.
 
 ``` sql
---| eval: false
+ 
 SELECT 
     o.order_id,
     o.order_date,
