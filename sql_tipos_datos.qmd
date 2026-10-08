@@ -29,8 +29,8 @@ SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
 
 ## Motores SQL donde existe
 
-|  |  |  |
-|--------------------|--------------------|-------------------------------|
+
+|---------------------|---------------------|------------------------------|
 | **Motor SQL** | **Soporte** | **Observaciones** |
 | **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
 | **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
@@ -126,7 +126,7 @@ Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener
 
 El tipo de dato `BIT` y las operaciones a nivel de bit (`&`, `|`, `~`) **están permitidos en casi todos los SGBD principales**, aunque con diferencias en cómo lo manejan:
 
-|  |  |  |  |
+  |
 |------------------|------------------|------------------|------------------|
 | **Motor SQL** | **¿Soporta BIT?** | **¿Soporta cadenas como BIT(7) o b'1111111'?** | **¿Soporta el operador &?** |
 | **Microsoft SQL Server** | **Sí**, pero es solo `BIT` (1 bit: `0` o `1`). | No admite longitud `BIT(M)` ni literales `b'111'`. | **Sí**, soporta `&`, \` |
@@ -179,8 +179,8 @@ En SQL Server usas el tipo **`TINYINT`** (que es un entero pequeño de 1 byte = 
 
 Cada día de la semana corresponde a una potencia de 2 en binario:
 
-|  |  |  |  |
-|-----------------|-----------------|-----------------|-----------------|
+  |
+|------------------|------------------|------------------|------------------|
 | **Día** | **Posición binaria** | **Valor en Binario** | **Valor Decimal a guardar** |
 | **Domingo** | Posición 1 | `0000001` | **1** |
 | **Sábado** | Posición 2 | `0000010` | **2** |
@@ -273,8 +273,8 @@ En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres est
 
 ## Motores SQL donde existe
 
-|  |  |  |
-|--------------------|---------------------|------------------------------|
+
+|---------------------|----------------------|-----------------------------|
 | **Motor SQL** | **Soporte** | **Tipo Interno / Nota** |
 | **PostgreSQL** | Sí (Nativo) | `BOOLEAN` o `BOOL` |
 | **MySQL / MariaDB** | Sí (Como alias) | Se convierte a `TINYINT(1)` |
@@ -318,7 +318,7 @@ Existen varios subtipos que varían principalmente en la **cantidad de bytes que
 
 Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*).
 
-|  |  |  |  |
+  |
 |------------------|------------------|------------------|------------------|
 | **Tipo de Dato** | **Espacio** | **Rango con Signo (Signed)** | **Caso de Uso Típico** |
 | **`TINYINT`** | **1 Byte** (8 bits) | -128 a 127 | Estados, meses (1-12), edades, días de la semana. |
@@ -334,7 +334,7 @@ Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*
 
 Al no tener que reservar un bit para el signo +/- (el bit más significativo o *sign bit*), **duplica el valor máximo positivo** que cabe en el mismo espacio físico de bytes.
 
-|  |  |  |
+
 |------------------------|------------------------|------------------------|
 | **Tipo de Dato** | **Rango Con Signo (Signed)** | **Rango Sin Signo (UNSIGNED)** |
 | **`TINYINT`** | -128 a 127 | **0 a 255** |
@@ -350,7 +350,7 @@ Es ideal para columnas que por su naturaleza **jamás pueden ser negativas**, co
 
 ## Motores SQL donde existe
 
-|  |  |  |
+
 |------------------------|------------------------|------------------------|
 | **Motor SQL** | **Soporte de TINYINT, SMALLINT, INT, BIGINT** | **Soporte de la opción UNSIGNED** |
 | **MySQL / MariaDB** | **Sí**, soporta todos los tipos. | **Sí**, soporte completo para todos los enteros. |
@@ -458,9 +458,12 @@ SELECT 0.1 + 0.2;
 
 ## Exactos vs aproximados ¿Cuándo elegir cada uno?
 
-|  \| \| \|
-
-\<\<\<\<\<\<\< Updated upstream \|------------------\|-----------------------\|-------------------------------\| ======= \|------------------\|-----------------------\|------------------------------\| \>\>\>\>\>\>\> Stashed changes \| **Criterio** \| **Exactos (DECIMAL / NUMERIC)** \| **Aproximados (FLOAT / DOUBLE)** \| \| **Precisión** \| **100% exacta.** Sin pérdidas ni redondeos impredecibles. \| **Aproximada.** Puede acumular errores al sumar o multiplicar. \| \| **Rendimiento** \| **Más lento.** Las operaciones aritméticas se procesan por software en la CPU. \| **Extremadamente rápido.** La tarjeta gráfica y la CPU procesan punto flotante por hardware (FPU). \| \| **Almacenamiento** \| Variable y superior (de 5 a 17+ bytes). \| Fijo y compacto (4 u 8 bytes). \| \| **Uso Recomendado** \| Dinero, impuestos, transacciones bancarias, inventarios. \| Lecturas de sensores (temperatura, velocidad), física, astronomía, coordinadas GPS. \|
+| Criterio | Exactos (`DECIMAL` / `NUMERIC`) | Aproximados (`FLOAT` / `DOUBLE`) |
+|:-----------------------|:-----------------------|:-----------------------|
+| **Precisión** | **100% exacta.** Sin pérdidas ni redondeos impredecibles. | **Aproximada.** Puede acumular errores al sumar o multiplicar. |
+| **Rendimiento** | **Más lento.** Las operaciones aritméticas se procesan por software en la CPU. | **Extremadamente rápido.** La CPU/FPU procesa punto flotante por hardware. |
+| **Almacenamiento** | Variable y superior (de 5 a 17+ bytes). | Fijo y compacto (4 u 8 bytes). |
+| **Uso Recomendado** | Dinero, impuestos, transacciones bancarias, inventarios. | Lecturas de sensores (temperatura, velocidad), física, astronomía, coordenadas GPS. |
 
 ``` sql
 CREATE TABLE mediciones (
@@ -531,7 +534,7 @@ Diseñado para almacenar grandes volúmenes de texto no estructurado donde la lo
 
 ### Subtipos en MySQL / MariaDB
 
-|  |  |  |
+
 |------------------------|------------------------|------------------------|
 | **Tipo** | **Longitud Máxima en Bytes / Caracteres** | **Espacio Real Consumido** |
 | **`TINYTEXT`** | Hasta 255 bytes | Longitud real + 1 byte |
@@ -543,13 +546,7 @@ Diseñado para almacenar grandes volúmenes de texto no estructurado donde la lo
 
 ## Ventajas e Inconvenientes: ¿Cuándo elegir cada uno?
 
-|  |  |  |  |
-|------------------|------------------|------------------|------------------|
-| **Criterio** | **CHAR** | **VARCHAR** | **TEXT** |
-| **Velocidad / Rendimiento** | **Más rápido.** Al tener un tamaño fijo por fila, el motor calcula de forma directa la posición en memoria. | **Moderado.** Requiere leer la cabecera para determinar el fin de la cadena. | **Más lento.** Se almacena fuera del bloque principal de la fila (*Off-page storage*). |
-| **Uso de Espacio** | Ineficiente si los datos varían mucho de tamaño. | **Muy eficiente.** No desperdicia espacio en blanco. | Eficiente para grandes volúmenes, pero añade *overhead* de punteros. |
-| **Indexación y Búsquedas** | Búsquedas muy rápidas. | Permite índices estándar. | Requiere **índices de texto completo (*Full-Text Index*)** para búsquedas eficientes. |
-| **Uso Típico** | Códigos de país (`CHAR(2)`), Hashes. | Nombres, Emails, URLs. | Artículos de blog, JSON en texto, descripciones. |
+\|------------------\|------------------\|------------------\|------------------\| \| **Criterio** \| **CHAR** \| **VARCHAR** \| **TEXT** \| \| **Velocidad / Rendimiento** \| **Más rápido.** Al tener un tamaño fijo por fila, el motor calcula de forma directa la posición en memoria. \| **Moderado.** Requiere leer la cabecera para determinar el fin de la cadena. \| **Más lento.** Se almacena fuera del bloque principal de la fila (*Off-page storage*). \| \| **Uso de Espacio** \| Ineficiente si los datos varían mucho de tamaño. \| **Muy eficiente.** No desperdicia espacio en blanco. \| Eficiente para grandes volúmenes, pero añade *overhead* de punteros. \| \| **Indexación y Búsquedas** \| Búsquedas muy rápidas. \| Permite índices estándar. \| Requiere **índices de texto completo (*Full-Text Index*)** para búsquedas eficientes. \| \| **Uso Típico** \| Códigos de país (`CHAR(2)`), Hashes. \| Nombres, Emails, URLs. \| Artículos de blog, JSON en texto, descripciones. \|
 
 ## Motores SQL y la opción `NVARCHAR` / Unicode
 
@@ -588,8 +585,8 @@ VALUES (
 
 # Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
 
-|  |  |  |  |  |
-|---------------|---------------|---------------|---------------|---------------|
+  |  |
+|---------|---------------|---------------|----------|-------------------------|
 | **Tipo de Dato** | **Formato** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
 | **`DATE`** | `YYYY-MM-DD` | `1000-01-01` a `9999-12-31` | **3 bytes** | Fechas de nacimiento, fechas de contratación, vencimientos sin hora. |
 | **`TIME`** | `HH:MM:SS` (o `HH:MM:SS.p`) | `-838:59:59` a `838:59:59` | **3 bytes** | Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido. |
@@ -639,7 +636,7 @@ Aunque ambos almacenan tanto la fecha como la hora, existen diferencias crítica
 ## Tabla Comparativa: `DATETIME` vs `TIMESTAMP`
 
 | Característica | DATETIME | TIMESTAMP |
-|:-----------------------|:-----------------------|:-----------------------|
+|:----------------|:-----------------------|:------------------------------|
 | **Zona Horaria** | Ignora la zona horaria (almacena texto/número literal). | **Sensible a la zona horaria** (convierte a UTC internamente). |
 | **Rango de Fechas** | Amplio (`1000-01-01` a `9999-12-31`). | Reducido (`1970-01-01` a `2038-01-19`). |
 | **Almacenamiento** | 5 bytes (en versiones modernas de MySQL) a 8 bytes. | **4 bytes fijo.** |
@@ -682,8 +679,8 @@ Usar `TIMESTAMP` garantiza que **todas las transacciones queden alineadas en un 
 
 En MySQL, los principales tipos de datos para almacenar información temporal son:
 
-|  |  |  |
-|----------------|----------------|----------------------------------------|
+
+|------------------|------------------|------------------------------------|
 | **Tipo** | **Formato Estándar** | **Descripción** |
 | `DATE` | `YYYY-MM-DD` | Solo fecha (año, mes, día). |
 | `TIME` | `HH:MM:SS` | Solo hora (horas, minutos, segundos). |
@@ -831,7 +828,6 @@ SELECT STR_TO_DATE('07/10/2026', '%d/%m/%Y');
 Aplicar funciones como `YEAR()` o `DATE_FORMAT()` sobre una columna en la cláusula `WHERE` impide que MySQL use los índices de esa columna:
 
 ``` sql
---| eval: false
 -- ❌ INEFICIENTE (No usa índice en order_date)
 SELECT * FROM orders 
 WHERE YEAR(order_date) = 2026;
@@ -846,7 +842,6 @@ WHERE order_date >= '2026-01-01' AND order_date <= '2026-12-31';
 Cuando filtras un campo `DATETIME` usando solo fechas sin hora (`YYYY-MM-DD`), la fecha final por defecto asume `00:00:00`:
 
 ``` sql
-
 -- ❌ Puede perder registros del día 31 después de las 00:00:00
 SELECT * FROM payments 
 WHERE paid_at BETWEEN '2026-10-01' AND '2026-10-31';
@@ -872,7 +867,7 @@ Se dividen en dos categorías principales:
 
 Almacenan información en formato binario crudo. Son ideales para archivos como imágenes, audios, documentos PDF, ejecutables o claves cifradas.
 
-|  |  |  |
+
 |------------------------|------------------------|------------------------|
 | **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Tamaño Típico de Ejemplo** |
 | **`TINYBLOB`** | 255 bytes | Pequeños iconos, firmas digitales cortas |
@@ -886,7 +881,7 @@ Almacenan información en formato binario crudo. Son ideales para archivos como 
 
 Almacenan texto plano o marcado (HTML, XML, JSON en texto, código fuente) de gran extensión.
 
-|  |  |  |
+
 |------------------------|------------------------|------------------------|
 | **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Casos de Uso** |
 | **`TINYTEXT`** | 255 bytes | Resúmenes breves, notas de una línea |
@@ -908,8 +903,8 @@ A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BL
 
 Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.
 
-|  |  |  |
-|--------------------|------------------------|---------------------------|
+
+|---------------------|------------------------|---------------------------|
 | **Criterio** | **Guardar el archivo en la BD (BLOB)** | **Guardar en servidor/S3 y la ruta en la BD (VARCHAR)** |
 | **Integridad Transaccional (ACID)** | **Excelente.** Si haces un `ROLLBACK`, el archivo se borra o restaura junto con el registro. | **Riesgo.** El archivo puede borrarse del disco y dejar un puntero "huérfano" en la base de datos. |
 | **Copias de Seguridad (*Backups*)** | **Cómodo pero pesado.** Todo el sistema se respalda en un único archivo de base de datos. | **Rápido.** La base de datos ocupa pocos megabytes; los archivos se respaldan por separado. |
@@ -1100,8 +1095,8 @@ WHERE notificaciones & 2; -- Busca los usuarios con 'SMS' activo
 
 ## Comparativa: `ENUM` vs `SET`
 
-|  |  |  |
-|------------------|--------------------------|--------------------------|
+
+|-------------------|---------------------------|---------------------------|
 | **Criterio** | **ENUM** | **SET** |
 | **Selección** | Exclusiva (**Exactamente 1 valor** del conjunto). | Inclusiva (**Cero, 1 o múltiples valores** combinados). |
 | **Almacenamiento Interno** | Índice entero consecutivo (`1, 2, 3...`). | Máscara de bits (*Bitmask*: `1, 2, 4, 8, 16...`). |

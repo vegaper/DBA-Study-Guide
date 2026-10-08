@@ -100,6 +100,14 @@ GRANT ALL PRIVILEGES ON erpcrm_lab.* TO 'admin'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
 
+Para logearse en mysql con ese usario:
+
+``` bash
+mysql -u admin -p
+```
+
+Como sólo le hemos dado permiso para conectarse a través de localhost, tendremos que estar en la máquina servidor o conectados a ella via ssh.
+
 ------------------------------------------------------------------------
 
 # Definición del Esquema e Identificación de Tablas
@@ -255,25 +263,6 @@ CREATE TABLE payments (
     INDEX idx_pay_status (status),
     INDEX idx_pay_paid_at (paid_at)
 ) ENGINE=InnoDB;
-```
-
-## Vista de Totales `order_totals`
-
-Creación de vista para la consulta de totales agrupados por pedido:
-
-``` sql
- 
-CREATE OR REPLACE VIEW order_totals AS
-SELECT 
-    o.order_id,
-    o.customer_id,
-    o.sales_rep_emp_id,
-    o.order_date,
-    o.status,
-    ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS order_total
-FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
 ```
 
 ------------------------------------------------------------------------
@@ -785,9 +774,32 @@ SET unit_price = @v_base_price * 1.21;
 
 A continuación se presentan las 5 consultas propuestas para la explotación analítica de la base de datos.
 
+Vamos a realizar el ejercicio de distintas maneras, para que veamos las ventajas que nos aportan a la hora de escribir y leer las consultas el uso de CTE y views.
+
+## Vista de Totales `order_totals`
+
+Creación de vista para la consulta de totales agrupados por pedido:
+
+``` sql
+ 
+CREATE OR REPLACE VIEW v_order_totals AS
+SELECT 
+    o.order_id,
+    o.customer_id,
+    o.sales_rep_emp_id,
+    o.order_date,
+    o.status,
+    ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+```
+
 ## Consulta 1: Top 5 Clientes por Facturación
 
 Obtiene los 5 clientes con mayor gasto acumulado en pedidos no cancelados.
+
+OPCIÓN A, sin subconsulta ni CTE, calculando el importe de cada línea de pedido y sumando por cliente:
 
 ``` sql
 SELECT 
@@ -807,7 +819,7 @@ order by order_total desc
 limit 5;
 ```
 
-Opción B, creando una subconsulta *order_totals* para conseguir el importe de cada orden, agrupa por cliente y suma order_total.
+OPCIÓN B, creando una subconsulta *order_totals* para conseguir el importe de cada orden, agrupa por cliente y suma order_total.
 
 ``` sql
 with order_totals as (
@@ -819,15 +831,34 @@ with order_totals as (
       o.status,
       ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
 FROM orders o
-JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+JOIN order_items oi 
+    ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status
 )    
 SELECT 
     c.customer_id,
     c.company_name,
     SUM(order_total) AS total_facturado
 FROM order_totals ot
-JOIN customers c ON ot.customer_id = c.customer_id
+JOIN customers c 
+      ON ot.customer_id = c.customer_id
+WHERE ot.status != 'CANCELLED'
+GROUP BY c.customer_id, c.company_name
+ORDER BY total_facturado DESC
+LIMIT 5;
+```
+
+OPCIÓN C: usando la vista `v_order_totals` creada previamente:
+
+``` sql
+
+SELECT 
+    c.customer_id,
+    c.company_name,
+    SUM(order_total) AS total_facturado
+FROM v_order_totals ot
+JOIN customers c 
+      ON ot.customer_id = c.customer_id
 WHERE ot.status != 'CANCELLED'
 GROUP BY c.customer_id, c.company_name
 ORDER BY total_facturado DESC
@@ -837,6 +868,40 @@ LIMIT 5;
 ## Consulta 2: Ventas Mensuales por Comercial y Departamento
 
 Agrupa el volumen total facturado por mes, departamento y empleado (solo para pedidos enviados/`SHIPPED`).
+
+OPCIÓN A, sin CTE ni vista, calculando el importe de cada línea de pedido y sumando por mes, departamento y empleado:
+
+``` sql
+SELECT 
+  YEAR(o.order_date) AS year
+, MONTHNAME(o.order_date) AS month 
+, e.first_name
+, e.last_name
+, ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS total
+, d.dept_name
+
+FROM orders o 
+    LEFT JOIN order_items oi 
+    ON oi.order_id = o.order_id
+
+    LEFT JOIN employees e
+    ON e.emp_id = o.sales_rep_emp_id
+    
+    LEFT JOIN departments d
+    ON d.dept_id = e.dept_id
+
+WHERE o.status = 'SHIPPED'
+
+GROUP BY
+  YEAR(o.order_date)
+, MONTH(o.order_date)       -- Recomendado incluir MONTH() para agrupar de forma unívoca
+, MONTHNAME(o.order_date)
+, e.first_name
+, e.last_name
+, d.dept_name;
+```
+
+OPCIÓN B: usando una CTE para reducir los joins
 
 ``` sql
 with order_totals as (
@@ -864,34 +929,55 @@ GROUP BY mes, d.dept_name, comercial
 ORDER BY mes ASC, total_ventas DESC;
 ```
 
+OPCIÓN C: usando la vista `v_order_totals` creada previamente:
+
+``` sql
+
+SELECT 
+    DATE_FORMAT(ot.order_date, '%Y-%m') AS mes,
+    d.dept_name,
+    CONCAT(e.first_name, ' ', e.last_name) AS comercial,
+    SUM(ot.order_total) AS total_ventas
+FROM v_order_totals ot
+JOIN employees e ON ot.sales_rep_emp_id = e.emp_id
+JOIN departments d ON e.dept_id = d.dept_id
+WHERE ot.status = 'SHIPPED'
+GROUP BY mes, d.dept_name, comercial
+ORDER BY mes ASC, total_ventas DESC;
+```
+
 ## Consulta 3: Productos más Vendidos y Alerta de Stock
 
 Calcula las unidades vendidas e importe acumulado (excluyendo cancelados), emitiendo una alerta `'REORDER'` si el stock es menor a 20 unidades para productos físicos.
 
+OPCIÓN A: sin CTE
+
 ``` sql
- 
 SELECT 
-    p.product_id,
-    p.product_name,
-    p.category,
-    p.stock_qty,
-    SUM(oi.quantity) AS unidades_vendidas,
-    ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS facturacion_total,
-    CASE 
-        WHEN p.category != 'Service' AND p.stock_qty < 20 THEN 'REORDER'
+    p.product_id
+  , p.product_name
+  , p.stock_qty
+  , SUM(oi.quantity) AS unidades_vendidas
+  , ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS revenue
+  , CASE 
+        WHEN p.stock_qty < 20 THEN 'REORDER'
         ELSE 'OK'
-    END AS estado_stock
-FROM order_items oi
-JOIN products p ON oi.product_id = p.product_id
-JOIN orders o ON oi.order_id = o.order_id
-WHERE o.status != 'CANCELLED'
-GROUP BY p.product_id, p.product_name, p.category, p.stock_qty
+    END AS low_stock
+FROM order_items oi  
+INNER JOIN products p 
+    ON oi.product_id = p.product_id
+INNER JOIN orders o
+    ON o.order_id = oi.order_id
+WHERE o.status != 'CANCELLED' 
+  AND p.category = 'Hardware'
+GROUP BY 
+    p.product_id
+  , p.product_name
+  , p.stock_qty
 ORDER BY unidades_vendidas DESC;
 ```
 
-## Consulta 4: Clientes con Ticket Medio Superior a la Media Global
-
-Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.
+OPCIÓN B: usando una CTE `order_totals` en este caso no es muy util ya que sólo lo usamos para filtrar los pedidos cancelados:
 
 ``` sql
 with order_totals as (
@@ -904,13 +990,120 @@ with order_totals as (
       ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status
+)  
+
+SELECT 
+    p.product_id
+  , p.product_name
+  , p.category
+  , p.stock_qty  
+  , SUM(oi.quantity) AS unidades_vendidas
+  , CASE 
+        WHEN p.category = 'Hardware' AND p.stock_qty < 20 THEN 'REORDER'
+        ELSE 'OK'
+    END AS stock_alert
+FROM products p
+inner join order_items oi ON oi.product_id = p.product_id
+inner join order_totals ot ON ot.order_id = oi.order_id
+WHERE ot.status != 'CANCELLED'
+and p.category = 'Hardware'
+GROUP BY 
+    p.product_id
+  , p.product_name
+  , p.category
+  , p.stock_qty
+ORDER BY unidades_vendidas DESC;
+```
+
+OPCIÓN C: usando la vista `v_order_totals` creada previamente:
+
+``` sql
+SELECT 
+    p.product_id
+  , p.product_name
+  , p.category
+  , p.stock_qty  
+  , SUM(oi.quantity) AS unidades_vendidas
+  , CASE 
+        WHEN p.category = 'Hardware' AND p.stock_qty < 20 THEN 'REORDER'
+        ELSE 'OK'
+    END AS stock_alert
+FROM products p
+inner join order_items oi ON oi.product_id = p.product_id
+inner join v_order_totals ot ON ot.order_id = oi.order_id
+WHERE ot.status != 'CANCELLED'
+and p.category = 'Hardware'
+GROUP BY 
+    p.product_id
+  , p.product_name
+  , p.category
+  , p.stock_qty
+ORDER BY unidades_vendidas DESC;
+```
+
+## Consulta 4: Clientes con Ticket Medio Superior a la Media Global
+
+Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.
+
+OPCIÓN A: La consulta sin CTE ni vista es compleja de leer y mantener:
+
+``` sql
+SELECT 
+    sub.customer_id
+  , ROUND(AVG(sub.total_ticket), 2) AS ticket_medio
+  , COUNT(*) AS n_tickets
+FROM (
+    SELECT 
+        o.customer_id 
+      , o.order_id
+      , ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS total_ticket
+    FROM orders o 
+    INNER JOIN order_items oi 
+      ON oi.order_id = o.order_id
+    WHERE o.status != 'CANCELLED'
+    GROUP BY
+        o.customer_id 
+      , o.order_id
+) AS sub
+GROUP BY 
+    sub.customer_id
+HAVING 
+    COUNT(*) >= 3
+    AND ROUND(AVG(sub.total_ticket), 2) > (
+        SELECT AVG(orders_amount.total_ticket) 
+        FROM (
+            SELECT 
+                ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS total_ticket
+            FROM orders o
+            INNER JOIN order_items oi 
+              ON oi.order_id = o.order_id
+            WHERE o.status != 'CANCELLED'
+            GROUP BY o.order_id
+        ) AS orders_amount
+    );
+```
+
+OPCIÓN B: La consulta equivalente usando CTE es más legible y fácil de mantener:
+
+``` sql
+with order_totals as (
+  SELECT 
+      o.order_id,
+      o.customer_id,
+      o.sales_rep_emp_id,
+      o.order_date,
+      o.status,
+      ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status
 ) 
 SELECT 
     c.customer_id,
     c.company_name,
-    COUNT(vt.order_id) AS num_pedidos,
-    ROUND(AVG(vt.order_total), 2) AS ticket_medio_cliente
+    COUNT(ot.order_id) AS num_pedidos,
+    ROUND(AVG(ot.order_total), 2) AS ticket_medio_cliente
 FROM order_totals ot
 JOIN customers c ON ot.customer_id = c.customer_id
 WHERE ot.status != 'CANCELLED'
@@ -924,9 +1117,53 @@ HAVING num_pedidos >= 3
 ORDER BY ticket_medio_cliente DESC;
 ```
 
+OPCIÓN C: usando la vista `v_order_totals` creada previamente:
+
+``` sql
+
+SELECT 
+    c.customer_id,
+    c.company_name,
+    COUNT(ot.order_id) AS num_pedidos,
+    ROUND(AVG(ot.order_total), 2) AS ticket_medio_cliente
+FROM v_order_totals ot
+JOIN customers c ON ot.customer_id = c.customer_id
+WHERE ot.status != 'CANCELLED'
+GROUP BY c.customer_id, c.company_name
+HAVING num_pedidos >= 3 
+   AND ticket_medio_cliente > (
+       SELECT AVG(order_total) 
+       FROM v_order_totals 
+       WHERE status != 'CANCELLED'
+   )
+ORDER BY ticket_medio_cliente DESC;
+```
+
 ## Consulta 5: Pedidos con Pago Pendiente o Fallido
 
-Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre `2025-12-31`.
+OPCIÓN A: Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre `2025-12-31`.
+
+``` sql
+select 
+o.order_id
+,p.status
+,o.order_date
+,ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS amount
+from orders o 
+inner join payments p
+    on p.order_id = o.order_id
+    and p.status IN ( 'PENDING', 'FAILED') 
+inner join order_items oi
+     ON oi.order_id = o.order_id
+where order_date  <= '2025-12-31'
+group by 
+    o.order_id
+,p.status
+,o.order_date
+ORDER BY o.order_date ASC;
+```
+
+OPCIÓN B:
 
 ``` sql
 with order_totals as (
@@ -939,7 +1176,7 @@ with order_totals as (
       ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct/100)), 2) AS order_total
 FROM orders o
 JOIN order_items oi ON o.order_id = oi.order_id
-GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;
+GROUP BY o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status
 ) 
 SELECT 
     o.order_id,
@@ -952,6 +1189,25 @@ FROM orders o
 JOIN customers c ON o.customer_id = c.customer_id
 JOIN payments pay ON o.order_id = pay.order_id
 JOIN order_totals ot ON o.order_id = ot.order_id
+WHERE pay.status IN ('PENDING', 'FAILED')
+  AND o.order_date <= '2025-12-31'
+ORDER BY o.order_date ASC;
+```
+
+OPCIÓN C
+
+``` sql
+SELECT 
+    o.order_id,
+    o.order_date,
+    c.company_name,
+    pay.status AS estado_pago,
+    pay.method AS metodo_pago,
+    ot.order_total
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN payments pay ON o.order_id = pay.order_id
+JOIN v_order_totals ot ON o.order_id = ot.order_id
 WHERE pay.status IN ('PENDING', 'FAILED')
   AND o.order_date <= '2025-12-31'
 ORDER BY o.order_date ASC;

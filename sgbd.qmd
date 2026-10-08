@@ -5,9 +5,7 @@ format: html
 
 # Arquitectura Cliente - Servidor en SGBD
 
-Esta lección teórica va acompañada de las prácicas:
- [Práctica guiada: Instalación de MySQL 8.4 en Ubuntu Server 26.04](mysqlubuntu.html) y
- [Práctica guiada: Aplicación web con MySQL y PHP ](practica_guiada_aplicaci_n_web_mysql_php.html)
+Esta lección teórica va acompañada de las prácicas: [Práctica guiada: Instalación de MySQL 8.4 en Ubuntu Server 26.04](mysqlubuntu.html) y [Práctica guiada: Aplicación web con MySQL y PHP](practica_guiada_aplicaci_n_web_mysql_php.html)
 
 En los Sistemas de Gestión de Bases de Datos Relacionales (SGBDR), el software no se ejecuta como una aplicación aislada de un solo bloque, sino bajo una **arquitectura distribuida cliente-servidor**
 
@@ -72,16 +70,15 @@ Al instalar MySQL 8.4 por primera vez en un sistema operativo como Ubuntu Server
 
 ## El Usuario Administrador por Defecto (`root`)
 
--   **Identidad:** `'root'@'localhost'`.
+- **Identidad:** `'root'@'localhost'`.
 
--   **Método de Autenticación (`auth_socket`):** Por defecto en Ubuntu, la cuenta `root` de MySQL no utiliza contraseña al principio, sino el plugin `auth_socket`. Este plugin delega la autenticación en el propio sistema operativo: solo el usuario root del sistema de archivos (o alguien que ejecute `sudo`) puede entrar al cliente de MySQL ejecutando únicamente:
+- **Método de Autenticación (`auth_socket`):** Por defecto en Ubuntu, la cuenta `root` de MySQL no utiliza contraseña al principio, sino el plugin `auth_socket`. Este plugin delega la autenticación en el propio sistema operativo: solo el usuario root del sistema de archivos (o alguien que ejecute `sudo`) puede entrar al cliente de MySQL ejecutando únicamente:
 
-<<<<<<< Updated upstream
 ``` bash
 sudo mysql
 ```
 
--   **Rol en el sistema:** Es el superusuario con todos los privilegios (`ALL PRIVILEGES`) sobre todo el motor.
+- **Rol en el sistema:** Es el superusuario con todos los privilegios (`ALL PRIVILEGES`) sobre todo el motor.
 
 ## Flujo habitual de administración:
 
@@ -95,31 +92,19 @@ sudo mysql
 
 A diferencia de los sistemas operativos tradicionales, donde un usuario se identifica únicamente por su nombre, en motores como MySQL la identidad de una cuenta es **bidimensional**:
 
-$$
-\text{Cuenta} = \text{'Usuario'}@\text{'Host'}
-$$
-
-|  |  |  |
-|------------------|-------------------------------|------------------------|
-=======
 $$\text{Cuenta} = \text{'Usuario'}@\text{'Host'}$$
 
-|  |  |  |
-|------------|-----------------------------------|-------------------|
->>>>>>> Stashed changes
-| **Componente** | **Definición** | **Ejemplo** |
-| **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` |
-| **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
+| **Componente** | **Definición** | **Ejemplo** | | **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` | | **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
 
 ## Los tipos de Host más comunes
 
--   `'localhost'`: Permite el acceso únicamente desde el propio equipo mediante el archivo de socket UNIX local.
+- `'localhost'`: Permite el acceso únicamente desde el propio equipo mediante el archivo de socket UNIX local.
 
--   `'127.0.0.1'`: Obliga a realizar la conexión mediante la interfaz TCP/IP de *loopback* local.
+- `'127.0.0.1'`: Obliga a realizar la conexión mediante la interfaz TCP/IP de *loopback* local.
 
--   `'192.168.X.X'`: Restringe la autenticación a una máquina específica de la red local.
+- `'192.168.X.X'`: Restringe la autenticación a una máquina específica de la red local.
 
--   `'%'`: Comodín (*wildcard*) que permite al usuario conectarse desde cualquier dirección IP remota.
+- `'%'`: Comodín (*wildcard*) que permite al usuario conectarse desde cualquier dirección IP remota.
 
 ## El Principio de Mínimo Privilegio (*Least Privilege*)
 
@@ -134,17 +119,23 @@ Lo correcto es crear un usuario dedicado para la aplicación, restringido a su I
 > GRANT SELECT, INSERT ON museo.Objetos TO 'museo_app'@'127.0.0.1';
 > ```
 
+Para interactuar con la base de datos con el nuevo usuario:
+
+``` bash
+mysql -u museo_app -p
+```
+
 # Interfaces de Escucha y Red (`bind-address` y Puertos)
 
 Para que el servidor acepte o rechace conexiones de red, entran en juego los parámetros del protocolo TCP/IP:
 
--   **Puerto de Servicio:** Punto lógico de comunicación. Por defecto, MySQL escucha en el puerto **TCP 3306**.
+- **Puerto de Servicio:** Punto lógico de comunicación. Por defecto, MySQL escucha en el puerto **TCP 3306**.
 
--   **Dirección de Escucha (`bind-address`):** Indica qué tarjetas de red o interfaces del servidor procesarán tráfico entrante:
+- **Dirección de Escucha (`bind-address`):** Indica qué tarjetas de red o interfaces del servidor procesarán tráfico entrante:
 
-    -   `127.0.0.1` (**Loopback**): El servidor ignora las peticiones que vengan del exterior y solo escucha las internas de la propia máquina.
+  - `127.0.0.1` (**Loopback**): El servidor ignora las peticiones que vengan del exterior y solo escucha las internas de la propia máquina.
 
-    -   `0.0.0.0` (**Todas las interfaces**): Permite recibir peticiones procedentes de cualquier tarjeta de red o IP pública/privada configurada.
+  - `0.0.0.0` (**Todas las interfaces**): Permite recibir peticiones procedentes de cualquier tarjeta de red o IP pública/privada configurada.
 
 # Archivos de Configuración y Protección de Credenciales
 
@@ -152,9 +143,9 @@ Un SGBD y sus aplicaciones asociadas utilizan archivos de texto plano para ajust
 
 ## Configuración del Servidor SGBD
 
--   En sistemas Linux/Ubuntu, los archivos de configuración se estructuran modularmente en `/etc/mysql/` (por ejemplo, `mysqld.cnf`).
+- En sistemas Linux/Ubuntu, los archivos de configuración se estructuran modularmente en `/etc/mysql/` (por ejemplo, `mysqld.cnf`).
 
--   Cualquier modificación en estos archivos requiere reiniciar el demonio (`sudo systemctl restart mysql`) para aplicar los cambios.
+- Cualquier modificación en estos archivos requiere reiniciar el demonio (`sudo systemctl restart mysql`) para aplicar los cambios.
 
 ## Configuración de la Aplicación y Seguridad en el Sistema de Archivos
 
@@ -168,11 +159,11 @@ Por ello, se utiliza la regla de **almacenamiento externo y permisos octales red
 
 3.  Aplicar permisos de lectura estricta (`chmod 640`):
 
-    -   **Propietario (`root` - 6):** Lectura y escritura.
+    - **Propietario (`root` - 6):** Lectura y escritura.
 
-    -   **Grupo (`www-data` - 4):** Solo lectura (para que el servidor web pueda ejecutar la conexión).
+    - **Grupo (`www-data` - 4):** Solo lectura (para que el servidor web pueda ejecutar la conexión).
 
-    -   **Otros (0):** Sin ningún tipo de acceso.
+    - **Otros (0):** Sin ningún tipo de acceso.
 
 > 🔗 **Enlace a la Práctica:** Consulta el apartado **"Crear la conexión con MySQL mediante PDO"** de la práctica para ver la aplicación técnica de `chown root:www-data` y `chmod 640` sobre el archivo de credenciales.
 
@@ -182,9 +173,9 @@ Al instalar el motor, este crea de forma automática un catálogo del sistema co
 
 ## Esquemas del Sistema
 
--   `mysql`: Contiene las tablas internas del motor, como `mysql.user` (donde se guardan los usuarios, sus contraseñas encriptadas y sus permisos globales).
+- `mysql`: Contiene las tablas internas del motor, como `mysql.user` (donde se guardan los usuarios, sus contraseñas encriptadas y sus permisos globales).
 
--   `information_schema` y `performance_schema`: Vistas de solo lectura con metadatos sobre la estructura de tablas, tipos de datos, índices y métricas de rendimiento en tiempo real.
+- `information_schema` y `performance_schema`: Vistas de solo lectura con metadatos sobre la estructura de tablas, tipos de datos, índices y métricas de rendimiento en tiempo real.
 
 ## Esquemas de Usuario
 
@@ -196,8 +187,8 @@ En la capa teórica del diseño de tablas, la base de datos es la encargada de m
 
 ## Resumen Teórico de Restricciones y Tipos de Datos Avanzados
 
-|  |  |  |
-|-----------------|--------------------------------------|-----------------|
+
+|------------------|-------------------------------------|------------------|
 | **Restricción / Tipo** | **Función Teórica** | **Aplicación en el Modelo del Museo** |
 | `PRIMARY KEY` | Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. | `id_objeto INT UNSIGNED AUTO_INCREMENT` |
 | `UNIQUE` | Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. | `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') |
@@ -223,9 +214,9 @@ Una consulta preparada compila la estructura lógica de la sentencia SQL en el s
 
 > 🔗 **Enlace a la Práctica:**
 >
-> -   Ver el script **`guardar.php`** para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
+> - Ver el script **`guardar.php`** para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
 >
-> -   Ver el script **`buscar.php`** para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
+> - Ver el script **`buscar.php`** para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
 
 # Resumen Integrado de Conceptos
 

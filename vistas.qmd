@@ -1,0 +1,239 @@
+---
+title: "Vistas en SQL"
+format: html
+---
+
+# ¿Qué es una Vista en SQL?
+
+Una **vista** (*view*) es una consulta SQL almacenada en la base de datos a la que se le asigna un nombre. A menudo se la define como una **"tabla virtual"** porque, desde la perspectiva del usuario o de una aplicación, se consulta exactamente igual que una tabla física (`SELECT * FROM nombre_vista`).
+
+> **Punto clave:** Una vista estándar **no almacena los datos en disco**. Cada vez que ejecutas una consulta contra la vista, el motor de la base de datos ejecuta dinámicamente la consulta `SELECT` subyacente sobre las tablas base.
+
+------------------------------------------------------------------------
+
+# Ventajas e Inconvenientes
+
+| Ventajas | Inconvenientes |
+|:-----------------------------------|:-----------------------------------|
+| **Simplificación de consultas:** Encapsula `JOIN`s complejos, funciones de agregación y filtros repetitivos. | **Impacto en rendimiento:** Al no almacenar datos, la consulta subyacente se ejecuta en tiempo real cada vez. |
+| **Seguridad y control de acceso:** Permite exponer solo ciertas columnas o filas a un usuario sin darle acceso a la tabla original. | **Dependencia de tablas base:** Si cambia la estructura de las tablas origen (ej. cambiar nombre a una columna), la vista puede romperse. |
+| **Abstracción de la capa de datos:** Si la estructura interna de las tablas cambia, basta con actualizar la vista sin modificar la aplicación. | **Restricciones de actualización:** Las vistas con `GROUP BY`, `DISTINCT`, `JOIN`s o agregaciones suelen ser de **solo lectura**. |
+| **Estandarización de reglas de negocio:** Garantiza que todos los usuarios consulten los datos bajo el mismo criterio (ej. filtrar siempre registros no cancelados). | **Anidamiento excesivo:** Crear vistas sobre otras vistas (*view stacks*) dificulta el mantenimiento y la optimización del plan de ejecución. |
+
+------------------------------------------------------------------------
+
+# Vista Estándar vs. Vista Materializada vs. Tabla
+
+|------------------|------------------|------------------|------------------|
+| **Concepto** | **Almacenamiento en Disco** | **Rendimiento de Lectura** | **Frescura de los Datos** |
+| **Tabla** | **Sí** (Datos persistentes) | Muy rápido (según índices) | Requiere `INSERT/UPDATE` manual o procesado. |
+| **Vista Estándar** | **No** (Solo guarda la consulta) | Depende de la complejidad de la consulta base | **100% en tiempo real** (Refleja datos al instante). |
+| **Vista Materializada** | **Sí** (Almacena el resultado) | Excelente (Como una tabla física) | Requiere refresco periódico (`REFRESH MATERIALIZED VIEW`). |
+
+: *(Nota: MySQL no soporta vistas materializadas de forma nativa como Oracle o PostgreSQL, aunque se pueden simular mediante tablas físicas y eventos programados/triggers).*
+
+# Sintaxis DDL: Crear, Modificar y Eliminar Vistas
+
+## Crear una Vista (`CREATE VIEW`)
+
+La sintaxis básica para definir una vista es:
+
+``` sql
+
+CREATE VIEW nombre_vista AS
+SELECT columna1, columna2, columna3
+FROM tabla_origen
+WHERE condicion;
+```
+
+Ejemplo
+
+``` sql
+
+CREATE VIEW v_order_totals AS
+SELECT 
+    o.order_id
+  , o.customer_id
+  , o.order_date
+  , o.status
+  , ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS order_total
+FROM orders o
+INNER JOIN order_items oi ON oi.order_id = o.order_id
+GROUP BY 
+    o.order_id
+  , o.customer_id
+  , o.order_date
+  , o.status;
+```
+
+## Modificar o Reemplazar una Vista (`CREATE OR REPLACE VIEW`)
+
+Para cambiar la definición de una vista existente sin borrarla ni perder sus permisos asociados:
+
+``` sql
+CREATE OR REPLACE VIEW v_order_totals AS
+SELECT 
+    o.order_id
+  , o.customer_id
+  , o.sales_rep_emp_id -- Columna añadida
+  , o.order_date
+  , o.status
+  , ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)), 2) AS order_total
+FROM orders o
+INNER JOIN order_items oi ON oi.order_id = o.order_id
+GROUP BY 
+    o.order_id
+  , o.customer_id
+  , o.sales_rep_emp_id
+  , o.order_date
+  , o.status;
+```
+
+*Sintaxis alternativa estándar en otros SGBD:* `ALTER VIEW nombre_vista AS ...`
+
+## Eliminar una Vista (`DROP VIEW`)
+
+Si la vista ya no es necesaria, se elimina con la siguiente orden:
+
+``` sql
+DROP VIEW IF EXISTS v_order_totals;
+```
+
+# ¿Cuándo Conviene Usar Vistas?
+
+1.  **Agregaciones y cálculos frecuentes:** Cuando varias consultas o informes necesitan utilizar la misma lógica de cálculo (por ejemplo, totales de facturación con descuentos o márgenes).
+
+2.  **Restricción de seguridad por filas o columnas:** Cuando quieres que el departamento comercial vea solo clientes de su región o que el departamento de operaciones no vea salarios/datos bancarios.
+
+3.  **Refactorización de Bases de Datos:** Si necesitas dividir o renombrar una tabla física antigua, puedes crear una vista con el nombre de la tabla antigua para no romper el código de las aplicaciones que dependen de ella.
+
+4.  **Simplificación para herramientas BI:** Muchas herramientas de analítica y BI (Power BI, Tableau) consumen directamente vistas para trabajar con modelos planos y limpios.
+
+# Vistas Actualizables y la cláusula `WITH CHECK OPTION`
+
+En MySQL y otros motores relacionales, es posible realizar operaciones `INSERT`, `UPDATE` o `DELETE` directamente sobre una vista **solo si la vista tiene una relación 1:1 con la tabla base** (sin `GROUP BY`, `DISTINCT`, `HAVING`, `UNION` o funciones de agregación).
+
+::: nota-importante
+- Si un usuario no tiene permiso directo para hacer `UPDATE` en la tabla `customers`, pero tú le das permiso de `UPDATE` sobre la vista `v_madrid_customers`, la vista actúa como una "puerta con mirilla": Solo le dejas tocar los registros y columnas que la vista le muestra.
+
+- Si un usuario no tiene permiso directo para hacer `DELETE` en la tabla `customers`, pero tú le das permiso de `DELETE` sobre la vista `v_madrid_customers`, podrá borrar registros que cumplan la condición de la vista (`WHERE ciudad = 'Madrid'`), pero no podrá borrar registros de otras ciudades.
+
+- Si no restringes la vista con `WITH CHECK OPTION`, el usuario podría insertar o actualizar registros que luego **no cumplan la condición de la vista**, lo que provoca inconsistencias y confusión.
+:::
+
+Para que una vista sea actualizable (`Updatable View`), la relación entre la fila de la vista y la fila de la tabla base debe ser **estrictamente de 1 a 1**.
+
+## Qué deshabilita la actualización en la mayoría de motores:
+
+Si el motor de base de datos no puede determinar de forma unívoca a qué fila exacta de la tabla física corresponde un registro de la vista, **bloqueará la modificación automáticamente**:
+
+- **`GROUP BY` o funciones de agregación (`SUM`, `AVG`, `COUNT`):** Si modificas una fila que representa el promedio de ventas de un departamento, el motor no sabe qué venta individual cambiar.
+
+- **`DISTINCT`:** Elimina duplicados, por lo que se pierde la trazabilidad 1:1.
+
+- **`UNION` / `UNION ALL`:** Junta filas de múltiples tablas u orígenes.
+
+- **Columnas calculadas:** Si la vista tiene `precio * 1.21 AS precio_con_iva`, no puedes hacer un `UPDATE` directo sobre `precio_con_iva`.
+
+- **Ciertos tipos de `JOIN`:** En la mayoría de motores, si una vista une 3 tablas, solo puedes modificar columnas que pertenezcan a **una sola tabla base a la vez** por cada sentencia `UPDATE`.
+
+## Matices entre diferentes motores relacionales
+
+Aunque todos siguen el estándar, cada motor gestiona las vistas actualizables a su manera:
+
+
+|-----------------|-----------------|--------------------------------------|
+| **Motor** | **Soporte de Vistas Actualizables** | **Comportamiento / Particularidades** |
+| **MySQL / MariaDB** | **Nativo (Automático)** | Si la vista cumple las reglas (1:1, sin agregaciones), te deja hacer `INSERT/UPDATE/DELETE` directamente sin configurar nada extra. |
+| **PostgreSQL** | **Nativo + Triggers** | Soporta actualizaciones automáticas en vistas simples. Para vistas complejas (con `JOIN`s o agregaciones), permite usar **Triggers `INSTEAD OF`** para programar tú mismo qué hacer cuando alguien intenta un `UPDATE`. |
+| **Oracle** | **Nativo + Triggers** | Soporta actualización en "vistas modificables clave" (*key-preserved tables*). También soporta triggers `INSTEAD OF` para casos complejos. |
+| **SQL Server** | **Nativo + Triggers** | Permite actualización directa si afecta a una sola tabla base del `JOIN`. También utiliza triggers `INSTEAD OF`. |
+| **SQLite** | **Vía Triggers únicamente** | Por defecto, las vistas en SQLite son **siempre de solo lectura**, a menos que crees explícitamente un trigger `INSTEAD OF`. |
+
+## Garantizar integridad con `WITH CHECK OPTION`
+
+Evita que se inserten o modifiquen filas a través de la vista que luego no cumplan con la propia condición del `WHERE` de la vista:
+
+``` sql
+CREATE VIEW v_active_customers AS
+SELECT customer_id, company_name, status
+FROM customers
+WHERE status = 'ACTIVE'
+WITH CHECK OPTION;
+
+-- Si intentas un UPDATE que cambie el status a 'INACTIVE', MySQL rechazará la operación.
+```
+
+Por defecto, el motor de base de datos valida los permisos sobre la vista, pero **no comprueba si el nuevo valor cumple la cláusula `WHERE` de la propia vista** al hacer un `INSERT` o `UPDATE`.
+
+Imagina la vista:
+
+``` sql
+CREATE VIEW v_madrid_customers AS
+SELECT id, nombre, ciudad
+FROM customers
+WHERE ciudad = 'Madrid';
+```
+
+Si tenemos un cliente con Id =10 que es de la ciudad 'Madrid' y ejecutas esto a través de la vista:
+
+``` sql
+UPDATE v_madrid_customers
+SET ciudad = 'Barcelona'
+WHERE id = 10;
+```
+
+Su ciudad se actualizará a 'Barcelona'
+
+**¿Qué ocurre en la base de datos?** 1. **Permisos:** Correcto. El usuario tiene permiso de `UPDATE` en la vista `v_madrid_customers`.
+
+2.  **Columnas:** Correcto. Solo está tocando `id`, `nombre` y `ciudad`.
+
+3.  **Ejecución:** La fila con `id = 10` (que antes era de Madrid) **cambia su ciudad a Barcelona en la tabla base física**.
+
+4.  **Efecto secundario:** La fila se modifica con éxito, pero **desaparece de la vista `v_madrid_customers`** porque ya no cumple `WHERE ciudad = 'Madrid'`.
+
+Del mismo modo, si el usuario hace:
+
+``` sql
+INSERT INTO v_madrid_customers 
+    VALUES (11, 'Juan', 'Sevilla')
+```
+
+el registro se insertará en la tabla base customers con ciudad 'Sevilla', aunque el usuario nunca pueda volver a ver a Juan desde su vista, por lo que no podrá hacer un UPDATE:
+
+``` sql
+--esta operación fallará
+UPDATE v_madrid_customers
+SET ciudad = 'Barcelona'
+WHERE id = 11;
+```
+
+Cuando tú ejecutas un `UPDATE` sobre una vista, la base de datos **primero tiene que buscar qué filas de la vista coinciden con tu `WHERE id = 11`**.
+
+Internamente, la base de datos traduce tu consulta a algo como esto:
+
+> *"Busca en la tabla `customers` las filas donde `ciudad = 'Madrid'` AND `id = 11` y cámbiales la ciudad a Barcelona."*
+
+Como la fila con `id = 11` tiene `ciudad = 'Sevilla'`, **no pasa el filtro de la vista (`ciudad = 'Madrid'`)**.
+
+- **El resultado:** La consulta se ejecuta con éxito, pero **afecta a 0 filas** (`0 rows affected`). No puede cambiar el ID 11 a `'Barcelona'` porque, desde el "punto de vista" de la vista, **el ID 11 no existe**.
+
+  ::: {#nota}
+  Sin WITH CHECK OPTION
+
+  **El `INSERT` te permite "crear"** registros con cualquier valor (incluso los que no cumple la vista), enviándolos directamente a la tabla base.
+
+  **El `UPDATE` te impide "modificar"** esos mismos registros recién creados, porque para modificar una fila a través de una vista, **esa fila tiene que ser visible en la vista en el momento del `UPDATE`**.
+
+  **El `DELETE` actua como el UPDATE:** solo puede borrar filas que sean visibles en la vista. Si la fila no cumple el `WHERE` de la vista, no se puede borrar a través de ella.
+  :::
+
+Para evitar esta anomalía donde puedes insertar cosas que luego no puedes consultar ni modificar a través de la misma vista, es por lo que se utiliza **`WITH CHECK OPTION`**: detiene el problema desde la raíz bloqueando directamente el `INSERT` inicial de Sevilla.
+
+
+|--------------------|------------------------|----------------------------|
+| **Aspecto** | **Sin WITH CHECK OPTION** | **Con WITH CHECK OPTION** |
+| **Protección de columnas** | ✅ Sí (no se pueden tocar columnas no expuestas) | ✅ Sí |
+| **Protección de tabla base** | ✅ Sí (se bloquea el acceso directo a `customers`) | ✅ Sí |
+| **Garantía de pertenencia de filas** | ❌ **No.** Puedes modificar/insertar filas con valores que rompan el `WHERE` | ✅ **Sí.** Bloquea cualquier cambio que haga que la fila deje de ser visible en la vista |
