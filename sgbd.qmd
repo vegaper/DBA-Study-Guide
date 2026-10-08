@@ -62,7 +62,7 @@ Cuando introducimos un servidor web (Apache2) y un lenguaje de programación (PH
 ```
 ````
 
-🔗 **Enlace a la Práctica:** Puedes consultar la implementación real de esta arquitectura multicapa y el flujo completo de datos de un formulario en la sección **"Idea general y arquitectura"** de la *Práctica Guiada: Aplicación web con Apache2, PHP y MySQL*.
+🔗 **Enlace a la Práctica:** Puedes consultar la implementación real de esta arquitectura multicapa y el flujo completo de datos de un formulario en la sección **"[Idea general y arquitectura](practica_guiada_aplicaci_n_web_mysql_php.html#Idea-general-y-arquitectura)"** de la *Práctica Guiada: Aplicación web con Apache2, PHP y MySQL*.
 
 # Instalación Inicial, Usuarios por Defecto y Primer Acceso
 
@@ -94,7 +94,7 @@ A diferencia de los sistemas operativos tradicionales, donde un usuario se ident
 
 $$\text{Cuenta} = \text{'Usuario'}@\text{'Host'}$$
 
-| **Componente** | **Definición** | **Ejemplo** | | **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` | | **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
+| **Componente** \| **Definición** \| **Ejemplo** \| \| **Usuario** \| Nombre de la cuenta o aplicación. \| `'root'`, `'museo_app'` \| \| **Host** \| La dirección IP o interfaz desde la cual tiene permitido conectar. \| `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` \|
 
 ## Los tipos de Host más comunes
 
@@ -112,7 +112,7 @@ Nunca se deben utilizar las credenciales del usuario `root` para conectar una ap
 
 Lo correcto es crear un usuario dedicado para la aplicación, restringido a su IP de origen y con permisos (*Grants*) estrictamente limitados a las operaciones requeridas.
 
-> 🔗 **Enlace a la Práctica:** En la sección **"Crear un usuario específico para la aplicación"** de la práctica guiada, se muestra el ejemplo práctico de cómo crear el usuario `'museo_app'@'127.0.0.1'` con contraseña y cómo limitarle los permisos otorgando únicamente las operaciones `SELECT` e `INSERT` sobre la tabla `Objetos`:
+> 🔗 **Enlace a la Práctica:** En la sección **"[Crear un usuario específico para la aplicación](practica_sql_base_de_datos_con_carga_de_datos_desde_csv.html#crear-usuario-administrador-espec%C3%ADfico)"** de la práctica guiada, se muestra el ejemplo práctico de cómo crear el usuario `'museo_app'@'127.0.0.1'` con contraseña y cómo limitarle los permisos otorgando únicamente las operaciones `SELECT` e `INSERT` sobre la tabla `Objetos`:
 >
 > ``` sql
 > CREATE USER 'museo_app'@'127.0.0.1' IDENTIFIED BY 'ContraseñaSegura';
@@ -124,6 +124,29 @@ Para interactuar con la base de datos con el nuevo usuario:
 ``` bash
 mysql -u museo_app -p
 ```
+
+donde `-u` significa usuario y `-p` indica que se autentica por password
+
+Como solo le hemos dado a este usuario acceso desde la dirección lookback, sólo podremos conectarnos desde el servidor. Si estamos en otra máquina, primero tendremos que conectarnos al servidor mediante SSH para poder usar ese usuario.
+
+Si creamos un usuario con acceso desde cualquier dirección de la red compartida con el servidor:
+
+``` sql
+CREATE USER 'museo_app'@'10.0.20.0/24' IDENTIFIED BY 'ContraseñaSegura';
+GRANT SELECT, INSERT ON museo.Objetos TO 'museo_app'@'10.0.20.100';
+```
+
+Ahora podremos usar el CLI en la máquina del usuario para conectarnos a la base de datos:
+
+``` bash
+mysql -h 10.0.20.101 -u museo_app -p
+```
+
+donde `-h` significa host y a continuación ponemos la ip del servidor al que nos estamos conectando.
+
+::: nota
+Es importante notar que si hacemos exactamente esto y creamos dos usuarios con el mismo nombre de usuario pero distinta dirección de conexión, actúan como usuarios totalmente distintos, con privilegios distintos.
+:::
 
 # Interfaces de Escucha y Red (`bind-address` y Puertos)
 
@@ -165,7 +188,7 @@ Por ello, se utiliza la regla de **almacenamiento externo y permisos octales red
 
     - **Otros (0):** Sin ningún tipo de acceso.
 
-> 🔗 **Enlace a la Práctica:** Consulta el apartado **"Crear la conexión con MySQL mediante PDO"** de la práctica para ver la aplicación técnica de `chown root:www-data` y `chmod 640` sobre el archivo de credenciales.
+> 🔗 **Enlace a la Práctica:** Consulta el apartado **"[Crear la conexión con MySQL mediante PDO](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-conexi%C3%B3n-con-mysql-mediante-pdo)"** de la práctica para ver la aplicación técnica de `chown root:www-data` y `chmod 640` sobre el archivo de credenciales.
 
 # Estructura Interna: Bases de Datos de Sistema y de Usuario
 
@@ -187,18 +210,11 @@ En la capa teórica del diseño de tablas, la base de datos es la encargada de m
 
 ## Resumen Teórico de Restricciones y Tipos de Datos Avanzados
 
+\|------------------\|-------------------------------------\|------------------\| \| **Restricción / Tipo** \| **Función Teórica** \| **Aplicación en el Modelo del Museo** \| \| `PRIMARY KEY` \| Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. \| `id_objeto INT UNSIGNED AUTO_INCREMENT` \| \| `UNIQUE` \| Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. \| `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') \| \| `CHECK` \| Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. \| `CHECK (mes_inicio BETWEEN 1 AND 12)` \| \| `ENUM` \| Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. \| `era ENUM('a.C.', 'd.C.')` \| \| `NULL` \| Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). \| Campos opcionales de datación histórica. \|
 
-|------------------|-------------------------------------|------------------|
-| **Restricción / Tipo** | **Función Teórica** | **Aplicación en el Modelo del Museo** |
-| `PRIMARY KEY` | Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. | `id_objeto INT UNSIGNED AUTO_INCREMENT` |
-| `UNIQUE` | Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. | `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') |
-| `CHECK` | Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. | `CHECK (mes_inicio BETWEEN 1 AND 12)` |
-| `ENUM` | Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. | `era ENUM('a.C.', 'd.C.')` |
-| `NULL` | Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). | Campos opcionales de datación histórica. |
+> 🔗 **Enlace a la Práctica:** Revisa la sentencia SQL de creación de la tabla en el apartado **"[Crear la base de datos y la tabla Objetos](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-base-de-datos-y-la-tabla-objetos)"** de la práctica para observar cómo se traducen estos conceptos en una tabla real de MySQL.
 
-> 🔗 **Enlace a la Práctica:** Revisa la sentencia SQL de creación de la tabla en el apartado **"Crear la base de datos y la tabla Objetos"** de la práctica para observar cómo se traducen estos conceptos en una tabla real de MySQL.
-
-# Interacción Seguro mediante PDO y Consultas Preparadas
+# Interacción Segura mediante PDO y Consultas Preparadas
 
 Cuando un script de backend envía consultas a la base de datos con información que proviene del usuario final, existe un grave riesgo de **Inyección SQL (SQLi)** si se concatenan cadenas de texto directamente.
 
@@ -214,9 +230,9 @@ Una consulta preparada compila la estructura lógica de la sentencia SQL en el s
 
 > 🔗 **Enlace a la Práctica:**
 >
-> - Ver el script **`guardar.php`** para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
+> - [Ver el script **`guardar.php`** ](practica_guiada_aplicaci_n_web_mysql_php.html#programar-la-inserción-en-mysql)para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
 >
-> - Ver el script **`buscar.php`** para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
+> - [Ver el script **`buscar.php`** ](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-página-de-búsqueda)para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
 
 # Resumen Integrado de Conceptos
 
@@ -240,5 +256,3 @@ Una consulta preparada compila la estructura lógica de la sentencia SQL en el s
 │        └─► Base de Datos: 'museo' ──► Tabla: 'Objetos'                 │
 └────────────────────────────────────────────────────────────────────────┘
 ```
-
-------------------------------------------------------------------------
