@@ -13,30 +13,80 @@ En los Sistemas de Gestión de Bases de Datos Relacionales (SGBDR), el software 
 
 ## El Servidor de Base de Datos (*Database Engine / Daemon*)
 
-````         
--   Es el proceso o servicio que se ejecuta continuamente en segundo plano (ejemplo: `mysqld` en Linux).
+- Es el proceso o servicio que se ejecuta continuamente en segundo plano (ejemplo: `mysqld` en Linux).
 
--   Administra el almacenamiento físico en disco, la concurrencia de accesos, las transacciones, los permisos de seguridad y el procesamiento de sentencias SQL.
+- Administra el almacenamiento físico en disco, la concurrencia de accesos, las transacciones, los permisos de seguridad y el procesamiento de sentencias SQL.
 
--   Requiere un equipo o sistema operativo activo para escuchar y responder a peticiones de red.
+- Requiere un equipo o sistema operativo activo para escuchar y responder a peticiones de red.
 
 ## El Cliente de Base de Datos
 
--   Es la herramienta o programa que envía instrucciones SQL al servidor a través de la red y recibe los resultados estructurados.
+- Es la herramienta o programa que envía instrucciones SQL al servidor a través de la red y recibe los resultados estructurados.
 
--   **Tipos de clientes más habituales:**
+- **Tipos de clientes más habituales:**
 
-    1.  **Clientes CLI (Línea de comandos):** `mysql`, `mysqlsh`.
+  1.  **Clientes CLI (Línea de comandos):** `mysql`, `mysqlsh`.
 
-    2.  **Interfaces Gráficas (GUI):** DBeaver, MySQL Workbench, phpMyAdmin.
+  2.  **Interfaces Gráficas (GUI):** DBeaver, MySQL Workbench, phpMyAdmin.
 
-    3.  **Aplicaciones o conectores de código:** Scripts y programas en PHP (PDO), Python (mysql-connector), Java (JDBC) o Node.js.
+  3.  **Aplicaciones o conectores de código:** Scripts y programas en PHP (PDO), Python (mysql-connector), Java (JDBC) o Node.js.
 
 ### Aclaración Clave: El cliente y el servidor en la misma máquina
 
 Estar en el mismo equipo **no elimina la relación cliente-servidor**. Cuando instalamos un servidor en Linux y ejecutamos en la consola `sudo mysql` o `mysql -u root -p`, estamos arrancando un **programa cliente** que se conecta al **servicio servidor** (`mysqld`).
 
 Aunque no haya un cable de red de por medio, ambos programas son procesos independientes que se comunican internamente mediante la red local de *loopback* (`127.0.0.1`) o mediante un archivo de *socket* UNIX.
+
+#### El cliente avanzado: MySQL Shell (`mysqlsh`)
+
+Además del cliente clásico de línea de comandos (`mysql`), MySQL incluye **MySQL Shell (`mysqlsh`)**, una aplicación cliente avanzada y moderna de interfaz de línea de comandos.
+
+- **Instalación independiente:** Al igual que cualquier otro cliente, `mysqlsh` **no viene incluido en el servidor por defecto** y debe instalarse de forma explícita en la máquina (equipo cliente) desde la cual el administrador o desarrollador se va a conectar al servidor de bases de datos.
+- **Modos de trabajo:** Permite trabajar de manera interactiva utilizando SQL, pero también soporta lenguajes de scripting como **JavaScript** y **Python**, y es la herramienta estándar para la administración de arquitecturas avanzadas como *MySQL InnoDB Cluster*.
+
+#### Requisitos y configuración para la conexión remota con clientes CLI (`mysql` o `mysqlsh`)
+
+Para que una máquina cliente pueda conectarse con éxito a un servidor remoto utilizando herramientas como `mysql` o `mysqlsh`, se deben cumplir y configurar los siguientes aspectos previos:
+
+1.  **Autorización del Host en la cuenta (`'usuario'@'host'`):** Como se detalla en el principio de bidimensionalidad de usuarios, el usuario con el que intentemos conectar **debe estar creado expresamente con el Host autorizado** coincidiendo con la IP de la máquina cliente (o un comodín/subred válido), y no solo para `localhost`.
+
+2.  **Configuración de red del servidor (`bind-address`):** Por defecto, muchos servidores vienen configurados para escuchar solo peticiones locales (`127.0.0.1`). Para aceptar conexiones desde fuera, el parámetro `bind-address` en el archivo de configuración del servidor (`mysqld.cnf`) debe permitir la IP de la red o configurarse como `0.0.0.0` (todas las interfaces). [en la práctica Instalando y Configurando MySQL en Ubuntu vemos cómo hacerlo en la práctica](mysqlubuntu.html#configurar-mysql-para-aceptar-conexiones-desde-la-red)
+
+3.  **Apertura de Puertos (Firewall / Red):** El puerto de servicio de MySQL (**TCP 3306**) debe estar abierto y accesible a través de la red (red local o VPN) entre ambas máquinas, asegurándose de que los cortafuegos (*firewalls* como `ufw` en Ubuntu) no bloqueen el tráfico entrante a dicho puerto.
+
+#### Ejemplos de uso de `mysqlsh`
+
+- **Entrando por defecto:** Si ejecutas mysqlsh a secas (o solo con el usuario/host):
+
+  ``` bash
+  mysqlsh -u root -p
+  ```
+
+  Por defecto, `mysqlsh` arranca en modo JavaScript (el prompt cambiará a algo como JS\>). Una vez dentro, para poder lanzar consultas de bases de datos, tienes que escribir el comando de cambio de modo: `\sql`
+
+  ``` javascript
+  JS> \sql
+  ```
+
+  A partir de ahí, la consola cambia a modo SQL (SQL\>).
+
+Iniciar directamente la herramienta indicándolo mediante `--sql`:
+
+- **Conexión local básica (modo SQL directo):**
+
+  ``` bash
+  mysqlsh --sql -u root -p
+  ```
+
+- **Conexión remota especificando el host (-h o --host), usuario y puerto:** `bash   mysqlsh --sql -h 192.168.1.50 -P 3306 -u museo_app -p` (Donde -P en mayúsculas indica el puerto TCP si es diferente al predeterminado).
+
+- **Conexión mediante URI (Connection String):** Una de las ventajas de mysqlsh es permitir conexiones limpias mediante cadenas URI:
+
+  ``` bash
+  mysqlsh museo_app@192.168.1.50:3306 --sql
+  ```
+
+  ------------------------------------------------------------------------
 
 ### La Arquitectura Multicapa en Aplicaciones Web
 
@@ -60,7 +110,6 @@ Cuando introducimos un servidor web (Apache2) y un lenguaje de programación (PH
          v
 [ Disco / Base de Datos: 'museo' ]
 ```
-````
 
 🔗 **Enlace a la Práctica:** Puedes consultar la implementación real de esta arquitectura multicapa y el flujo completo de datos de un formulario en la sección **"[Idea general y arquitectura](practica_guiada_aplicaci_n_web_mysql_php.html#Idea-general-y-arquitectura)"** de la *Práctica Guiada: Aplicación web con Apache2, PHP y MySQL*.
 
@@ -78,6 +127,8 @@ Al instalar MySQL 8.4 por primera vez en un sistema operativo como Ubuntu Server
 sudo mysql
 ```
 
+Esto conectará el usuario root desde localhost al cliente de mysql que está dentro del servidor.
+
 - **Rol en el sistema:** Es el superusuario con todos los privilegios (`ALL PRIVILEGES`) sobre todo el motor.
 
 ## Flujo habitual de administración:
@@ -94,7 +145,7 @@ A diferencia de los sistemas operativos tradicionales, donde un usuario se ident
 
 $$\text{Cuenta} = \text{'Usuario'}@\text{'Host'}$$
 
-| **Componente** \| **Definición** \| **Ejemplo** \| \| **Usuario** \| Nombre de la cuenta o aplicación. \| `'root'`, `'museo_app'` \| \| **Host** \| La dirección IP o interfaz desde la cual tiene permitido conectar. \| `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` \|
+| **Componente** | **Definición** | **Ejemplo** | | **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` | | **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
 
 ## Los tipos de Host más comunes
 
@@ -125,16 +176,44 @@ Para interactuar con la base de datos con el nuevo usuario:
 mysql -u museo_app -p
 ```
 
-donde `-u` significa usuario y `-p` indica que se autentica por password
+donde `-u` significa usuario y `-p` indica que se autentica por password.
 
 Como solo le hemos dado a este usuario acceso desde la dirección lookback, sólo podremos conectarnos desde el servidor. Si estamos en otra máquina, primero tendremos que conectarnos al servidor mediante SSH para poder usar ese usuario.
 
-Si creamos un usuario con acceso desde cualquier dirección de la red compartida con el servidor:
+Si creamos un usuario con acceso desde cualquier dirección de la red 10.0.20.0/24:
 
 ``` sql
-CREATE USER 'museo_app'@'10.0.20.0/24' IDENTIFIED BY 'ContraseñaSegura';
-GRANT SELECT, INSERT ON museo.Objetos TO 'museo_app'@'10.0.20.100';
+CREATE USER 'museo_app'@'10.0.20.0/24' IDENTIFIED BY 'mypassword_here';
+GRANT SELECT, INSERT ON museo.Objetos TO 'museo_app'@'10.0.20.0/24';
 ```
+
+Esta instrucción crea una nueva cuenta de usuario en el servidor de bases de datos. Sus componentes son:
+
+- `CREATE USER`: Es la orden principal de SQL para dar de alta una nueva identidad en el sistema de seguridad de MySQL.
+
+- `'museo_app'` (El Usuario): Es el nombre con el que se identificará la cuenta o aplicación que va a conectarse.
+
+- `'10.0.20.0/24'` Define la subred de origen permitida. Mediante notación CIDR (/24), se indica que este usuario exclusivamente podrá intentar conectarse desde cualquier dirección IP comprendida en el rango de la red local 10.0.20.1 hasta la 10.0.20.254. Si se intentara conectar desde fuera de esta subred, el servidor rechazaría la conexión de inmediato, incluso sabiendo la contraseña.
+
+- IDENTIFIED BY: Es la cláusula que indica que la autenticación se realizará mediante una contraseña tradicional de texto (que luego el motor encripta internamente).
+
+- ***'**mypassword_here**'***: Es la contraseña que la aplicación o el usuario deberá proporcionar obligatoriamente al autenticarse.
+
+- **`GRANT`**: Es la orden SQL utilizada para conceder permisos o privilegios (*privileges*) a una cuenta de usuario.
+
+- **`SELECT, INSERT` (Los Privilegios):**
+
+  - `SELECT`: Permite consultar/leer registros de la tabla (equivalente a operaciones de lectura o búsquedas).
+
+  - `INSERT`: Permite añadir nuevos registros o filas a la tabla (equivalente a operaciones de creación o guardado).
+
+  - *(Nota: Al separar por comas, se le están concediendo exclusivamente estos dos permisos y se le niegan por completo otros como `UPDATE`, `DELETE` o permisos administrativos, cumpliendo estrictamente el principio de mínimo privilegio).*
+
+- **`ON museo.Objetos` (El Objeto de la base de datos):** Especifica el ámbito exacto sobre el que aplican los permisos anteriores. En este caso, se restringen únicamente a la tabla `Objetos` que se encuentra dentro de la base de datos `museo`. No tiene acceso a ninguna otra tabla ni base de datos del servidor.
+
+- **`TO`**: Cláusula que indica a qué usuario van destinados esos privilegios.
+
+- **`'museo_app'@'10.0.20.0/24'` :** El Usuario y Host de origen (ip desde la que se conecta)Identifica de forma unívoca a la cuenta receptora de los permisos.
 
 Ahora podremos usar el CLI en la máquina del usuario para conectarnos a la base de datos:
 
@@ -210,7 +289,7 @@ En la capa teórica del diseño de tablas, la base de datos es la encargada de m
 
 ## Resumen Teórico de Restricciones y Tipos de Datos Avanzados
 
-\|------------------\|-------------------------------------\|------------------\| \| **Restricción / Tipo** \| **Función Teórica** \| **Aplicación en el Modelo del Museo** \| \| `PRIMARY KEY` \| Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. \| `id_objeto INT UNSIGNED AUTO_INCREMENT` \| \| `UNIQUE` \| Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. \| `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') \| \| `CHECK` \| Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. \| `CHECK (mes_inicio BETWEEN 1 AND 12)` \| \| `ENUM` \| Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. \| `era ENUM('a.C.', 'd.C.')` \| \| `NULL` \| Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). \| Campos opcionales de datación histórica. \|
+|------------------|-------------------------------------|------------------| | **Restricción / Tipo** | **Función Teórica** | **Aplicación en el Modelo del Museo** | | `PRIMARY KEY` | Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. | `id_objeto INT UNSIGNED AUTO_INCREMENT` | | `UNIQUE` | Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. | `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') | | `CHECK` | Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. | `CHECK (mes_inicio BETWEEN 1 AND 12)` | | `ENUM` | Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. | `era ENUM('a.C.', 'd.C.')` | | `NULL` | Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). | Campos opcionales de datación histórica. |
 
 > 🔗 **Enlace a la Práctica:** Revisa la sentencia SQL de creación de la tabla en el apartado **"[Crear la base de datos y la tabla Objetos](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-base-de-datos-y-la-tabla-objetos)"** de la práctica para observar cómo se traducen estos conceptos en una tabla real de MySQL.
 
@@ -230,9 +309,9 @@ Una consulta preparada compila la estructura lógica de la sentencia SQL en el s
 
 > 🔗 **Enlace a la Práctica:**
 >
-> - [Ver el script **`guardar.php`** ](practica_guiada_aplicaci_n_web_mysql_php.html#programar-la-inserción-en-mysql)para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
+> - [Ver el script **`guardar.php`**](practica_guiada_aplicaci_n_web_mysql_php.html#programar-la-inserción-en-mysql)para comprender la inserción de datos usando `PDO::prepare()` y la conversión de campos vacíos a `NULL`.
 >
-> - [Ver el script **`buscar.php`** ](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-página-de-búsqueda)para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
+> - [Ver el script **`buscar.php`**](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-página-de-búsqueda)para observar cómo se realizan búsquedas dinámicas con `bindValue()` filtrando por clave primaria (`id_objeto`) o clave única (`codigo_inventario`).
 
 # Resumen Integrado de Conceptos
 
