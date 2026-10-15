@@ -1,0 +1,351 @@
+---
+title: "Usuarios, Roles y Gestión de Permisos en MySQL"
+format: html
+---
+
+# Fundamentos de Seguridad: Autenticación vs. Autorización
+
+En la administración de bases de datos, la seguridad se articula en dos fases secuenciales:
+
+- **Autenticación (¿Quién eres?):** Proceso mediante el cual el motor verifica la identidad de un cliente conectándose mediante la combinación de su cuenta (`'usuario'@'host'`) y su método de credenciales (contraseña, socket UNIX, plugin, etc.).
+
+- **Autorización (¿Qué puedes hacer?):** Una vez verificada la identidad, el motor consulta las tablas del sistema para comprobar si esa cuenta dispone del privilegio necesario para ejecutar la sentencia SQL solicitada sobre el objeto correspondiente.
+
+```         
++------------------+     1. Autenticación      +-------------------+
+|  Cliente SQL     | ------------------------> |   MySQL Server    |
+| 'ana'@'10.0.0.5' |                           | (mysql.user)      |
++------------------+                           +-------------------+
+                                                         |
+                                                         | 2. Autorización
+                                                         v
+                                               +-------------------+
+                                               | Valida permisos   |
+                                               | sobre el objeto   |
+                                               +-------------------+
+```
+
+> **Referencia:** Para revisar la configuración inicial del usuario administrador (`root`), la autenticación mediante `auth_socket` y la sintaxis básica de creación de usuarios, consulta [sgbd.html#permisosIntro](https://www.google.com/search?q=sgbd.html%23permisosIntro).
+
+# La Identidad Bidimensional de Usuario: `'Usuario'@'Host'`
+
+A diferencia de los sistemas operativos donde un usuario se identifica solo por su nombre, en MySQL la identidad de una cuenta es estrictamente bidimensional:
+
+$$\text{Cuenta} = \text{'Usuario'}\@\text{'Host'}$$
+
+|  |  |  |
+|----------------|----------------------------|----------------------------|
+| **Componente** | **Definición** | **Ejemplo** |
+| **Usuario** | Nombre de la entidad (persona física o servicio/aplicación). | `'ana'`, `'museo_app'` |
+| **Host** | Origen (IP, nombre de dominio o interfaz) desde el cual se permite la conexión. | `'localhost'`, `'192.168.1.50'`, `'10.0.20.0/24'`, `'%'` |
+
+> **Implicación clave:** `'ana'@'localhost'`, `'ana'@'192.168.1.50'` y `'ana'@'%'` son **tres cuentas completamente independientes** dentro del servidor (registradas en `mysql.user`). Pueden tener distintas contraseñas, permisos e incluso métodos de autenticación.
+
+## Tipos de Cuentas: Personas vs. Aplicaciones
+
+- **Usuarios de Aplicación / Servicios:** Cuentas creadas para que sistemas o *backends* (PHP, Python, Node.js) interactúen con la BD. Deben tener un alcance limitado a la IP o subred del servidor de aplicaciones y únicamente los permisos DML mínimos necesarios (`SELECT`, `INSERT`, `UPDATE`, `DELETE`).
+
+- **Usuarios Humanos (Desarrolladores / Administradores):** Cuentas asociadas a personas. Se recomienda asignarles credenciales individuales (nunca compartir la cuenta `root`) para mantener la trazabilidad y la auditoría.
+
+## Notación de Hosts Comunes
+
+- `'localhost'`: Conexión local mediante archivo de socket UNIX (no utiliza pila TCP/IP).
+
+- `'127.0.0.1'`: Conexión local obligada a través de la interfaz de loopback TCP/IP.
+
+- `'192.168.1.50'`: Restringe la conexión a una dirección IP fija.
+
+- `'10.0.20.0/24'`: Permite el acceso desde cualquier IP dentro del rango CIDR especificado (`10.0.20.1` a `10.0.20.254`).
+
+- `'%'`: Comodín (*wildcard*) que permite conectarse desde cualquier dirección IP remota.
+
+## Gestión del Ciclo de Vida de Usuarios
+###Creación de Cuentas (CREATE USER)
+```sql
+-- Crear cuenta con contraseña local
+CREATE USER 'museo_app'@'127.0.0.1' IDENTIFIED BY 'ClaveSegura123!';
+
+-- Crear cuenta para subred específica
+CREATE USER 'museo_app'@'10.0.20.0/24' IDENTIFIED BY 'ClaveSegura123!';
+```
+
+### Modificación y Bloqueo de Cuentas (ALTER USER)
+```sql
+-- Cambiar contraseña de un usuario
+ALTER USER 'ana'@'192.168.1.50' IDENTIFIED BY 'NuevaClave456!';
+
+-- Bloquear el acceso a una cuenta temporalmente
+ALTER USER 'ana'@'192.168.1.50' ACCOUNT LOCK;
+
+-- Desbloquear la cuenta
+ALTER USER 'ana'@'192.168.1.50' ACCOUNT UNLOCK;
+```
+### Eliminación de Cuentas (DROP USER)
+```sql
+-- Elimina la cuenta y revoca implícitamente todos sus permisos asociados
+DROP USER 'ana'@'192.168.1.50';
+```
+-- Elimina la cuenta y revoca implícitamente todos sus permisos asociados
+```sql
+DROP USER 'ana'@'192.168.1.50';
+```
+# Configuración del Servidor para Acceso Remoto (`bind-address`)
+
+Por defecto, en instalaciones de producción (como Ubuntu Server), el demonio de MySQL (`mysqld`) viene configurado para escuchar únicamente en la interfaz local (`127.0.0.1`) por motivos de seguridad.
+
+Si creas un usuario con host remoto (ej. `'app'@'192.168.1.%'`) pero no cambias la configuración del servidor, la conexión remota será denegada a nivel de red antes de llegar al proceso de autenticación.
+
+## Pasos para habilitar conexiones externas:
+
+1.  **Editar el archivo de configuración:** Normalmente ubicado en `/etc/mysql/mysql.conf.d/mysqld.cnf` (en Ubuntu/Debian):
+  ``` sql
+  [mysqld]
+  # Cambiar 127.0.0.1 por 0.0.0.0 para escuchar en todas las interfaces de red
+  bind-address = 0.0.0.0
+  ```
+
+2. **Reiniciar el servicio MySQL:** `sudo systemctl restart mysql`
+
+3. **Verificar puertos e interfaz:** Asegurar que el puerto TCP `3306` está abierto en el cortafuegos del sistema (`ufw` o similar).
+
+# Clasificación de Privilegios: Sistema vs. Objeto
+
+Los privilegios en MySQL definen el alcance de las acciones permitidas y se dividen en dos categorías principales según el nivel de impacto:
+
+## Privilegios de Sistema (Globales)
+
+Afectan a la administración general del servidor y no están vinculados a una tabla o base de datos específica. Se otorgan globalmente utilizando la sintaxis `ON *.*`. Hay muchos más, pero estos son algunos de los más frecuentes:
+
+- **`CREATE USER`:** Permite crear, alterar, renombrar y eliminar cuentas de usuario.
+
+- **`GRANT OPTION`:** Permite delegar privilegios a otros usuarios.
+
+- **`SUPER`:** (Obsoleto/Restringido desde MySQL 8.0) Permite operaciones críticas como cancelar hilos de ejecución o cambiar variables globales.
+
+- **`RELOAD`:** Permite ejecutar comandos de mantenimiento como `FLUSH PRIVILEGES`.
+
+- **`PROCESS`:** Permite visualizar los hilos que se están ejecutando en el servidor (`SHOW PROCESSLIST`).
+
+- **`SYSTEM_VARIABLES_ADMIN`:** Introducido en MySQL 8.0 para sustituir parte de las funciones de `SUPER`.
+
+## Privilegios de Objeto (Específicos)
+
+Aplican sobre elementos concretos dentro del servidor (bases de datos, tablas, columnas, vistas, procedimientos almacenados).
+
+- **Nivel de Base de Datos (`ON base_datos.*`):** `CREATE`, `DROP`, `ALTER`, `CREATE ROUTINE`.
+
+- **Nivel de Tabla (`ON base_datos.tabla`):** `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `INDEX`, `ALTER`, `REFERENCES`.
+
+- **Nivel de Columna (`ON base_datos.tabla` especificando columnas):** Permite restringir el acceso a campos concretos. Por ejemplo:
+
+  ``` sql
+  GRANT SELECT(nombre, email), UPDATE(email) ON empresa.empleados TO 'soporte'@'192.168.1.%'; 
+  ```
+
+- **Nivel de Rutina (`ON PROCEDURE` / `ON FUNCTION`):** `EXECUTE`, `ALTER ROUTINE`.
+```
+                          ┌─ Globales (ON *.*) ─────────► Adm. del servidor (CREATE USER, RELOAD)
+                          │
+ Privilegios en MySQL ────┼─ Base de Datos (ON bd.*) ───► Estructura (CREATE, DROP, ALTER)
+                          │
+                          ├─ Tablas (ON bd.tabla) ──────► Datos (SELECT, INSERT, UPDATE, DELETE)
+                          │
+                          └─ Columnas ──────────────────► Campos específicos (ej. UPDATE(email))
+```
+
+::: nota
+Aunque en el lenguaje cotidiano y en muchos manuales se usan como sinónimos, técnicamente existe una distinción conceptual importante en la administración de bases de datos:
+
+- **Privilegio:** Es el **derecho o capacidad abstracta** que el motor de la base de datos define para realizar una acción específica (por ejemplo: `SELECT`, `INSERT`, `CREATE USER`, `DROP`). Es la *acción* en sí misma que el sistema reconoce.
+
+- **Permiso:** Es la **concesión real y efectiva** de uno o varios privilegios a un sujeto concreto (usuario o rol) sobre un objeto específico (una tabla, una base de datos o el sistema entero). Es el resultado de aplicar la sentencia `GRANT`.
+
+Un **privilegio** es la acción o facultad técnica definida por la base de datos (p. ej., `INSERT`), mientras que el **permiso** es la asignación efectiva de dicho privilegio a una cuenta o rol sobre un objeto determinado mediante una sentencia `GRANT`.
+:::
+
+# Comandos DCL para la Gestión de Permisos
+
+La gestión del control de acceso se realiza mediante las sentencias del lenguaje DCL (*Data Control Language*): `GRANT` y `REVOKE`.
+
+## Asignación de Permisos: `GRANT`
+
+La sintaxis general para otorgar permisos es:
+
+``` sql
+GRANT privilegio_1, privilegio_2 
+ON ámbito_objeto 
+TO 'usuario'@'host' 
+[WITH GRANT OPTION];
+```
+
+### Ámbitos de Aplicación (`ON`):
+
+- **Global:** `ON *.*`
+
+- **Base de Datos completa:** `ON mi_bd.*`
+
+- **Tabla específica:** `ON mi_bd.mi_tabla`
+
+- **Procedimiento/Función:** `ON PROCEDURE mi_bd.mi_procedimiento`
+
+### La Opción de Delegación: `WITH GRANT OPTION`
+
+La cláusula `WITH GRANT OPTION` permite que el usuario receptor pueda conceder a otros usuarios **únicamente los permisos que él posee sobre ese ámbito**.
+
+``` sql
+-- Ana obtiene INSERT y ALTER sin opción de delegar
+GRANT INSERT, ALTER ON empresa.empleados TO 'ana'@'10.0.0.%';
+
+-- Ana obtiene SELECT con la capacidad de delegarlo a terceros
+GRANT SELECT ON empresa.empleados TO 'ana'@'10.0.0.%' WITH GRANT OPTION;
+```
+
+**Comportamiento en MySQL:** Si `ana` intenta ejecutar `GRANT INSERT ON empresa.empleados TO 'carlos'`, el servidor devolverá un error de denegación de acceso (`Error 1045`), ya que el privilegio `WITH GRANT OPTION` solo fue concedido para la sentencia que incluía el permiso `SELECT`.
+
+## Revocación de Permisos: `REVOKE`
+
+Para retirar permisos previamente concedidos se utiliza la sentencia `REVOKE`. Su sintaxis refleja la de `GRANT`:
+
+``` sql
+REVOKE privilegio_1, privilegio_2 
+ON ámbito_objeto 
+FROM 'usuario'@'host';
+```
+
+Ejemplo práctico de revocación parcial:
+
+``` sql
+-- Quitar solo el permiso de modificación manteniendo la lectura
+REVOKE UPDATE, DELETE ON empresa.empleados FROM 'ana'@'10.0.0.%';
+
+-- Revocar únicamente la capacidad de delegar permisos (GRANT OPTION) sin eliminar los permisos base
+REVOKE GRANT OPTION ON empresa.empleados FROM 'ana'@'10.0.0.%';
+```
+
+# Gestión de Roles (MySQL 8.0+)
+
+Un **Rol** es un contenedor nombrado de privilegios. En lugar de asignar individualmente conjuntos de permisos a múltiples cuentas de usuario (lo que genera incoherencias y dificulta la auditoría), se definen roles según el perfil laboral y se asignan a los usuarios.
+
+```         
+                  +-------------------+
+                  |  Rol: 'desarrollo' |
+                  | (SELECT, INSERT)  |
+                  +-------------------+
+                     /             \
+                    /               \
+                   v                 v
++-----------------------+   +-----------------------+
+| 'ana'@'192.168.1.50'  |   | 'carlos'@'10.0.0.15'  |
++-----------------------+   +-----------------------+
+```
+
+## Flujo Completo de Trabajo con Roles
+
+**Paso 1: Crear el Rol**
+
+Los roles se definen sintácticamente de forma similar a los usuarios, pero no requieren autenticarse por sí mismos.
+
+``` sql
+CREATE ROLE 'rol_desarrollo', 'rol_lectura_analitica';
+```
+
+**Paso 2: Asignar Privilegios al Rol**
+
+``` sql
+-- El rol de desarrollo puede leer y escribir en la base de datos app_prod
+GRANT SELECT, INSERT, UPDATE, DELETE ON app_prod.* TO 'rol_desarrollo';
+
+-- El rol de lectura solo puede consultar la base de datos de informes
+GRANT SELECT ON informes.* TO 'rol_lectura_analitica';
+```
+
+**Paso 3: Asignar el Rol a las Cuentas de Usuario**
+
+Cada cuenta `'usuario'@'host'` requiere un registro explícito en MySQL, pero los permisos se gestionan a través del rol:
+
+``` sql
+-- Crear usuarios de ejemplo para distintas ubicaciones
+CREATE USER 'ana'@'192.168.1.50' IDENTIFIED BY 'ClaveSegura123!';
+CREATE USER 'ana'@'10.0.0.15' IDENTIFIED BY 'ClaveSegura123!';
+
+-- Asignar el rol a ambas cuentas
+GRANT 'rol_desarrollo' TO 'ana'@'192.168.1.50', 'ana'@'10.0.0.15';
+```
+
+**Paso 4: Activación de Roles (`DEFAULT ROLE`)**
+
+En MySQL 8.0, al otorgar un rol a un usuario, este permanece **inactivo por defecto** durante la sesión a menos que se configure explícitamente como rol predeterminado o se active manualmente mediante `SET ROLE`.
+
+Para activar el rol automáticamente en cada inicio de sesión:
+
+``` sql
+-- Establecer el rol por defecto para las cuentas de Ana
+ALTER USER 'ana'@'192.168.1.50', 'ana'@'10.0.0.15' DEFAULT ROLE 'rol_desarrollo';
+```
+
+Si no se define como predeterminado, el usuario deberá ejecutar al conectarse:
+
+``` sql
+SET ROLE 'rol_desarrollo';
+```
+
+# Auditoría e Inspección de Seguridad
+
+Para verificar los permisos y roles asignados en el sistema se utilizan comandos de inspección sobre las tablas del diccionario de datos (`mysql.*`):
+
+## Consultar permisos de una cuenta específica
+
+``` sql
+SHOW GRANTS FOR 'ana'@'192.168.1.50';
+```
+
+Consultar los permisos otorgados a través de un Rol
+
+``` sql
+SHOW GRANTS FOR 'ana'@'192.168.1.50' USING 'rol_desarrollo';
+```
+
+## Inspección directa en la tabla del sistema `mysql.user`
+
+Para obtener un listado global de todas las cuentas creadas y sus hosts autorizados:
+
+``` sql
+SELECT User, Host, plugin, account_locked 
+FROM mysql.user;
+```
+
+# Resumen de Buenas Prácticas
+
+1.  **Aplicar el Principio de Mínimo Privilegio:** Limitar el alcance del permiso al menor ámbito posible (tabla o columna antes que base de datos completa; `SELECT`/`INSERT` antes que `ALL PRIVILEGES`).
+
+2.  **Uso sistemático de Roles:** Evitar la ejecución de sentencias `GRANT` directas a cuentas individuales cuando existan perfiles repetidos en la organización.
+
+3.  **Restricción por Host:** Nunca utilizar `'%'` de forma indiscriminada para cuentas con permisos de escritura o administrativos. Especificar la IP fija o la subred requerida.
+
+4. **Uso de Roles:** Agrupar permisos por funciones operativas para facilitar el mantenimiento y evitar inconsistencias.  
+
+5.  **Separación de cuentas de aplicación e interacción humana:** Un desarrollador no debe compartir las credenciales que utiliza el backend de la aplicación web.
+
+6.  **Aplicación de cambios:** Aunque los comandos DCL como `GRANT` y `REVOKE` actualizan las tablas de permisos en memoria de forma inmediata, en modificaciones directas sobre las tablas del sistema `mysql.*` se debe ejecutar:
+
+    ``` sql
+    FLUSH PRIVILEGES;
+    ```
+7. Configuración de Red Segura: En servidores expuestos a la red, restringir bind-address y apoyarse en reglas de cortafuegos (UFW/Iptables) o conexiones VPN/SSH tunneling en lugar de abrir el puerto 3306 libremente a Internet. 
+
+8. Auditoría periódica: Revisar los permisos y roles asignados, eliminando cuentas obsoletas y ajustando privilegios según cambios en la organización o en la aplicación.
+
+9. Registro de actividad: Habilitar el *general log* o el *audit log* para monitorear accesos y cambios de permisos, especialmente en entornos de producción.
+
+10. Documentación de cambios: Mantener un registro de las modificaciones de permisos y roles, incluyendo quién realizó el cambio y la justificación, para cumplir con políticas de seguridad y auditoría.
+
+11. **Actualización de versiones:** Mantener el motor de base de datos actualizado para beneficiarse de mejoras en seguridad, autenticación y gestión de permisos.
+
+12. **Contraseñas robustas y rotación periódica:** Implementar políticas de complejidad y caducidad de contraseñas para todas las cuentas, especialmente aquellas con privilegios elevados.
+
+13. **Monitoreo de intentos fallidos de acceso:** Configurar alertas o bloqueos automáticos ante múltiples intentos fallidos de autenticación para prevenir ataques de fuerza bruta.
+
+14. **Revisión de plugins de autenticación:** Evaluar y utilizar plugins de autenticación más seguros (como `caching_sha2_password`) en lugar de métodos obsoletos (`mysql_native_password`), según las necesidades de compatibilidad y seguridad.
+
+15. **Segregación de entornos:** Mantener entornos de desarrollo, prueba y producción separados, con cuentas y permisos distintos para cada uno, evitando que cambios en un entorno afecten a otro.
+

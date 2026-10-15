@@ -115,6 +115,10 @@ CREATE TABLE cursos (
 
 ![](images/paste-SnyGrjuDjtfFufRPjCs9x.png)
 
+Si en lugar de `DESCRIBE` usamos `DESCRIBE TABLE {nombre de tabla}`, nos dará una información distinta, idéntica al resultado que conseguiríamos usando `EXPLAIN SELECT * FROM {tabla}`;
+
+![](images/paste-mYDwUZR19TvmgyRIY2kom.png)
+
 ## Ver los comandos con los que se creo la tabla
 
 `SHOW CREATE TABLE cursos;`
@@ -359,13 +363,7 @@ Garantiza la **integridad referencial**: impide que se registre un alumno apunta
 
 Definen qué debe hacer MySQL cuando el registro de la tabla padre (`cursos`) se **modifica** (`ON UPDATE`) o se **elimina** (`ON DELETE`).
 
-
-|------------------|-------------------------|-----------------------------|
-| **Opción** | **¿Qué hace al Borrar/Actualizar el Padre?** | **Ejemplo con tu código** |
-| **`RESTRICT`** *(Por defecto)* | **Bloquea la operación.** Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados. | Si intentas borrar un curso que tiene alumnos, MySQL lanza un error. |
-| **`CASCADE`** | **Propaga el cambio.** Borra o actualiza automáticamente los registros hijos asociados. | En tu código (`ON UPDATE CASCADE`): Si el `id_curso` `5` pasa a ser `10`, todos los alumnos con `id_curso = 5` cambian a `10` automáticamente. |
-| **`SET NULL`** | **Pone a `NULL` la columna del hijo.** Mantiene al registro hijo pero rompe el vínculo. | En tu código (`ON DELETE SET NULL`): Si eliminas el curso `5`, los alumnos pertenecientes a ese curso pasan a tener `id_curso = NULL` (no se borra al alumno). |
-| **`NO ACTION`** | Similar a `RESTRICT` en MySQL. Comprueba la integridad al final de la instrucción. | Bloquea la eliminación/modificación si existen referencias activas. |
+|------------------|-------------------------|-----------------------------| | **Opción** | **¿Qué hace al Borrar/Actualizar el Padre?** | **Ejemplo con tu código** | | **`RESTRICT`** *(Por defecto)* | **Bloquea la operación.** Devuelve un error y no permite borrar/cambiar el padre si tiene hijos vinculados. | Si intentas borrar un curso que tiene alumnos, MySQL lanza un error. | | **`CASCADE`** | **Propaga el cambio.** Borra o actualiza automáticamente los registros hijos asociados. | En tu código (`ON UPDATE CASCADE`): Si el `id_curso` `5` pasa a ser `10`, todos los alumnos con `id_curso = 5` cambian a `10` automáticamente. | | **`SET NULL`** | **Pone a `NULL` la columna del hijo.** Mantiene al registro hijo pero rompe el vínculo. | En tu código (`ON DELETE SET NULL`): Si eliminas el curso `5`, los alumnos pertenecientes a ese curso pasan a tener `id_curso = NULL` (no se borra al alumno). | | **`NO ACTION`** | Similar a `RESTRICT` en MySQL. Comprueba la integridad al final de la instrucción. | Bloquea la eliminación/modificación si existen referencias activas. |
 
 - **Usa `ON DELETE CASCADE`** cuando el hijo no tenga sentido sin el padre (ejemplo: las líneas de detalle de una factura respecto a la cabecera de la factura; si se borra la factura, deben desaparecer sus líneas).
 
@@ -702,15 +700,7 @@ DELETE FROM alumnos;
 
 ## Tabla Comparativa
 
-|------------------|------------------|------------------|------------------|
-| **Característica** | **DELETE** | **TRUNCATE** | **DROP** |
-| **Categoría SQL** | **DML** (*Data Manipulation*) | **DDL** (*Data Definition*) | **DDL** (*Data Definition*) |
-| **¿Qué elimina?** | Filas específicas o todas las filas. | Todas las filas de la tabla. | **La tabla completa + su estructura**. |
-| **Soporta `WHERE`** | **Sí** | **No** | **No** |
-| **Resetea `AUTO_INCREMENT`** | **No** | **Sí** | N/A (la tabla desaparece) |
-| **Mantiene la estructura** | **Sí** | **Sí** | **No** |
-| **Rendimiento** | Lento (registro fila por fila). | **Muy rápido** (libera páginas). | **Inmediato**. |
-| **Se puede hacer `ROLLBACK`** | **Sí** (si está en transacción). | Depende del motor (en MySQL no). | **No** |
+|------------------|------------------|------------------|------------------| | **Característica** | **DELETE** | **TRUNCATE** | **DROP** | | **Categoría SQL** | **DML** (*Data Manipulation*) | **DDL** (*Data Definition*) | **DDL** (*Data Definition*) | | **¿Qué elimina?** | Filas específicas o todas las filas. | Todas las filas de la tabla. | **La tabla completa + su estructura**. | | **Soporta `WHERE`** | **Sí** | **No** | **No** | | **Resetea `AUTO_INCREMENT`** | **No** | **Sí** | N/A (la tabla desaparece) | | **Mantiene la estructura** | **Sí** | **Sí** | **No** | | **Rendimiento** | Lento (registro fila por fila). | **Muy rápido** (libera páginas). | **Inmediato**. | | **Se puede hacer `ROLLBACK`** | **Sí** (si está en transacción). | Depende del motor (en MySQL no). | **No** |
 
 ## Comportamiento de triggers y acciones de clave foránea durante el borrado
 
@@ -720,10 +710,4 @@ Es muy común confundirlos porque ambos provocan **acciones automáticas** dentr
 
 - **Disparador (*Trigger*):** Es un **bloque de código procedural** (programado expresamente con un `CREATE TRIGGER`) que ejecuta lógica personalizada antes o después de una sentencia `INSERT`, `UPDATE` o `DELETE`.
 
-|------------------|--------------------------|----------------------------|
-| **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** |
-| **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. |
-| **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. |
-| **Acciones posibles** | Limitadas a 4 estándar: `RESTRICT`, `CASCADE`, `SET NULL`, `NO ACTION`. | Cualquier código SQL (insertar registros en logs, enviar alertas, actualizar otras tablas, etc.). |
-| **Disparo con `DROP TABLE`** | **No se ejecuta.** De hecho, bloquea el `DROP` de la tabla padre. | **No se ejecuta.** El trigger se destruye junto con la tabla sin dispararse. |
-| **Efecto en Cascada (`CASCADE`)** | Actualiza o borra en la tabla hija a nivel del motor interno. | En la mayoría de versiones de MySQL, los cambios en cascada por FK **no activan triggers en las tablas hijas**. |
+|------------------|--------------------------|----------------------------| | **Criterio** | **Clave Foránea (ON DELETE / ON UPDATE)** | **Disparador (Trigger DML)** | | **Definición** | Se declara en el `CREATE TABLE` o `ALTER TABLE`. | Se crea de forma independiente mediante `CREATE TRIGGER`. | | **Propósito** | Garantizar la **integridad referencial** entre dos tablas. | Ejecutar **lógica de negocio**, auditorías, validaciones o cálculos complejos. | | **Acciones posibles** | Limitadas a 4 estándar: `RESTRICT`, `CASCADE`, `SET NULL`, `NO ACTION`. | Cualquier código SQL (insertar registros en logs, enviar alertas, actualizar otras tablas, etc.). | | **Disparo con `DROP TABLE`** | **No se ejecuta.** De hecho, bloquea el `DROP` de la tabla padre. | **No se ejecuta.** El trigger se destruye junto con la tabla sin dispararse. | | **Efecto en Cascada (`CASCADE`)** | Actualiza o borra en la tabla hija a nivel del motor interno. | En la mayoría de versiones de MySQL, los cambios en cascada por FK **no activan triggers en las tablas hijas**. |
