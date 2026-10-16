@@ -34,7 +34,7 @@ A diferencia de los sistemas operativos donde un usuario se identifica solo por 
 $$\text{Cuenta} = \text{'Usuario'}\@\text{'Host'}$$
 
 |  |  |  |
-|----------------|----------------------------|----------------------------|
+|------------------|---------------------------|---------------------------|
 | **Componente** | **Definición** | **Ejemplo** |
 | **Usuario** | Nombre de la entidad (persona física o servicio/aplicación). | `'ana'`, `'museo_app'` |
 | **Host** | Origen (IP, nombre de dominio o interfaz) desde el cual se permite la conexión. | `'localhost'`, `'192.168.1.50'`, `'10.0.20.0/24'`, `'%'` |
@@ -60,8 +60,10 @@ $$\text{Cuenta} = \text{'Usuario'}\@\text{'Host'}$$
 - `'%'`: Comodín (*wildcard*) que permite conectarse desde cualquier dirección IP remota.
 
 ## Gestión del Ciclo de Vida de Usuarios
-###Creación de Cuentas (CREATE USER)
-```sql
+
+### Creación de Cuentas (CREATE USER)
+
+``` sql
 -- Crear cuenta con contraseña local
 CREATE USER 'museo_app'@'127.0.0.1' IDENTIFIED BY 'ClaveSegura123!';
 
@@ -70,7 +72,8 @@ CREATE USER 'museo_app'@'10.0.20.0/24' IDENTIFIED BY 'ClaveSegura123!';
 ```
 
 ### Modificación y Bloqueo de Cuentas (ALTER USER)
-```sql
+
+``` sql
 -- Cambiar contraseña de un usuario
 ALTER USER 'ana'@'192.168.1.50' IDENTIFIED BY 'NuevaClave456!';
 
@@ -80,15 +83,20 @@ ALTER USER 'ana'@'192.168.1.50' ACCOUNT LOCK;
 -- Desbloquear la cuenta
 ALTER USER 'ana'@'192.168.1.50' ACCOUNT UNLOCK;
 ```
+
 ### Eliminación de Cuentas (DROP USER)
-```sql
+
+``` sql
 -- Elimina la cuenta y revoca implícitamente todos sus permisos asociados
 DROP USER 'ana'@'192.168.1.50';
 ```
+
 -- Elimina la cuenta y revoca implícitamente todos sus permisos asociados
-```sql
+
+``` sql
 DROP USER 'ana'@'192.168.1.50';
 ```
+
 # Configuración del Servidor para Acceso Remoto (`bind-address`)
 
 Por defecto, en instalaciones de producción (como Ubuntu Server), el demonio de MySQL (`mysqld`) viene configurado para escuchar únicamente en la interfaz local (`127.0.0.1`) por motivos de seguridad.
@@ -98,15 +106,16 @@ Si creas un usuario con host remoto (ej. `'app'@'192.168.1.%'`) pero no cambias 
 ## Pasos para habilitar conexiones externas:
 
 1.  **Editar el archivo de configuración:** Normalmente ubicado en `/etc/mysql/mysql.conf.d/mysqld.cnf` (en Ubuntu/Debian):
-  ``` sql
-  [mysqld]
-  # Cambiar 127.0.0.1 por 0.0.0.0 para escuchar en todas las interfaces de red
-  bind-address = 0.0.0.0
-  ```
 
-2. **Reiniciar el servicio MySQL:** `sudo systemctl restart mysql`
+``` sql
+[mysqld]
+# Cambiar 127.0.0.1 por 0.0.0.0 para escuchar en todas las interfaces de red
+bind-address = 0.0.0.0
+```
 
-3. **Verificar puertos e interfaz:** Asegurar que el puerto TCP `3306` está abierto en el cortafuegos del sistema (`ufw` o similar).
+2.  **Reiniciar el servicio MySQL:** `sudo systemctl restart mysql`
+
+3.  **Verificar puertos e interfaz:** Asegurar que el puerto TCP `3306` está abierto en el cortafuegos del sistema (`ufw` o similar).
 
 # Clasificación de Privilegios: Sistema vs. Objeto
 
@@ -143,7 +152,8 @@ Aplican sobre elementos concretos dentro del servidor (bases de datos, tablas, c
   ```
 
 - **Nivel de Rutina (`ON PROCEDURE` / `ON FUNCTION`):** `EXECUTE`, `ALTER ROUTINE`.
-```
+
+```         
                           ┌─ Globales (ON *.*) ─────────► Adm. del servidor (CREATE USER, RELOAD)
                           │
  Privilegios en MySQL ────┼─ Base de Datos (ON bd.*) ───► Estructura (CREATE, DROP, ALTER)
@@ -289,6 +299,12 @@ Si no se define como predeterminado, el usuario deberá ejecutar al conectarse:
 SET ROLE 'rol_desarrollo';
 ```
 
+Para dejar de usar el rol en la sessión activa el usuario puede usar:
+
+``` sql
+SET ROLE NONE;
+```
+
 # Auditoría e Inspección de Seguridad
 
 Para verificar los permisos y roles asignados en el sistema se utilizan comandos de inspección sobre las tablas del diccionario de datos (`mysql.*`):
@@ -322,7 +338,7 @@ FROM mysql.user;
 
 3.  **Restricción por Host:** Nunca utilizar `'%'` de forma indiscriminada para cuentas con permisos de escritura o administrativos. Especificar la IP fija o la subred requerida.
 
-4. **Uso de Roles:** Agrupar permisos por funciones operativas para facilitar el mantenimiento y evitar inconsistencias.  
+4.  **Uso de Roles:** Agrupar permisos por funciones operativas para facilitar el mantenimiento y evitar inconsistencias.
 
 5.  **Separación de cuentas de aplicación e interacción humana:** Un desarrollador no debe compartir las credenciales que utiliza el backend de la aplicación web.
 
@@ -331,11 +347,12 @@ FROM mysql.user;
     ``` sql
     FLUSH PRIVILEGES;
     ```
-7. Configuración de Red Segura: En servidores expuestos a la red, restringir bind-address y apoyarse en reglas de cortafuegos (UFW/Iptables) o conexiones VPN/SSH tunneling en lugar de abrir el puerto 3306 libremente a Internet. 
 
-8. Auditoría periódica: Revisar los permisos y roles asignados, eliminando cuentas obsoletas y ajustando privilegios según cambios en la organización o en la aplicación.
+7.  Configuración de Red Segura: En servidores expuestos a la red, restringir bind-address y apoyarse en reglas de cortafuegos (UFW/Iptables) o conexiones VPN/SSH tunneling en lugar de abrir el puerto 3306 libremente a Internet.
 
-9. Registro de actividad: Habilitar el *general log* o el *audit log* para monitorear accesos y cambios de permisos, especialmente en entornos de producción.
+8.  Auditoría periódica: Revisar los permisos y roles asignados, eliminando cuentas obsoletas y ajustando privilegios según cambios en la organización o en la aplicación.
+
+9.  Registro de actividad: Habilitar el *general log* o el *audit log* para monitorear accesos y cambios de permisos, especialmente en entornos de producción.
 
 10. Documentación de cambios: Mantener un registro de las modificaciones de permisos y roles, incluyendo quién realizó el cambio y la justificación, para cumplir con políticas de seguridad y auditoría.
 
@@ -349,3 +366,6 @@ FROM mysql.user;
 
 15. **Segregación de entornos:** Mantener entornos de desarrollo, prueba y producción separados, con cuentas y permisos distintos para cada uno, evitando que cambios en un entorno afecten a otro.
 
+------------------------------------------------------------------------
+
+![](images/diagramaPermisos.jpg)

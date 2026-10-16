@@ -1,0 +1,1324 @@
+# Objetivos
+
+Al finalizar la práctica podremos:
+
+- Crear cuentas de usuario en MySQL.
+- Comprender la estructura 'usuario'\@'origen'.
+- Restringir una cuenta a:
+  - conexiones locales;
+  - una dirección IP concreta;
+  - una red completa;
+  - cualquier origen.
+- Crear roles y asignarles privilegios.
+- Asignar uno o varios roles a diferentes usuarios.
+- Conceder privilegios directamente, sin utilizar roles.
+- Aplicar privilegios en los niveles de base de datos, tabla y columna.
+- Activar roles de forma predeterminada.
+- Comprobar los permisos efectivos de cada cuenta.
+- Verificar que las operaciones no autorizadas son rechazadas.
+- Revocar privilegios y eliminar cuentas y roles.
+
+# Escenario de la práctica
+
+Continuamos con la base de datos `academia_it` creada y alimentada en la práctica anterior. No volvemos a crear la base de datos, las tablas ni los datos iniciales.
+
+El servidor mysql está en la ip 10.0.20.101
+
+## Base de datos academia_it
+
+Utilizaremos las tablas:
+
+- `alumnos`
+- `profesores`
+- `asignaturas`
+- `cursos`
+- `curso_asignatura`
+- `matriculas`
+- `notas`
+
+Crearemos los siguientes roles:
+
+| Rol | Función |
+|:-------------------|:---------------------------------------------------|
+| `rol_lectura` | Consultar toda la base de datos |
+| `rol_profesor` | Consultar información e insertar o modificar notas |
+| `rol_secretaria` | Gestionar datos de los alumnos |
+| `rol_auditor` | Consultar toda la información sin modificarla |
+| `rol_admin_academia` | Administrar completamente la base de datos `academia_it` |
+
+También crearemos cuentas con distintos orígenes permitidos:
+
+| Cuenta             | Origen permitido                            |
+|:-------------------|:--------------------------------------------|
+| `profesor_local`   | Solo desde el propio servidor               |
+| `secretaria_red`   | Desde cualquier equipo de $10.0.20.0/24$    |
+| `auditor_ip`       | Solo desde $10.0.20.50$                     |
+| `consulta_global`  | Desde cualquier origen accesible            |
+| `gestor_local`     | Solo desde el servidor                      |
+| `temporal_directo` | Solo desde el servidor y sin utilizar roles |
+
+La dirección IP utilizada como ejemplo para el servidor MySQL será: $10.0.20.101$
+
+Debe sustituirse por la dirección real del servidor.
+
+# Concepto fundamental: usuario y origen
+
+En MySQL, una cuenta no está formada únicamente por el nombre del usuario. Está formada por:
+
+$$\text{'usuario'}\text{@}\text{'origen'}$$
+
+Pensad en las llaves de un centro: poder entrar en el edificio no permite abrir cualquier despacho. En MySQL, una cuenta permite identificarse; los privilegios determinan qué operaciones podéis realizar sobre los datos.
+
+Por ejemplo:
+
+$$\text{'ana'}\text{@}\text{'localhost'}$$
+
+y:
+
+$$\text{'ana'}\text{@}\text{'10.0.20.50'}$$
+
+son dos cuentas diferentes, aunque ambas se llamen ana.
+
+La primera puede conectarse localmente y la segunda únicamente desde la IP indicada. MySQL admite nombres de host, direcciones IPv4 o IPv6 y redes expresadas mediante máscara; desde MySQL 8.0.23 también admite notación CIDR para IPv4.
+
+## Orígenes habituales
+
+| Definición | Significado |
+|:-----------------------------------|:-----------------------------------|
+| `'usuario'@'localhost'` | Conexión local |
+| `'usuario'@'127.0.0.1'` | Conexión por la interfaz de loopback IPv4 |
+| `'usuario'@'10.0.20.50'` | Solo desde esa IP |
+| `'usuario'@'10.0.20.0/255.255.255.0'` | Desde toda la red $10.0.20.0/24$ |
+| `'usuario'@'10.0.20.0/24'` | La misma red, en MySQL 8.0.23 o posterior |
+| `'usuario'@'%'` | Desde cualquier origen |
+
+El comodín `%` continúa funcionando en MySQL 8.0, pero su utilización en el componente host está obsoleta desde MySQL 8.0.35. Para entornos reales es preferible definir IP concretas, redes conocidas, una VPN o reglas de firewall restrictivas.
+
+# Controles que intervienen en una conexión remota
+
+Para conectarnos remotamente no basta con crear una cuenta como:
+
+$$\text{'secretaria_red'}\text{@}\text{'10.0.20.0/255.255.255.0'}$$
+
+Deben cumplirse cuatro condiciones:
+
+1.  El servidor MySQL escucha en una interfaz de red
+2.  La red y el firewall permiten llegar al puerto $3306$
+3.  Existe una cuenta `usuario@origen` que coincide
+4.  La cuenta tiene privilegios para ejecutar la operación
+
+MySQL realiza primero la comprobación de conexión e identidad y, después, comprueba si la cuenta tiene privilegios suficientes para cada sentencia ejecutada.
+
+# Requisitos
+
+Necesitaremos:
+
+- MySQL Server 8.x (8.0 o 8.4). Ejecutad `SELECT VERSION();` y verificad contra la versión instalada los ejemplos de conexión, configuración y TLS.
+- Acceso administrativo mediante `root` u otra cuenta con permisos para:
+  - crear usuarios;
+  - conceder privilegios.
+- Al menos un equipo cliente para probar conexiones remotas.
+- Conectividad IP entre cliente y servidor.
+- Cliente de MySQL instalado en los equipos desde los que se realizarán las pruebas.
+
+Academia IT debe tener las siete tablas y los CSV de la práctica anterior cargados. Necesitamos al menos una matrícula sin registro en notas para probar `INSERT`. Con los CSV corregidos, las matrículas $26$ y $27$ cumplen esta condición. No confundáis una fila con nota `NULL` con una matrícula sin fila en notas.
+
+# Preparación del acceso remoto
+
+Esta parte solo es necesaria si vamos a conectarnos desde otros equipos.
+
+## Comprobar la dirección en la que escucha MySQL
+
+Entramos como administrador:
+
+``` bash
+sudo mysql
+```
+
+O bien:
+
+``` bash
+mysql -u root -p
+```
+
+Consultamos la configuración:
+
+``` sql
+SHOW VARIABLES LIKE 'bind_address';
+SHOW VARIABLES LIKE 'port';
+```
+
+Si `bind_address` tiene el valor `127.0.0.1`, MySQL solo acepta conexiones TCP/IP locales.
+
+## Configuración en Ubuntu o Debian
+
+Editamos:
+
+``` bash
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+```
+
+Una opción recomendable es hacer que MySQL escuche solamente en la IP del servidor:
+
+``` ini
+bind-address = 10.0.20.101
+```
+
+*Nota:* Verificar contra la versión instalada: la ruta indicada corresponde a instalaciones habituales del paquete MySQL. Comprobad el fichero utilizado por vuestro servicio antes de editarlo. Si el acceso remoto ya funciona, no cambiéis su configuración.
+
+En un laboratorio aislado también podría utilizarse:
+
+``` ini
+bind-address = 0.0.0.0
+```
+
+`0.0.0.0` significa que MySQL escuchará en todas las interfaces IPv4 del servidor. MySQL 8.0.13 y versiones posteriores permiten indicar varias direcciones separadas por comas.
+
+Reiniciamos el servicio:
+
+``` bash
+sudo systemctl restart mysql
+```
+
+Comprobamos su estado:
+
+``` bash
+sudo systemctl status mysql
+```
+
+Y verificamos que escucha en el puerto $3306$:
+
+``` bash
+sudo ss -lntp | grep 3306
+```
+
+## Configurar UFW si está activo
+
+Comprobamos su estado:
+
+``` bash
+sudo ufw status
+```
+
+Para permitir el acceso al puerto $3306$ únicamente desde la red del aula:
+
+``` bash
+sudo ufw allow proto tcp from 10.0.20.0/24 to any port 3306
+```
+
+Comprobamos la regla:
+
+``` bash
+sudo ufw status numbered
+```
+
+Ubuntu permite limitar una regla de UFW a una IP o a una subred concreta, lo que resulta preferible a abrir el puerto para cualquier origen.
+
+La restricción del firewall y la restricción `'usuario'@'origen'` se complementan. Una cuenta definida con `@'%'` no puede atravesar un firewall que bloquee su dirección IP.
+
+# Comprobar la base de datos existente
+
+Entramos en MySQL con una cuenta administrativa:
+
+``` bash
+mysql -u root -p
+```
+
+Seleccionamos la base de datos ya creada:
+
+``` sql
+USE academia_it;
+SHOW TABLES;
+
+-- Debe devolver 7 para las tablas base del modelo.
+SELECT COUNT(*) AS numero_tablas
+FROM information_schema.tables
+WHERE table_schema = 'academia_it'  
+  AND table_type = 'BASE TABLE';
+```
+
+Resultado esperado: `alumnos`, `profesores`, `asignaturas`, `cursos`, `curso_asignatura`, `matriculas` y `notas`. Si faltan tablas, completad la práctica anterior antes de continuar.
+
+``` sql
+SELECT COUNT(*) AS alumnos FROM academia_it.alumnos;
+SELECT COUNT(*) AS matriculas FROM academia_it.matriculas;
+SELECT COUNT(*) AS notas FROM academia_it.notas;
+```
+
+# Recordar las relaciones de Academia IT
+
+Cada matrícula identifica un alumno y una asignatura de un curso. Una nota se relaciona únicamente con su matrícula. El profesor se asigna en `curso_asignatura`, no en `asignaturas`.
+
+``` sql
+SHOW CREATE TABLE academia_it.matriculas;
+SHOW CREATE TABLE academia_it.notas;
+SHOW CREATE TABLE academia_it.curso_asignatura;
+```
+
+![ejemplo de output](paste-oMN4gKXuqkXl263SJhLZR)
+
+## Campos que utilizaremos
+
+- **alumnos:** `id_alumno`, `nombre`, `apellido1`, `apellido2`, `email` y `fecha_alta`.
+- **matriculas:** `id_matricula`, `id_alumno` e `id_curso_asignatura`.
+- **notas:** `id_nota`, `id_matricula`, `nota`, `fecha_evaluacion` y `observaciones`.
+- **curso_asignatura:** `id_curso_asignatura`, `id_curso`, `id_asignatura` e `id_profesor`.
+
+## Consultar el historial sin duplicar vínculos
+
+La siguiente consulta enlaza las siete tablas existentes. Se ejecuta como administrador y muestra también matrículas que aún no tienen un registro de calificación.
+
+``` sql
+SELECT m.id_matricula, a.nombre, a.apellido1,       
+       c.codigo AS curso, s.nombre AS asignatura,       
+       p.nombre AS profesor, n.nota, n.fecha_evaluacion
+FROM academia_it.matriculas AS m
+JOIN academia_it.alumnos AS a  
+  ON a.id_alumno = m.id_alumno
+JOIN academia_it.curso_asignatura AS ca  
+  ON ca.id_curso_asignatura = m.id_curso_asignatura
+JOIN academia_it.cursos AS c 
+  ON c.id_curso = ca.id_curso
+JOIN academia_it.asignaturas AS s  
+  ON s.id_asignatura = ca.id_asignatura
+JOIN academia_it.profesores AS p  
+  ON p.id_profesor = ca.id_profesor
+LEFT JOIN academia_it.notas AS n  
+  ON n.id_matricula = m.id_matricula
+ORDER BY m.id_matricula;
+```
+
+# Preparar pruebas sin cambiar los datos iniciales
+
+Las pruebas de escritura se harán sobre InnoDB con `START TRANSACTION` y terminarán con `ROLLBACK`. Así se deshacen las inserciones y modificaciones de prueba. Los valores `AUTO_INCREMENT` consumidos pueden dejar huecos: es normal.
+
+Ejecutad cada operación por separado. Un error previsto de permisos no es motivo para saltar la reversión. No ejecutéis DDL ni administración de cuentas entre `START TRANSACTION` y `ROLLBACK`: esas sentencias pueden provocar un `COMMIT` implícito. (Ver apartado [Transacciones en MySQL](dml.html#qué-es-una-transacción) en el capítulo sobre Comandos DML)
+
+``` sql
+-- Identificar una matrícula sin fila en notas.
+SELECT m.id_matricula
+FROM academia_it.matriculas AS m
+LEFT JOIN academia_it.notas AS n  
+  ON n.id_matricula = m.id_matricula
+WHERE n.id_nota IS NULL
+ORDER BY m.id_matricula;
+```
+
+Resultado esperado con los CSV corregidos: $26$ y $27$. Si no devuelve filas, revisad los datos de la práctica anterior. No borréis una nota existente para preparar esta prueba.
+
+Antes de crear roles o usuarios, comprobad que los nombres de esta práctica no pertenecen a cuentas que debáis conservar. Si ya existen, revisadlo con el docente para evitar reutilizar permisos anteriores.
+
+``` sql
+SELECT User, Host FROM mysql.user
+WHERE User IN ('profesor_local', 'secretaria_red', 'auditor_ip',               
+               'consulta_global', 'gestor_local', 'temporal_directo',               
+               'rol_lectura', 'rol_profesor', 'rol_secretaria',               
+               'rol_auditor', 'rol_admin_academia');
+```
+
+# Crear los roles
+
+Un rol de MySQL es una colección de privilegios identificada mediante un nombre. Los privilegios pueden concederse al rol y, posteriormente, el rol puede asignarse a diferentes cuentas.
+
+Creamos los cinco roles:
+
+``` sql
+CREATE ROLE    
+    'rol_lectura',    
+    'rol_profesor',    
+    'rol_secretaria',    
+    'rol_auditor',    
+    'rol_admin_academia';
+```
+
+Los roles se crean inicialmente sin privilegios. Podemos comprobar su existencia:
+
+``` sql
+SELECT User, Host, account_locked
+FROM mysql.user
+WHERE User LIKE 'rol_%';
+```
+
+![](paste-GwsHzGErhDSO_o2qz9AkM)
+
+# Conceder privilegios a los roles
+
+MySQL permite conceder privilegios a nivel global, de base de datos, tabla, columna y rutina almacenada.
+
+## Rol de lectura
+
+Podrá consultar todas las tablas de la base de datos:
+
+``` sql
+GRANT SELECT
+ON academia_it.*
+TO 'rol_lectura';
+```
+
+Significado: \* `SELECT` $\rightarrow$ privilegio \* `academia_it.*` $\rightarrow$ todos los objetos de academia_it \* `rol_lectura` $\rightarrow$ destinatario
+
+## Rol de profesor
+
+El profesorado podrá consultar alumnos, asignaturas, profesores, cursos, curso_asignatura y matrículas. El permiso sobre notas se concede en el bloque siguiente.
+
+``` sql
+GRANT SELECT ON academia_it.alumnos TO 'rol_profesor';
+GRANT SELECT ON academia_it.asignaturas TO 'rol_profesor';
+GRANT SELECT ON academia_it.profesores TO 'rol_profesor';
+GRANT SELECT ON academia_it.cursos TO 'rol_profesor';
+GRANT SELECT ON academia_it.curso_asignatura TO 'rol_profesor';
+GRANT SELECT ON academia_it.matriculas TO 'rol_profesor';
+```
+
+También podrá consultar e insertar notas:
+
+``` sql
+GRANT SELECT, INSERT
+ON academia_it.notas
+TO 'rol_profesor';
+```
+
+Únicamente podrá modificar las columnas `nota` y `fecha_evaluacion`:
+
+``` sql
+GRANT UPDATE (nota, fecha_evaluacion)
+ON academia_it.notas 
+TO 'rol_profesor';
+```
+
+No le concedemos: `DELETE`, `CREATE`, `DROP`, `ALTER`. Por tanto, no podrá borrar notas ni modificar la estructura de las tablas.
+
+Estos permisos se aplican a toda la tabla: no limitan al usuario a las notas de las asignaturas que imparte. El vínculo con un registro de profesores no se crea automáticamente al dar de alta una cuenta MySQL. En esta práctica estudiamos permisos por tabla y columna, no autorización por fila.
+
+## Rol de Secretaría
+
+Secretaría podrá consultar, insertar y modificar información de los alumnos:
+
+``` sql
+GRANT SELECT, INSERT
+ON academia_it.alumnos
+TO 'rol_secretaria';
+```
+
+Solo podrá modificar estas columnas:
+
+``` sql
+GRANT UPDATE (nombre, apellido1, apellido2, email)
+ON academia_it.alumnos 
+TO 'rol_secretaria';
+```
+
+También podrá consultar profesores, asignaturas, cursos, curso_asignatura y matrículas. La gestión de matrículas conserva sus permisos actuales: aquí solo añadimos consulta, no escritura.
+
+``` sql
+GRANT SELECT ON academia_it.profesores TO 'rol_secretaria';
+GRANT SELECT ON academia_it.asignaturas TO 'rol_secretaria';
+GRANT SELECT ON academia_it.cursos TO 'rol_secretaria';
+GRANT SELECT ON academia_it.curso_asignatura TO 'rol_secretaria';
+GRANT SELECT ON academia_it.matriculas TO 'rol_secretaria';
+```
+
+No podrá modificar notas: No se concede `UPDATE` sobre `academia_it.notas`.
+
+## Rol de auditoría
+
+El auditor podrá consultar toda la base de datos:
+
+``` sql
+GRANT SELECT
+ON academia_it.*
+TO 'rol_auditor';
+```
+
+No podrá insertar, modificar ni eliminar registros. Aunque `rol_auditor` y `rol_lectura` tienen inicialmente los mismos privilegios, se mantienen separados porque representan funciones diferentes. En el futuro podrían evolucionar de manera distinta.
+
+## Rol de administrador de la base academia_it
+
+``` sql
+GRANT ALL PRIVILEGES
+ON academia_it.*
+TO 'rol_admin_academia';
+```
+
+Este rol recibe todos los privilegios aplicables sobre la base de datos `academia_it`. No recibe privilegios globales sobre `*.*`. Por tanto, no se convierte automáticamente en administrador completo del servidor MySQL.
+
+# Comprobar los privilegios de los roles
+
+``` sql
+SHOW GRANTS FOR 'rol_lectura';
+SHOW GRANTS FOR 'rol_profesor';
+SHOW GRANTS FOR 'rol_secretaria';
+SHOW GRANTS FOR 'rol_auditor';
+SHOW GRANTS FOR 'rol_admin_academia';
+```
+
+`SHOW GRANTS` permite revisar los privilegios y asignaciones de roles de una cuenta.
+
+![![](paste-RJTogLDbP-Q_DJjVsvwWT)](paste-tK-IPXazpHs0JJTuzXKDW)
+
+# Crear usuarios con diferentes orígenes
+
+Las contraseñas siguientes son únicamente ejemplos para el laboratorio. Deben adaptarse a la política de contraseñas configurada en el servidor.
+
+## Usuario que solo puede conectarse localmente
+
+``` sql
+CREATE USER 'profesor_local'@'localhost'
+IDENTIFIED BY 'Profesor_Local_2026!';
+```
+
+Esta cuenta está pensada para utilizarse desde el propio servidor MySQL.
+
+## Usuario que puede conectarse desde una red completa
+
+``` sql
+CREATE USER    
+    'secretaria_red'@'10.0.20.0/255.255.255.0'
+IDENTIFIED BY 'Secretaria_Red_2026!';
+```
+
+Esta cuenta podrá autenticarse desde direcciones como $10.0.20.10$, $10.0.20.50$, $10.0.20.200$. No coincidirá con $10.0.21.10$ o $192.168.1.20$.
+
+En MySQL 8.0.23 o posterior también puede utilizarse:
+
+``` sql
+CREATE USER 'secretaria_cidr'@'10.0.20.0/24'
+IDENTIFIED BY 'Secretaria_CIDR_2026!';
+```
+
+No crearemos esta segunda cuenta durante la práctica, porque representaría el mismo caso.
+
+## Usuario restringido a una IP concreta
+
+``` sql
+CREATE USER 'auditor_ip'@'10.0.20.50'
+IDENTIFIED BY 'Auditor_IP_2026!';
+```
+
+Solo podrá autenticarse cuando la conexión proceda de $10.0.20.50$.
+
+## Usuario autorizado desde cualquier origen
+
+``` sql
+CREATE USER 'consulta_global'@'%'
+IDENTIFIED BY 'Consulta_Global_2026!';
+```
+
+Esta cuenta se crea para estudiar el comportamiento de `%`. Debe utilizarse únicamente en un entorno de laboratorio. Autorizar cualquier origen y exponer directamente el puerto $3306$ a Internet sería una mala práctica.
+
+## Gestor local de la base de datos
+
+``` sql
+CREATE USER 'gestor_local'@'localhost'
+IDENTIFIED BY 'Gestor_Local_2026!';
+```
+
+## Usuario con privilegio directo
+
+``` sql
+CREATE USER 'temporal_directo'@'localhost'
+IDENTIFIED BY 'Temporal_Directo_2026!';
+```
+
+Esta cuenta no recibirá un rol. Se utilizará para comparar los permisos directos con los permisos heredados mediante roles.
+
+# Asignar roles a los usuarios
+
+## Asignar el rol de profesor
+
+``` sql
+GRANT 'rol_profesor'
+TO 'profesor_local'@'localhost';
+```
+
+## Asignar el rol de Secretaría
+
+``` sql
+GRANT 'rol_secretaria'
+TO 'secretaria_red'@'10.0.20.0/255.255.255.0';
+```
+
+## Asignar el rol de auditor
+
+``` sql
+GRANT 'rol_auditor'
+TO 'auditor_ip'@'10.0.20.50';
+```
+
+## Asignar el rol de lectura
+
+``` sql
+GRANT 'rol_lectura'
+TO 'consulta_global'@'%';
+```
+
+## Asignar el rol de administrador de academia_it
+
+``` sql
+GRANT 'rol_admin_academia'
+TO 'gestor_local'@'localhost';
+```
+
+Para asignar privilegios se utiliza `GRANT ... ON ...;` para asignar un rol se utiliza `GRANT rol TO usuario`, sin cláusula `ON`.
+
+# Activar los roles de forma predeterminada
+
+Asignar un rol no implica necesariamente que se active al iniciar sesión. Un privilegio directo está siempre activo, pero un rol puede estar activo o inactivo según su configuración.
+
+Configuramos los roles predeterminados:
+
+``` sql
+SET DEFAULT ROLE 'rol_profesor'
+TO 'profesor_local'@'localhost';
+
+SET DEFAULT ROLE 'rol_secretaria'
+TO 'secretaria_red'@'10.0.20.0/255.255.255.0';
+
+SET DEFAULT ROLE 'rol_auditor'
+TO 'auditor_ip'@'10.0.20.50';
+
+SET DEFAULT ROLE 'rol_lectura'
+TO 'consulta_global'@'%';
+
+SET DEFAULT ROLE 'rol_admin_academia'
+TO 'gestor_local'@'localhost';
+```
+
+Otra posibilidad sería:
+
+``` sql
+SET DEFAULT ROLE ALL
+TO 'profesor_local'@'localhost';
+```
+
+Esta variante activa de forma predeterminada todos los roles concedidos a la cuenta.
+
+# Conceder un privilegio directamente
+
+Al usuario `temporal_directo` le concedemos directamente permiso de lectura sobre la tabla Alumnos:
+
+``` sql
+GRANT SELECT
+ON academia_it.alumnos
+TO 'temporal_directo'@'localhost';
+```
+
+No hemos creado ni asignado ningún rol. La diferencia es: \* `profesor_local` $\rightarrow$ recibe `rol_profesor` $\rightarrow$ hereda sus privilegios \* `temporal_directo` $\rightarrow$ recibe `SELECT` directamente $\rightarrow$ no depende de ningún rol
+
+# Revisar la configuración de las cuentas
+
+## Mostrar usuarios y orígenes
+
+``` sql
+SELECT    
+    User,    
+    Host,    
+    account_locked
+FROM mysql.user
+WHERE User IN (    
+    'profesor_local',    
+    'secretaria_red',    
+    'auditor_ip',    
+    'consulta_global',    
+    'gestor_local',    
+    'temporal_directo'
+);
+```
+
+![](paste-j1QRWtijxZUkuIzVwgqIk)
+
+## Mostrar los privilegios y roles concedidos
+
+``` sql
+SHOW GRANTS FOR 'profesor_local'@'localhost';
+SHOW GRANTS FOR 'secretaria_red'@'10.0.20.0/255.255.255.0';
+SHOW GRANTS FOR 'auditor_ip'@'10.0.20.50';
+SHOW GRANTS FOR 'consulta_global'@'%';
+SHOW GRANTS FOR 'gestor_local'@'localhost';
+SHOW GRANTS FOR 'temporal_directo'@'localhost';
+```
+
+Para ver los privilegios heredados mediante un rol:
+
+``` sql
+SHOW GRANTS
+FOR 'profesor_local'@'localhost'
+USING 'rol_profesor';
+```
+
+![](paste-jhDU1d2vfWpCY72x74i_Z)
+
+*Nota:* No es necesario ejecutar `FLUSH PRIVILEGES` después de utilizar `CREATE USER`, `GRANT` o `REVOKE`. Las sentencias de administración de cuentas comunican los cambios directamente al servidor; `FLUSH PRIVILEGES` se necesita principalmente cuando se modifican manualmente las tablas internas, algo que no debe hacerse en esta práctica.
+
+# Pruebas del usuario profesor_local
+
+Salimos de MySQL:
+
+``` bash
+EXIT;
+```
+
+Nos conectamos desde el propio servidor e introducimos la contraseña:
+
+``` bash
+mysql -u profesor_local -p
+```
+
+## Comprobar la identidad y el rol activo
+
+``` sql
+SELECT    
+    USER(),    
+    CURRENT_USER(),    
+    CURRENT_ROLE();
+```
+
+![](paste-fmuE7bUy_3c-Ixk1D-Voa)
+
+## Consulta permitida
+
+``` sql
+SELECT * 
+FROM academia_it.alumnos 
+LIMIT 3;
+```
+
+![](paste-L4SUMDKSY5TL0TORf69O_)
+
+## Consulta de notas permitida
+
+``` sql
+SELECT * 
+FROM academia_it.notas 
+LIMIT 3;
+```
+
+![](paste-XtEwiDFVfmtdzmoiMa9oK)
+
+## Inserción de una nota permitida
+
+Seleccionamos una matrícula sin nota en esta misma sesión. Después abrimos una transacción; no añadimos alumnos ni cambiamos las matrículas. Como `profesor_local`:
+
+``` sql
+SET @id_matricula_prueba = (  
+  SELECT m.id_matricula  
+  FROM academia_it.matriculas AS m  
+  LEFT JOIN academia_it.notas AS n    
+    ON n.id_matricula = m.id_matricula  
+  WHERE n.id_nota IS NULL  
+  ORDER BY m.id_matricula 
+  LIMIT 1
+);
+
+SELECT @id_matricula_prueba; -- Debe ser un identificador, no NULL.
+
+START TRANSACTION;
+
+INSERT INTO academia_it.notas  
+  (id_matricula, nota, fecha_evaluacion)
+VALUES 
+  (@id_matricula_prueba, 6.50, CURRENT_DATE);
+```
+
+Resultado esperado: Inserción correcta.
+
+## Modificación de la columna nota
+
+``` sql
+UPDATE academia_it.notas
+SET nota = 7.00
+WHERE id_matricula = @id_matricula_prueba;
+
+SELECT id_matricula, nota 
+FROM academia_it.notas
+WHERE id_matricula = @id_matricula_prueba;
+```
+
+![](paste-PGpN0nQrMlYsGpe3evylT)
+
+Resultado esperado: Modificación correcta.
+
+## Intentar modificar una columna no autorizada
+
+``` sql
+UPDATE academia_it.notas
+SET id_matricula = id_matricula
+WHERE id_matricula = @id_matricula_prueba;
+```
+
+Resultado esperado: Permiso `UPDATE` denegado para `id_matricula`. Aunque se intente conservar el mismo valor, sigue siendo una columna no autorizada.
+
+## Intentar borrar una nota
+
+``` sql
+DELETE FROM academia_it.notas
+WHERE id_matricula = @id_matricula_prueba;
+```
+
+![](paste-SwWRO2TrBHcjUrMgAMkhP)
+
+Resultado esperado: `ERROR 1142`: comando `DELETE` denegado.
+
+## Revertir las operaciones de prueba
+
+``` sql
+ROLLBACK;
+
+SELECT * 
+FROM academia_it.notas
+WHERE id_matricula = @id_matricula_prueba;
+```
+
+![](paste-dj4Nw4fl1SzFPkEEWevbx)
+
+Resultado esperado: La consulta no devuelve filas: la inserción y el cambio de nota se han deshecho. El alumno y su matrícula siguen existiendo. No se crea ninguna tabla auxiliar.
+
+# Activar y desactivar roles durante una sesión
+
+Seguimos conectados como `profesor_local`.
+
+## Desactivar todos los roles
+
+``` sql
+SET ROLE NONE;
+```
+
+Comprobamos:
+
+``` sql
+SELECT CURRENT_ROLE();
+```
+
+![](paste-Nwjmo0RPFo6q7Yr_pCJ6h)
+
+Resultado esperado: `NONE`.
+
+Intentamos consultar:
+
+``` sql
+SELECT * 
+FROM academia_it.alumnos;
+```
+
+La consulta debería ser rechazada porque los privilegios procedían del rol.
+
+![](paste-8RCgL0I1uoE2Izo6zEJKW)
+
+## Restaurar el rol predeterminado
+
+``` sql
+SET ROLE DEFAULT;
+```
+
+Comprobamos y volvemos a consultar para verificar que vuelve a funcionar. MySQL permite modificar los roles activos de la sesión mediante `SET ROLE`, y `CURRENT_ROLE()` muestra cuáles están activos.
+
+# Pruebas del usuario secretaria_red
+
+Desde un equipo cuya IP pertenezca a `10.0.20.0/24`: Nota: cambiar 10.0.20.101 por la ip del servidor mysql
+
+``` bash
+mysql -h 10.0.20.101 -u secretaria_red -p
+```
+
+O si estamos usando el cliente de windows:
+
+``` bash
+mysqlsh -h 10.0.20.101 -u secretaria_red -p
+```
+
+- Verificar identidad y rol: `SELECT USER(), CURRENT_USER(), CURRENT_ROLE();`
+
+  ![](paste-LMetF9b9yCTwdIC_fCSR3)
+
+- Consultar alumnos: `SELECT * FROM academia_it.alumnos LIMIT 3;` (Debe funcionar)
+
+  ![](paste-Hweze3QPHyYspaeEAYxRi)
+
+- Insertar un alumno con transacción y `LAST_INSERT_ID()`.
+
+  ``` sql
+  START TRANSACTION;
+  INSERT INTO academia_it.alumnos
+    (nombre, apellido1, apellido2, email, fecha_alta)
+  VALUES
+    ('Pedro', 'Ruiz', 'López',
+     'practica04.pedro@example.com', CURRENT_DATE);
+  SET @id_alumno_prueba = LAST_INSERT_ID();
+  ```
+
+- Ver el registro del alumno que acabamos de crear:
+
+  ``` sql
+  SELECT * FROM academia_it.alumnos where id_alumno =@id_alumno_prueba;
+  ```
+
+  ![](paste-yByAdXI-qphimnPf52M26)
+
+- Modificar un correo electrónico (Debe funcionar).
+
+  ``` sql
+  UPDATE academia_it.alumnos
+  SET email = 'practica04.pedro.ruiz@example.com'
+  WHERE id_alumno = @id_alumno_prueba;
+  ```
+
+- Intentar modificar una nota (ERROR: `UPDATE` denegado).
+
+  ![](paste-HPwhnGtLvnEPbbX1h9BYL)
+
+- Intentar eliminar un alumno (ERROR: `DELETE` denegado).
+
+  ![](paste-J4YF11W3aOP6_hj5v7DVd)
+
+- `ROLLBACK;` para limpiar los cambios de prueba.
+
+  ``` sql
+  ROLLBACK;
+  ```
+
+- Comprobación del rollback;
+
+  ![](paste-td0IZKzJU4qzVNg8AKJB8)
+
+# Pruebas del usuario restringido a una IP
+
+Nuestro equipo de auditoría nos comunica que ha cambiado al auditor su ip ya no es `'10.0.20.50'` sino `'10.0.20.10'`, así que en lugar de borrar el usuario, crear uno nuevo y asignarle de nuevo los permisos, vamos a renombrar el usuario:
+
+``` sql
+RENAME USER 'auditor_ip'@'10.0.20.50' TO 'auditor_ip'@'10.0.20.10';
+```
+
+También tendremos que proporcionarle una nueva contraseña por seguridad
+
+``` sql
+ALTER USER 'auditor_ip'@'10.0.20.10' IDENTIFIED BY 'NuevaContraseñaSegura123!';
+```
+
+Desde `10.0.20.10`:
+
+``` bash
+mysqlsh -h 10.0.20.101 -u auditor_ip -p
+```
+
+- **Consulta permitida:** `SELECT * FROM academia_it.notas;`
+
+- **Modificación denegada:** `UPDATE` sobre notas debe ser rechazada.
+
+- Modificación denegada porque el rol solo contiene `SELECT`.
+
+  ::: {}
+  ``` sql
+  UPDATE academia_it.notas
+  SET nota = 10
+  WHERE id_nota = 1;
+  ```
+
+  `ERROR: 1142: UPDATE command denied to user 'auditor_ip'@'10.0.20.10' for table 'notas'`
+  :::
+
+- **Prueba desde otra IP:** Intentar conectar como `auditor_ip` desde `10.0.20.60` será rechazado porque no existe la cuenta para ese origen.
+
+# Pruebas del usuario autorizado desde cualquier origen
+
+Desde cualquier equipo que tenga conectividad y sea admitido por el firewall:
+
+``` bash
+mysqlsh -h 10.0.20.101 -u consulta_global -p
+```
+
+- **Consulta permitida:** `SELECT * FROM academia_it.profesores;`
+
+- **Inserción denegada:** `INSERT` en profesores debe ser rechazada porque el rol solo contiene `SELECT`.
+
+  ``` sql
+  INSERT INTO academia_it.profesores
+    (nombre, apellido1, email, fecha_alta)
+  VALUES ('Profesor', 'Prueba',
+          'practica04.profesor@example.com', CURRENT_DATE);
+  ```
+
+  `ERROR: 1142: INSERT command denied to user 'consulta_global'@'10.0.20.10' for table 'profesores'`
+
+## Conclusión importante
+
+- `'@'%'` **no significa:** Puede hacer cualquier cosa.
+- **Significa:** Puede intentar conectarse desde cualquier origen accesible. Las acciones que puede realizar dependen de sus privilegios.
+
+# Pruebas del gestor local
+
+Nos conectamos desde el servidor:
+
+``` bash
+mysql -u gestor_local -p
+```
+
+Comprobamos:
+
+``` sql
+SELECT CURRENT_ROLE();
+SHOW GRANTS;
+SHOW GRANTS FOR 'gestor_local'@'localhost' USING 'rol_admin_academia';
+```
+
+![](paste-yBe3ZrPdWBykCQRV-Rm1N)
+
+![](paste-MkeKKCy-j-4ivOn2I67O6)
+
+![](paste-6f1r-8rID7bzAt6LILOc0)
+
+Resultado esperado: privilegios de administración sobre `academia_it.*`, incluidos `CREATE`, `ALTER` y `DROP`. No ejecutamos cambios estructurales sobre el modelo. Probamos una modificación reversible con `START TRANSACTION` y `ROLLBACK`.
+
+Intentamos crear otro usuario:
+
+``` sql
+CREATE USER 'usuario_prueba'@'localhost'
+IDENTIFIED BY 'Usuario_Prueba_2026!';
+```
+
+`ERROR 1227 (42000): Access denied; you need (at least one of) the CREATE USER privilege(s) for this operation`
+
+Debe ser rechazado porque `rol_admin_academia` tiene privilegios sobre `academia_it.*` pero no posee el privilegio global `CREATE USER`.
+
+Probamos una modificación reversible sobre una tabla existente:
+
+``` sql
+START TRANSACTION;
+
+SET @id_profesor_prueba =
+  (SELECT MIN(id_profesor) 
+    FROM academia_it.profesores);
+
+UPDATE academia_it.profesores
+SET nombre = 'Profesor de prueba'
+WHERE id_profesor = @id_profesor_prueba;
+
+SELECT id_profesor, nombre 
+    FROM academia_it.profesores
+WHERE id_profesor = @id_profesor_prueba;
+
+ROLLBACK;
+```
+
+# Pruebas del usuario con privilegio directo
+
+Nos conectamos directamente desde el servidor
+
+``` bash
+mysql -u temporal_directo -p
+```
+
+- Comprobamos el rol: devuelve `NONE`.
+
+- ![](paste-quC4YTnCfGKkf1uEvwy5s)
+
+- `SELECT * FROM academia_it.alumnos;` funciona porque el privilegio `SELECT` fue concedido directamente.
+
+- `SELECT * FROM academia_it.notas;` falla porque el usuario solo tiene permiso sobre Alumnos.
+
+  `ERROR 1142 (42000): SELECT command denied to user 'temporal_directo'@'localhost' for table 'notas'`
+
+# Asignar varios roles a un mismo usuario
+
+Vamos a conceder a `profesor_local` también el rol de lectura:
+
+``` sql
+GRANT 'rol_lectura'
+TO 'profesor_local'@'localhost';
+
+SET DEFAULT ROLE    
+    'rol_profesor',    
+    'rol_lectura'
+TO 'profesor_local'@'localhost';
+```
+
+Volvemos a conectarnos como `profesor_local` y comprobamos con `SELECT CURRENT_ROLE();`. La cuenta tendrá los privilegios combinados de forma aditiva.
+
+``` bash
+mysql -u profesor_local -p
+```
+
+``` sql
+SELECT CURRENT_ROLE();
+SHOW GRANTS FOR 'profesor_local'@'localhost';
+```
+
+![](paste-fPyoQczpxsa38ywOOyJ5n)
+
+![](paste-b2n5lO5OHmabAJG5qE5TS)
+
+Comprobamos que podemos ver la tabla profesores:
+
+![](paste-TDHe9syKcp1zFlbeIxdUQ)
+
+# Revocar privilegios
+
+## Retirar un privilegio a un rol
+
+Como administrador `sudo mysql`:
+
+``` sql
+REVOKE INSERT
+ON academia_it.notas
+FROM 'rol_profesor';
+```
+
+Comprobamos:
+
+``` sql
+SHOW GRANTS FOR 'rol_profesor';
+```
+
+![](paste-aQqrgycTFjmAx9yzvB4Lu)
+
+Reconectad `profesor_local`, verificad `CURRENT_ROLE()` y revisad `SHOW GRANTS ... USING`. `INSERT` ya no estará disponible por este rol.
+
+## Volver a concederlo
+
+``` sql
+GRANT INSERT
+ON academia_it.notas
+TO 'rol_profesor';
+```
+
+![](paste-fXetxj-nqY_6c-nVz56ek)
+
+Vemos que no podemos revocar el privilegio directamente al usuario, ya que éste ha sido concedido a través del rol:
+
+![](paste-W44k25hpryi9cpPXT1odU)
+
+# Revocar un rol a un usuario
+
+Retiramos el rol de auditor:
+
+``` sql
+REVOKE 'rol_auditor'
+FROM 'auditor_ip'@'10.0.20.10';
+```
+
+La cuenta sigue existiendo y puede autenticarse desde su IP, pero ya no dispone de los privilegios del rol. Desconectad y reconectad al auditor antes de comprobarlo.
+
+![](paste-zNCx2poKd3kuAx9fzc3Hj)
+
+Volvemos a asignarlo:
+
+``` sql
+GRANT 'rol_auditor'
+TO 'auditor_ip'@'10.0.20.10';
+
+SET DEFAULT ROLE 'rol_auditor'
+TO 'auditor_ip'@'10.0.20.10';
+```
+
+![](paste-0-oZ5CjlvAB4DKDRKQi6X)
+
+Desde la cuenta de administrador no podemos desactivar el rol de un usuario para su sessión activa. Recordemos que el propio usuario sí que puede hacerlo mediante
+
+``` sql
+SET ROLE NONE;
+```
+
+Pero desde otra cuenta no podemos hacer:
+
+``` sql
+SET ROLE NONE TO 'auditor_ip'@'10.0.20.10'; ---ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'TO 'auditor_ip'@'10.0.20.10'' at line 1
+```
+
+# Bloquear y desbloquear una cuenta
+
+Podemos bloquear temporalmente una cuenta sin eliminarla:
+
+``` sql
+ALTER USER 'consulta_global'@'%' ACCOUNT LOCK;
+```
+
+Intentamos conectarnos y comprobamos que la autenticación se rechaza.
+
+![](paste-QHbZ6eaFRsqfP_w8rrgtD)
+
+Para desbloquearla:
+
+``` sql
+ALTER USER 'consulta_global'@'%' ACCOUNT UNLOCK;
+```
+
+# Cambiar una contraseña
+
+``` sql
+ALTER USER 'profesor_local'@'localhost'
+IDENTIFIED BY 'Nueva_Clave_Profesor_2026!';
+```
+
+A partir de ese momento habrá que utilizar la nueva contraseña.
+
+# Protección opcional mediante TLS
+
+Para exigir una conexión cifrada a la cuenta accesible desde cualquier origen:
+
+``` sql
+ALTER USER 'consulta_global'@'%' REQUIRE SSL;
+```
+
+Después de conectarnos, podemos comprobar el cifrado con:
+
+``` sql
+SHOW STATUS LIKE 'Ssl_cipher';
+```
+
+Para retirar temporalmente este requisito:
+
+``` sql
+ALTER USER 'consulta_global'@'%' REQUIRE NONE;
+```
+
+# Matriz final de comprobación
+
+| Usuario | Conexión admitida | SELECT | INSERT | UPDATE | DELETE | CREATE |
+|:----------|:----------|:----------|:----------|:----------|:----------|:----------|
+| `profesor_local` | Solo local | Sí | Solo Notas | nota y fecha | No | No |
+| `secretaria_red` | Red $10.0.20.0/24$ | Sí, limitado | Alumnos | Columnas concretas de Alumnos | No | No |
+| `auditor_ip` | Solo $10.0.20.10$ | Sí | No | No | No | No |
+| `consulta_global` | Cualquier origen accesible | Sí | No | No | No | No |
+| `gestor_local` | Solo local | Sí | Sí | Sí | Sí | Sí, en academia_it |
+| `temporal_directo` | Solo local | Solo Alumnos | No | No | No | No |
+
+# Errores habituales
+
+## Error 1: el usuario existe, pero no puede conectarse remotamente
+
+Comprobar: `SELECT User, Host FROM mysql.user WHERE User = 'secretaria_red';`,
+
+después revisar `sudo ss -lntp | grep 3306` y `sudo ufw status`.
+
+Puede existir correctamente la cuenta, pero MySQL estar escuchando únicamente en `127.0.0.1`.
+
+## Error 2: el usuario se conecta, pero no puede consultar
+
+Comprobar `SELECT CURRENT_ROLE();`. Si devuelve `NONE`, activamos el rol con `SET ROLE DEFAULT;`.
+
+## Error 3: se creó 'usuario'\@'localhost', pero se intenta acceder remotamente
+
+Esta cuenta no equivale a `'usuario'@'%'`. Debe crearse una cuenta correspondiente al origen remoto.
+
+## Error 4: utilizar únicamente el nombre del usuario
+
+No debe confundirse `CREATE USER 'ana';` con `CREATE USER 'ana'@'localhost';`. Cuando se omite el componente `@host`, MySQL interpreta el nombre como equivalente a `'ana'@'%'`.
+
+## Error 5: conceder privilegios excesivos
+
+No deberíamos utilizar indiscriminadamente `GRANT ALL PRIVILEGES ON *.* TO 'usuario'@'%' WITH GRANT OPTION;`, ya que va en contra del principio de mínimo privilegio.
+
+# Preguntas de reflexión
+
+1.  ¿Por qué `'ana'@'localhost'` y `'ana'@'10.0.20.10'` son cuentas diferentes?
+2.  ¿Qué diferencia existe entre conceder un privilegio directamente y concederlo mediante un rol?
+3.  ¿Por qué un usuario puede conectarse correctamente y, aun así, recibir un error al ejecutar `SELECT`?
+4.  ¿Qué diferencia existe entre `SET ROLE NONE` y `REVOKE rol FROM usuario`?
+5.  ¿Qué riesgos presenta utilizar `'usuario'@'%'`?
+6.  ¿Por qué `rol_admin_academia` no puede crear usuarios del servidor?
+7.  ¿Qué ventaja ofrece conceder `UPDATE` solamente sobre determinadas columnas?
+8.  ¿Qué tres elementos deben comprobarse cuando falla una conexión remota?
+9.  ¿Por qué no es necesario ejecutar `FLUSH PRIVILEGES` después de `GRANT`?
+10. ¿Qué ocurriría si retiramos un privilegio al rol utilizado por veinte usuarios?
+
+# Actividad final propuesta
+
+Crear una cuenta denominada `coordinador` que cumpla estas condiciones:
+
+\* Solo puede conectarse desde $10.0.20.10$.
+
+\* Puede consultar todas las tablas.
+
+\* Puede insertar y modificar profesores.
+
+\* Puede modificar únicamente `id_profesor` en `curso_asignatura` para reasignar quién imparte una asignatura de un curso.
+
+\* No puede eliminar registros.
+
+\* No puede crear, modificar ni eliminar tablas.
+
+\* Debe recibir sus privilegios mediante un rol llamado `rol_coordinador`.
+
+Habrá que entregar:
+
+1\. La sentencia de creación del rol.
+
+CREATE ROLE 'rol_coordinador';
+
+2\. Los privilegios concedidos al rol.
+
+3\. La sentencia de creación del usuario.
+
+4\. La asignación del rol.
+
+5\. La configuración del rol predeterminado.
+
+6\. Las consultas utilizadas para comprobar los permisos.
+
+7\. Una operación permitida y otra denegada.
+
+8\. El resultado de `SHOW GRANTS FOR 'coordinador'@'10.0.20.10';`.
+
+La prueba de reasignación debe usar un `id_profesor` existente y terminar con `ROLLBACK`. No se modifica `id_profesor` en asignaturas, porque esa columna no pertenece al catálogo de Academia IT.
+
+------------------------------------------------------------------------
+
+# Limpieza del entorno
+
+La limpieza elimina únicamente las cuentas y roles de esta práctica. Conservamos `academia_it`, sus siete tablas y los datos de la práctica anterior. Cerrad las sesiones de prueba antes de ejecutarla.
+
+## Eliminar los usuarios
+
+``` sql
+DROP USER IF EXISTS 
+    'profesor_local'@'localhost', 
+    'secretaria_red'@'10.0.20.0/255.255.255.0', 
+    'auditor_ip'@'10.0.20.50', 
+    'consulta_global'@'%', 
+    'gestor_local'@'localhost', 
+    'temporal_directo'@'localhost', 
+    'coordinador'@'10.0.20.60';
+```
+
+## Eliminar los roles
+
+``` sql
+DROP ROLE IF EXISTS 
+    'rol_lectura', 
+    'rol_profesor', 
+    'rol_secretaria', 
+    'rol_auditor', 
+    'rol_admin_academia', 
+    'rol_coordinador';
+```
+
+## Comprobar que Academia IT se conserva
+
+``` sql
+USE academia_it;
+SHOW TABLES;
+SELECT COUNT(*) AS matriculas FROM academia_it.matriculas;
+SELECT COUNT(*) AS notas FROM academia_it.notas;
+```
+
+# Conclusión
+
+En esta práctica hemos aplicado los tres conceptos principales:
+
+\* **Privilegio:** Acción disponible en MySQL (`SELECT`, `INSERT`, `UPDATE`, `DELETE`...)
+
+\* **Permiso:** Privilegio aplicado a una cuenta o rol sobre una base de datos, tabla o columna
+
+\* **Rol:** Conjunto reutilizable de privilegios asignable a uno o varios usuarios
+
+Además, hemos comprobado que la autorización en MySQL depende de dos dimensiones distintas: ¿Desde dónde puede conectarse? y ¿Qué puede hacer una vez conectado?
+
+## Referencias de MySQL
+
+- Roles: <https://dev.mysql.com/doc/refman/8.0/en/roles.html>
+- GRANT y privilegios por columna: <https://dev.mysql.com/doc/refman/8.4/en/grant.html>
+- SHOW GRANTS: <https://dev.mysql.com/doc/refman/8.4/en/show-grants.html>
+- Nombres de cuenta y origen: <https://dev.mysql.com/doc/refman/8.0/en/account-names.html>
+
+------------------------------------------------------------------------
+
+![](paste-bi1AdYhpjmNojfPR86Zjc)
