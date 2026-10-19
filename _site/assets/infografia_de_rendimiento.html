@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infografía: Diagnóstico y Rendimiento de Sistemas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- CONFIRMATION: I explicitly confirm that NEITHER Mermaid JS NOR SVG were used anywhere in this output. Palette chosen: Vibrant Tech (Indigo, Cyan, Pink, Emerald). -->
+<style>
+body {
+    background-color: #f8fafc;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+}
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 350px;
+    max-height: 400px;
+}
+@media (min-width: 768px) {
+    .chart-container {
+        height: 400px;
+    }
+}
+.card-shadow {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+.flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.flow-arrow::after {
+    content: "▶";
+    font-size: 1.5rem;
+    color: #4f46e5;
+    margin: 0 10px;
+}
+@media (max-width: 768px) {
+    .flow-arrow::after {
+        content: "▼";
+        margin: 10px 0;
+    }
+    .flow-container {
+        flex-direction: column;
+    }
+}
+.icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+</style>
+</head>
+<body class="antialiased">
+
+<header class="bg-indigo-900 text-white py-16 px-4 mb-10 shadow-lg border-b-8 border-pink-500">
+    <div class="max-w-6xl mx-auto text-center">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">Anatomía del Rendimiento</h1>
+        <p class="text-xl md:text-2xl text-indigo-200 font-light max-w-3xl mx-auto">Guía visual de procesos, monitorización y diagnóstico de cuellos de botella para Administradores de Sistemas y DBAs.</p>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 pb-20 space-y-16">
+
+    <section class="bg-white rounded-2xl p-8 card-shadow border-t-4 border-cyan-400">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-indigo-900 mb-2">1. Conceptos Core del Sistema</h2>
+            <p class="text-gray-600 text-lg">Para diagnosticar un servidor, primero debemos entender las piezas que lo componen y cómo el sistema operativo gestiona el trabajo en segundo plano.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-indigo-500 text-white px-3 py-1 rounded-bl-lg font-bold">PID</div>
+                <div class="icon-box bg-indigo-200 text-indigo-700 mb-4">⚙️</div>
+                <h3 class="text-xl font-bold text-indigo-900 mb-2">Procesos</h3>
+                <p class="text-sm text-gray-700">Programa en ejecución con recursos asignados (RAM, CPU). Pueden dividirse en <strong>subprocesos (threads)</strong> para paralelizar el trabajo.</p>
+            </div>
+            
+            <div class="bg-pink-50 rounded-xl p-6 border border-pink-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-pink-500 text-white px-3 py-1 rounded-bl-lg font-bold">DAEMON</div>
+                <div class="icon-box bg-pink-200 text-pink-700 mb-4">🛡️</div>
+                <h3 class="text-xl font-bold text-pink-900 mb-2">Servicios</h3>
+                <p class="text-sm text-gray-700">Procesos críticos sin interfaz gráfica que se inician con el sistema. Son los pilares invisibles (ej. SGBD, DNS, Servidor Web).</p>
+            </div>
+
+            <div class="bg-cyan-50 rounded-xl p-6 border border-cyan-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-cyan-500 text-white px-3 py-1 rounded-bl-lg font-bold">CRON</div>
+                <div class="icon-box bg-cyan-200 text-cyan-700 mb-4">⏱️</div>
+                <h3 class="text-xl font-bold text-cyan-900 mb-2">Tareas</h3>
+                <p class="text-sm text-gray-700">Unidades de trabajo programadas. Un proceso ejecutándose en segundo plano sin interacción directa del usuario.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white rounded-2xl p-8 card-shadow border-t-4 border-indigo-500">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-indigo-900 mb-2">2. El Flujo de Diagnóstico (Metodología)</h2>
+            <p class="text-gray-600 text-lg">Resolver problemas de rendimiento exige un método sistemático, desde la detección de la anomalía hasta la resolución y documentación.</p>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between bg-gray-50 p-6 rounded-xl border border-gray-200 flow-container">
+            <div class="bg-white px-6 py-4 rounded-lg shadow border-b-4 border-indigo-400 text-center font-bold text-indigo-900 flex-1 w-full md:w-auto flow-arrow">1. Observar</div>
+            <div class="bg-white px-6 py-4 rounded-lg shadow border-b-4 border-cyan-400 text-center font-bold text-cyan-900 flex-1 w-full md:w-auto flow-arrow">2. Identificar</div>
+            <div class="bg-white px-6 py-4 rounded-lg shadow border-b-4 border-pink-400 text-center font-bold text-pink-900 flex-1 w-full md:w-auto flow-arrow">3. Localizar</div>
+            <div class="bg-white px-6 py-4 rounded-lg shadow border-b-4 border-amber-400 text-center font-bold text-amber-900 flex-1 w-full md:w-auto flow-arrow">4. Diferenciar</div>
+            <div class="bg-white px-6 py-4 rounded-lg shadow border-b-4 border-emerald-400 text-center font-bold text-emerald-900 flex-1 w-full md:w-auto">5. Aplicar</div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-2xl p-8 card-shadow border-t-4 border-emerald-400 flex flex-col">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-indigo-900 mb-2">Anatomía de la RAM</h2>
+                <p class="text-gray-600 text-sm">No toda la memoria consumida es memoria "perdida". Los sistemas modernos optimizan el uso mediante cachés. <em>(Datos ilustrativos de un servidor sano)</em>.</p>
+            </div>
+            <div class="flex-grow flex items-center justify-center">
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-8 card-shadow border-t-4 border-pink-500 flex flex-col">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-indigo-900 mb-2">Frecuencia de Cuellos de Botella</h2>
+                <p class="text-gray-600 text-sm">Distribución relativa de la criticidad e impacto en el rendimiento global según el recurso saturado en servidores de bases de datos.</p>
+            </div>
+            <div class="flex-grow flex items-center justify-center">
+                <div class="chart-container">
+                    <canvas id="bottleneckChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-white rounded-2xl p-8 card-shadow border-t-4 border-amber-400">
+        <div class="mb-8 md:col-span-2">
+            <h2 class="text-3xl font-bold text-indigo-900 mb-2">Profundidad de Herramientas de Monitorización</h2>
+            <p class="text-gray-600 text-lg">Comparativa de las herramientas integradas en Windows según su capacidad para diagnosticar diferentes componentes. <strong>Perfmon</strong> domina en históricos, mientras <strong>Resmon</strong> destaca en granularidad en tiempo real.</p>
+        </div>
+        <div class="chart-container w-full max-w-5xl">
+            <canvas id="toolsChart"></canvas>
+        </div>
+    </section>
+
+    <section class="bg-indigo-900 text-white rounded-2xl p-8 card-shadow">
+        <h2 class="text-3xl font-bold text-cyan-300 mb-6">Guía Rápida de Diagnóstico (DBAs)</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-indigo-800 text-indigo-100">
+                        <th class="p-4 font-semibold rounded-tl-lg">Síntoma</th>
+                        <th class="p-4 font-semibold">Recurso Sospechoso</th>
+                        <th class="p-4 font-semibold">Herramienta</th>
+                        <th class="p-4 font-semibold rounded-tr-lg">Qué buscar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-indigo-700">
+                    <tr class="hover:bg-indigo-800/50 transition">
+                        <td class="p-4">Consultas lentas, BD responde</td>
+                        <td class="p-4 font-bold text-pink-400">Disco (I/O)</td>
+                        <td class="p-4 text-cyan-200">Resmon / Perfmon</td>
+                        <td class="p-4 text-sm text-indigo-100">Alta latencia (ms) y "Cola de disco" elevada.</td>
+                    </tr>
+                    <tr class="hover:bg-indigo-800/50 transition">
+                        <td class="p-4">Servidor web dice "Timeout"</td>
+                        <td class="p-4 font-bold text-emerald-400">Red / Servicio</td>
+                        <td class="p-4 text-cyan-200">Task Manager / Visor Eventos</td>
+                        <td class="p-4 text-sm text-indigo-100">Servicio detenido o errores de pool de conexiones.</td>
+                    </tr>
+                    <tr class="hover:bg-indigo-800/50 transition">
+                        <td class="p-4">Servidor "congelado" a tirones</td>
+                        <td class="p-4 font-bold text-amber-400">CPU</td>
+                        <td class="p-4 text-cyan-200">Get-Process / Task Manager</td>
+                        <td class="p-4 text-sm text-indigo-100">Procesos al 100%. Si es el SGBD: faltan índices.</td>
+                    </tr>
+                    <tr class="hover:bg-indigo-800/50 transition">
+                        <td class="p-4">Base de datos se reinicia sola</td>
+                        <td class="p-4 font-bold text-cyan-400">Memoria (RAM)</td>
+                        <td class="p-4 text-cyan-200">Visor Eventos / Resmon</td>
+                        <td class="p-4 text-sm text-indigo-100">Errores OOM (Out of Memory) y Hard Faults altos.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<footer class="bg-gray-900 text-gray-400 py-8 text-center text-sm">
+    <p>Visualización de Datos - Administración y Rendimiento de Sistemas</p>
+</footer>
+
+<script>
+function wrapLabel(text, maxChars = 16) {
+    if (text.length <= maxChars) return text;
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    
+    words.forEach(word => {
+        if ((currentLine + word).length > maxChars) {
+            if (currentLine) lines.push(currentLine.trim());
+            currentLine = word + ' ';
+        } else {
+            currentLine += word + ' ';
+        }
+    });
+    if (currentLine) lines.push(currentLine.trim());
+    return lines;
+}
+
+const tooltipConfig = {
+    callbacks: {
+        title: function(tooltipItems) {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            } else {
+                return label;
+            }
+        }
+    }
+};
+
+const ramCtx = document.getElementById('ramChart').getContext('2d');
+new Chart(ramCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            wrapLabel('En Uso (Activa)'), 
+            wrapLabel('En Espera (Caché Reciclable)'), 
+            wrapLabel('Modificada (Pendiente Disco)'), 
+            wrapLabel('Libre (Sin Uso)')
+        ],
+        datasets: [{
+            data: [45, 35, 10, 10],
+            backgroundColor: ['#e91e63', '#00bcd4', '#ffc107', '#4caf50'],
+            borderWidth: 0,
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: tooltipConfig
+        },
+        cutout: '70%'
+    }
+});
+
+const bottleneckCtx = document.getElementById('bottleneckChart').getContext('2d');
+new Chart(bottleneckCtx, {
+    type: 'radar',
+    data: {
+        labels: [
+            wrapLabel('Saturación de CPU'), 
+            wrapLabel('Agotamiento de RAM (OOM)'), 
+            wrapLabel('Cola de Disco (I/O)'), 
+            wrapLabel('Latencia de Red'), 
+            wrapLabel('Bloqueos de Procesos'), 
+            wrapLabel('Inodos / Espacio FS')
+        ],
+        datasets: [{
+            label: 'Criticidad e Impacto',
+            data: [85, 95, 90, 60, 75, 50],
+            backgroundColor: 'rgba(233, 30, 99, 0.2)',
+            borderColor: '#e91e63',
+            pointBackgroundColor: '#e91e63',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#e91e63',
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            r: {
+                angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                pointLabels: { font: { size: 11 }, color: '#1e293b' },
+                ticks: { display: false, min: 0, max: 100 }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: tooltipConfig
+        }
+    }
+});
+
+const toolsCtx = document.getElementById('toolsChart').getContext('2d');
+new Chart(toolsCtx, {
+    type: 'bar',
+    data: {
+        labels: [
+            wrapLabel('Task Manager (Administrador)'), 
+            wrapLabel('Resmon (Monitor Recursos)'), 
+            wrapLabel('Perfmon (Monitor Rendimiento)')
+        ],
+        datasets: [
+            {
+                label: 'Granularidad CPU/RAM',
+                data: [6, 10, 8],
+                backgroundColor: '#3f51b5'
+            },
+            {
+                label: 'Diagnóstico I/O Disco',
+                data: [4, 9, 10],
+                backgroundColor: '#00bcd4'
+            },
+            {
+                label: 'Tendencias Históricas',
+                data: [1, 2, 10],
+                backgroundColor: '#ffc107'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 10,
+                ticks: { display: false },
+                grid: { borderDash: [5, 5] }
+            },
+            x: {
+                grid: { display: false }
+            }
+        },
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: tooltipConfig
+        }
+    }
+});
+</script>
+</body>
+</html>

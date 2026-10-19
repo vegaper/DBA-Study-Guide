@@ -37,17 +37,17 @@ Para evitar que se nos rompa el monitor, necesitaremos tener la misma ip siempre
 
 Para introducir una dirección ip manual paramos en este punto de la instalación de ubuntu server en nuestra máquina virtual y seleccionamos para editar `enp0s3`
 
-![](images/paste-41.png)
+![](images/monitor_Grafana_Ubuntu_fig1.png)
 
-![](images/paste-44.png)
+![](images/monitor_Grafana_Ubuntu_fig2.png)
 
 y ponemos la configuración de red de forma manual, aunque usamos la misma que nos ha dado por defecto el DHCP
 
-![](images/paste-42.png)
+![](images/monitor_Grafana_Ubuntu_fig3.png)
 
 Comprobar que es *static* aquí después de configurar.
 
-![](images/paste-43.png)
+![](images/monitor_Grafana_Ubuntu_fig4.png)
 
 ## Cambiar a ip fija un servidor existente.
 
@@ -63,7 +63,7 @@ Normalmente está en:
 
 O algo similar dentro de `/etc/netplan/`.
 
-![](images/paste-45.png)
+![](images/monitor_Grafana_Ubuntu_fig5.png)
 
 Ábrelo:
 
@@ -71,7 +71,7 @@ O algo similar dentro de `/etc/netplan/`.
 sudo nano /etc/netplan/00-installer-config.yaml 
 ```
 
-![](images/paste-46.png)
+![](images/monitor_Grafana_Ubuntu_fig6.png)
 
 ### Configurar la IP fija
 
@@ -149,7 +149,7 @@ sudo apt install -y ca-certificates curl gnupg
 
 -   **gnupg**: permite manejar claves GPG (necesarias para verificar que los paquetes de Docker son auténticos).
 
-    ![](images/paste-48.png)
+    ![](images/monitor_Grafana_Ubuntu_fig7.png)
 
 ## Crear directorio para la clave GPG de Docker
 
@@ -220,7 +220,7 @@ Ahora que has añadido un repositorio nuevo, apt debe volver a actualizar la lis
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin 
 ```
 
-![](images/paste-49.png)
+![](images/monitor_Grafana_Ubuntu_fig8.png)
 
 ### ¿Qué instala cada paquete?
 
@@ -240,7 +240,7 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
 docker --version docker compose version 
 ```
 
-![](images/paste-50.png)
+![](images/monitor_Grafana_Ubuntu_fig9.png)
 
 Si ves versiones, todo está bien.
 
@@ -253,7 +253,7 @@ sudo docker run hello-world
 Esto descarga una imagen mínima y la ejecuta. Si funciona, Docker está correctamente instalado.
 
 \
-![](images/paste-51.png)
+![](images/monitor_Grafana_Ubuntu_fig10.png)
 
 ## Usar Docker sin sudo
 
@@ -265,7 +265,7 @@ sudo usermod -aG docker $USER
 
 puedes verificar después que estás en el grupo usando `groups`
 
-![](images/paste-52.png)
+![](images/monitor_Grafana_Ubuntu_fig11.png)
 
 ::: summary
 -   Actualiza Ubuntu.
@@ -676,7 +676,7 @@ Ejemplos:
 
 -   **red interna de Docker** → permite que Grafana acceda a Prometheus usando `http://prometheus:9090`
 
-![](images/paste-58.png)
+![](images/monitor_Grafana_Ubuntu_fig12.png)
 
 ## Verificar que funciona
 
@@ -690,12 +690,12 @@ http://{TU_IP}:9090 por ejemplo <http://10.0.20.44:9090/>
 
 Si estamos dentro de la propia máquina: `http://localhost:9090`\
 \
-![](images/paste-55.png)
+![](images/monitor_Grafana_Ubuntu_fig13.png)
 
 Entramos en: `Status > Target health`
 
 O directamente: http://{IP_DEL_SERVIDOR}:9090/targets\
-![](images/paste-60.png)
+![](images/monitor_Grafana_Ubuntu_fig14.png)
 
 #### Hacer una primera consulta en Prometheus
 
@@ -703,7 +703,7 @@ En Prometheus, vamos a la pestaña de consulta y probamos: `up`
 
 Pulsamos **Execute**.
 
-![](images/paste-61.png)
+![](images/monitor_Grafana_Ubuntu_fig15.png)
 
 Interpretación:
 
@@ -713,29 +713,29 @@ Interpretación:
 
 Probamos ahora: `node_memory_MemTotal_bytes`
 
-![](images/paste-62.png)
+![](images/monitor_Grafana_Ubuntu_fig16.png)
 
 Y después: `node_cpu_seconds_total`
 
-![](images/paste-63.png)
+![](images/monitor_Grafana_Ubuntu_fig17.png)
 
 Estas métricas serán las que luego usaremos en Grafana.
 
 ### Node Exporter:
 
 http://{TU_IP}:9100/metrics\
-![](images/paste-56.png)
+![](images/monitor_Grafana_Ubuntu_fig18.png)
 
 Node Exporter debería estar exponiendo métricas en el puerto 9100.
 
 Ejecutamos: `curl http://localhost:9100/metrics | head`
 
-Si queremos ver solo métricas relacionadas con el sistema: `curl http://localhost:9100/metrics | grep node_cpu | head`![](images/paste-59.png)
+Si queremos ver solo métricas relacionadas con el sistema: `curl http://localhost:9100/metrics | grep node_cpu | head`![](images/monitor_Grafana_Ubuntu_fig19.png)
 
 ### Grafana:
 
 http://{TU_IP}:3000 Usuario: **admin** Contraseña: **Admin123**\*\
-![](images/paste-57.png)
+![](images/monitor_Grafana_Ubuntu_fig20.png)
 
 # Trabajar en Grafana
 
@@ -743,16 +743,16 @@ Grafana puede pedir cambiar la contraseña. Para la práctica podemos cambiarla 
 
 ## Añadir Prometheus como fuente de datos en Grafana
 
-Dentro de Grafana: `Connections / Data sources -> Add data source -> Prometheus`![](images/paste-64.png)
+Dentro de Grafana: `Connections / Data sources -> Add data source -> Prometheus`![](images/monitor_Grafana_Ubuntu_fig21.png)
 
 Importante: dentro de Docker **no usamos** localhost:9090 como aparece por defecto, porque localhost sería la máquina desde donde nos estamos conectando mediante el navegador web. Docker Compose crea una red interna donde cada servicio se resuelve por su nombre. Usamos el nombre del servicio Docker: (prometheus)
 
 En la URL ponemos: http://prometheus:9090\
-![](images/paste-65.png)
+![](images/monitor_Grafana_Ubuntu_fig22.png)
 
 Pulsamos: `Save & test`
 
-![](images/paste-66.png)
+![](images/monitor_Grafana_Ubuntu_fig23.png)
 
 ## Crear nuestro primer dashboard manual
 
@@ -760,17 +760,17 @@ Pulsamos: `Save & test`
 
 Entramos en: Dashboards \> New \> New dashboard \> Add visualization
 
-![](images/paste-67.png)
+![](images/monitor_Grafana_Ubuntu_fig24.png)
 
-![](images/paste-68.png)
+![](images/monitor_Grafana_Ubuntu_fig25.png)
 
 #### Seleccionamos la fuente de datos:
 
 Prometheus
 
-![](images/paste-69.png)
+![](images/monitor_Grafana_Ubuntu_fig26.png)
 
-![](images/paste-70.png)
+![](images/monitor_Grafana_Ubuntu_fig27.png)
 
 Tipo de visualización recomendado para todos los graficos: Time series\
 \
@@ -869,11 +869,11 @@ Eso significa:
 
 Consulta PromQL: `100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)`
 
-![](images/paste-71.png)
+![](images/monitor_Grafana_Ubuntu_fig28.png)
 
 Unidad: Percent (0-100)
 
-![](images/paste-72.png)
+![](images/monitor_Grafana_Ubuntu_fig29.png)
 
 ##### Explicación de la métrica:
 
@@ -1014,7 +1014,7 @@ Cuando terminemos, eliminamos el fichero de prueba:
 ### Preguntas para responder:
 
 1\. ¿Qué panel ha cambiado al ejecutar stress-ng?\
-![](images/paste-73.png)
+![](images/monitor_Grafana_Ubuntu_fig30.png)
 
 2\. ¿Qué métrica permite ver el uso de CPU? `node_cpu_seconds_total`
 
@@ -1029,7 +1029,7 @@ Cuando terminemos, eliminamos el fichero de prueba:
 Además del dashboard manual, podemos importar un dashboard ya creado por la comunidad.
 
 En Grafana: Dashboards \>New\> Import\
-![](images/paste-74.png)
+![](images/monitor_Grafana_Ubuntu_fig31.png)
 
 En el campo de ID ponemos: **1860**
 
@@ -1043,11 +1043,11 @@ Es posible que algunos paneles aparezcan vacíos si esperan métricas avanzadas 
 
 Ejecutamos: `docker compose ps`
 
-![](images/paste-75.png)
+![](images/monitor_Grafana_Ubuntu_fig32.png)
 
 ## Puertos
 
-Comprobamos los puertos: `ss -tulnp | grep -E "3000|9090|9100"`![](images/paste-76.png)
+Comprobamos los puertos: `ss -tulnp | grep -E "3000|9090|9100"`![](images/monitor_Grafana_Ubuntu_fig33.png)
 
 Deberíamos ver:
 
@@ -1064,7 +1064,7 @@ Comprobamos métricas: `curl http://localhost:9100/metrics | grep node_memory | 
 
 Lo que dará es **información detallada del estado de la memoria RAM** de tu máquina, desglosada en diferentes categorías internas del kernel de Linux.
 
-![](images/paste-77.png)
+![](images/monitor_Grafana_Ubuntu_fig34.png)
 
 **Explicación del output**
 
@@ -1110,7 +1110,7 @@ Lo que dará es **información detallada del estado de la memoria RAM** de tu m�
 
 En un navegador: `http://{IP_DEL_SERVIDOR}:9090/targets`
 
-![](images/paste-78.png)
+![](images/monitor_Grafana_Ubuntu_fig35.png)
 
 ## Comprobamos Grafana
 

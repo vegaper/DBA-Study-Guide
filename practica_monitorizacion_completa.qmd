@@ -17,7 +17,7 @@ El acceso a Grafana desde el host se realizará mediante **SSH port forwarding**
 
 # Arquitectura del escenario
 
-![](images/paste-96.png)
+![](images/practica_monitorizacion_completa_fig1.png)
 
 # Configuración de IP fija en las máquinas
 
@@ -67,11 +67,11 @@ Durante la instalación del sistema o mediante Netplan (como vimos en prácticas
 
   - DNS: **8.8.8.8**
 
-![](images/paste-89.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig2.png){fig-align="center"}
 
 Comprobar conectividad con la primera máquina, para ello haremos ping desde Windows a esta.
 
-![](images/paste-90.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig3.png){fig-align="center"}
 
 ## Ubuntu Server monitorización (Prometheus + Grafana)
 
@@ -85,7 +85,7 @@ Durante la instalación:
 
 - DNS: **8.8.8.8**
 
-![](images/paste-87.png)
+![](images/practica_monitorizacion_completa_fig4.png)
 
 Comprobar conectividad cruzada: Desde Windows: ping 10.0.2.11 y ping 10.0.2.12 Desde Ubuntu deberíamos poder hacer ping a la otra Ubuntu. Nota: Los pings hacia Windows pueden fallar porque el Firewall de Windows bloquea ICMP (Ping) por defecto.
 
@@ -110,17 +110,17 @@ Ejecutar el instalador:
 
 - [Activar Firewal Exception!]{.highlight}
 
-![](images/paste-80.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig5.png){fig-align="center"}
 
 Durante la instalación te dice qué puerto va a usar, luego vamos a necesitar este puerto para configurar prometheus en la máquina monitor: 9182
 
-![](images/paste-79.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig6.png){fig-align="center"}
 
 **Verificar que el servicio está activo:**
 
 En un navegador introduce `localhost:9182/metrics`
 
-![](images/paste-81.png)
+![](images/practica_monitorizacion_completa_fig7.png)
 
 o en PowerShell (no la consola)
 
@@ -128,7 +128,7 @@ o en PowerShell (no la consola)
 Get-Service -Name windows_exporter
 ```
 
-![](images/paste-82.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig8.png){fig-align="center"}
 
 Comprobar que expone métricas. Desde PowerShell
 
@@ -136,7 +136,7 @@ Comprobar que expone métricas. Desde PowerShell
 Invoke-WebRequest http://localhost:9182/metrics
 ```
 
-![](images/paste-83.png)
+![](images/practica_monitorizacion_completa_fig9.png)
 
 # Instalación de Node Exporter (Nativo)
 
@@ -156,14 +156,14 @@ Comprobar que está activo:
 systemctl status prometheus-node-exporter 
 ```
 
-![](images/paste-84.png)\
+![](images/practica_monitorizacion_completa_fig10.png)\
 Comprobar métricas:
 
 ``` bash
 curl http://localhost:9100/metrics 
 ```
 
-![](images/paste-85.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig11.png){fig-align="center"}
 
 # Redireccionamiento de puertos
 
@@ -179,7 +179,7 @@ El problema es que en Red NAT el Host no tiene conectividad directa con las IP i
 
     - **Guest IP:** `10.0.2.12` | **Guest Port:** `22` (el puerto 22 es el puerto SSH por defecto)
 
-![](images/paste-91.png)
+![](images/practica_monitorizacion_completa_fig12.png)
 
 Ahora podemos conectarnos desde nuestro Host usando el puerto redirigido:
 
@@ -400,7 +400,7 @@ volumes:
 docker compose up -d 
 ```
 
-![](images/paste-92.png){fig-align="center"}
+![](images/practica_monitorizacion_completa_fig13.png){fig-align="center"}
 
 # Acceso a grafana desde el host
 
@@ -410,14 +410,14 @@ Grafana se maneja desde una interfaz gráfica, y el ubuntu server que estamos us
 
 Podemos hacerlo creando una nueva redirección de puertos en la que el puerto X del host se conecte de forma remota al puerto de grafana del servidor monitor.
 
-![](images/paste-93.png)
+![](images/practica_monitorizacion_completa_fig14.png)
 
 Ahora en el ordenador host podemos conectarnos a grafana usando el navegador: `http://localhost:3000/`
 
 Si además queremos conectarnos a la interfaz de prometheus desde el host tendremos que redireccionar también ese puerto:
 
 \
-![](images/paste-94.png)
+![](images/practica_monitorizacion_completa_fig15.png)
 
 Pero esto no es necesario para que prometheus funcione dentro de grafana, sólo si queremos ver prometheus directamente.
 
@@ -448,11 +448,11 @@ Ahora puedes abrir en tu navegador (en tu PC físico):
 ## Crear un nuevo origen de datos para conectar grafana a prometheus.
 
 \
-![](images/paste-95.png)
+![](images/practica_monitorizacion_completa_fig16.png)
 
 ::: extra
 En la casilla de Prometheus server URL podemos poner la ip de la máquina virtual que está hospedando a grafana y prometeus `http://10.0.20.12:9090` o usar el nombre que le hemos dado al contenedor en el archivo de configuración yaml de docker:\
-![](images/paste-97.png)
+![](images/practica_monitorizacion_completa_fig17.png)
 
 En este caso no podemos poner `http://localhost:9090` porque estamos dentro del contenedor docker de grafana, y tiene su propia ip privada, independiente de la de la maquina virtual que lo aloja. Vamos a explicarlo con más detalle.\
 \
@@ -492,7 +492,7 @@ Si hubiéramos instalado grafana y prometheus directamente sobre el SO y no medi
 
 - Cuando Grafana (instalado nativamente) busca algo en `localhost:9090`, pregunta dentro de la propia máquina virtual. Como Prometheus también está instalado nativamente ahí y escuchando en ese puerto, se encuentran de inmediato.
 
-![](images/paste-99.png)
+![](images/practica_monitorizacion_completa_fig18.png)
 
 ### Comparativa rápida
 

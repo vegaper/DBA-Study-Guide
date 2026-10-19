@@ -35,21 +35,21 @@ format: html
 
 # Estado general del sistema
 
-- Ver la **versión del sistema operativo** `cat /etc/os-release`![](images/paste-4.png)
+- Ver la **versión del sistema operativo** `cat /etc/os-release`![](images/linux_monitoring_fig1.png)
 
 - Ver **información general del equipo**: `hostnamectl` Muestra información del equipo, como nombre del host, sistema operativo, kernel, arquitectura y tipo de máquina.
 
-  ![](images/paste-5.png)
+  ![](images/linux_monitoring_fig2.png)
 
 - Ver versión del kernel `uname -a` nombre del kernel, versión, arquitectura y fecha de compilación.
 
-  ![](images/paste-6.png)l
+  ![](images/linux_monitoring_fig3.png)l
 
   7.0.0
 
 - **Ver CPU y número de procesadores lógicos**: `lscpu` muestra información de la cpu
 
-![](images/paste-7.png)
+![](images/linux_monitoring_fig4.png)
 
 `nproc` devuelve el numero de procesadores lógicos: 4
 
@@ -61,17 +61,17 @@ format: html
 
 - Ver **uso de memoria:** Comando: `free -h` Muestra la memoria RAM y swap en formato legible.\
   El dato más útil suele ser available, porque indica una estimación de la memoria disponible para nuevas aplicaciones sin recurrir a swap.\
-  ![](images/paste-8.png)
+  ![](images/linux_monitoring_fig5.png)
 
 - Ver **espacio en disco:** Comando: `df -hT` Muestra el espacio usado y libre de los sistemas de archivos montados. `-h`: muestra tamaños en formato legible. `-T`: muestra el tipo de sistema de archivos.\
-  ![](images/paste-9.png)
+  ![](images/linux_monitoring_fig6.png)
 
 - Ver discos y particiones: Comando: `lsblk -o [nombres de columnas a mostrar]`. Ejemplo `lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL`
 
-Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares![](images/paste-38.png)
+Nos fijaremos en el resultado del arbol sda, vda, nvme0n1 o similares![](images/linux_monitoring_fig7.png)
 
 - Ver **direcciones de red:** `ip -br a` Muestra las interfaces de red y sus direcciones IP de forma resumida.\
-  ![](images/paste-11.png)
+  ![](images/linux_monitoring_fig8.png)
 
 Qué significa `enp0s3 :`El nombre se divide en partes:
 
@@ -101,7 +101,7 @@ Comando: `top` Muestra una vista **dinámica** del sistema:
 
 - Procesos que más recursos consumen.
 
-![](images/paste-12.png)
+![](images/linux_monitoring_fig9.png)
 
 Dentro de top:\
 `p` Ordena por uso de CPU.\
@@ -116,7 +116,7 @@ Comando: `top -b -n 1 | head -n 20` Las opciones significan:\
 `head -n 20`: muestra solo las primeras 20 líneas, por defecto ordenadas por PID
 
 \
-![](images/paste-13.png)
+![](images/linux_monitoring_fig10.png)
 
 Para ordenar por columnas determinadas y conseguir así los procesos que más recursos están usando:\
 Ordenar por:
@@ -282,7 +282,7 @@ aux:
 
 muestra **una lista completa de procesos activos**, incluyendo usuario, consumo de CPU y memoria, estado del proceso y el comando que lo lanzó.
 
-![](images/paste-20.png)
+![](images/linux_monitoring_fig11.png)
 
 Por defecto ordena los procesos por uso de CPU, de mayor a menor, podemos cambiar ese orden usando argumentos, por ejemplo para ver los que más memoria consumen `ps aux --sort=-%mem | head -n 10`
 
@@ -302,7 +302,7 @@ Podemos visualizar un proceso en concreto, por ejemplo usando su PID
 
 `ps -fp {pid}`
 
-![](images/paste-15.png)
+![](images/linux_monitoring_fig12.png)
 
 o buscarlo por nombre usando `grep`: `ps aux | grep apache`
 
@@ -310,19 +310,19 @@ Ver la ruta real del ejecutable (no funcionará con los hilos internos de kernel
 
 `sudo ls -l /proc/{pid}/exe`
 
-![](images/paste-16.png)
+![](images/linux_monitoring_fig13.png)
 
 `sudo readlink /proc/{pid}/exe`
 
-![](images/paste-17.png)
+![](images/linux_monitoring_fig14.png)
 
 Ver el nombre del proceso: `ps -p {PID} -o pid,user,comm,args`
 
-![](images/paste-18.png)
+![](images/linux_monitoring_fig15.png)
 
 Ver la línea de comandos completa: `tr '\0' ' ' < /proc/{PID}/cmdline , echo` Muestra el comando completo con el que se inició el proceso con sus parámetros.
 
-![](images/paste-19.png)
+![](images/linux_monitoring_fig16.png)
 
 ::: nota
 La diferencia esencial entre `ps aux` y `top` es que uno te da **una foto fija** de los procesos en ese instante (ps), mientras que el otro te ofrece **una vista dinámica y en tiempo real** del sistema.
@@ -340,13 +340,13 @@ pstree muestra los procesos en forma de árbol, indicando qué proceso ha lanzad
 
 `pstree -p`
 
-![](images/paste-23.png)
+![](images/linux_monitoring_fig17.png)
 
 # Memoria y swap con free y vmstat
 
 free: Muestra memoria total, usada, libre, compartida, caché y disponible. `free -h`
 
-![vmstat: muestra mediciones o snapshots de acuerdo con los parámetros que le pasemos, por ejemplo `vmstat  1 5` nos muestra 5 mediciones separadas por 1 segundo.](images/paste-24.png)
+![vmstat: muestra mediciones o snapshots de acuerdo con los parámetros que le pasemos, por ejemplo `vmstat  1 5` nos muestra 5 mediciones separadas por 1 segundo.](images/linux_monitoring_fig18.png)
 
 | **Columna** | **Significado** | **Cómo interpretarlo** |
 |--------------------|--------------------|--------------------------------|
@@ -383,7 +383,7 @@ Opciones:
 
 - 5: cinco mediciones.
 
-![Nota: el screenshot no muestra toda la información disponible.](images/paste-26.png)
+![Nota: el screenshot no muestra toda la información disponible.](images/linux_monitoring_fig19.png)
 
 Dispositivos:
 
@@ -422,7 +422,7 @@ La columna **Device** te dice *dónde mirar* cuando analizas rendimiento de disc
 
 `ip route`
 
-![](images/paste-29.png)
+![](images/linux_monitoring_fig20.png)
 
 Vamos a ver lo que significa línea por línea
 
@@ -504,7 +504,7 @@ Todo el tráfico que no sea de la red local va a **10.0.20.1**.
 
 Mostrar la tabla de enrutamiento del sistema: `ip route`
 
-![](images/paste-29.png)
+![](images/linux_monitoring_fig20.png)
 
 Vamos a ver lo que significa línea por línea
 
@@ -587,7 +587,7 @@ Todo el tráfico que no sea de la red local va a **10.0.20.1**.
 ## Ver estadísticas de interfaces
 
 Ejecutar: `ip -s link`Este comando muestra **todas las interfaces de red** del sistema junto con **estadísticas de tráfico** (RX/TX), errores, paquetes descartados, etc. Es una herramienta muy útil para diagnosticar problemas de red.\
-![](images/paste-30.png)
+![](images/linux_monitoring_fig21.png)
 
 Voy a explicarlo **por partes**, **interfaz por interfaz**, y **línea por línea**.
 
@@ -744,7 +744,7 @@ Con columnas:
 
 - **Peer Address:Port** → IP y puerto remoto
 
-![](images/paste-31.png)
+![](images/linux_monitoring_fig22.png)
 
 **Servicios escuchando**
 
@@ -773,7 +773,7 @@ Con columnas:
 ## Listar servicios en ejecución
 
 `systemctl list-units --type=service --state=running` te muestra **todos los servicios que están cargados y ejecutándose ahora mismo** en tu sistema. La tabla tiene tres columnas importantes: **LOAD**, **ACTIVE**, **SUB**. Si sabes leer esas tres, sabes interpretar cualquier servicio de systemd.\
-![](images/paste-32.png)
+![](images/linux_monitoring_fig23.png)
 
 ### Load
 
@@ -808,7 +808,7 @@ Con columnas:
 
 `systemctl --failed --no-pager`
 
-![](images/paste-33.png)
+![](images/linux_monitoring_fig24.png)
 
 Consultar un servicio concreto\
 El comando `systemctl status` te da un **informe completo** del estado de un servicio gestionado por systemd. La salida siempre se divide en **5 partes**:
@@ -823,7 +823,7 @@ El comando `systemctl status` te da un **informe completo** del estado de un ser
 
 5.  **Logs recientes del servicio**
 
-`systemctl status {nombre_servicio} --no-pager`. Ejemplo `systemctl status systemd-journald.service --no-pager`![](images/paste-34.png)
+`systemctl status {nombre_servicio} --no-pager`. Ejemplo `systemctl status systemd-journald.service --no-pager`![](images/linux_monitoring_fig25.png)
 
 - Cabecera del servicio
 
@@ -872,7 +872,7 @@ Es la forma más directa de inspeccionar la configuración real de un servicio.
 
 ## Ver dependencias del servicio
 
-`systemctl list-dependencies {nombre_servicio} --no-pager` . Ejemplo: `systemctl list-dependencies systemd-journald.service --no-pager`![NOTA: el screenshot no muestra toda la salida del sistema](images/paste-35.png)
+`systemctl list-dependencies {nombre_servicio} --no-pager` . Ejemplo: `systemctl list-dependencies systemd-journald.service --no-pager`![NOTA: el screenshot no muestra toda la salida del sistema](images/linux_monitoring_fig26.png)
 
 # Logs y eventos con journalctl
 
@@ -889,12 +889,12 @@ Opciones:
 
 - `--no-pager`: muestra la salida directamente sin paginador.
 
-![](images/paste-36.png)
+![](images/linux_monitoring_fig27.png)
 
 ## Ver logs de un servicio concreto
 
 `journalctl -u {nombre_servicio} -n {numero_lineas} --no-pager` Ejemplo: `journalctl -u systemd-journald.service -n 5 --no-pager` Muestra los últimos 5 eventos del servicio indicado.\
-![](images/paste-37.png)
+![](images/linux_monitoring_fig28.png)
 
 ## Ver mensajes del kernel
 
