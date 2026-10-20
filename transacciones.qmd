@@ -1,0 +1,621 @@
+---
+title: "Transacciones en MySQL"
+format: html
+---
+
+# Objetivos
+
+- **Entender la concurrencia:** Comprender cómo múltiples sesiones leen y modifican la misma base de datos simultáneamente.
+- **Interpretar bloqueos:** Distinguir los diferentes tipos de bloqueos y saber qué operación continúa y cuál queda en espera.
+- **Controlar transacciones:** Abrir una transacción, confirmar cambios (`COMMIT`), deshacerlos totalmente (`ROLLBACK`) o de forma parcial (`SAVEPOINT`).
+- **Conocer mecanismos internos y niveles de aislamiento:** Dominar el comportamiento de MVCC, Undo Log, Read Views y anomalías de lectura.
+
+------------------------------------------------------------------------
+
+# El problema: Concurrencia y Bloqueos
+
+En un entorno multiusuario, varias sesiones comparten una misma base de datos y pueden ejecutar operaciones sobre la misma tabla al mismo tiempo. Esto genera el reto de garantizar la consistencia de la información sin penalizar excesivamente el rendimiento.
+
+- **Usuario vs. Sesión:** Un usuario autenticado en el sistema puede abrir varias sesiones simultáneas (por ejemplo, múltiples conexiones desde una aplicación web o la CLI). Cada sesión maneja sus propias transacciones activas de forma independiente.
+- **Riesgo de Incompatibilidad:** Si dos sesiones intentan modificar el mismo registro de forma concurrente, una escritura basada en datos obsoletos o en proceso de modificación por otra sesión provocaría **pérdida de actualizaciones** o **inconsistencias de integridad**.
+
+Para gestionar esto, MySQL (a través del motor **InnoDB**) combina dos estrategias principales:
+
+1.  **Bloqueos (Locking):** Impiden o coordinan accesos concurrentes conflictivos a nivel de fila o tabla.
+
+2.  **Control de Concurrencia Multiversión (MVCC):** Permite lecturas consistentes sin necesidad de bloquear los registros durante un `SELECT`.
+
+# Transacciones
+
+Una **transacción** es un conjunto de una o más sentencias SQL de manipulación de datos (**DML**) que se ejecutan como una **única unidad lógica de trabajo**.
+
+Por defecto, MySQL opera en modo **`autocommit = 1`** (activado). En este modo, cada sentencia DML (`INSERT`, `UPDATE`, `DELETE`) ejecutada de forma individual **se confirma implícita y automáticamente como una transacción independiente**.
+
+Para agrupar varias operaciones en una sola unidad transaccional:
+
+\- Iniciar un bloque explícito con **`START TRANSACTION;`** (o `BEGIN;`).
+
+\- O bien desactivar el comportamiento automático para la sesión actual mediante:
+
+``` sql
+SET autocommit = 0;
+-- o su se consigue exactamente lo mismo:
+SET SESSION autocommit =0;
+```
+
+Para modificar el comportamiento global para todas las sessiones
+
+``` sql
+SET GLOBAL autocommit = 0;
+```
+
+::: nota
+**Nota:** Cambiar la variable a nivel `GLOBAL` no modifica el valor de las sesiones que ya están abiertas actualmente, solo afectará a las conexiones entrantes futuras. Si el servidor se reinicia, volverá a su valor predeterminado a menos que modifiques el archivo de configuración (`my.cnf` o `my.ini`).
+:::
+
+El objetivo de las transacciones es garantizar la integridad de los datos siguiendo las propiedades **ACID** (Atomaticidad, Consistencia, Aislamiento y Durabilidad). En términos prácticos: **o se aplican con éxito todas las operaciones del grupo, o no se aplica ninguna**.
+
+El objetivo fundamental de las transacciones es garantizar la integridad de los datos cumpliendo las 4 propiedades ACID:
+
+## Propiedades ACID
+
+- **Atomicidad** (Atomicity): Principio del "todo o nada". O se aplican con éxito todas las sentencias del bloque transaccional o se deshacen por completo.
+
+- **Consistencia** (Consistency): La base de datos pasa de un estado válido a otro estado válido. Ninguna transacción puede dejar los datos violando restricciones (CHECK, FOREIGN KEY, UNIQUE, etc.).
+
+- **Aislamiento** (Isolation): Las operaciones de una transacción son invisibles para el resto de transacciones concurrentes hasta que se confirman.
+
+- **Durabilidad** (Durability): Una vez ejecutado el COMMIT, los cambios persistidos no se perderán, incluso ante fallos graves del sistema o cortes de energía (garantizado en InnoDB mediante el Redo Log).
+
+# Sentencias de Control de Transacciones (TCL) y Savepoints
+
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+|                                       |                                                                                                             |
++=======================================+=============================================================================================================+
+| **Comando**                           | **Descripción**                                                                                             |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`START TRANSACTION`** / **`BEGIN`** | Inicia explícitamente un bloque de transacción.                                                             |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`COMMIT`**                          | Confirma permanentemente en disco todos los cambios realizados durante la transacción.                      |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`ROLLBACK`**                        | Cancela y revierte todos los cambios DML de la transacción actual.                                          |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`SAVEPOINT nombre`**                | Establece un punto de guardado intermedio dentro de la transacción.                                         |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`ROLLBACK TO SAVEPOINT nombre`**    | Revierte las operaciones DML ejecutadas después del savepoint indicado, manteniendo la transacción abierta. |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+| **`RELEASE SAVEPOINT nombre`**        | Elimina un punto de guardado previamente definido (sin deshacer cambios).                                   |
++---------------------------------------+-------------------------------------------------------------------------------------------------------------+
+
+## Sintaxis y Ejemplo Práctico
+
+Imaginemos un proceso donde trasladamos un objeto de sala y registramos el movimiento en una tabla de auditoría:
+
+``` sql
+-- 1. Iniciamos la transacción
+START TRANSACTION;
+
+-- 2. Actualizamos la ubicación del objeto
+UPDATE objetos 
+SET ubicacion_actual = 'Sala 4 - Vitrina A'
+WHERE codigo_inventario = 'ROM-0001';
+
+-- 3. Insertamos el registro de auditoría
+INSERT INTO historial_movimientos (codigo_inventario, nueva_ubicacion, fecha)
+VALUES ('ROM-0001', 'Sala 4 - Vitrina A', NOW());
+
+-- 4. Si todo ha salido bien, confirmamos permanentemente los cambios
+COMMIT;
+```
+
+Si durante el proceso se detecta un error o una validación falla:
+
+``` sql
+-- Si algo falla antes del COMMIT, cancelamos todo:
+ROLLBACK;
+```
+
+Ejemplo práctico con Savepoints
+
+``` sql
+START TRANSACTION;
+
+-- 1. Actualizamos la ubicación del objeto
+UPDATE objetos 
+SET ubicacion_actual = 'Sala 4 - Vitrina A'
+WHERE codigo_inventario = 'ROM-0001';
+
+-- Definimos un punto de guardado
+SAVEPOINT sp_ubicacion_actualizada;
+
+-- 2. Intentamos registrar en la auditoría
+INSERT INTO historial_movimientos (codigo_inventario, nueva_ubicacion, fecha)
+VALUES ('ROM-0001', 'Sala 4 - Vitrina A', NOW());
+
+-- Supongamos que la inserción de auditoría tuvo un error de validación
+-- Revertimos solo hasta el Savepoint: la reubicación en `objetos` se mantiene
+ROLLBACK TO SAVEPOINT sp_ubicacion_actualizada;
+
+-- Corregimos la auditoría o ejecutamos una alternativa
+INSERT INTO historial_movimientos (codigo_inventario, nueva_ubicacion, fecha, observaciones)
+VALUES ('ROM-0001', 'Sala 4 - Vitrina A', NOW(), 'Registro manual tras ajuste');
+
+-- Confirmamos los cambios
+COMMIT;
+```
+
+::: {#nota}
+Cuando ya necesitas un savepoint es recomendable eliminar el punto para que no se quede ocupando memoria.
+
+El comando `RELEASE SAVEPOINT nombre_savepoint` sirve para **eliminar manualmente un savepoint mientras la transacción sigue abierta**, sin deshacer ninguna de las operaciones DML ejecutadas.
+
+\
+Cuando ejecutas un **`COMMIT`** o un **`ROLLBACK`**, la transacción entera se da por finalizada. En ese momento, **MySQL elimina de forma automática todos los savepoints** que hubieras creado dentro de esa transacción y libera la memoria asociada a ellos.
+
+Hacer un `ROLLBACK TO SAVEPOINT` **no elimina** el savepoint utilizado ni los anteriores a él. La transacción permanece abierta, por lo que podrías volver a hacer `ROLLBACK TO SAVEPOINT punto_1` más adelante si hicieras más cambios.
+:::
+
+:::: nota-importante
+## DML y DCL vs. DDL en Transacciones
+
+Las transacciones en MySQL están diseñadas principalmente para sentencias de manipulación de datos (**DML**).
+
+- **Sentencias DML (`INSERT`, `UPDATE`, `DELETE`):** Se pueden deshacer con un `ROLLBACK` si están dentro de un bloque de transacción.
+
+- **Sentencias DDL (`CREATE`, `ALTER`, `DROP`, `TRUNCATE`):** Provocan un **`COMMIT` implícito**.
+
+- Sentencias DCL (Data Control Language) `GRANT` `REVOKE` `DENY`: funcionan igual que DDL haciendo un **`COMMIT` implícito.**
+
+> **Advertencia:** Si ejecutas una sentencia DDL o DCL como un `CREATE TABLE` o un `TRUNCATE TABLE` en medio de una transacción, MySQL guardará automáticamente todo el trabajo DML anterior y cerrará la transacción activa. **Un `ROLLBACK` posterior no podrá deshacer las sentencias DDL ni las DML anteriores a ella.**
+
+Ejemplo.
+
+``` sql
+START TRANSACTION;
+
+-- 1. Esto es DML
+UPDATE objetos SET estado_conservacion = 'Malo' WHERE id_objeto = 1;
+
+-- 2. Al ejecutar esto (DDL), MySQL ejecuta un COMMIT automático de la línea anterior
+ALTER TABLE objetos ADD COLUMN notas VARCHAR(250);
+
+-- 3. Intentamos hacer ROLLBACK
+ROLLBACK;
+```
+
+¿ Puedes hacer un `ALTER TABLE` dentro de una transacción y luego un `ROLLBACK` ? **En MySQL (con el motor InnoDB), NO se puede.**
+
+En el momento exacto en que ejecutas un `ALTER TABLE` (o cualquier comando DDL):
+
+1.  MySQL detecta que vas a cambiar la estructura física de la base de datos.
+
+2.  De forma automática e imperativa, ejecuta un **`COMMIT` implícito** de todo lo que hayas hecho antes en la transacción.
+
+3.  Aplica el cambio de estructura.
+
+4.  Finaliza la transacción.
+
+Si ejecutas un `ROLLBACK` justo después del `ALTER TABLE`, **ya no habrá transacción activa que deshacer** (o solo deshará lo que hagas *después* del `ALTER`).
+
+- El `UPDATE` **NO** se deshace (se guardó permanentemente por el `COMMIT` automático provocado por el `ALTER`).
+
+- La nueva columna `notas` **NO** se elimina (los cambios DDL no son reversibles con `ROLLBACK` en MySQL).
+
+Aunque en **MySQL** las sentencias DDL y DCL hacen `COMMIT` implícito y rompen el `ROLLBACK`, existen otros motores de bases de datos como **PostgreSQL** o **SQLite** que sí soportan *Transactional DDL* (es decir, permiten meter un `ALTER TABLE` dentro de un `START TRANSACTION` y hacer `ROLLBACK` de la estructura). Pero en el estándar y comportamiento de **MySQL / MariaDB**, el DDL no es transaccional.
+
+::: nota
+En **MySQL (motor InnoDB)**, el comportamiento con las tablas temporales (`TEMPORARY TABLE`) presenta una excepción respecto a las tablas normales.\
+`REATE TEMPORARY TABLE` y `DROP TEMPORARY TABLE`
+
+- **No provocan un `COMMIT` implícito:** A diferencia de las tablas permanentes, la creación o eliminación de una tabla temporal **NO rompe ni confirma la transacción activa**. Puedes ejecutar un `CREATE TEMPORARY TABLE` a mitad de una transacción sin que se haga `COMMIT` automático de los cambios anteriores (`INSERT`, `UPDATE`, `DELETE`).
+
+- **No forman parte del `ROLLBACK`:** El ciclo de vida de la definición DDL de la propia tabla temporal (su estructura) no se puede deshacer con un `ROLLBACK`. Si creas una tabla temporal dentro de una transacción y luego ejecutas un `ROLLBACK`:
+
+  1.  Los datos DML insertados en la tabla temporal durante la transacción **sí se deshacen**.
+
+  2.  La tabla temporal **sigue existiendo en la sesión** (el comando `CREATE` no se revierte).
+
+  ``` sql
+  START TRANSACTION;
+
+  -- 1. Insertamos un registro en una tabla permanente
+  INSERT INTO clientes (nombre) VALUES ('Ana');
+
+  -- 2. Creamos una tabla temporal (NO hace COMMIT implícito)
+  CREATE TEMPORARY TABLE temp_calculos (
+      id INT,
+      total DECIMAL(10, 2)
+  );
+
+  -- 3. Insertamos datos en la tabla temporal
+  INSERT INTO temp_calculos VALUES (1, 150.00);
+
+  -- 4. Ejecutamos ROLLBACK
+  ROLLBACK;
+  ```
+
+**Resultado tras el `ROLLBACK`:**
+
+- **`clientes`:** El registro 'Ana' **se deshace** correctamente (porque el `CREATE TEMPORARY TABLE` no forzó un `COMMIT` implícito).
+
+- **`temp_calculos`:** La tabla **sigue existiendo** en la sesión, pero está **vacía** (la estructura no se revirtió, pero el `INSERT` dentro de la tabla sí se deshizo).
+:::
+::::
+
+# Bloqueos en MySQL (InnoDB)
+
+Un **bloqueo** es simplemente un mecanismo de protección que pone la base de datos sobre un recurso (una fila, una página o una tabla entera) para evitar que dos personas intenten escribir sobre el mismo dato a la vez y destruyan la información. Un bloqueo coordina operaciones concurrentes sobre los datos.
+
+- Una operación de UPDATE o DELETE solicita bloqueos automáticamente. Si existe incompatibilidad puede esperar a otra transacción.
+
+- COMMIT/ ROLLBACK: Finaliza la transacción. Libera los bloqueos transaccionales.
+
+InnoDB implementa granularidad a **nivel de fila** (row-level locking), lo que permite que múltiples sesiones modifiquen diferentes filas de la misma tabla simultáneamente.
+
+## Comportamiento por defecto:
+
+Supongamos que tenemos una tabla `empleados` con el empleado `Juan` (`id = 1`) que cobra `2000`.
+
+Tú abres una transacción y haces un `UPDATE` o un `DELETE` sobre la fila de Juan, **pero aún no haces `COMMIT` ni `ROLLBACK`**:
+
+``` sql
+-- Tu Sesión (Sesión A)
+START TRANSACTION;
+
+UPDATE empleados 
+SET salario = 2500 
+WHERE id = 1;
+
+-- ¡Atención! Aún NO has hecho COMMIT ni ROLLBACK.
+```
+
+Al ejecutar ese `UPDATE`, MySQL/InnoDB pone automáticamente un **bloqueo exclusivo (X)** sobre la fila de `Juan` (`id = 1`).
+
+¿Qué pasa con los **otros usuarios** (Sesión B) que intentan interactuar con la fila de Juan?
+
+Depende de **qué operación** intente hacer el otro usuario:
+
+### Si el otro usuario intenta MODIFICAR o BORRAR la misma fila (`UPDATE` / `DELETE`)
+
+``` sql
+-- Sesión B (Otro usuario)
+UPDATE empleados SET salario = 3000 WHERE id = 1;
+```
+
+- **Comportamiento:** La consulta del otro usuario **se queda congelada / en espera**. No devuelve error de inmediato; MySQL la deja esperando a que la sessión A libere el bloqueo.
+
+- **¿Qué ocurre después?**
+
+  - **Si tú haces `COMMIT`:** Tu cambio se guarda. El `UPDATE` de la Sesión B se desbloquea al instante y se ejecuta sobre el nuevo valor.
+
+  - **Si tú haces `ROLLBACK`:** Tu cambio se deshace. El `UPDATE` de la Sesión B se desbloquea al instante y se ejecuta sobre el valor original.
+
+  - **Si tardas demasiado tiempo en responder:** La Sesión B fallará con el error:
+
+    `ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction`
+
+### Si el otro usuario intenta LEER la misma fila con un `SELECT` normal
+
+``` sql
+-- Sesión B (Otro usuario)
+SELECT salario FROM empleados WHERE id = 1;
+```
+
+- **Comportamiento:** NO se bloquea y responde INMEDIATAMENTE.
+
+- **¿Qué valor lee la Sesión B?**
+
+  Lee el valor **anterior al `UPDATE`** (`2000`). Esto ocurre gracias al mecanismo **MVCC (Multi-Version Concurrency Control)** e **Undo Log** de InnoDB: MySQL acude al registro de cambios en segundo plano y le construye al usuario B una "foto" del dato tal y como estaba antes de que tú iniciaras tu modificación.
+
+- **Ventaja:** En MySQL, **las lecturas normales nunca bloquean a las escrituras, ni las escrituras bloquean a las lecturas normales**.
+
+## Bloqueos Básicos de Fila
+
+La diferencia fundamental entre el **Bloqueo Compartido (S)** y el **Bloqueo Exclusivo (X)** radica en la **intención**: ¿quiero garantizar que el dato no cambie mientras lo leo o voy a modificarlo yo mismo?
+
+### Bloqueo Compartido (Shared / `S`)
+
+- **Concepto:** Es un bloqueo de **"solo lectura garantizada"**. Varias sesiones pueden poner un bloqueo `S` sobre la misma fila simultáneamente (por eso se llama *compartido*).
+
+- **Lo que SÍ permite:** Permite que otras sesiones lean la fila e incluso que otras sesiones soliciten también un bloqueo `S` sobre ella.
+
+- **Lo que IMPIDE:** Impide que cualquier sesión (incluida la tuya, si otros también la han bloqueado) modifique o elimine la fila (`UPDATE` o `DELETE`), y evita que alguien pida un bloqueo exclusivo (`X`).
+
+- **Sintaxis SQL en MySQL:**
+
+  ``` sql
+  SELECT * FROM productos WHERE id = 10 FOR SHARE;
+  -- (En versiones antiguas de MySQL se usaba LOCK IN SHARE MODE)
+  ```
+
+**Ejemplo práctico del mundo real:**
+
+Imagina un sistema de reservas de billetes de avión.
+
+1.  Un cliente inicia el proceso de compra. El sistema lee el precio del billete y comprueba si hay plazas libres ejecutando un `SELECT ... FOR SHARE`.
+
+2.  Al poner el bloqueo `S`, el sistema asegura que **nadie cambie el precio del billete ni cancele el vuelo** mientras el cliente está introduciendo los datos de su tarjeta de crédito.
+
+3.  Si otro usuario entra al mismo tiempo a consultar la disponibilidad de ese vuelo, **también puede leerlo** y solicitar otro bloqueo `S` sin quedarse colgado.
+
+4.  Pero si un administrador intenta hacer un `UPDATE` para subir el precio de ese billete, **tendrá que esperar** a que todos los bloqueos `S` se liberen.
+
+### Bloqueo Exclusivo (Exclusive / `X`)
+
+- **Concepto:** Es un bloqueo de **"propiedad absoluta"**. Solo **una única transacción** puede tener un bloqueo `X` sobre una fila.
+
+- **Lo que SÍ permite:** Permite a la transacción poseedora del bloqueo modificar (`UPDATE`), eliminar (`DELETE`) o leer la fila.
+
+- **Lo que IMPIDE:** Ninguna otra sesión puede modificar la fila, ni tampoco pedir sobre ella un bloqueo `S` (`FOR SHARE`) o `X` (`FOR UPDATE`). *(Nota: Como vimos con MVCC, otros usuarios **sí podrán seguir haciendo `SELECT` normales sin bloqueo**, leyendo la versión anterior desde la Undo Log).*
+
+  ``` sql
+  -- Invocado explícitamente:
+  SELECT * FROM productos WHERE id = 10 FOR UPDATE;
+
+  -- Invocado automáticamente por MySQL:
+  UPDATE productos SET stock = stock - 1 WHERE id = 10;
+  DELETE FROM productos WHERE id = 10;
+  ```
+
+  **Ejemplo práctico del mundo real:**
+
+  Siguiendo con el sistema de billetes de avión:
+
+  1.  El cliente pulsa "Pagar y Confirmar Reserva".
+
+  2.  La aplicación ejecuta un `SELECT ... FOR UPDATE` o un `UPDATE vuelos SET plazas = plazas - 1 WHERE id = 10`.
+
+  3.  MySQL coloca inmediatamente un **bloqueo exclusivo (`X`)** sobre ese vuelo.
+
+  4.  Si en ese mismo milisegundo otro proceso de compra intenta restar una plaza del mismo vuelo, **se queda congelado en espera** hasta que la primera transacción haga `COMMIT` o `ROLLBACK`. Así se evita vender dos veces la misma plaza (el famoso *overbooking* por condición de carrera).
+
+::: nota
+**Bloqueo Compartido (Shared / `S`):** Permite leer el registro a múltiples transacciones. Impide modificaciones (`UPDATE`/`DELETE`).
+
+**Bloqueo Exclusivo (Exclusive / `X`):** Bloquea la fila para escritura. Ninguna otra transacción puede leer con bloqueo ni modificar dicha fila.
+
+### Matriz de Compatibilidad entre Bloqueos
+
+Esta tabla resume qué ocurre cuando la **Sesión 1** ya tiene un bloqueo sobre una fila y la **Sesión 2** intenta solicitar otro bloqueo sobre esa **misma fila**:
+
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+|                              |                                              |                                                                 |
++==============================+==============================================+=================================================================+
+| **Si la Sesión 1 tiene...**  | **Y la Sesión 2 pide Bloqueo S (FOR SHARE)** | **Y la Sesión 2 pide Bloqueo X (FOR UPDATE / UPDATE / DELETE)** |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+| **Bloqueo `S` (Compartido)** | **COMPATIBLE**                               | **INCOMPATIBLE**                                                |
+|                              |                                              |                                                                 |
+|                              | *(La Sesión 2 entra sin esperar)*            | *(La Sesión 2 se queda en espera)*                              |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+| **Bloqueo `X` (Exclusivo)**  | **INCOMPATIBLE**                             | **INCOMPATIBLE**                                                |
+|                              |                                              |                                                                 |
+|                              | *(La Sesión 2 se queda en espera)*           | *(La Sesión 2 se queda en espera)*                              |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+:::
+
+::: extra
+## Bloqueos Intencionales (Table-Level Intent Locks)
+
+Para evitar comprobar fila por fila si existe algún bloqueo antes de bloquear una tabla completa:
+
+- **Intent Shared (`IS`)** e **Intent Exclusive (`IX`)**: Indican que una transacción tiene o pretende obtener bloqueos `S` o `X` en filas individuales de dicha tabla.
+
+## Bloqueos de Rango e Índice
+
+- **Record Lock:** Bloquea directamente la entrada del índice asociada al registro.
+
+- **Gap Lock:** Bloquea el "hueco" o espacio entre dos valores de índice (o antes del primero/después del último) para impedir que otras sesiones inserten datos en ese rango.
+
+- **Next-Key Lock:** Combinación de un *Record Lock* en el registro y un *Gap Lock* en el espacio previo. Es el algoritmo por defecto que usa InnoDB en `REPEATABLE READ` para evitar escrituras fantasma.
+:::
+
+## **Interbloqueo** o **Abrazo Mortal (*Deadlock*)**.
+
+Ocurre cuando dos (o más) transacciones se bloquean mutuamente porque **cada una tiene reservado un recurso que la otra necesita** para continuar, creando un bucle de espera infinito.
+
+### Ejemplo Clásico de *Deadlock*
+
+Imagina dos filas en la base de datos: `Fila 1` y `Fila 2`.
+
+1.  **Sesión A:** Ejecuta un `UPDATE` sobre la `Fila 1`. *(Sesión A obtiene el bloqueo exclusivo `X` de la `Fila 1`)*.
+
+2.  **Sesión B:** Ejecuta un `UPDATE` sobre la `Fila 2`. *(Sesión B obtiene el bloqueo exclusivo `X` de la `Fila 2`)*.
+
+3.  **Sesión A:** Intenta hacer un `UPDATE` sobre la `Fila 2`. *(Se queda congelada en espera porque la `Fila 2` está bloqueada por B)*.
+
+4.  **Sesión B:** Intenta hacer un `UPDATE` sobre la `Fila 1`. *(Se queda congelada en espera porque la `Fila 1` está bloqueada por A)*.
+
+En este punto, **ninguna de las dos puede avanzar** ni liberar sus propios bloqueos porque ambas están esperando a que la otra termine.
+
+### ¿Cómo lo resuelve MySQL (InnoDB)?
+
+Si MySQL no hiciera nada, ambas sesiones se quedarían colgadas indefinidamente hasta que expirase el tiempo de espera (*lock wait timeout*).
+
+Sin embargo, InnoDB cuenta con un **detector automático de *deadlocks*** (*Deadlock Detector*):
+
+1.  **Detección:** MySQL monitoriza el grafo de bloqueos en tiempo real y detecta la dependencia circular inmediatamente.
+
+2.  **Víctima (*Victima Rollback*):** MySQL elige automáticamente a una de las dos transacciones (normalmente la que haya realizado menos modificaciones o sea más "barata" de revertir) y la **cancela forzosamente** ejecutando un `ROLLBACK`.
+
+3.  **Resolución:**
+
+    - La sesión anulada recibe el error:
+
+      `ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction`.
+
+    - La otra sesión se desbloquea al instante, obtiene el recurso libre y **continúa su ejecución con éxito**.
+
+### Buenas Prácticas para Evitarlos
+
+- **Mantener un orden constante:** Acceder a las tablas y filas siempre en el mismo orden dentro de la aplicación (por ejemplo, ordenar siempre los `UPDATE` por la clave primaria `id`).
+
+- **Transacciones cortas:** Hacer `COMMIT` lo antes posible para no retener bloqueos durante mucho tiempo.
+
+- **Actualizar todo de golpe:** Si vas a modificar varias filas, intenta hacerlo en un único comando SQL en lugar de múltiples sentencias individuales dentro del mismo bloque.
+
+------------------------------------------------------------------------
+
+# Referencia Comparativa con Otros Motores de BBDD
+
+Aunque los conceptos ACID y la sintaxis SQL estándar son comunes, los detalles de implementación varían notablemente entre los principales motores RDBMS:
+
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+|                                           |                                                         |                                                                                         |                                                                 |                                                                            |                                                   |
++===========================================+=========================================================+=========================================================================================+=================================================================+============================================================================+===================================================+
+| **Característica / Motor**                | **MySQL (InnoDB)**                                      | **PostgreSQL**                                                                          | **Oracle Database**                                             | **Microsoft SQL Server**                                                   | **SQLite**                                        |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+| **Nivel por defecto**                     | `REPEATABLE READ`                                       | `READ COMMITTED`                                                                        | `READ COMMITTED`                                                | `READ COMMITTED`                                                           | `SERIALIZABLE`                                    |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+| **Transactional DDL**                     | No *(hace `COMMIT` implícito)*                          | Sí *(permite `ROLLBACK` de `CREATE/ALTER`)*                                             | No *(hace `COMMIT` implícito)*                                  | Sí *(permite `ROLLBACK` de DDL)*                                           | Sí                                                |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+| **Mecanismo MVCC**                        | Undo Log en espacio separado (ibdata/undo tablespaces). | Mantiene múltiples versiones de filas dentro de la **misma tabla** (requiere `VACUUM`). | Undo Tablespace separado para construir lecturas pasadas.       | Basado en `tempdb` (cuando está activo el modo RCSI).                      | Vía archivo WAL (*Write-Ahead Logging*).          |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+| **Bloqueo por defecto en Lectura**        | Sin bloqueos mediante MVCC (consistent read).           | Sin bloqueos mediante MVCC.                                                             | Sin bloqueos mediante MVCC.                                     | Por defecto usa bloqueos `S` de lectura (se pueden evitar activando RCSI). | Bloquea el archivo completo durante la escritura. |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+| **Lectura Fantasma en `REPEATABLE READ`** | Prevenida por MVCC + Next-Key Locks.                    | Prevenida completamente por la implementación propia de MVCC.                           | N/A *(no implementa `REPEATABLE READ`, pasa a `SERIALIZABLE`)*. | Puede ocurrir *(requiere nivel `SERIALIZABLE` o `SNAPSHOT`)*.              | Prevenida (aislamiento estricto por archivo).     |
++-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+
+# Niveles de Aislamiento y Anomalías de Lectura
+
+El nivel de aislamiento determina el grado en que las operaciones de una sesión están protegidas de las interferencias de otras sesiones concurrentes. A mayor aislamiento, mayor consistencia pero menor rendimiento de concurrencia.
+
+## Anomalías de Lectura
+
+1.  **Lectura Sucia (Dirty Read):** Una sesión lee datos modificados por otra transacción que **aún no ha sido confirmada** (`COMMIT`). Si la otra sesión hace `ROLLBACK`, los datos leídos nunca existieron realmente.
+
+2.  **Lectura No Repetible (Non-Repeatable Read):** Una sesión lee una fila, otra transacción modifica o elimina dicha fila y hace `COMMIT`. Cuando la primera sesión vuelve a leer la fila, obtiene valores diferentes.
+
+3.  **Lectura Fantasma (Phantom Read):** Una sesión ejecuta una consulta con un rango de filas. Otra transacción inserta nuevas filas que cumplen ese rango y hace `COMMIT`. Al reejecutar la consulta, la primera sesión ve filas "fantasma" adicionales.
+
+## La solución: Niveles de Aislamiento (Estándar SQL)
+
+Van desde el nivel más permisivo (menos aislamiento, más rápido) hasta el más estricto (aislamiento total, menor concurrencia).
+
+### `READ UNCOMMITTED` (Lectura no confirmada)
+
+- **¿Cómo funciona?:** No pone casi ninguna restricción. Las transacciones pueden leer los cambios de otras sesiones incluso si no se ha hecho `COMMIT`.
+
+- **Permite:** Lecturas Sucias, Lecturas No Repetibles y Lecturas Fantasma.
+
+- **Uso:** Rara vez se usa en producción, salvo para consultas estadísticas muy pesadas donde la precisión exacta del dato no importa y no se quiere bloquear nada.
+
+### `READ COMMITTED` (Lectura confirmada)
+
+- **¿Cómo funciona?:** Garantiza que **solo leerás datos que ya han sido confirmados con `COMMIT`**.
+
+- **Evita:** Lecturas Sucias.
+
+- **Permite:** Lecturas No Repetibles y Lecturas Fantasma (porque si otra sesión hace `COMMIT` mientras tu transacción sigue abierta, al volver a consultar verás los nuevos datos confirmados).
+
+- **Uso:** Es el nivel por defecto en bases de datos como PostgreSQL, Oracle y SQL Server.
+
+### `REPEATABLE READ` (Lectura repetible)
+
+- **¿Cómo funciona?:** Garantiza que si lees una fila dentro de una transacción, volverás a leer **exactamente el mismo valor** aunque otras sesiones la modifiquen y hagan `COMMIT`.
+
+- **Evita:** Lecturas Sucias y Lecturas No Repetibles.
+
+- **Comportamiento especial en MySQL (InnoDB):** Es el **nivel por defecto en MySQL**. A diferencia del estándar SQL (donde este nivel suele permitir lecturas fantasma), **InnoDB evita también las lecturas fantasma** mediante su mecanismo MVCC y bloqueos de rango (*Next-Key Locks*).
+
+  La clave para entender cómo MySQL (con el motor **InnoDB**) consigue `REPEATABLE READ` **sin bloquear las lecturas de los demás usuarios** reside en que no utiliza bloqueos de lectura tradicionales para las consultas normales. En su lugar, utiliza una técnica llamada **MVCC (Multi-Version Concurrency Control)** apoyada en la **Undo Log**.
+
+  En palabras sencillas: **MySQL nunca lee directamente el dato "en vivo" si este ha cambiado; lee una "foto en el tiempo" (fotografía) de los datos creada al inicio de tu transacción.**
+
+  Cada vez que una fila se modifica en InnoDB, la base de datos **no borra ni sobrescribe** el dato antiguo inmediatamente. Guarda el nuevo dato en la tabla y envía el dato anterior a un espacio de memoria especial llamado **Undo Log** (el historial de deshacer).
+
+  Cuando tu transacción hace su primer `SELECT`, InnoDB crea para ti una **Read View** (Visión de Lectura): una "fotografía" de qué transacciones estaban confirmadas en ese milisegundo exacto.
+
+  **Veamos un ejemplo práctico en orden cronológico:**
+
+  Imagina que la cuenta de Juan tiene **100 €** (versión inicial).
+
+  1.  **Tu Transacción A** empieza y ejecuta su primer `SELECT`:
+
+      - MySQL crea una *Read View* para tu sesión.
+
+      - Lees: `100 €`.
+
+  2.  **La Transacción B** de otro usuario hace un `UPDATE` y un `COMMIT`:
+
+      ``` sql
+      UPDATE cuentas SET saldo = 500 WHERE id = 1;
+      COMMIT;
+      ```
+
+      - En la tabla real, el registro ahora vale `500 €`.
+
+      - El valor antiguo (`100 €`) se guarda en la **Undo Log**.
+
+  3.  **Tu Transacción A** (que sigue abierta) vuelve a ejecutar exactamente el mismo `SELECT`:
+
+      - MySQL ve que en la tabla real el dato vale `500 €`, pero detecta que ese cambio fue realizado por una transacción posterior a tu *Read View*.
+
+      - En lugar de devolverte `500 €`, MySQL **viaja en el tiempo usando la Undo Log** y te reconstruye la fila tal como estaba cuando abriste tu transacción.
+
+      - Lees nuevamente: `100 €`.
+
+      ::: nota
+      La diferencia clave entre `READ COMMITTED` y `REPEATABLE READ` en MySQL
+
+      La única diferencia entre estos dos niveles en MySQL es **cuándo se genera la *Read View***:
+
+      - En **`READ COMMITTED`**: MySQL genera una **NUEVA *Read View* en cada `SELECT`** que ejecutas. Por eso, si alguien hace `COMMIT` a mitad de tu transacción, tu siguiente `SELECT` verá los nuevos cambios.
+
+      - En **`REPEATABLE READ`**: MySQL genera **UNA SOLA *Read View* en el primer `SELECT`** de la transacción y la **mantiene congelada** durante todo el bloque transaccional hasta que hagas `COMMIT` o `ROLLBACK`.
+      :::
+
+### `SERIALIZABLE` (Serializable)
+
+- **¿Cómo funciona?:** Es el nivel más estricto. Obliga a que las transacciones se ejecuten de forma equivalente a si fuera "una detrás de otra" en estricto orden secuencial. Convierte implícitamente todos los `SELECT` en lecturas con bloqueo (`SELECT ... FOR SHARE`).
+
+- **Evita:** Todas las anomalías (Lectura Sucia, No Repetible y Fantasma).
+
+- **Inconveniente:** Reduce drásticamente el rendimiento y la concurrencia, ya que las sesiones se quedan esperando constantemente en cola a que las demás terminen.
+
++------------------------------------------------+-------------------+--------------------------+----------------------+
+|                                                |                   |                          |                      |
++================================================+===================+==========================+======================+
+| **Nivel de Aislamiento**                       | **Lectura Sucia** | **Lectura No Repetible** | **Lectura Fantasma** |
++------------------------------------------------+-------------------+--------------------------+----------------------+
+| **`READ UNCOMMITTED`**                         | Sí                | Sí                       | Sí                   |
++------------------------------------------------+-------------------+--------------------------+----------------------+
+| **`READ COMMITTED`**                           | No                | Sí                       | Sí                   |
++------------------------------------------------+-------------------+--------------------------+----------------------+
+| **`REPEATABLE READ`** *(Por defecto en MySQL)* | No                | No                       | No *(En InnoDB)*     |
++------------------------------------------------+-------------------+--------------------------+----------------------+
+| **`SERIALIZABLE`**                             | No                | No                       | No                   |
++------------------------------------------------+-------------------+--------------------------+----------------------+
+
+Configuración en MySql
+
+``` sql
+-- Consultar el nivel global y de la sesión activa
+SELECT @@GLOBAL.transaction_isolation, @@session.transaction_isolation;
+
+-- Cambiar el nivel para la siguiente transacción en la sesión actual
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+```
+
+# Mecanismos Internos de Concurrencia en InnoDB
+
+MySQL InnoDB utiliza arquitectura multiversión para ofrecer alto rendimiento de lectura sin bloquear las escrituras.
+
+- **MVCC (Multi-Version Concurrency Control):** Mantiene múltiples versiones de una misma fila. Cuando se actualiza una fila, InnoDB no sobrescribe inmediatamente los datos antiguos, sino que crea una nueva versión.
+
+- **Undo Log:** Mapea y guarda la versión previa de los registros. Sirve para:
+
+  1.  Realizar el `ROLLBACK` de transacciones no confirmadas.
+
+  2.  Construir lecturas consistentes del pasado para otras sesiones.
+
+- **Redo Log:** Registro tipo *Write-Ahead Log* (WAL) que almacena los cambios físicos para garantizar la **Durabilidad** tras un fallo o reinicio del servidor.
+
+- **Read View (Visión de Lectura):** Instantánea temporal que determina qué transacciones son "visibles" para una sesión en un momento dado.
+
+## Prevención de Lecturas Fantasma en InnoDB (`REPEATABLE READ`)
+
+A diferencia del estándar SQL estricto donde `REPEATABLE READ` permite lecturas fantasma, **InnoDB evita lecturas fantasma** combinando:
+
+- **Lecturas consistentes sin bloqueo:** Mediante MVCC y *Read Views*.
+
+- **Lecturas de bloqueo (`SELECT ... FOR UPDATE`):** Mediante bloqueos de rango de claves (**Next-Key Locks**). :::

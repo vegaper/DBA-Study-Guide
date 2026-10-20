@@ -1168,49 +1168,20 @@ WHERE pay.status IN ('PENDING', 'FAILED')
 ORDER BY o.order_date ASC;
 ```
 
-------------------------------------------------------------------------
-# Carga e Importación de Archivos SQL
-
-Un archivo `.sql` contiene instrucciones SQL estructuradas (`CREATE TABLE`, `INSERT`, `ALTER`, etc.)
-
-## Ejecución mediante privilegios del sistema operativo (`sudo`)
-
-Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios `sudo`), es posible redirigir un archivo `.sql` directamente hacia el cliente de MySQL mediante la entrada estándar, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión:
-
-`sudo mysql < {archivo a ejecutar}`
-
-``` bash
-sudo mysql < /home/sysadmin/datos.sql
-```
-Autenticación mediante el Sistema Operativo (sudo): Al anteponer sudo, ejecutas el cliente de MySQL con los privilegios de superusuario de Linux. En las configuraciones por defecto de Ubuntu (con MySQL o MariaDB), el usuario root de la base de datos utiliza el plugin de autenticación por socket (auth_socket). Esto permite que el sistema operativo valide tu identidad al ser el administrador de Linux, evitando tener que introducir una contraseña de MySQL.
-
-### Importar indicando la base de datos existente
-Si el archivo no incluye las sentencias CREATE DATABASE o USE en su interior, se puede indicar la base de datos de destino directamente en el comando:
-
-`sudo mysql {base_de_datos} < {archivo a ejecutar}`
-``` bash
-sudo mysql empresa < /home/sysadmin/datos.sql
-```
-
-## Ejecución mediante cuenta de usuario de MySQL
-El ususuario tiene que tener privilegios de lectura y escritura sobre la base de datos destino. Se puede ejecutar el archivo SQL desde la línea de comandos del sistema operativo, redirigiendo la entrada estándar hacia el cliente de MySQL:
-
-Si tenemos que ejecutar el script sobre una base de datos ya creada:
-`mysql -u {usuario} -p {base_de_datos} < {archivo a ejecutar}`
-``` bash
-mysql -u usuario1 -p empresa < /home/sysadmin/datos.sql
-```
-
-Si el archivo SQL contiene la sentencia `CREATE DATABASE` y `USE`, no es necesario indicar la base de datos destino:
-``` bash
-mysql -u root -p < /home/sysadmin/datos.sql
-```
-
-## Ejecutar el archivo dentro de la consola interactiva de MySQL
-
-``` sql
-SOURCE /home/sysadmin/datos.sql;
-```
-------------------------------------------------------------------------
+|  |
+|:-----------------------------------------------------------------------|
+| \# Carga e Importación de Archivos SQL |
+| Un archivo `.sql` contiene instrucciones SQL estructuradas (`CREATE TABLE`, `INSERT`, `ALTER`, etc.) |
+| \## Ejecución mediante privilegios del sistema operativo (`sudo`) |
+| Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios `sudo`), es posible redirigir un archivo `.sql` directamente hacia el cliente de MySQL mediante la entrada estándar, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión: |
+| `sudo mysql < {archivo a ejecutar}` |
+| `bash sudo mysql < /home/sysadmin/datos.sql` Autenticación mediante el Sistema Operativo (sudo): Al anteponer sudo, ejecutas el cliente de MySQL con los privilegios de superusuario de Linux. En las configuraciones por defecto de Ubuntu (con MySQL o MariaDB), el usuario root de la base de datos utiliza el plugin de autenticación por socket (auth_socket). Esto permite que el sistema operativo valide tu identidad al ser el administrador de Linux, evitando tener que introducir una contraseña de MySQL. |
+| \### Importar indicando la base de datos existente Si el archivo no incluye las sentencias CREATE DATABASE o USE en su interior, se puede indicar la base de datos de destino directamente en el comando: |
+| `sudo mysql {base_de_datos} < {archivo a ejecutar}` |
+| \## Ejecución mediante cuenta de usuario de MySQL El ususuario tiene que tener privilegios de lectura y escritura sobre la base de datos destino. Se puede ejecutar el archivo SQL desde la línea de comandos del sistema operativo, redirigiendo la entrada estándar hacia el cliente de MySQL: |
+| Si tenemos que ejecutar el script sobre una base de datos ya creada: `mysql -u {usuario} -p {base_de_datos} < {archivo a ejecutar}` |
+| Si el archivo SQL contiene la sentencia `CREATE DATABASE` y `USE`, no es necesario indicar la base de datos destino: |
+| \## Ejecutar el archivo dentro de la consola interactiva de MySQL |
+| `sql SOURCE /home/sysadmin/datos.sql;` |
 
 ![Imagen generada con IA, puede contener errores.](images/practica_sql_base_de_datos_con_carga_de_datos_desde_csv_fig1.jpg)

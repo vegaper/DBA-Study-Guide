@@ -232,6 +232,39 @@ REVOKE UPDATE, DELETE ON empresa.empleados FROM 'ana'@'10.0.0.%';
 REVOKE GRANT OPTION ON empresa.empleados FROM 'ana'@'10.0.0.%';
 ```
 
+::: nota
+## Otorgar permisos de UPDATE sin permiso de SELECT
+
+**Técnicamente es totalmente posible conceder el permiso de `UPDATE` a un usuario sin darle permiso de `SELECT`**. Sin embargo, existen limitaciones operativas muy importantes sobre lo que ese usuario podrá hacer en la práctica.
+
+La sintaxis en MySQL no impide otorgar `UPDATE` de forma independiente: `GRANT UPDATE ON empresa.empleados TO 'usuario_modificador'@'10.0.20.%';`
+
+### ¿Qué SÍ puede hacer el usuario?
+
+El usuario podrá ejecutar modificaciones a **nivel global de la tabla** (sin evaluar condiciones sobre los valores de las filas):
+
+``` sql
+-- VÁLIDO: Modifica el campo 'estado' en TODAS las filas de la tabla
+UPDATE empresa.empleados SET estado = 'Inactivo';
+```
+
+### Qué NO puede hacer (Limitación clave)?
+
+El usuario **no podrá usar cláusulas `WHERE` que requieran leer/evaluar columnas**, ni tampoco realizar actualizaciones basadas en el valor actual de los campos:
+
+``` sql
+-- ERROR: Requiere leer la columna 'departamento' para evaluar la condición WHERE
+UPDATE empresa.empleados SET salario = 2500 WHERE departamento = 'IT';
+-- Error: Command denied to user for table 'empleados' (requiere SELECT en departamento)
+
+-- ERROR: Requiere leer el valor actual de 'salario' para calcular la suma
+UPDATE empresa.empleados SET salario = salario * 1.10;
+-- Error: Command denied to user for table 'empleados' (requiere SELECT en salario)
+```
+
+Un `UPDATE` condicional (`WHERE ...`) o acumulativo (`columna = columna + x`) necesita implícitamente **permisos de lectura (`SELECT`)** sobre las columnas involucradas en la condición o en el cálculo. Si no los tiene, el motor denegará la consulta.
+:::
+
 # Gestión de Roles (MySQL 8.0+)
 
 Un **Rol** es un contenedor nombrado de privilegios. En lugar de asignar individualmente conjuntos de permisos a múltiples cuentas de usuario (lo que genera incoherencias y dificulta la auditoría), se definen roles según el perfil laboral y se asignan a los usuarios.
@@ -329,6 +362,96 @@ Para obtener un listado global de todas las cuentas creadas y sus hosts autoriza
 SELECT User, Host, plugin, account_locked 
 FROM mysql.user;
 ```
+
+# Interacciones, Combinación y Resolución de Permisos en MySQL
+
+En la administración práctica de MySQL, un usuario puede recibir privilegios por múltiples vías simultáneas: mediante **permisos directos** asignados a su cuenta, a través de **uno o varios roles**, o mediante **diferentes niveles de jerarquía** (global, base de datos, tabla o columna).
+
+Entender cómo interactúan y se resuelven estas combinaciones es fundamental para evitar agujeros de seguridad o comportamientos inesperados.
+
+## Naturaleza Acumulativa: Lógica Aditiva (OR)
+
+En MySQL **los permisos son estrictamente aditivos (se suman)**. No existe el concepto de "denegación explícita" (un *DENY* o *REJECT* explícito) que sobrescriba o anule un permiso concedido por otra vía.
+
+$$\text{Permisos Efectivos} = \text{Permisos Directos} \cup \text{Rol 1} \cup \text{Rol 2} \cup \dots \cup \text{Rol N}$$
+
+- **Múltiples Roles:** Si a una cuenta de usuario se le asignan los roles `rol_lectura` (permiso `SELECT`) y `rol_escritura` (permiso `INSERT`), la cuenta obtiene de forma efectiva el conjunto de ambos permisos (`SELECT` + `INSERT`).
+
+- **Roles + Permisos Directos:** Si un usuario pertenece a un rol con permiso de `SELECT` y además se le concede directamente el permiso `UPDATE`, el usuario dispondrá de `SELECT` y `UPDATE`.
+
+## Revocación de Permisos en Vías Múltiples
+
+Dado que la evaluación de permisos es acumulativa, **si un usuario posee el mismo privilegio a través de dos o más vías independientes, revocar el permiso en una sola vía NO impedirá que el usuario lo siga ejerciendo**.
+
+### Ejemplo de Conflicto en Revocación:
+
+El usuario `'ana'@'10.0.20.%'` recibe el privilegio `SELECT` de forma directa sobre la tabla `empleados`:
+
+``` sql
+GRANT SELECT ON empresa.empleados TO 'ana'@'10.0.20.%';
+```
+
+Además, `'ana'@'10.0.20.%'` tiene asignado el rol `'rol_analista'`, que también tiene concedido `SELECT` sobre la misma tabla:
+
+``` sql
+GRANT 'rol_analista' TO 'ana'@'10.0.20.%';
+```
+
+Si el administrador intenta quitarle el permiso a Ana de forma directa:
+
+``` sql
+REVOKE SELECT ON empresa.empleados FROM 'ana'@'10.0.20.%';
+```
+
+**Resultado:** Ana **sigue pudiendo hacer `SELECT`** sobre la tabla `empleados`, porque lo continúa heredando a través del rol `'rol_analista'`.
+
+::: nota
+**Regla de oro:** Para revocar efectivamente un acceso, es necesario identificar todas las fuentes (permisos directos y todos los roles activos) y retirar el permiso o la asignación del rol en cada una de ellas.
+:::
+
+## Jerarquía y Ámbitos de Aplicación (Herencia de Niveles)
+
+MySQL evalúa los permisos siguiendo una estructura jerárquica de arriba hacia abajo:
+
+$$\text{Global (\*.\*)} \longrightarrow \text{Base de Datos (bd.\*)} \longrightarrow \text{Tabla (bd.tabla)} \longrightarrow \text{Columna (bd.tabla(col))}$$
+
+- **Concesión en Nivel Superior:** Si un usuario o rol recibe un permiso a nivel global (`ON *.*`) o de base de datos (`ON empresa.*`), ese permiso se aplica implícitamente a todas las tablas y columnas contenidas.
+
+- **Imposibilidad de Restringir Nivel Inferior:** No es posible otorgar un permiso amplio a nivel de base de datos y luego "restar" o "revocar" el permiso sobre una tabla específica dentro de esa base de datos.
+
+  ``` sql
+  -- Otorga SELECT en TODAS las tablas de 'empresa'
+  GRANT SELECT ON empresa.* TO 'ana'@'10.0.20.%';
+
+  -- ERROR / INEFICAZ: No puedes revocar el acceso a una sola tabla si el permiso se dio a nivel de BD
+  REVOKE SELECT ON empresa.salarios FROM 'ana'@'10.0.20.%';
+  -- MySQL devolverá: There is no such grant defined for user 'ana' on table 'salarios'
+  ```
+
+## Interacción con la Opción de Delegación (`WITH GRANT OPTION`)
+
+El privilegio de delegación `WITH GRANT OPTION` también sigue las reglas de la lógica aditiva y de ámbito:
+
+1.  **Especificidad por Permiso:** `WITH GRANT OPTION` solo otorga capacidad de delegar sobre aquellos permisos explícitamente incluidos en la misma sentencia `GRANT` (o acumulados previamente con esa opción).
+
+2.  **Propagación en Roles:** Si a un rol se le concede un privilegio con `WITH GRANT OPTION`, los usuarios que adopten ese rol podrán delegar dicho privilegio a otros usuarios mientras el rol permanezca activo.
+
+3.  **Revocación Independiente:** Se puede revocar únicamente la capacidad de delegar sin eliminar los permisos base de ejecución:
+
+    ``` sql
+    REVOKE GRANT OPTION ON empresa.empleados FROM 'ana'@'10.0.20.%';
+    ```
+
+## Cuadro Resumen de Reglas de Interacción
+
+|  |  |
+|------------------------------------|------------------------------------|
+| **Escenario** | **Resultado Efectivo** |
+| **Rol A (`SELECT`) + Rol B (`INSERT`)** | El usuario tiene permisos de `SELECT` e `INSERT`. |
+| **Permiso Directo (`DELETE`) + Rol (`SELECT`)** | El usuario tiene permisos de `DELETE` y `SELECT`. |
+| **Revocar Permiso Directo teniendo aún un Rol habilitado** | El usuario **mantiene** el permiso (obtenido a través del rol). |
+| **Permiso otorgado en `empresa.*` e intento de `REVOKE` en `empresa.tabla1`** | **Error**. La revocación debe hacerse en el mismo nivel jerárquico en el que fue concedido. |
+| **Cambio de permisos en un Rol con sesión de usuario abierta** | Los permisos sobre objetos (tablas/BD) aplican **inmediatamente**. Si el rol no estaba activo, requiere ejecutar `SET ROLE`. |
 
 # Resumen de Buenas Prácticas
 

@@ -11,96 +11,123 @@ El diseño cumple estrictamente con el requisito de estar compuesto por **exacta
 
 ------------------------------------------------------------------------
 
+# Enunciado
+
+**Diseño de una base de datos para Academia IT**
+
+Academia IT es un centro de formación que quiere almacenar en una base de datos la información de su alumnado, profesorado, cursos, asignaturas, matrículas y calificaciones.
+
+Actualmente, esta información se gestiona en documentos separados, lo que dificulta consultar las matrículas y mantener el historial académico. El centro necesita un modelo que permita organizar estos datos y evitar duplicidades e incoherencias.
+
+A partir de los requisitos siguientes, diseña el esquema entidad-relación y su transformación a un modelo relacional de **exactamente siete tablas**.
+
+**Información que necesita almacenar el centro**
+
+**Alumnado y profesorado**
+
+De cada alumno se guardarán el nombre, primer apellido, segundo apellido, DNI o NIE, correo electrónico, teléfono, fecha de nacimiento, fecha de alta y si está activo.
+
+De cada profesor se guardarán el nombre, primer apellido, segundo apellido, DNI o NIE, correo electrónico, teléfono, fecha de alta y si está activo.
+
+En ambos casos, serán obligatorios el nombre, primer apellido, correo electrónico, fecha de alta y estado de actividad. Los demás datos podrán quedar sin informar.
+
+Dentro del alumnado no podrán repetirse los correos electrónicos ni los DNI o NIE informados. La misma regla se aplicará, por separado, al profesorado. Al registrar un alumno o profesor, se considerará activo por defecto.
+
+**Cursos y asignaturas**
+
+De cada curso se guardarán un código, un nombre, una descripción, el número total de horas, las fechas de inicio y finalización y si está activo.
+
+Todos estos datos serán obligatorios excepto la descripción. El código no podrá repetirse, las horas deberán ser mayores que cero y la fecha de finalización no podrá ser anterior a la de inicio. Los cursos estarán activos por defecto.
+
+De cada asignatura se guardarán un código, un nombre, una descripción, el número de horas y si está activa.
+
+Todos estos datos serán obligatorios excepto la descripción. El código no podrá repetirse y las horas deberán ser mayores que cero. Las asignaturas estarán activas por defecto. Podrán existir asignaturas con el mismo nombre siempre que tengan códigos distintos.
+
+**Organización de la formación**
+
+Un curso está compuesto por varias asignaturas. Una misma asignatura puede formar parte de distintos cursos y existe en el catálogo independientemente de los cursos en los que se imparta.
+
+Para cada asignatura incluida en un curso debe conocerse qué profesor la imparte. Una asignatura concreta dentro de un curso tendrá un único profesor asignado. Un profesor podrá impartir distintas asignaturas y participar en distintos cursos.
+
+No se podrá incluir dos veces la misma asignatura en un mismo curso.
+
+**Matrículas**
+
+**El alumnado se matricula individualmente en asignaturas de un curso. No es necesario que se matricule en el curso completo.**
+
+Cada matrícula debe identificar al alumno y a la asignatura concreta que se imparte dentro de un curso. También se guardarán la fecha de matrícula y su estado; ambos datos serán obligatorios.
+
+Algunos ejemplos de estado son «matriculado», «finalizado» y «abandonado». Estos ejemplos no constituyen una lista cerrada de valores.
+
+Un alumno podrá matricularse en varias asignaturas. Una asignatura de un curso podrá tener varios alumnos matriculados. No se permitirá matricular dos veces al mismo alumno en la misma asignatura del mismo curso.
+
+**Calificaciones**
+
+Cada matrícula podrá tener una única calificación final. De ella se almacenarán la nota, la fecha de evaluación y las observaciones.
+
+La nota podrá quedar sin informar. Cuando exista, deberá estar comprendida entre 0 y 10 y admitir dos decimales. La fecha de evaluación y las observaciones también serán opcionales.
+
+Una nota sin informar representa una evaluación pendiente y debe distinguirse de una calificación de 0,00.
+
+Cada registro de calificación debe estar asociado a una matrícula existente. Esa matrícula ya identifica al alumno y a la asignatura del curso que está realizando, por lo que estos vínculos no deben repetirse en la calificación.
+
+**Conservación del historial**
+
+El centro quiere conservar su historial académico. No se permitirá borrar un registro mientras existan otros que lo referencien mediante una clave foránea.
+
+Cuando un alumno, profesor, curso o asignatura deje de utilizarse, se podrá marcar como inactivo mediante el dato de actividad previsto.
+
+**Trabajo que debe entregar el alumnado**
+
+1.  **Diagrama entidad-relación.** Identifica las entidades y relaciones necesarias, indica las cardinalidades y justifica cómo representas las matrículas individuales y las calificaciones.
+
+2.  **Modelo relacional de siete tablas.** Define las tablas y sus campos. Cada tabla tendrá un identificador interno entero positivo, autoincremental y utilizado como clave primaria.
+
+3.  **Diccionario de datos.** Para cada campo, indica su descripción, tipo MySQL, obligatoriedad y valor por defecto cuando corresponda. Utiliza estas longitudes máximas:
+
+    - Nombres de personas y apellidos: 50 caracteres.
+
+    - DNI o NIE: 12 caracteres.
+
+    - Correo electrónico: 254 caracteres.
+
+    - Teléfono y códigos: 20 caracteres.
+
+    - Nombre de asignatura: 100 caracteres.
+
+    - Nombre de curso: 150 caracteres.
+
+    - Estado de matrícula: 20 caracteres.
+
+    - Observaciones de la calificación: 255 caracteres.
+
+Las descripciones de cursos y asignaturas se almacenarán como texto de longitud variable.
+
+2.  **Claves y restricciones.** Especifica las claves primarias y foráneas, las restricciones de unicidad y las comprobaciones necesarias para cumplir el enunciado.
+
+3.  **Índices.** Propón índices para consultar personas por sus apellidos y nombre, localizar cursos por sus fechas y consultar las relaciones entre registros. Explica cuáles quedan cubiertos por claves o restricciones de unicidad.
+
+4.  **Política de borrado.** Indica la acción que aplicarás a cada clave foránea para conservar el historial.
+
+5.  **Comprobación del modelo.** Explica cómo tu diseño permite estas situaciones:
+
+    - Un alumno se matricula únicamente en SQL y Linux de un curso que contiene más asignaturas.
+
+    - Una misma asignatura se imparte en dos cursos distintos.
+
+    - Una matrícula todavía no tiene calificación.
+
+    - Un alumno obtiene una calificación de 0,00.
+
+Explica también qué restricciones impedirían una matrícula duplicada, una segunda nota final para la misma matrícula y una calificación vinculada a una matrícula inexistente.
+
+El diseño debe ajustarse a la información descrita. No añadas entidades, campos ni requisitos que no aparezcan en el enunciado.
+
+------------------------------------------------------------------------
+
 # Diagrama Entidad-Relación (E/R)
 
-## Entidades y Atributos
-
-1.  **ALUMNO**: Atributos: `id_alumno` (PK), `nombre`, `apellido1`, `apellido2`, `dni_nie`, `email`, `telefono`, `fecha_nacimiento`, `fecha_alta`, `activo`.
-2.  **PROFESOR**: Atributos: `id_profesor` (PK), `nombre`, `apellido1`, `apellido2`, `dni_nie`, `email`, `telefono`, `fecha_alta`, `activo`.
-3.  **CURSO**: Atributos: `id_curso` (PK), `codigo`, `nombre`, `descripcion`, `horas_totales`, `fecha_inicio`, `fecha_fin`, `activo`.
-4.  **ASIGNATURA**: Atributos: `id_asignatura` (PK), `codigo`, `nombre`, `descripcion`, `horas`, `activa`.
-
-## Relaciones y Justificación de Intersecciones
-
-- **CURSO_ASIGNATURA_PROFESOR** (Relación ternaria o entidad débil/intersección de la organización del curso):
-  - Un curso contiene varias asignaturas y una asignatura se puede impartir en varios cursos.
-  - Cada combinación concreta de asignatura en un curso la imparte exactamente un profesor.
-  - *Cardinalidad*: `CURSO (1,N) ---- ASIGNATURA (1,N) ---- PROFESOR (0,N)`.
-- **MATRICULA**:
-  - Vincula a un **Alumno** con una asignatura concreta impartida dentro de un curso (**Curso_Asignatura_Profesor**).
-  - *Justificación*: El enunciado especifica que el alumnado se matricula de forma individual por asignaturas dentro de un curso. Por tanto, la matrícula no apunta al curso completo ni a la asignatura abstracta, sino a la impartición específica (`id_curso_asignatura`).
-- **CALIFICACION**:
-  - Relación $1:1$ (opcional) asociada directamente a la **Matrícula**.
-  - *Justificación*: Se modela como una entidad separada para permitir que la clave primaria autoincremental propia satisfaga la estructura pedida y mantenga una restricción de unicidad (`UNIQUE`) sobre la clave foránea `id_matricula`. Esto garantiza que cada matrícula pueda tener, como máximo, una calificación final.
-
-## Representación Diagramática (Mermaid)
-
-```{mermaid}
-erDiagram
-    ALUMNO ||--o{ MATRICULA : realiza
-    PROFESOR ||--o{ CURSO_ASIGNATURA : imparte
-    CURSO ||--o{ CURSO_ASIGNATURA : contiene
-    ASIGNATURA ||--o{ CURSO_ASIGNATURA : incluye
-    CURSO_ASIGNATURA ||--o{ MATRICULA : pertenece
-    MATRICULA ||--o| CALIFICACION : obtiene
-
-    ALUMNO {
-        int id_alumno PK
-        string dni_nie UK
-        string email UK
-        string nombre
-        boolean activo
-    }
-
-    PROFESOR {
-        int id_profesor PK
-        string dni_nie UK
-        string email UK
-        string nombre
-        boolean activo
-    }
-
-    CURSO {
-        int id_curso PK
-        string codigo UK
-        string nombre
-        int horas_totales
-        boolean activo
-    }
-
-    ASIGNATURA {
-        int id_asignatura PK
-        string codigo UK
-        string nombre
-        int horas
-        boolean activa
-    }
-
-    CURSO_ASIGNATURA {
-        int id_curso_asignatura PK
-        int id_curso FK
-        int id_asignatura FK
-        int id_profesor FK
-    }
-
-    MATRICULA {
-        int id_matricula PK
-        int id_alumno FK
-        int id_curso_asignatura FK
-        date fecha_matricula
-        string estado
-    }
-
-    CALIFICACION {
-        int id_calificacion PK
-        int id_matricula FK, UK
-        decimal nota
-        date fecha_evaluacion
-        string observaciones
-    }
-```
-
-# Modelo Relacional (7 Tablas)
+## Modelo Relacional (7 Tablas)
 
 El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 
@@ -117,6 +144,20 @@ El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 6.  `matriculas` (`id_matricula` \[PK\], `id_alumno` \[FK\], `id_curso_asignatura` \[FK\], ...)
 
 7.  `calificaciones` (`id_calificacion` \[PK\], `id_matricula` \[FK, UNIQUE\], ...)
+
+
+## Relaciones y Justificación de Intersecciones
+
+- **CURSO_ASIGNATURA_PROFESOR** (Relación ternaria o entidad débil/intersección de la organización del curso):
+  - Un curso contiene varias asignaturas y una asignatura se puede impartir en varios cursos.
+  - Cada combinación concreta de asignatura en un curso la imparte exactamente un profesor.
+  - *Cardinalidad*: `CURSO (1,N) ---- ASIGNATURA (1,N) ---- PROFESOR (0,N)`.
+- **MATRICULA**:
+  - Vincula a un **Alumno** con una asignatura concreta impartida dentro de un curso (**Curso_Asignatura_Profesor**).
+  - *Justificación*: El enunciado especifica que el alumnado se matricula de forma individual por asignaturas dentro de un curso. Por tanto, la matrícula no apunta al curso completo ni a la asignatura abstracta, sino a la impartición específica (`id_curso_asignatura`).
+- **CALIFICACION**:
+  - Relación $1:1$ (opcional) asociada directamente a la **Matrícula**.
+  - *Justificación*: Se modela como una entidad separada para permitir que la clave primaria autoincremental propia satisfaga la estructura pedida y mantenga una restricción de unicidad (`UNIQUE`) sobre la clave foránea `id_matricula`. Esto garantiza que cada matrícula pueda tener, como máximo, una calificación final.
 
 # Diccionario de Datos
 
@@ -189,15 +230,15 @@ El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
 | `descripcion`   | Descripción detallada          | `TEXT`                        | No              | NULL                  |
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
-| `horas_totales` | Número total de horas          | `INT UNSIGNED`                | Sí              | —\[cite: 1\]          |
+| `horas_totales` | Número total de horas          | `INT UNSIGNED`                | Sí              | —          |
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
-| `fecha_inicio`  | Fecha de inicio del curso      | `DATE`                        | Sí              | —\[cite: 1\]          |
+| `fecha_inicio`  | Fecha de inicio del curso      | `DATE`                        | Sí              | —          |
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
-| `fecha_fin`     | Fecha de finalización          | `DATE`                        | Sí              | —\[cite: 1\]          |
+| `fecha_fin`     | Fecha de finalización          | `DATE`                        | Sí              | —          |
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
 | `activo`        | Estado de actividad del curso  | `BOOLEAN`                     | Sí              | `TRUE`                |
 |                 |                                |                               |                 |                       |
-|                 |                                |                               |                 | \[cite: 1\]           |
+|                 |                                |                               |                 |            |
 +-----------------+--------------------------------+-------------------------------+-----------------+-----------------------+
 
 ### Tabla: `asignaturas`
@@ -215,11 +256,11 @@ El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 +-----------------+----------------------------------+-------------------------------+-----------------+-----------------------+
 | `descripcion`   | Descripción detallada            | `TEXT`                        | No              | NULL                  |
 +-----------------+----------------------------------+-------------------------------+-----------------+-----------------------+
-| `horas`         | Número de horas de la asignatura | `INT UNSIGNED`                | Sí              | —\[cite: 1\]          |
+| `horas`         | Número de horas de la asignatura | `INT UNSIGNED`                | Sí              | —              |
 +-----------------+----------------------------------+-------------------------------+-----------------+-----------------------+
 | `activa`        | Estado de actividad              | `BOOLEAN`                     | Sí              | `TRUE`                |
 |                 |                                  |                               |                 |                       |
-|                 |                                  |                               |                 | \[cite: 1\]           |
+|                 |                                  |                               |                 |                   |
 +-----------------+----------------------------------+-------------------------------+-----------------+-----------------------+
 
 ### Tabla: `curso_asignaturas`
@@ -235,7 +276,7 @@ El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 +-----------------------+--------------------------------------------------+-------------------------------+-----------------+-----------------------+
 | `id_asignatura`       | Referencia a la asignatura                       | `INT UNSIGNED`                | Sí              | —                     |
 +-----------------------+--------------------------------------------------+-------------------------------+-----------------+-----------------------+
-| `id_profesor`         | Profesor que imparte la asignatura en este curso | `INT UNSIGNED`                | Sí              | —\[cite: 1, 2\]       |
+| `id_profesor`         | Profesor que imparte la asignatura en este curso | `INT UNSIGNED`                | Sí              | —                    |
 +-----------------------+--------------------------------------------------+-------------------------------+-----------------+-----------------------+
 
 ### Tabla: `matriculas`
@@ -274,7 +315,74 @@ El modelo relacional está compuesto exactamente por las siguientes 7 tablas:
 | `observaciones`    | Comentarios u observaciones                   | `VARCHAR(255)`                | No              | NULL                  |
 +--------------------+-----------------------------------------------+-------------------------------+-----------------+-----------------------+
 
-# Claves y Restricciones (DDL SQL)
+## Diagrama
+
+```{mermaid}
+erDiagram
+    ALUMNO ||--o{ MATRICULA : realiza
+    PROFESOR ||--o{ CURSO_ASIGNATURA : imparte
+    CURSO ||--o{ CURSO_ASIGNATURA : contiene
+    ASIGNATURA ||--o{ CURSO_ASIGNATURA : incluye
+    CURSO_ASIGNATURA ||--o{ MATRICULA : pertenece
+    MATRICULA ||--o| CALIFICACION : obtiene
+
+    ALUMNO {
+        int id_alumno PK
+        string dni_nie UK
+        string email UK
+        string nombre
+        boolean activo
+    }
+
+    PROFESOR {
+        int id_profesor PK
+        string dni_nie UK
+        string email UK
+        string nombre
+        boolean activo
+    }
+
+    CURSO {
+        int id_curso PK
+        string codigo UK
+        string nombre
+        int horas_totales
+        boolean activo
+    }
+
+    ASIGNATURA {
+        int id_asignatura PK
+        string codigo UK
+        string nombre
+        int horas
+        boolean activa
+    }
+
+    CURSO_ASIGNATURA {
+        int id_curso_asignatura PK
+        int id_curso FK
+        int id_asignatura FK
+        int id_profesor FK
+    }
+
+    MATRICULA {
+        int id_matricula PK
+        int id_alumno FK
+        int id_curso_asignatura FK
+        date fecha_matricula
+        string estado
+    }
+
+    CALIFICACION {
+        int id_calificacion PK
+        int id_matricula FK, UK
+        decimal nota
+        date fecha_evaluacion
+        string observaciones
+    }
+```
+
+# DDL SQL
 
 ``` sql
 -- 1. Tabla ALUMNOS
@@ -418,7 +526,7 @@ Para garantizar la conservación del historial académico solicitada:
 
 2.  **Misma asignatura en dos cursos distintos**:
 
-    - La tabla `asignaturas` almacena una única entrada de la asignatura (ej. "Bases de Datos")\[cite: 1\]. La tabla `curso_asignaturas` vincula esta asignatura con dos `id_curso` diferentes.
+    - La tabla `asignaturas` almacena una única entrada de la asignatura (ej. "Bases de Datos"). La tabla `curso_asignaturas` vincula esta asignatura con dos `id_curso` diferentes.
 
 3.  **Matrícula sin calificación**:
 
@@ -435,3 +543,7 @@ Para garantizar la conservación del historial académico solicitada:
 - **Segunda nota para la misma matrícula**: Impedida por la restricción `CONSTRAINT uq_calificacion_matricula UNIQUE (id_matricula)` .
 
 - **Calificación vinculada a una matrícula inexistente**: Impedida por la clave foránea `CONSTRAINT fk_cal_matricula FOREIGN KEY (id_matricula) REFERENCES matriculas(id_matricula)` .
+
+------------------------------------------------------------------------
+
+![](paste-fE5_vlBSHD8099pVe-yNP)
