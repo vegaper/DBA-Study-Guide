@@ -98,7 +98,7 @@ Como ver las sesiones activas en el servidor
  SHOW PROCESSLIST;
 ```
 
-![](images/paste-1.png)
+![](images/practica_transacciones_mysql_fig1.png)
 
 Ver el número total de conexiones activas:
 
@@ -106,7 +106,7 @@ Ver el número total de conexiones activas:
 SHOW STATUS WHERE variable_name = 'Threads_connected';
 ```
 
-![](images/paste-2.png)
+![](images/practica_transacciones_mysql_fig2.png)
 
 O desde la terminal de linux, sin entrar en mysql:
 
@@ -132,7 +132,7 @@ SELECT
     @@session.transaction_isolation AS aislamiento;
 ```
 
-![](images/paste-4.png)
+![](images/practica_transacciones_mysql_fig3.png)
 
 **Resultado esperado:** los identificadores de conexión serán diferentes, aunque la cuenta MySQL puede ser la misma.
 
@@ -149,7 +149,7 @@ WHERE TABLE_SCHEMA = DATABASE()
   AND TABLE_NAME IN ('cuentas', 'productos');
 ```
 
-![](images/paste-5.png)
+![](images/practica_transacciones_mysql_fig4.png)
 
 Ambas tablas deberán utilizar InnoDB para reproducir los comportamientos de la guía.
 
@@ -228,7 +228,7 @@ SELECT @@session.autocommit;
 
 El resultado deberá ser `1`.
 
-![](images/paste-6.png)
+![](images/practica_transacciones_mysql_fig5.png)
 
 ## Paso 2: Sesión A — Modificar un precio sin iniciar una transacción explícita
 
@@ -248,7 +248,7 @@ WHERE id_producto = 1;
 
 **Resultado esperado:** precio `25.00`.
 
-![](images/paste-7.png)
+![](images/practica_transacciones_mysql_fig6.png)
 
 ## Paso 4: Sesión A — Intentar deshacer el cambio
 
@@ -256,7 +256,7 @@ WHERE id_producto = 1;
 ROLLBACK;
 ```
 
-![](images/paste-8.png)
+![](images/practica_transacciones_mysql_fig7.png)
 
 ## Paso 5: Sesión B — Volver a consultar
 
@@ -290,7 +290,7 @@ Se establece una unidad de trabajo que incluirá el descuento en una cuenta y el
 
 Recordamos el balance de las cuentasantes de esta operación:
 
-![](images/paste-9.png)
+![](images/practica_transacciones_mysql_fig8.png)
 
 ``` sql
 UPDATE cuentas
@@ -311,7 +311,7 @@ ORDER BY id_cuenta;
 | Ana    | 900.00             |
 | Luis   | 500.00             |
 
-![](images/paste-10.png)
+![](images/practica_transacciones_mysql_fig9.png)
 
 No ejecutar `COMMIT` todavía.
 
@@ -323,7 +323,7 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/paste-11.png)
+![](images/practica_transacciones_mysql_fig10.png)
 
 B verá `1000.00` y `500.00`. A ve su propia modificación pendiente; B consulta una versión confirmada disponible para su lectura.
 
@@ -348,7 +348,7 @@ FROM cuentas;
 
 A verá `900.00`, `600.00` y un total de `1500.00`.
 
-![](images/paste-12.png)
+![](images/practica_transacciones_mysql_fig11.png)
 
 ## Paso 6: Sesión A — Confirmar la operación
 
@@ -364,7 +364,7 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/paste-13.png)
+![](images/practica_transacciones_mysql_fig12.png)
 
 Ahora B verá `900.00` y `600.00`. `COMMIT` finaliza la transacción y confirma sus cambios.
 
@@ -408,7 +408,7 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/paste-14.png)
+![](images/practica_transacciones_mysql_fig13.png)
 
 A verá `800.00` y `700.00`.
 
@@ -420,7 +420,7 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/paste-15.png)
+![](images/practica_transacciones_mysql_fig14.png)
 
 B seguirá viendo `1000.00` y `500.00`.
 
@@ -438,7 +438,7 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/paste-16.png)
+![](images/practica_transacciones_mysql_fig15.png)
 
 Ambas verán `1000.00` y `500.00`.
 
@@ -472,7 +472,7 @@ SET saldo = saldo + 100.00
 WHERE id_cuenta = 9999;
 ```
 
-![](images/paste-17.png)
+![](images/practica_transacciones_mysql_fig16.png)
 
 ## Paso 3: Sesión A — Comprobar inmediatamente las filas afectadas
 
@@ -484,7 +484,7 @@ Cuando ejecutas un `SELECT`, la función `ROW_COUNT()` **no cuenta filas selecci
 SELECT ROW_COUNT() AS filas_afectadas;
 ```
 
-![](images/paste-18.png)
+![](images/practica_transacciones_mysql_fig17.png)
 
 El resultado deberá ser `0`. El `UPDATE` es válido, pero no encuentra la cuenta de destino. No se produce un error SQL que automáticamente invalide la transferencia.
 
@@ -615,7 +615,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-20.png)
+![](images/practica_transacciones_mysql_fig18.png)
 
 El precio será `35.00`.
 
@@ -675,7 +675,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-21.png)
+![](images/practica_transacciones_mysql_fig19.png)
 
 A verá precio `25.00` y stock `1`. Se conserva el cambio realizado antes del punto y se deshacen los dos posteriores.
 
@@ -687,7 +687,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-22.png)
+![](images/practica_transacciones_mysql_fig20.png)
 
 B verá precio `20.00` y stock `1`. Volver a un punto de guardado no confirma la transacción.
 
@@ -721,7 +721,7 @@ Al repetir su consulta, B verá precio `25.00` y stock `0`.
 ROLLBACK TO SAVEPOINT precio_revisado;
 ```
 
-![](images/paste-23.png)
+![](images/practica_transacciones_mysql_fig21.png)
 
 Se producirá un error indicando que el punto no existe. Los puntos de guardado pertenecen a la transacción y no son copias de seguridad. Una reversión parcial tampoco garantiza que se liberen todos los bloqueos adquiridos.
 
@@ -763,7 +763,7 @@ SET stock = stock - 1
 WHERE id_producto = 2;
 ```
 
-![](images/paste-24.png)
+![](images/practica_transacciones_mysql_fig22.png)
 
 La sentencia termina porque trabaja con otra fila.
 
@@ -792,7 +792,7 @@ WHERE id_producto IN (1, 2)
 ORDER BY id_producto;
 ```
 
-![](images/paste-25.png)
+![](images/practica_transacciones_mysql_fig23.png)
 
 ## Paso 7: Sesión B — Cancelar las modificaciones
 
@@ -967,7 +967,7 @@ COMMIT;
 
 ## Paso 4: Sesión B — Consultar inmediatamente las filas afectadas
 
-![](images/paste-26.png)
+![](images/practica_transacciones_mysql_fig24.png)
 
 Cuando termine su `UPDATE`, ejecutar:
 
@@ -1128,7 +1128,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-27.png)
+![](images/practica_transacciones_mysql_fig25.png)
 
 B verá `99.00` aunque la operación de UPDATE no se ha confirmado aún.
 
@@ -1228,7 +1228,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-29.png)
+![](images/practica_transacciones_mysql_fig26.png)
 
 Continúa viendo `20.00`.
 
@@ -1242,7 +1242,7 @@ FROM productos
 WHERE id_producto = 1;
 ```
 
-![](images/paste-30.png)
+![](images/practica_transacciones_mysql_fig27.png)
 
 Ahora verá `25.00`.
 
@@ -1319,7 +1319,7 @@ SET SESSION autocommit = 0;
 LOCK TABLES productos WRITE;
 ```
 
-![](images/paste-31.png)
+![](images/practica_transacciones_mysql_fig28.png)
 
 No ejecutar `START TRANSACTION` después de `LOCK TABLES`.
 
@@ -1364,7 +1364,7 @@ Por eso esta demostración se realiza por separado y no se utiliza como paso obl
 SELECT @@global.innodb_deadlock_detect;
 ```
 
-![](images/paste-32.png)
+![](images/practica_transacciones_mysql_fig29.png)
 
 El resultado deberá ser `1`. Si está desactivada, el docente deberá adaptar la prueba.
 
@@ -1414,7 +1414,7 @@ WHERE id_cuenta = 1;
 
 A necesita un recurso bloqueado por B y B necesita otro bloqueado por A.
 
-![](images/paste-33.png)
+![](images/practica_transacciones_mysql_fig30.png)
 
 **Resultado esperado:** una de las sesiones recibirá el error `1213`, asociado a un interbloqueo. No se debe suponer de antemano cuál será la elegida. InnoDB cancela completamente una de las transacciones y permite que la otra continúe.
 
@@ -1563,25 +1563,25 @@ Aplicar la preparación común antes de empezar.
 
 Anotar los saldos, el precio y el stock antes de comenzar.
 
-![](images/paste-34.png)
+![](images/practica_transacciones_mysql_fig31.png)
 
 ## Paso 2: Iniciar una transacción en A
 
 Utilizar la instrucción adecuada para agrupar las operaciones.
 
-![](images/paste-35.png)
+![](images/practica_transacciones_mysql_fig32.png)
 
 ## Paso 3: Realizar las dos modificaciones de la transferencia
 
 Transferir 150.00 euros de Ana a Luis. Comprobar inmediatamente las filas afectadas después de cada `UPDATE`. Si una operación no modifica la cuenta prevista, no confirmar la transferencia.
 
-![](images/paste-36.png)
+![](images/practica_transacciones_mysql_fig33.png)
 
-![](images/paste-37.png)
+![](images/practica_transacciones_mysql_fig34.png)
 
 ## Paso 4: Verificar la suma de los saldos
 
-![](images/paste-38.png)
+![](images/practica_transacciones_mysql_fig35.png)
 
 El total deberá continuar siendo `1500.00`.
 
@@ -1589,7 +1589,7 @@ El total deberá continuar siendo `1500.00`.
 
 Utilizar el nombre `transferencia_completa`.
 
-![](images/paste-39.png)
+![](images/practica_transacciones_mysql_fig36.png)
 
 ## Paso 6: Modificar el precio y descontar el stock
 
@@ -1599,7 +1599,7 @@ Registrar una venta descontando una unidad solo si existe stock.
 
 Utilizar una condición que impida vender si no quedan unidades.
 
-![](images/paste-40.png)
+![](images/practica_transacciones_mysql_fig37.png)
 
 ## Paso 7: Consultar en A y en B antes de confirmar
 
@@ -1609,13 +1609,13 @@ Explicar por qué los resultados son distintos.
 
 Utilizar una reversión parcial.
 
-![](images/paste-41.png)
+![](images/practica_transacciones_mysql_fig38.png)
 
 ## Paso 9: Comprobar qué cambios permanecen dentro de A
 
 Verificar que se conserva la transferencia y se han deshecho las modificaciones del teclado.
 
-![](images/paste-42.png)
+![](images/practica_transacciones_mysql_fig39.png)
 
 ## Paso 10: Confirmar la transacción y consultar desde B
 
@@ -1628,9 +1628,9 @@ Verificar que se conserva la transferencia y se han deshecho las modificaciones 
 | **Stock del teclado**  | 1                        |
 
 ::: nota
-![](images/paste-43.png)
+![](images/practica_transacciones_mysql_fig40.png)
 
-![](images/paste-44.png)
+![](images/practica_transacciones_mysql_fig41.png)
 
 **Justificación que debe entregar el estudiante:** explicar por qué quedó confirmada la transferencia y no las modificaciones del teclado.
 :::
