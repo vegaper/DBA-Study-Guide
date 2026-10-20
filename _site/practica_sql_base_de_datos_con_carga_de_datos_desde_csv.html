@@ -2,13 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.31">
+<meta name="generator" content="quarto-1.9.38">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Práctica sql con carga de datos desde csv – Apuntes: Administración de Bases de Datos</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -71,10 +74,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-0dd6b25f39dd0ed3453471286ba3b5de.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +116,7 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -126,7 +129,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -473,6 +476,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./transacciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Transacciones en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
   </div>
@@ -513,17 +522,40 @@ window.Quarto = {
  <span class="menu-text">Práctica: Usuarios, Privilegios y Roles en Academia IT</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false">
+ <span class="menu-text">practica_transacciones_mysql.html</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_transacciones_mysql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Transacciones en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_transacciones.sql" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">script SQL de la práctica: Transacciones en MySQL</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
  <span class="menu-text">Anexos</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
@@ -608,6 +640,15 @@ window.Quarto = {
   <li><a href="#consulta-4-clientes-con-ticket-medio-superior-a-la-media-global" id="toc-consulta-4-clientes-con-ticket-medio-superior-a-la-media-global" class="nav-link" data-scroll-target="#consulta-4-clientes-con-ticket-medio-superior-a-la-media-global"><span class="header-section-number">8.5</span> Consulta 4: Clientes con Ticket Medio Superior a la Media Global</a></li>
   <li><a href="#consulta-5-pedidos-con-pago-pendiente-o-fallido" id="toc-consulta-5-pedidos-con-pago-pendiente-o-fallido" class="nav-link" data-scroll-target="#consulta-5-pedidos-con-pago-pendiente-o-fallido"><span class="header-section-number">8.6</span> Consulta 5: Pedidos con Pago Pendiente o Fallido</a></li>
   </ul></li>
+  <li><a href="#carga-e-importación-de-archivos-sql" id="toc-carga-e-importación-de-archivos-sql" class="nav-link" data-scroll-target="#carga-e-importación-de-archivos-sql"><span class="header-section-number">9</span> Carga e Importación de Archivos SQL</a>
+  <ul>
+  <li><a href="#ejecución-mediante-privilegios-del-sistema-operativo-sudo" id="toc-ejecución-mediante-privilegios-del-sistema-operativo-sudo" class="nav-link" data-scroll-target="#ejecución-mediante-privilegios-del-sistema-operativo-sudo"><span class="header-section-number">9.1</span> Ejecución mediante privilegios del sistema operativo (<code>sudo</code>)</a>
+  <ul class="collapse">
+  <li><a href="#importar-indicando-la-base-de-datos-existente" id="toc-importar-indicando-la-base-de-datos-existente" class="nav-link" data-scroll-target="#importar-indicando-la-base-de-datos-existente"><span class="header-section-number">9.1.1</span> Importar indicando la base de datos existente</a></li>
+  </ul></li>
+  <li><a href="#ejecución-mediante-cuenta-de-usuario-de-mysql-el-ususuario-tiene-que-tener-privilegios-de-lectura-y-escritura-sobre-la-base-de-datos-destino.-se-puede-ejecutar-el-archivo-sql-desde-la-línea-de-comandos-del-sistema-operativo-redirigiendo-la-entrada-estándar-hacia-el-cliente-de-mysql" id="toc-ejecución-mediante-cuenta-de-usuario-de-mysql-el-ususuario-tiene-que-tener-privilegios-de-lectura-y-escritura-sobre-la-base-de-datos-destino.-se-puede-ejecutar-el-archivo-sql-desde-la-línea-de-comandos-del-sistema-operativo-redirigiendo-la-entrada-estándar-hacia-el-cliente-de-mysql" class="nav-link" data-scroll-target="#ejecución-mediante-cuenta-de-usuario-de-mysql-el-ususuario-tiene-que-tener-privilegios-de-lectura-y-escritura-sobre-la-base-de-datos-destino.-se-puede-ejecutar-el-archivo-sql-desde-la-línea-de-comandos-del-sistema-operativo-redirigiendo-la-entrada-estándar-hacia-el-cliente-de-mysql"><span class="header-section-number">9.2</span> Ejecución mediante cuenta de usuario de MySQL El ususuario tiene que tener privilegios de lectura y escritura sobre la base de datos destino. Se puede ejecutar el archivo SQL desde la línea de comandos del sistema operativo, redirigiendo la entrada estándar hacia el cliente de MySQL:</a></li>
+  <li><a href="#ejecutar-el-archivo-dentro-de-la-consola-interactiva-de-mysql" id="toc-ejecutar-el-archivo-dentro-de-la-consola-interactiva-de-mysql" class="nav-link" data-scroll-target="#ejecutar-el-archivo-dentro-de-la-consola-interactiva-de-mysql"><span class="header-section-number">9.3</span> Ejecutar el archivo dentro de la consola interactiva de MySQL</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -646,18 +687,18 @@ window.Quarto = {
 <p><code>scp</code> (Secure Copy Protocol) permite copiar archivos de forma segura mediante SSH. Los siguientes comandos se ejecutan en PowerShell o CMD en Windows.</p>
 <section id="subir-todos-los-archivos-csv-de-una-carpeta" class="level3" data-number="2.1.1">
 <h3 data-number="2.1.1" class="anchored" data-anchor-id="subir-todos-los-archivos-csv-de-una-carpeta"><span class="header-section-number">2.1.1</span> Subir todos los archivos CSV de una carpeta</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\*</span>.csv sysadmin@10.0.20.100:/home/sysadmin/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\*</span>.csv sysadmin@10.0.20.100:/home/sysadmin/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Si hay archivos con los mismos nombres en el destino se sobreescribirán.</p>
 </section>
 <section id="subir-un-archivo-concreto" class="level3" data-number="2.1.2">
 <h3 data-number="2.1.2" class="anchored" data-anchor-id="subir-un-archivo-concreto"><span class="header-section-number">2.1.2</span> Subir un archivo concreto</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\d</span>epartments.csv sysadmin@10.0.20.100:/home/sysadmin/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\d</span>epartments.csv sysadmin@10.0.20.100:/home/sysadmin/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="subir-una-carpeta-completa" class="level3" data-number="2.1.3">
 <h3 data-number="2.1.3" class="anchored" data-anchor-id="subir-una-carpeta-completa"><span class="header-section-number">2.1.3</span> Subir una carpeta completa</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> <span class="at">-r</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\d</span>atos sysadmin@10.0.20.100:/home/sysadmin/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> <span class="at">-r</span> C:<span class="dt">\U</span>sers<span class="dt">\n</span>ombre_usuario<span class="dt">\D</span>ownloads<span class="dt">\d</span>atos sysadmin@10.0.20.100:/home/sysadmin/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>En la terminal de Ubuntu se puede verificar la recepción de archivos con:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> /home/sysadmin/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-lh</span> /home/sysadmin/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
@@ -667,20 +708,20 @@ window.Quarto = {
 <p>A continuación se define la estructura inicial del entorno de base de datos <code>erpcrm_lab</code>.</p>
 <section id="crear-la-base-de-datos" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="crear-la-base-de-datos"><span class="header-section-number">3.1</span> Crear la Base de Datos</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">DATABASE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> erpcrm_lab </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">DATABASE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> erpcrm_lab </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">DEFAULT</span> <span class="dt">CHARACTER</span> <span class="kw">SET</span> utf8mb4 </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">DEFAULT</span> COLLATE utf8mb4_unicode_ci;</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">USE</span> erpcrm_lab;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">USE</span> erpcrm_lab;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="crear-usuario-administrador-específico" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="crear-usuario-administrador-específico"><span class="header-section-number">3.2</span> Crear Usuario Administrador Específico</h2>
 <p>Se crea un usuario administradores restringido únicamente a esta base de datos schema.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="fu">USER</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> <span class="st">'admin'</span>@<span class="st">'localhost'</span> <span class="kw">IDENTIFIED</span> <span class="kw">BY</span> <span class="st">'Cambia_Esta_Clave!2026'</span>;</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="fu">USER</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> <span class="st">'admin'</span>@<span class="st">'localhost'</span> <span class="kw">IDENTIFIED</span> <span class="kw">BY</span> <span class="st">'Cambia_Esta_Clave!2026'</span>;</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">GRANT</span> <span class="kw">ALL</span> <span class="kw">PRIVILEGES</span> <span class="kw">ON</span> erpcrm_lab.<span class="op">*</span> <span class="kw">TO</span> <span class="st">'admin'</span>@<span class="st">'localhost'</span> <span class="kw">WITH</span> <span class="kw">GRANT</span> <span class="kw">OPTION</span>;</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FLUSH</span> <span class="kw">PRIVILEGES</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FLUSH</span> <span class="kw">PRIVILEGES</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Para logearse en mysql con ese usario:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mysql</span> <span class="at">-u</span> admin <span class="at">-p</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mysql</span> <span class="at">-u</span> admin <span class="at">-p</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Como sólo le hemos dado permiso para conectarse a través de localhost, tendremos que estar en la máquina servidor o conectados a ella via ssh.</p>
 <hr>
 </section>
@@ -691,17 +732,17 @@ window.Quarto = {
 <section id="tabla-departments" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="tabla-departments"><span class="header-section-number">4.1</span> Tabla <code>departments</code></h2>
 <p>Finalidad: Catálogo de departamentos de la organización.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> departments (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> departments (</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    dept_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    dept_name <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (dept_id),</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">UNIQUE</span> (dept_name)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-employees" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="tabla-employees"><span class="header-section-number">4.2</span> Tabla <code>employees</code></h2>
 <p>Finalidad: Registro de empleados internos y personal comercial.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> employees (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> employees (</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    emp_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    dept_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    first_name <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -714,12 +755,12 @@ window.Quarto = {
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">CONSTRAINT</span> fk_emp_dept </span>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (dept_id) <span class="kw">REFERENCES</span> departments(dept_id)</span>
 <span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span> <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">RESTRICT</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-customers" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="tabla-customers"><span class="header-section-number">4.3</span> Tabla <code>customers</code></h2>
 <p>Finalidad: Datos de empresas y contactos de clientes.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> customers (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> customers (</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    customer_id <span class="dt">INT</span> AUTO_INCREMENT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    company_name <span class="dt">VARCHAR</span>(<span class="dv">40</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    contact_name <span class="dt">VARCHAR</span>(<span class="dv">120</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -733,12 +774,12 @@ window.Quarto = {
 <span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">UNIQUE</span> (email),</span>
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_cust_province (province),</span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_cust_segment (<span class="kw">segment</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-products" class="level2" data-number="4.4">
 <h2 data-number="4.4" class="anchored" data-anchor-id="tabla-products"><span class="header-section-number">4.4</span> Tabla <code>products</code></h2>
 <p>Finalidad: Catálogo de productos y servicios ofertados.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> products (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> products (</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    product_id <span class="dt">INT</span> AUTO_INCREMENT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    product_name <span class="dt">VARCHAR</span>(<span class="dv">150</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">category</span> ENUM(<span class="st">'Hardware'</span>, <span class="st">'Software'</span>, <span class="st">'Service'</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -748,12 +789,12 @@ window.Quarto = {
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (product_id),</span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_prod_category (<span class="kw">category</span>),</span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_prod_active (active)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-orders" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="tabla-orders"><span class="header-section-number">4.5</span> Tabla <code>orders</code></h2>
 <p>Finalidad: Registro de cabeceras de pedidos.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> orders (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> orders (</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    order_id <span class="dt">INT</span> AUTO_INCREMENT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    customer_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    sales_rep_emp_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -770,12 +811,12 @@ window.Quarto = {
 <span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_ord_date (order_date),</span>
 <span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_ord_status (status),</span>
 <span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_ord_cust_date (customer_id, order_date)</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-order_items" class="level2" data-number="4.6">
 <h2 data-number="4.6" class="anchored" data-anchor-id="tabla-order_items"><span class="header-section-number">4.6</span> Tabla <code>order_items</code></h2>
 <p>Finalidad: Detalle de líneas asociadas a cada pedido.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> order_items (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> order_items (</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    order_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    line_no <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    product_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -790,12 +831,12 @@ window.Quarto = {
 <span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">FOREIGN</span> <span class="kw">KEY</span> (product_id) <span class="kw">REFERENCES</span> products(product_id)</span>
 <span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span> <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">RESTRICT</span>,</span>
 <span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_oi_product (product_id)</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="tabla-payments" class="level2" data-number="4.7">
 <h2 data-number="4.7" class="anchored" data-anchor-id="tabla-payments"><span class="header-section-number">4.7</span> Tabla <code>payments</code></h2>
 <p>Finalidad: Registro de pagos por cada pedido (Relación 1:1 con <code>orders</code>).</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> payments (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> payments (</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    payment_id <span class="dt">INT</span> AUTO_INCREMENT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    order_id <span class="dt">INT</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    amount <span class="dt">DECIMAL</span>(<span class="dv">10</span>,<span class="dv">2</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
@@ -809,7 +850,7 @@ window.Quarto = {
 <span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">ON</span> <span class="kw">UPDATE</span> <span class="kw">CASCADE</span> <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,</span>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_pay_status (status),</span>
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">INDEX</span> idx_pay_paid_at (paid_at)</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>) ENGINE<span class="op">=</span>InnoDB;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 </section>
@@ -820,15 +861,15 @@ window.Quarto = {
 <h2 data-number="5.1" class="anchored" data-anchor-id="uso-de-load-data-infile-lectura-del-servidor"><span class="header-section-number">5.1</span> Uso de <code>LOAD DATA INFILE</code> (Lectura del Servidor)</h2>
 <p>En este modo, el proceso del servidor MySQL (`mysqld`) lee el archivo directamente desde el sistema de archivos del servidor. Por razones de seguridad, MySQL limita los directorios desde los que se pueden leer archivos mediante la variable <code>secure_file_priv</code>.</p>
 <p>Para comprobar el directorio autorizado:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>SHOW VARIABLES <span class="kw">LIKE</span> <span class="st">'secure_file_priv'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>SHOW VARIABLES <span class="kw">LIKE</span> <span class="st">'secure_file_priv'</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Por defecto en sistemas Ubuntu, esta variable apunta al directorio <code>/var/lib/mysql-files/</code>, el cual pertenece al usuario de sistema `mysql`. Debido a estas restricciones de permisos, los usuarios del sistema deben copiar los archivos CSV desde su directorio personal a esta ubicación utilizando privilegios elevados:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> cp /home/sysadmin/departments.csv /var/lib/mysql-files/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> INFILE <span class="st">'/var/lib/mysql-files/departments.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> cp /home/sysadmin/departments.csv /var/lib/mysql-files/</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> INFILE <span class="st">'/var/lib/mysql-files/departments.csv'</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> departments</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">'"'</span></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="extra">
 <section id="explicación-de-los-parámetros" class="level3" data-number="5.1.1">
 <h3 data-number="5.1.1" class="anchored" data-anchor-id="explicación-de-los-parámetros"><span class="header-section-number">5.1.1</span> Explicación de los parámetros</h3>
@@ -881,13 +922,13 @@ window.Quarto = {
 <p><strong>Solución 1: Usar <code>LINES TERMINATED BY '\n'</code> + Limpiar <code>\r</code> con <code>SET</code> (La más recomendada)</strong></p>
 <p>Tanto los archivos de Linux (<code>\n</code>) como los de Windows (<code>\r\n</code>) comparten el carácter <code>\n</code> al final de la línea. Si le dices a MySQL que la línea termina en <code>\n</code>, procesará correctamente las filas en ambos casos, pero en los archivos de Windows dejará un retorno de carro impredecible (<code>\r</code>) al final del último campo de cada fila.</p>
 <p>Puedes eliminar ese <code>\r</code> dinámicamente usando la función <code>REPLACE()</code> o <code>TRIM()</code> en la cláusula <code>SET</code>:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/archivo.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/archivo.csv'</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> mi_tabla</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> OPTIONALLY ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\n</span><span class="st">'</span> <span class="co">-- Acepta filas de Linux y Windows</span></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>(columna1, columna2, @v_ultima_columna)</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> ultima_columna <span class="op">=</span> <span class="kw">REPLACE</span>(@v_ultima_columna, <span class="st">'</span><span class="ch">\r</span><span class="st">'</span>, <span class="st">''</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> ultima_columna <span class="op">=</span> <span class="kw">REPLACE</span>(@v_ultima_columna, <span class="st">'</span><span class="ch">\r</span><span class="st">'</span>, <span class="st">''</span>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><p><strong>Si el archivo es de Linux (<code>\n</code>):</strong> <code>@v_ultima_columna</code> no tiene <code>\r</code>, por lo que <code>REPLACE</code> no modifica nada y se guarda tal cual.</p></li>
 <li><p><strong>Si el archivo es de Windows (<code>\r\n</code>):</strong> <code>@v_ultima_columna</code> captura el texto con el <code>\r</code> al final. <code>REPLACE</code> lo limpia antes de insertarlo en la tabla.</p></li>
@@ -895,11 +936,11 @@ window.Quarto = {
 <p><strong>Solución 2: Normalizar los saltos de línea en el sistema operativo antes de cargar</strong></p>
 <p>Si trabajas en la terminal de Linux, la mejor práctica es homogeneizar el archivo a formato Unix/Linux antes de ejecutar el <code>LOAD DATA</code>.</p>
 <p>Puedes hacerlo al vuelo con la herramienta <code>dos2unix</code> o con <code>tr</code>:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Opción A: Convertir el archivo directamente con dos2unix</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Opción A: Convertir el archivo directamente con dos2unix</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">dos2unix</span> /home/sysadmin/archivo.csv</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Opción B: Eliminar los caracteres \r usando tr</span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">tr</span> <span class="at">-d</span> <span class="st">'\r'</span> <span class="op">&lt;</span> /home/sysadmin/archivo.csv <span class="op">&gt;</span> /home/sysadmin/archivo_linux.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">tr</span> <span class="at">-d</span> <span class="st">'\r'</span> <span class="op">&lt;</span> /home/sysadmin/archivo.csv <span class="op">&gt;</span> /home/sysadmin/archivo_linux.csv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Una vez normalizado el archivo a formato Linux, puedes ejecutar tu <code>LOAD DATA</code> con <code>LINES TERMINATED BY '\n'</code> con total seguridad de que no fallará.</p>
 </div></li>
 </ul>
@@ -945,31 +986,31 @@ window.Quarto = {
 <ol type="1">
 <li><strong>Verificar estado en el servdor:</strong></li>
 </ol>
-<div class="sourceCode" id="cb20"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>SHOW VARIABLES <span class="kw">LIKE</span> <span class="st">'local_infile'</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>SHOW VARIABLES <span class="kw">LIKE</span> <span class="st">'local_infile'</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ol start="2" type="1">
 <li><strong>Activar temporalmente en la sesión en el lado del servidor:</strong></li>
 </ol>
-<div class="sourceCode" id="cb21"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> <span class="kw">GLOBAL</span> local_infile <span class="op">=</span> <span class="dv">1</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> <span class="kw">GLOBAL</span> local_infile <span class="op">=</span> <span class="dv">1</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ol start="3" type="1">
 <li><strong>Conectarse desde el cliente permitiendo archivos locales en el cliente:</strong></li>
 </ol>
 <p>Añadimos <code>--local-infile=1</code> al comando de conexión:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mysql</span> <span class="at">--local-infile</span><span class="op">=</span>1 <span class="at">-u</span> admin <span class="at">-p</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mysql</span> <span class="at">--local-infile</span><span class="op">=</span>1 <span class="at">-u</span> admin <span class="at">-p</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ol start="4" type="1">
 <li><strong>Habilitar permanentemente en <code>mysqld.cnf</code>:</strong></li>
 </ol>
 <p>Edita el fichero <code>/etc/mysql/mysql.conf.d/mysqld.cnf</code> y añada bajo la seción <code>[msqld]</code>:</p>
 <p><code>sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf</code></p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[mysqld]</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="dt">local_infile</span><span class="ot">=</span><span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode ini code-with-copy"><code class="sourceCode ini"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[mysqld]</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="dt">local_infile</span><span class="ot">=</span><span class="dv">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Reinicia el servicio MySQL:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl restart mysql</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/departments.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl restart mysql</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/departments.csv'</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> departments</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">'"'</span></span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="comparativa-técnica" class="level2" data-number="5.3">
@@ -1012,7 +1053,7 @@ window.Quarto = {
 <p>Comportamiento ante modificaciones: Si más adelante intentas modificar (UPDATE) o eliminar (DELETE) un registro huérfano o una fila padre relacionada, MySQL aplicará las reglas de clave foránea (RESTRICT, CASCADE, etc.) a partir de ese momento.</p>
 <p>Precisamente por esta razón, es una buena práctica ejecutar consultas de verificación de integridad justo después de reactivar las claves foráneas, haciendo joins con checkeo de nulls.</p>
 </div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">USE</span> erpcrm_lab;</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">USE</span> erpcrm_lab;</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- 1. Desactivar temporalmente la verificación de Foreign Keys</span></span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> FOREIGN_KEY_CHECKS <span class="op">=</span> <span class="dv">0</span>;</span>
@@ -1063,7 +1104,7 @@ window.Quarto = {
 <span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> paid_at <span class="op">=</span> <span class="fu">NULLIF</span>(@paid_at, <span class="st">''</span>); <span class="co">-- Si el campo está vacío, se asigna NULL</span></span>
 <span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a><span class="co">-- 3. Reactivar la verificación de Foreign Keys</span></span>
-<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> FOREIGN_KEY_CHECKS <span class="op">=</span> <span class="dv">1</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> FOREIGN_KEY_CHECKS <span class="op">=</span> <span class="dv">1</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
 <section id="verificación-e-integridad-de-la-base-de-datos" class="level1" data-number="7">
@@ -1071,30 +1112,30 @@ window.Quarto = {
 <section id="checklist-de-verificación-de-estructura" class="level2" data-number="7.1">
 <h2 data-number="7.1" class="anchored" data-anchor-id="checklist-de-verificación-de-estructura"><span class="header-section-number">7.1</span> Checklist de Verificación de Estructura</h2>
 <p>Ejecute las siguientes sentencias para validar la declaración de esquemas e índices:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>DESCRIBE departments;</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>DESCRIBE departments;</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>SHOW <span class="kw">CREATE</span> <span class="kw">TABLE</span> employees\G;</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>SHOW <span class="kw">INDEX</span> <span class="kw">FROM</span> orders;</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>SHOW <span class="kw">TABLES</span>; <span class="co">-- Debe retornar las 7 tablas del sistema</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>SHOW <span class="kw">TABLES</span>; <span class="co">-- Debe retornar las 7 tablas del sistema</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="verificación-de-conteo-de-registros" class="level2" data-number="7.2">
 <h2 data-number="7.2" class="anchored" data-anchor-id="verificación-de-conteo-de-registros"><span class="header-section-number">7.2</span> Verificación de Conteo de Registros</h2>
 <p>Compruebe la correcta inserción comparando los recuentos esperados:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="st">'departments'</span> <span class="kw">AS</span> Tabla, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> Registros <span class="kw">FROM</span> departments</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="st">'departments'</span> <span class="kw">AS</span> Tabla, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> Registros <span class="kw">FROM</span> departments</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'employees'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> employees</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'customers'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> customers</span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'products'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> products</span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'orders'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> orders</span>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'order_items'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> order_items</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'payments'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> payments;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="kw">UNION</span> <span class="kw">ALL</span> <span class="kw">SELECT</span> <span class="st">'payments'</span>, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> payments;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><em>Registros esperados:</em> <code>departments</code> (8), <code>employees</code> (20), <code>customers</code> (80), <code>products</code> (40), <code>orders</code> (220), <code>order_items</code> (655), <code>payments</code> (220).</p>
 </section>
 <section id="comprobación-de-integridad-referencial" class="level2" data-number="7.3">
 <h2 data-number="7.3" class="anchored" data-anchor-id="comprobación-de-integridad-referencial"><span class="header-section-number">7.3</span> Comprobación de Integridad Referencial</h2>
 <p>La siguiente consulta evalúa huérfanos entre la tabla de detalles e inventario. <strong>Debe devolver 0 filas</strong>.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> oi.<span class="op">*</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> oi.<span class="op">*</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> order_items oi</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="kw">LEFT</span> <span class="kw">JOIN</span> products p <span class="kw">ON</span> p.product_id <span class="op">=</span> oi.product_id</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> p.product_id <span class="kw">IS</span> <span class="kw">NULL</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> p.product_id <span class="kw">IS</span> <span class="kw">NULL</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="manejando-diferencias-entre-el-csv-y-el-esquema-de-la-tabla" class="level2 extra" data-number="7.4">
 <h2 data-number="7.4" class="anchored" data-anchor-id="manejando-diferencias-entre-el-csv-y-el-esquema-de-la-tabla"><span class="header-section-number">7.4</span> Manejando diferencias entre el csv y el esquema de la tabla</h2>
@@ -1105,12 +1146,12 @@ window.Quarto = {
 <p><strong>Ejemplo</strong></p>
 <p>Imagina que la tabla <code>departments</code> solo tiene <code>dept_id</code> y <code>dept_name</code>, pero el CSV incluye una tercera columna con la ubicación (<code>location</code>):</p>
 <p>SQL</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/departments.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/departments.csv'</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> departments</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name, @columna_descartada);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>(dept_id, dept_name, @columna_descartada);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li><p>Se enumeran las columnas en el orden exacto en que vienen en el CSV.</p></li>
 <li><p>Las columnas del CSV que coinciden con la tabla se asignan directamente.</p></li>
@@ -1128,7 +1169,7 @@ window.Quarto = {
 <li><p><code>unit_price</code> <em>(guardar en tabla)</em></p></li>
 </ol>
 <p>Y quieres importar solo <code>product_name</code>, <code>category</code> y <code>unit_price</code> a la tabla <code>products</code>.</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> products</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
@@ -1140,7 +1181,7 @@ window.Quarto = {
 <span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">category</span>,          <span class="co">-- 4ª col CSV: se asigna a la columna de la tabla</span></span>
 <span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  @especificaciones, <span class="co">-- 5ª col CSV: se lee en variable temporal y se ignora</span></span>
 <span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  unit_price         <span class="co">-- 6ª col CSV: se asigna a la columna de la tabla</span></span>
-<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>¿Cómo funciona internamente?</strong></p>
 <ol type="1">
 <li><p><strong>Lectura por posición:</strong> MySQL lee el CSV línea a línea, posición por posición (de izquierda a derecha). No sabe de nombres de cabecera ni de significados; solo sabe la posición (1ª, 2ª, 3ª…).</p></li>
@@ -1164,12 +1205,12 @@ window.Quarto = {
 <section id="escenario-a-las-columnas-faltantes-admiten-null-o-tienen-un-default" class="level4" data-number="7.4.2.1">
 <h4 data-number="7.4.2.1" class="anchored" data-anchor-id="escenario-a-las-columnas-faltantes-admiten-null-o-tienen-un-default"><span class="header-section-number">7.4.2.1</span> Escenario A: Las columnas faltantes admiten <code>NULL</code> o tienen un <code>DEFAULT</code></h4>
 <p>Si las columnas que faltan en el CSV están definidas con un valor por defecto (<code>DEFAULT 'valor'</code>), auto-incremento (<code>AUTO_INCREMENT</code>) o permiten valores nulos (<code>NULL</code>), basta con mapear solo las columnas presentes en el archivo.</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> products</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>(product_name, <span class="kw">category</span>, unit_price);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>(product_name, <span class="kw">category</span>, unit_price);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="escenario-b-las-columnas-faltantes-son-not-null-sin-valor-por-defecto" class="level4" data-number="7.4.2.2">
 <h4 data-number="7.4.2.2" class="anchored" data-anchor-id="escenario-b-las-columnas-faltantes-son-not-null-sin-valor-por-defecto"><span class="header-section-number">7.4.2.2</span> Escenario B: Las columnas faltantes son <code>NOT NULL</code> sin valor por defecto</h4>
@@ -1185,12 +1226,12 @@ window.Quarto = {
 <p>Si el orden de los campos en el CSV no coincide con la definición de la tabla en MySQL, la solución es listar las columnas entre paréntesis al final de la sentencia en el <strong>orden en el que aparecen en el CSV</strong>.</p>
 <p><strong>Ejemplo</strong></p>
 <p>La tabla <code>employees</code> está definida como <code>(emp_id, dept_id, first_name, last_name, email...)</code>, pero en el CSV las columnas <code>first_name</code> y <code>last_name</code> están invertidas:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/employees.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/employees.csv'</span></span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> employees</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>(emp_id, dept_id, last_name, first_name, email, hire_date, salary);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>(emp_id, dept_id, last_name, first_name, email, hire_date, salary);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>MySQL mapeará cada valor del CSV a la columna correspondiente especificada en la lista, independientemente del orden interno de la tabla.</p>
 </section>
 <section id="necesitas-transformar-o-limpiar-datos-durante-la-carga" class="level3" data-number="7.4.4">
@@ -1200,35 +1241,35 @@ window.Quarto = {
 <section id="ejemplo-1-convertir-cadenas-vacías-en-null" class="level4" data-number="7.4.4.1">
 <h4 data-number="7.4.4.1" class="anchored" data-anchor-id="ejemplo-1-convertir-cadenas-vacías-en-null"><span class="header-section-number">7.4.4.1</span> <strong>Ejemplo 1: Convertir cadenas vacías en <code>NULL</code></strong></h4>
 <p>Como se vio en el archivo de pagos, si la fecha <code>paid_at</code> viene vacía <code>""</code> en el CSV y se intenta insertar directamente en un campo <code>DATETIME</code>, lanzará error o guardará un valor de fecha inválido (<code>0000-00-00</code>):</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/payments.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/payments.csv'</span></span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> payments</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
 <span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>(payment_id, order_id, amount, <span class="kw">method</span>, @v_paid_at, status)</span>
-<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> paid_at <span class="op">=</span> <span class="fu">NULLIF</span>(@v_paid_at, <span class="st">''</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> paid_at <span class="op">=</span> <span class="fu">NULLIF</span>(@v_paid_at, <span class="st">''</span>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="ejemplo-2-reformatizar-fechas-o-transformar-tipos" class="level4" data-number="7.4.4.2">
 <h4 data-number="7.4.4.2" class="anchored" data-anchor-id="ejemplo-2-reformatizar-fechas-o-transformar-tipos"><span class="header-section-number">7.4.4.2</span> Ejemplo 2: Reformatizar fechas o transformar tipos</h4>
 <p>Si en el CSV la fecha viene como <code>'31/12/2025'</code> y en MySQL la columna es de tipo <code>DATE</code> (que requiere <code>'2025-12-31'</code>):</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/orders.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/orders.csv'</span></span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> orders</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>(order_id, customer_id, sales_rep_emp_id, @v_order_date, status, notes)</span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> order_date <span class="op">=</span> STR_TO_DATE(@v_order_date, <span class="st">'%d/%m/%Y'</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> order_date <span class="op">=</span> STR_TO_DATE(@v_order_date, <span class="st">'%d/%m/%Y'</span>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="ejemplo-3-calcular-valores-derivados" class="level4" data-number="7.4.4.3">
 <h4 data-number="7.4.4.3" class="anchored" data-anchor-id="ejemplo-3-calcular-valores-derivados"><span class="header-section-number">7.4.4.3</span> Ejemplo 3: Calcular valores derivados</h4>
 <p>Si la tabla requiere guardar el precio con IVA incluido, pero el CSV trae el precio base:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>LOAD <span class="kw">DATA</span> <span class="kw">LOCAL</span> INFILE <span class="st">'/home/sysadmin/products.csv'</span></span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">INTO</span> <span class="kw">TABLE</span> products</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>FIELDS TERMINATED <span class="kw">BY</span> <span class="st">','</span> ENCLOSED <span class="kw">BY</span> <span class="st">'"'</span> ESCAPED <span class="kw">BY</span> <span class="st">''</span></span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>LINES TERMINATED <span class="kw">BY</span> <span class="st">'</span><span class="ch">\r\n</span><span class="st">'</span></span>
 <span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>IGNORE <span class="dv">1</span> LINES</span>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>(product_name, <span class="kw">category</span>, @v_base_price, stock_qty)</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> unit_price <span class="op">=</span> @v_base_price <span class="op">*</span> <span class="fl">1.21</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> unit_price <span class="op">=</span> @v_base_price <span class="op">*</span> <span class="fl">1.21</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 </section>
@@ -1241,7 +1282,7 @@ window.Quarto = {
 <section id="vista-de-totales-order_totals" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="vista-de-totales-order_totals"><span class="header-section-number">8.1</span> Vista de Totales <code>order_totals</code></h2>
 <p>Creación de vista para la consulta de totales agrupados por pedido:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">OR</span> <span class="kw">REPLACE</span> <span class="kw">VIEW</span> v_order_totals <span class="kw">AS</span></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    o.order_id,</span>
@@ -1252,13 +1293,13 @@ window.Quarto = {
 <span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ROUND</span>(<span class="fu">SUM</span>(oi.quantity <span class="op">*</span> oi.unit_price <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> oi.discount_pct <span class="op">/</span> <span class="fl">100.0</span>)), <span class="dv">2</span>) <span class="kw">AS</span> order_total</span>
 <span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> orders o</span>
 <span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> order_items oi <span class="kw">ON</span> o.order_id <span class="op">=</span> oi.order_id</span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> o.order_id, o.customer_id, o.sales_rep_emp_id, o.order_date, o.status;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="consulta-1-top-5-clientes-por-facturación" class="level2" data-number="8.2">
 <h2 data-number="8.2" class="anchored" data-anchor-id="consulta-1-top-5-clientes-por-facturación"><span class="header-section-number">8.2</span> Consulta 1: Top 5 Clientes por Facturación</h2>
 <p>Obtiene los 5 clientes con mayor gasto acumulado en pedidos no cancelados.</p>
 <p>OPCIÓN A, sin subconsulta ni CTE, calculando el importe de cada línea de pedido y sumando por cliente:</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    c.customer_id</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    ,c.company_name</span>
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    , <span class="fu">ROUND</span>(<span class="fu">SUM</span>(oi.quantity <span class="op">*</span> oi.unit_price <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> oi.discount_pct<span class="op">/</span><span class="dv">100</span>)), <span class="dv">2</span>) <span class="kw">as</span> order_total</span>
@@ -1272,9 +1313,9 @@ window.Quarto = {
 <span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>c.customer_id</span>
 <span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>,c.company_name</span>
 <span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="kw">order</span> <span class="kw">by</span> order_total <span class="kw">desc</span></span>
-<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a><span class="kw">limit</span> <span class="dv">5</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a><span class="kw">limit</span> <span class="dv">5</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN B, creando una subconsulta <em>order_totals</em> para conseguir el importe de cada orden, agrupa por cliente y suma order_total.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">SELECT</span> </span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>      o.order_id,</span>
 <span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>      o.customer_id,</span>
@@ -1297,9 +1338,9 @@ window.Quarto = {
 <span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> ot.status <span class="op">!=</span> <span class="st">'CANCELLED'</span></span>
 <span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> c.customer_id, c.company_name</span>
 <span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> total_facturado <span class="kw">DESC</span></span>
-<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">5</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">5</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN C: usando la vista <code>v_order_totals</code> creada previamente:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    c.customer_id,</span>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    c.company_name,</span>
@@ -1310,13 +1351,13 @@ window.Quarto = {
 <span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> ot.status <span class="op">!=</span> <span class="st">'CANCELLED'</span></span>
 <span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> c.customer_id, c.company_name</span>
 <span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> total_facturado <span class="kw">DESC</span></span>
-<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">5</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">5</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="consulta-2-ventas-mensuales-por-comercial-y-departamento" class="level2" data-number="8.3">
 <h2 data-number="8.3" class="anchored" data-anchor-id="consulta-2-ventas-mensuales-por-comercial-y-departamento"><span class="header-section-number">8.3</span> Consulta 2: Ventas Mensuales por Comercial y Departamento</h2>
 <p>Agrupa el volumen total facturado por mes, departamento y empleado (solo para pedidos enviados/<code>SHIPPED</code>).</p>
 <p>OPCIÓN A, sin CTE ni vista, calculando el importe de cada línea de pedido y sumando por mes, departamento y empleado:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">YEAR</span>(o.order_date) <span class="kw">AS</span> <span class="dt">year</span></span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>, MONTHNAME(o.order_date) <span class="kw">AS</span> <span class="dt">month</span> </span>
 <span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>, e.first_name</span>
@@ -1342,9 +1383,9 @@ window.Quarto = {
 <span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a>, MONTHNAME(o.order_date)</span>
 <span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a>, e.first_name</span>
 <span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a>, e.last_name</span>
-<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a>, d.dept_name;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a>, d.dept_name;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN B: usando una CTE para reducir los joins</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">SELECT</span> </span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>      o.order_id,</span>
 <span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>      o.customer_id,</span>
@@ -1366,9 +1407,9 @@ window.Quarto = {
 <span id="cb42-20"><a href="#cb42-20" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> departments d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.dept_id</span>
 <span id="cb42-21"><a href="#cb42-21" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> ot.status <span class="op">=</span> <span class="st">'SHIPPED'</span></span>
 <span id="cb42-22"><a href="#cb42-22" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> mes, d.dept_name, comercial</span>
-<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> mes <span class="kw">ASC</span>, total_ventas <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb42-23"><a href="#cb42-23" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> mes <span class="kw">ASC</span>, total_ventas <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN C: usando la vista <code>v_order_totals</code> creada previamente:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb43"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    DATE_FORMAT(ot.order_date, <span class="st">'%Y-%m'</span>) <span class="kw">AS</span> mes,</span>
 <span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    d.dept_name,</span>
@@ -1379,13 +1420,13 @@ window.Quarto = {
 <span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> departments d <span class="kw">ON</span> e.dept_id <span class="op">=</span> d.dept_id</span>
 <span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> ot.status <span class="op">=</span> <span class="st">'SHIPPED'</span></span>
 <span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a><span class="kw">GROUP</span> <span class="kw">BY</span> mes, d.dept_name, comercial</span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> mes <span class="kw">ASC</span>, total_ventas <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> mes <span class="kw">ASC</span>, total_ventas <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="consulta-3-productos-más-vendidos-y-alerta-de-stock" class="level2" data-number="8.4">
 <h2 data-number="8.4" class="anchored" data-anchor-id="consulta-3-productos-más-vendidos-y-alerta-de-stock"><span class="header-section-number">8.4</span> Consulta 3: Productos más Vendidos y Alerta de Stock</h2>
 <p>Calcula las unidades vendidas e importe acumulado (excluyendo cancelados), emitiendo una alerta <code>'REORDER'</code> si el stock es menor a 20 unidades para productos físicos.</p>
 <p>OPCIÓN A: sin CTE</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    p.product_id</span>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  , p.product_name</span>
 <span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  , p.stock_qty</span>
@@ -1406,9 +1447,9 @@ window.Quarto = {
 <span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    p.product_id</span>
 <span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>  , p.product_name</span>
 <span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>  , p.stock_qty</span>
-<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN B: usando una CTE <code>order_totals</code> en este caso no es muy util ya que sólo lo usamos para filtrar los pedidos cancelados:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb45"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">SELECT</span> </span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>      o.order_id,</span>
 <span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>      o.customer_id,</span>
@@ -1441,9 +1482,9 @@ window.Quarto = {
 <span id="cb45-31"><a href="#cb45-31" aria-hidden="true" tabindex="-1"></a>  , p.product_name</span>
 <span id="cb45-32"><a href="#cb45-32" aria-hidden="true" tabindex="-1"></a>  , p.<span class="kw">category</span></span>
 <span id="cb45-33"><a href="#cb45-33" aria-hidden="true" tabindex="-1"></a>  , p.stock_qty</span>
-<span id="cb45-34"><a href="#cb45-34" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb45-34"><a href="#cb45-34" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN C: usando la vista <code>v_order_totals</code> creada previamente:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    p.product_id</span>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  , p.product_name</span>
 <span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  , p.<span class="kw">category</span></span>
@@ -1463,13 +1504,13 @@ window.Quarto = {
 <span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>  , p.product_name</span>
 <span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>  , p.<span class="kw">category</span></span>
 <span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>  , p.stock_qty</span>
-<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> unidades_vendidas <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="consulta-4-clientes-con-ticket-medio-superior-a-la-media-global" class="level2" data-number="8.5">
 <h2 data-number="8.5" class="anchored" data-anchor-id="consulta-4-clientes-con-ticket-medio-superior-a-la-media-global"><span class="header-section-number">8.5</span> Consulta 4: Clientes con Ticket Medio Superior a la Media Global</h2>
 <p>Filtra clientes que hayan realizado al menos 3 pedidos y cuyo ticket medio supere la media global por pedido.</p>
 <p>OPCIÓN A: La consulta sin CTE ni vista es compleja de leer y mantener:</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb47"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>    sub.customer_id</span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  , <span class="fu">ROUND</span>(<span class="fu">AVG</span>(sub.total_ticket), <span class="dv">2</span>) <span class="kw">AS</span> ticket_medio</span>
 <span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  , <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> n_tickets</span>
@@ -1501,9 +1542,9 @@ window.Quarto = {
 <span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a>            <span class="kw">WHERE</span> o.status <span class="op">!=</span> <span class="st">'CANCELLED'</span></span>
 <span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a>            <span class="kw">GROUP</span> <span class="kw">BY</span> o.order_id</span>
 <span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a>        ) <span class="kw">AS</span> orders_amount</span>
-<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a>    );</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a>    );</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN B: La consulta equivalente usando CTE es más legible y fácil de mantener:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">SELECT</span> </span>
 <span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>      o.order_id,</span>
 <span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>      o.customer_id,</span>
@@ -1530,9 +1571,9 @@ window.Quarto = {
 <span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>       <span class="kw">FROM</span> order_totals </span>
 <span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>       <span class="kw">WHERE</span> status <span class="op">!=</span> <span class="st">'CANCELLED'</span></span>
 <span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>   )</span>
-<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> ticket_medio_cliente <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> ticket_medio_cliente <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN C: usando la vista <code>v_order_totals</code> creada previamente:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    c.customer_id,</span>
 <span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>    c.company_name,</span>
@@ -1548,12 +1589,12 @@ window.Quarto = {
 <span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>       <span class="kw">FROM</span> v_order_totals </span>
 <span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>       <span class="kw">WHERE</span> status <span class="op">!=</span> <span class="st">'CANCELLED'</span></span>
 <span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>   )</span>
-<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> ticket_medio_cliente <span class="kw">DESC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> ticket_medio_cliente <span class="kw">DESC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="consulta-5-pedidos-con-pago-pendiente-o-fallido" class="level2" data-number="8.6">
 <h2 data-number="8.6" class="anchored" data-anchor-id="consulta-5-pedidos-con-pago-pendiente-o-fallido"><span class="header-section-number">8.6</span> Consulta 5: Pedidos con Pago Pendiente o Fallido</h2>
 <p>OPCIÓN A: Devuelve los pedidos cuyo estado de pago sea pendiente o fallido antes o en la fecha de cierre <code>2025-12-31</code>.</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">select</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">select</span> </span>
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>o.order_id</span>
 <span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>,p.status</span>
 <span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>,o.order_date</span>
@@ -1569,9 +1610,9 @@ window.Quarto = {
 <span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a>    o.order_id</span>
 <span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a>,p.status</span>
 <span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>,o.order_date</span>
-<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN B:</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb51"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">with</span> order_totals <span class="kw">as</span> (</span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">SELECT</span> </span>
 <span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>      o.order_id,</span>
 <span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>      o.customer_id,</span>
@@ -1596,9 +1637,9 @@ window.Quarto = {
 <span id="cb51-23"><a href="#cb51-23" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> order_totals ot <span class="kw">ON</span> o.order_id <span class="op">=</span> ot.order_id</span>
 <span id="cb51-24"><a href="#cb51-24" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> pay.status <span class="kw">IN</span> (<span class="st">'PENDING'</span>, <span class="st">'FAILED'</span>)</span>
 <span id="cb51-25"><a href="#cb51-25" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> o.order_date <span class="op">&lt;=</span> <span class="st">'2025-12-31'</span></span>
-<span id="cb51-26"><a href="#cb51-26" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb51-26"><a href="#cb51-26" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>OPCIÓN C</p>
-<div class="sourceCode" id="cb52"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb52"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> </span>
 <span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    o.order_id,</span>
 <span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    o.order_date,</span>
 <span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    c.company_name,</span>
@@ -1611,53 +1652,27 @@ window.Quarto = {
 <span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a><span class="kw">JOIN</span> v_order_totals ot <span class="kw">ON</span> o.order_id <span class="op">=</span> ot.order_id</span>
 <span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> pay.status <span class="kw">IN</span> (<span class="st">'PENDING'</span>, <span class="st">'FAILED'</span>)</span>
 <span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">AND</span> o.order_date <span class="op">&lt;=</span> <span class="st">'2025-12-31'</span></span>
-<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 100%">
-</colgroup>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;"># Carga e Importación de Archivos SQL</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Un archivo <code>.sql</code> contiene instrucciones SQL estructuradas (<code>CREATE TABLE</code>, <code>INSERT</code>, <code>ALTER</code>, etc.)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">## Ejecución mediante privilegios del sistema operativo (<code>sudo</code>)</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios <code>sudo</code>), es posible redirigir un archivo <code>.sql</code> directamente hacia el cliente de MySQL mediante la entrada estándar, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión:</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"><code>sudo mysql &lt; {archivo a ejecutar}</code></td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><code>bash sudo mysql &lt; /home/sysadmin/datos.sql</code> Autenticación mediante el Sistema Operativo (sudo): Al anteponer sudo, ejecutas el cliente de MySQL con los privilegios de superusuario de Linux. En las configuraciones por defecto de Ubuntu (con MySQL o MariaDB), el usuario root de la base de datos utiliza el plugin de autenticación por socket (auth_socket). Esto permite que el sistema operativo valide tu identidad al ser el administrador de Linux, evitando tener que introducir una contraseña de MySQL.</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">### Importar indicando la base de datos existente Si el archivo no incluye las sentencias CREATE DATABASE o USE en su interior, se puede indicar la base de datos de destino directamente en el comando:</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;"><code>sudo mysql {base_de_datos} &lt; {archivo a ejecutar}</code></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">## Ejecución mediante cuenta de usuario de MySQL El ususuario tiene que tener privilegios de lectura y escritura sobre la base de datos destino. Se puede ejecutar el archivo SQL desde la línea de comandos del sistema operativo, redirigiendo la entrada estándar hacia el cliente de MySQL:</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Si tenemos que ejecutar el script sobre una base de datos ya creada: <code>mysql -u {usuario} -p {base_de_datos} &lt; {archivo a ejecutar}</code></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Si el archivo SQL contiene la sentencia <code>CREATE DATABASE</code> y <code>USE</code>, no es necesario indicar la base de datos destino:</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">## Ejecutar el archivo dentro de la consola interactiva de MySQL</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;"><code>sql SOURCE /home/sysadmin/datos.sql;</code></td>
-</tr>
-</tbody>
-</table>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> o.order_date <span class="kw">ASC</span>;</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="carga-e-importación-de-archivos-sql" class="level1" data-number="9">
+<h1 data-number="9"><span class="header-section-number">9</span> Carga e Importación de Archivos SQL</h1>
+<p>Un archivo <code>.sql</code> contiene instrucciones SQL estructuradas (<code>CREATE TABLE</code>, <code>INSERT</code>, <code>ALTER</code>, etc.)</p>
+<section id="ejecución-mediante-privilegios-del-sistema-operativo-sudo" class="level2" data-number="9.1">
+<h2 data-number="9.1" class="anchored" data-anchor-id="ejecución-mediante-privilegios-del-sistema-operativo-sudo"><span class="header-section-number">9.1</span> Ejecución mediante privilegios del sistema operativo (<code>sudo</code>)</h2>
+<p>Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios <code>sudo</code>), es posible redirigir un archivo <code>.sql</code> directamente hacia el cliente de MySQL mediante la entrada estándar, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión: <code>sudo mysql &lt; {archivo a ejecutar}</code> <code>bash sudo mysql &lt; /home/sysadmin/datos.sql</code> Autenticación mediante el Sistema Operativo (sudo): Al anteponer sudo, ejecutas el cliente de MySQL con los privilegios de superusuario de Linux. En las configuraciones por defecto de Ubuntu (con MySQL o MariaDB), el usuario root de la base de datos utiliza el plugin de autenticación por socket (auth_socket). Esto permite que el sistema operativo valide tu identidad al ser el administrador de Linux, evitando tener que introducir una contraseña de MySQL.</p>
+<section id="importar-indicando-la-base-de-datos-existente" class="level3" data-number="9.1.1">
+<h3 data-number="9.1.1" class="anchored" data-anchor-id="importar-indicando-la-base-de-datos-existente"><span class="header-section-number">9.1.1</span> Importar indicando la base de datos existente</h3>
+<p>Si el archivo no incluye las sentencias CREATE DATABASE o USE en su interior, se puede indicar la base de datos de destino directamente en el comando: <code>sudo mysql {base_de_datos} &lt; {archivo a ejecutar}</code></p>
+</section>
+</section>
+<section id="ejecución-mediante-cuenta-de-usuario-de-mysql-el-ususuario-tiene-que-tener-privilegios-de-lectura-y-escritura-sobre-la-base-de-datos-destino.-se-puede-ejecutar-el-archivo-sql-desde-la-línea-de-comandos-del-sistema-operativo-redirigiendo-la-entrada-estándar-hacia-el-cliente-de-mysql" class="level2" data-number="9.2">
+<h2 data-number="9.2" class="anchored" data-anchor-id="ejecución-mediante-cuenta-de-usuario-de-mysql-el-ususuario-tiene-que-tener-privilegios-de-lectura-y-escritura-sobre-la-base-de-datos-destino.-se-puede-ejecutar-el-archivo-sql-desde-la-línea-de-comandos-del-sistema-operativo-redirigiendo-la-entrada-estándar-hacia-el-cliente-de-mysql"><span class="header-section-number">9.2</span> Ejecución mediante cuenta de usuario de MySQL El ususuario tiene que tener privilegios de lectura y escritura sobre la base de datos destino. Se puede ejecutar el archivo SQL desde la línea de comandos del sistema operativo, redirigiendo la entrada estándar hacia el cliente de MySQL:</h2>
+<p>Si tenemos que ejecutar el script sobre una base de datos ya creada: <code>mysql -u {usuario} -p {base_de_datos} &lt; {archivo a ejecutar}</code> Si el archivo SQL contiene la sentencia <code>CREATE DATABASE</code> y <code>USE</code>, no es necesario indicar la base de datos destino:</p>
+</section>
+<section id="ejecutar-el-archivo-dentro-de-la-consola-interactiva-de-mysql" class="level2" data-number="9.3">
+<h2 data-number="9.3" class="anchored" data-anchor-id="ejecutar-el-archivo-dentro-de-la-consola-interactiva-de-mysql"><span class="header-section-number">9.3</span> Ejecutar el archivo dentro de la consola interactiva de MySQL</h2>
+<p><code>sql SOURCE /home/sysadmin/datos.sql;</code></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="images/practica_sql_base_de_datos_con_carga_de_datos_desde_csv_fig1.jpg" class="img-fluid figure-img"></p>
@@ -1721,13 +1736,14 @@ window.Quarto = {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy

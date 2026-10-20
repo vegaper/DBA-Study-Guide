@@ -378,38 +378,115 @@ Imagina un sistema de reservas de billetes de avión.
 
 Esta tabla resume qué ocurre cuando la **Sesión 1** ya tiene un bloqueo sobre una fila y la **Sesión 2** intenta solicitar otro bloqueo sobre esa **misma fila**:
 
-+------------------------------+----------------------------------------------+-----------------------------------------------------------------+
-|                              |                                              |                                                                 |
-+==============================+==============================================+=================================================================+
-| **Si la Sesión 1 tiene...**  | **Y la Sesión 2 pide Bloqueo S (FOR SHARE)** | **Y la Sesión 2 pide Bloqueo X (FOR UPDATE / UPDATE / DELETE)** |
-+------------------------------+----------------------------------------------+-----------------------------------------------------------------+
-| **Bloqueo `S` (Compartido)** | **COMPATIBLE**                               | **INCOMPATIBLE**                                                |
-|                              |                                              |                                                                 |
-|                              | *(La Sesión 2 entra sin esperar)*            | *(La Sesión 2 se queda en espera)*                              |
-+------------------------------+----------------------------------------------+-----------------------------------------------------------------+
-| **Bloqueo `X` (Exclusivo)**  | **INCOMPATIBLE**                             | **INCOMPATIBLE**                                                |
-|                              |                                              |                                                                 |
-|                              | *(La Sesión 2 se queda en espera)*           | *(La Sesión 2 se queda en espera)*                              |
-+------------------------------+----------------------------------------------+-----------------------------------------------------------------+
++------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
+|                              |                                                      |                                                                               |
++==============================+======================================================+===============================================================================+
+| **Si la Sesión 1 tiene...**  | **Y la Sesión 2 pide Bloqueo S (FOR SHARE)**         | **Y la Sesión 2 pide Bloqueo X (FOR UPDATE / UPDATE / DELETE)**               |
++------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
+| **Bloqueo `S` (Compartido)** | **COMPATIBLE**                                       | **INCOMPATIBLE**                                                              |
+|                              |                                                      |                                                                               |
+|                              | *(La Sesión 2 entra sin esperar)*                    | *(La Sesión 2 se queda en espera)*                                            |
++------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
+| **Bloqueo `X` (Exclusivo)**  | **INCOMPATIBLE**                                     | **INCOMPATIBLE**                                                              |
+|                              |                                                      |                                                                               |
+|                              | *(La Sesión 2 se queda en espera)*                   | *(La Sesión 2 se queda en espera)*                                            |
++------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
 :::
 
-::: extra
-## Bloqueos Intencionales (Table-Level Intent Locks)
+## Bloqueos explícitos de tablas (`LOCK TABLES` y `UNLOCK TABLES`)
 
-Para evitar comprobar fila por fila si existe algún bloqueo antes de bloquear una tabla completa:
+En MySQL, el motor InnoDB gestiona los bloqueos a nivel de fila (*row-level locking*) de forma automática durante las transacciones. Sin embargo, MySQL también permite solicitar **bloqueos explícitos sobre tablas completas** mediante las sentencias `LOCK TABLES` y `UNLOCK TABLES`.
 
-- **Intent Shared (`IS`)** e **Intent Exclusive (`IX`)**: Indican que una transacción tiene o pretende obtener bloqueos `S` o `X` en filas individuales de dicha tabla.
+::: nota-importante
+### Impacto en la concurrencia y transacciones
 
-## Bloqueos de Rango e Índice
-
-- **Record Lock:** Bloquea directamente la entrada del índice asociada al registro.
-
-- **Gap Lock:** Bloquea el "hueco" o espacio entre dos valores de índice (o antes del primero/después del último) para impedir que otras sesiones inserten datos en ese rango.
-
-- **Next-Key Lock:** Combinación de un *Record Lock* en el registro y un *Gap Lock* en el espacio previo. Es el algoritmo por defecto que usa InnoDB en `REPEATABLE READ` para evitar escrituras fantasma.
+1.  **Reduce drásticamente la concurrencia:** Bloquear una tabla completa impide que otros usuarios trabajen sobre filas diferentes de esa misma tabla.
+2.  **Confirmación implícita:** Ejecutar `LOCK TABLES` realiza un `COMMIT` implícito de cualquier transacción abierta antes de adquirir el bloqueo.
+3.  **Liberación con `START TRANSACTION`:** Iniciar una transacción explícita (`START TRANSACTION`) liberará inmediatamente cualquier bloqueo de tabla activo obtenido previamente con `LOCK TABLES`.
 :::
 
-## **Interbloqueo** o **Abrazo Mortal (*Deadlock*)**.
+Sintaxis básica
+
+``` sql
+-- Bloquear una o varias tablas
+LOCK TABLES 
+    nombre_tabla1 { READ [LOCAL] | WRITE },
+    [nombre_tabla2 { READ [LOCAL] | WRITE }];
+
+-- Liberar todos los bloqueos de tablas de la sesión actual
+UNLOCK TABLES;
+```
+
+### Tipos de bloqueos de tabla
+
++-------------------------+---------------------------------------------------+----------------------------------------------------------------------------------------+
+|                         |                                                   |                                                                                        |
++=========================+===================================================+========================================================================================+
+| **Tipo de Bloqueo**     | **Sesión que solicita el bloqueo**                | **Otras sesiones (concurrencia)**                                                      |
++-------------------------+---------------------------------------------------+----------------------------------------------------------------------------------------+
+| **`READ`** (Compartido) | Puede **leer** la tabla, pero **no modificarla**. | Pueden **leer** la tabla. Si intentan **modificarla**, quedan en espera (*lock wait*). |
++-------------------------+---------------------------------------------------+----------------------------------------------------------------------------------------+
+| **`WRITE`** (Exclusivo) | Puede **leer y modificar** la tabla.              | No pueden **ni leer ni modificar** la tabla; quedan totalmente bloqueadas en espera.   |
++-------------------------+---------------------------------------------------+----------------------------------------------------------------------------------------+
+
+### Ejemplos de uso paso a paso
+
+#### Ejemplo 1: Bloqueo de lectura (`READ`)
+
+Permite lecturas concurrentes pero congela cualquier intento de escritura hasta que la sesión origen libere el bloqueo.
+
+``` sql
+-- Sesión A: Bloquea la tabla productos para lectura
+LOCK TABLES productos READ;
+
+-- Sesión A: Puede consultar los datos
+SELECT * FROM productos WHERE id_producto = 1;
+
+-- Sesión A: Intentar modificar fallará inmediatamente en la propia sesión
+-- Error 1099: Table 'productos' was locked with a READ lock and can't be updated
+UPDATE productos SET precio = 25.00 WHERE id_producto = 1;
+
+-- Sesión B: Puede consultar la tabla sin problemas
+SELECT * FROM productos WHERE id_producto = 1;
+
+-- Sesión B: Intentar modificar se quedará ESPERANDO hasta que A ejecute UNLOCK TABLES
+UPDATE productos SET stock = stock - 1 WHERE id_producto = 1;
+
+-- Sesión A: Libera la tabla
+UNLOCK TABLES;
+```
+
+#### Ejemplo 2: Bloqueo de escritura (`WRITE`)
+
+Garantiza acceso exclusivo absoluto a una tabla mientras se realiza una operación crítica (como un mantenimiento estructurado o un proceso masivo).
+
+``` sql
+-- Sesión A: Bloquea la tabla cuentas de forma exclusiva
+LOCK TABLES cuentas WRITE;
+
+-- Sesión A: Puede leer y actualizar
+UPDATE cuentas SET saldo = saldo + 100 WHERE id_cuenta = 1;
+
+-- Sesión B: Intentar cualquier SELECT o UPDATE sobre 'cuentas' quedará en espera
+SELECT * FROM cuentas; -- Queda esperando...
+
+-- Sesión A: Finaliza y libera la tabla
+UNLOCK TABLES;
+
+-- Sesión B: En cuanto A ejecuta UNLOCK TABLES, su SELECT finaliza y devuelve el resultado.
+```
+
+### Utilidad y Casos de Uso
+
+A pesar de que en InnoDB se prefiere el uso de transacciones con bloqueos de fila (`SELECT ... FOR UPDATE` o `SELECT ... FOR SHARE`), `LOCK TABLES` resulta útil en los siguientes contextos:
+
+1.  **Copias de seguridad sólidas (*Logical Backups*):** Asegurar consistencia al exportar datos de tablas (aunque herramientas como `mysqldump --single-transaction` evitan su uso para tablas InnoDB).
+
+2.  **Tablas con motor MyISAM:** Motors antiguos que no soportan transacciones ni bloqueos a nivel de fila requieren `LOCK TABLES` para garantizar atomicidad en operaciones compuestas.
+
+3.  **Mantenimiento masivo y procesamiento por lotes (*Batch operations*):** Evitar interferencias o inconsistencias mientras se ejecutan scripts de migración, reorganización o mantenimiento masivo sobre una tabla.
+
+## Interbloqueo o Abrazo Mortal (*Deadlock*).
 
 Ocurre cuando dos (o más) transacciones se bloquean mutuamente porque **cada una tiene reservado un recurso que la otra necesita** para continuar, creando un bucle de espera infinito.
 
@@ -431,7 +508,13 @@ En este punto, **ninguna de las dos puede avanzar** ni liberar sus propios bloqu
 
 Si MySQL no hiciera nada, ambas sesiones se quedarían colgadas indefinidamente hasta que expirase el tiempo de espera (*lock wait timeout*).
 
-Sin embargo, InnoDB cuenta con un **detector automático de *deadlocks*** (*Deadlock Detector*):
+Sin embargo, InnoDB cuenta con un **detector automático de *deadlocks*** (*Deadlock Detector*).
+
+Para comprobar su estado:
+
+``` sql
+SELECT @@global.innodb_deadlock_detect;
+```
 
 1.  **Detección:** MySQL monitoriza el grafo de bloqueos en tiempo real y detecta la dependencia circular inmediatamente.
 
@@ -474,6 +557,91 @@ Aunque los conceptos ACID y la sintaxis SQL estándar son comunes, los detalles 
 +-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
 | **Lectura Fantasma en `REPEATABLE READ`** | Prevenida por MVCC + Next-Key Locks.                    | Prevenida completamente por la implementación propia de MVCC.                           | N/A *(no implementa `REPEATABLE READ`, pasa a `SERIALIZABLE`)*. | Puede ocurrir *(requiere nivel `SERIALIZABLE` o `SNAPSHOT`)*.              | Prevenida (aislamiento estricto por archivo).     |
 +-------------------------------------------+---------------------------------------------------------+-----------------------------------------------------------------------------------------+-----------------------------------------------------------------+----------------------------------------------------------------------------+---------------------------------------------------+
+
+::: extra
+## La gran diferencia entre MySQL y SQL Server
+
+Por defecto, en SQL Server los `SELECT` normales SÍ bloquean y se quedan bloqueados, a menos que uses `WITH (NOLOCK)`.
+
+**El comportamiento por defecto de SQL Server (`READ COMMITTED` tradicional)**
+
+A diferencia de MySQL (que usa MVCC con *Undo Log* por defecto para leer versiones antiguas sin bloquear), el motor tradicional de SQL Server utiliza un **mecanismo basado exclusivamente en bloqueos de lectura**:
+
+- Cuando ejecutas un `SELECT` en SQL Server, la consulta solicita un **bloqueo compartido (`S`)** sobre los registros.
+
+- Si otra persona está haciendo un `UPDATE` o `DELETE` sobre esos registros, esa transacción tiene un **bloqueo exclusivo (`X`)**.
+
+- **El conflicto:** Como un bloqueo `S` es **incompatible** con un bloqueo `X`, tu `SELECT` **se queda congelado en espera** hasta que la otra persona haga `COMMIT` o `ROLLBACK`.
+
+- En bases de datos muy transaccionales (con miles de escrituras por segundo), esto provoca que los informes y consultas de lectura **colapsen el sistema**, creando colas de espera masivas y bloqueos en cadena (*blocking*).
+
+### Lectura sin bloqueo `WITH (NOLOCK)`
+
+Añadir `WITH (NOLOCK)` al final de una tabla en T-SQL le dice al motor: *"Lee los datos directamente de la memoria sin pedir bloqueos compartidos y sin respetar los bloqueos exclusivos de otros"*.
+
+- **Ventaja:** Tus `SELECT` son instantáneos, no esperan por nadie y tampoco impiden que otros escriban. Es el equivalente a cambiar el nivel de aislamiento a **`READ UNCOMMITTED`**.
+
+- **El riesgo (Lectura Sucia):** Estás leyendo datos **no confirmados**. Si lees una fila a la que le están haciendo un `UPDATE` y luego esa transacción hace `ROLLBACK`, habrás procesado o mostrado un dato que jamás existió realmente.
+
+### La gran diferencia entre MySQL y SQL Server
+
++---------------------------------------+--------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+|                                       |                                                                                            |                                                                                              |
++=======================================+============================================================================================+==============================================================================================+
+| **Característica**                    | **MySQL (InnoDB)**                                                                         | **SQL Server (T-SQL) Por defecto tradicional**                                               |
++---------------------------------------+--------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| **¿El `SELECT` normal bloquea?**      | **NO.** Lee del *Undo Log* (MVCC) sin bloquear ni ser bloqueado.                           | **SÍ.** Pide bloqueos `S` y se queda esperando si hay un `UPDATE` activo.                    |
++---------------------------------------+--------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| **¿Necesita un truco como `NOLOCK`?** | **NO.** Ya lee de forma no bloqueante por defecto en `REPEATABLE READ` o `READ COMMITTED`. | **SÍ (`WITH (NOLOCK)`).** Se usaba para evitar que las lecturas congelaran la base de datos. |
++---------------------------------------+--------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+
+**Ejemplo práctico**
+
+En SQL Server, las lecturas normales (`SELECT`) solicitan bloqueos compartidos (`S`). Si una sesión está modificando una fila con un `UPDATE`, ese registro queda bajo un bloqueo exclusivo (`X`), haciendo que cualquier `SELECT` de otra sesión **se quede congelado en espera** hasta que finalice la transacción.
+
+Para evitar esta espera en entornos muy transaccionales (a costa de permitir **lecturas sucias**), se añade la pista (*hint*) `WITH (NOLOCK)` sobre las tablas de la consulta.
+
+Escenario:
+
+**Sesión A (Proceso de actualización largo):**
+
+``` sql
+-- Inicia una transacción explícita en SQL Server
+BEGIN TRANSACTION;
+
+UPDATE empleados
+SET salario = 3500
+WHERE id_empleado = 10;
+
+-- La transacción permanece abierta (aún NO hay COMMIT ni ROLLBACK)
+```
+
+**Sesión B (Consulta habitual de otro usuario):**
+
+``` sql
+-- Sin WITH (NOLOCK): Esta consulta SE CONGELA esperando a que la Sesión A termine
+SELECT salario 
+FROM empleados 
+WHERE id_empleado = 10;
+```
+
+**Sesión C (Consulta con `WITH (NOLOCK)`):**
+
+``` sql
+-- Con WITH (NOLOCK): Responde de INMEDIATO devolviendo 3500 (Lectura Sucia)
+SELECT salario 
+FROM empleados WITH (NOLOCK)
+WHERE id_empleado = 10;
+```
+
+#### ¿Por qué ya no es tan recomendable usar `WITH (NOLOCK)` en T-SQL moderno?
+
+Hoy en día, el uso indiscriminado de `WITH (NOLOCK)` se considera una **mala práctica** o un parche del pasado por dos motivos:
+
+1.  **Lecturas fantasma y duplicadas:** En SQL Server, si una tabla se está modificando mientras la lees con `NOLOCK` (y las páginas de datos se reorganizan), tu consulta puede **saltarse filas o leer la misma fila dos veces**.
+
+2.  **Existe una solución mucho mejor en SQL Server:** Activar a nivel de base de datos el modo **RCSI** (*Read Committed Snapshot Isolation*). Al activarlo, SQL Server pasa a comportarse como MySQL u Oracle: utiliza la base de datos `tempdb` para guardar versiones antiguas de las filas y permite lecturas consistentes sin bloqueos **sin tener que poner `WITH (NOLOCK)` en cada consulta**.
+:::
 
 # Niveles de Aislamiento y Anomalías de Lectura
 

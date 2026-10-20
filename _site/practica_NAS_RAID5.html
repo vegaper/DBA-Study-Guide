@@ -2,13 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.31">
+<meta name="generator" content="quarto-1.9.38">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Práctica guiada: servidor NAS/RAID 5 con Windows Server 2025 – Apuntes: Administración de Bases de Datos</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -71,10 +74,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-f90a550d0536259b58f26c6b6357a443.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-0dd6b25f39dd0ed3453471286ba3b5de.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -444,6 +447,12 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./transacciones.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Transacciones en SQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./practicaCrearRelaciones.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Laboratorio: Relaciones PK y FK en MySQL</span></a>
   </div>
@@ -484,17 +493,40 @@ gtag('config', 'G-9341LNVJM3', { 'anonymize_ip': true});
  <span class="menu-text">Práctica: Usuarios, Privilegios y Roles en Academia IT</span></a>
   </div>
 </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false">
+ <span class="menu-text">practica_transacciones_mysql.html</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./practica_transacciones_mysql.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Práctica: Transacciones en MySQL</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./laboratorio_transacciones.sql" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">script SQL de la práctica: Transacciones en MySQL</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true">
  <span class="menu-text">Anexos</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-8" role="navigation" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-8" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./ubuntu_cheat_sheet.html" class="sidebar-item-text sidebar-link">
@@ -1631,12 +1663,12 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <p>Microsoft permite agregar el nuevo disco desde el Administrador del servidor o mediante Add-PhysicalDisk. El disco debe encontrarse en el grupo primordial y mostrar CanPool=True.</p>
 <section id="alternativa-mediante-powershell" class="level3" data-number="7.9.1">
 <h3 data-number="7.9.1" class="anchored" data-anchor-id="alternativa-mediante-powershell"><span class="header-section-number">7.9.1</span> Alternativa mediante PowerShell</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">$NuevoDisco</span> = Get-PhysicalDisk <span class="at">-CanPool</span> <span class="va">$true</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Add-PhysicalDisk</span> <span class="kw">`</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">-StoragePool</span> <span class="va">$Pool</span> <span class="kw">`</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">-PhysicalDisks</span> <span class="va">$NuevoDisco</span> <span class="kw">`</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> AutoSelect</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> AutoSelect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="nota">
 <p>¿Cómo funciona el backtick ( ` ) en PowerShell?</p>
 <p>Técnicamente, el <em>backtick</em> (o acento grave) es el <strong>carácter de escape</strong> en PowerShell. Cuando lo colocas justo al final de una línea, lo que hace es “escapar” o anular el salto de línea que viene a continuación. Es tu forma de decirle a la consola: <em>“Este comando aún no ha terminado, sigue leyendo en la línea de abajo”</em>.</p>
@@ -1660,9 +1692,9 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <p>Localiza el disco cuyo estado no sea correcto y copia su <em>UniqueId.</em></p>
 <p>El disco puede haber sido marcado automáticamente como Retired (Usage : Retired)</p>
 <p>Si todavía aparece como Auto-Select, retíralo lógicamente utilizando su identificador:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Set-PhysicalDisk</span> <span class="kw">`</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Set-PhysicalDisk</span> <span class="kw">`</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">-UniqueId</span> <span class="st">"ID-DEL-DISCO-AVERIADO"</span> <span class="kw">`</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> Retired</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-Usage</span> Retired</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>La marca <em>Retired</em> indica que Storage Spaces debe dejar de utilizar ese disco y mover o reconstruir sus datos sobre otros discos disponibles.</p>
 </section>
 <section id="reparar-el-disco-virtual" class="level2" data-number="7.11">
@@ -1736,13 +1768,13 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 <section id="eliminar-la-referencia-al-disco-averiado" class="level2" data-number="7.13">
 <h2 data-number="7.13" class="anchored" data-anchor-id="eliminar-la-referencia-al-disco-averiado"><span class="header-section-number">7.13</span> Eliminar la referencia al disco averiado</h2>
 <p>Recupera el objeto correspondiente mediante su UniqueId:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="va">$Pool</span> = Get-StoragePool <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">$DiscoAveriado</span> = Get-PhysicalDisk <span class="kw">`</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-UniqueId</span> <span class="st">"ID-DEL-DISCO-AVERIADO"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-UniqueId</span> <span class="st">"ID-DEL-DISCO-AVERIADO"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Elimínalo del grupo:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Remove-PhysicalDisk</span> <span class="kw">`</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Remove-PhysicalDisk</span> <span class="kw">`</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">-StoragePool</span> <span class="va">$Pool</span> <span class="kw">`</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-PhysicalDisks</span> <span class="va">$DiscoAveriado</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">-PhysicalDisks</span> <span class="va">$DiscoAveriado</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Confirma la operación cuando PowerShell lo solicite.</p>
 <p>Remove-PhysicalDisk elimina el disco físico indicado de la configuración del grupo. Antes de utilizarlo debe existir capacidad suficiente para mantener la resistencia del disco virtual.</p>
 <div class="nota-importante">
@@ -1751,7 +1783,7 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
 </section>
 <section id="comprobación-final" class="level2" data-number="7.14">
 <h2 data-number="7.14" class="anchored" data-anchor-id="comprobación-final"><span class="header-section-number">7.14</span> Comprobación final</h2>
-<div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-StoragePool</span> <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span> <span class="kw">|</span> <span class="ex">Get-PhysicalDisk</span> <span class="kw">|</span> <span class="ex">Format-Table</span> DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Get-StoragePool</span> <span class="at">-FriendlyName</span> <span class="st">"GRUPO-NAS"</span> <span class="kw">|</span> <span class="ex">Get-PhysicalDisk</span> <span class="kw">|</span> <span class="ex">Format-Table</span> DeviceId,SerialNumber,UniqueId,OperationalStatus,HealthStatus,Usage,Size</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Deben quedar exactamente tres discos saludables dentro de GRUPO-NAS:</p>
 <ul>
 <li><p>Dos discos originales.</p></li>
@@ -1906,13 +1938,14 @@ Comprueba el resultado en la shell: <code>Get-Volume -DriveLetter N</code></p>
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
