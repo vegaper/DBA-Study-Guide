@@ -27,7 +27,7 @@ Al finalizar, el estudiante deberá ser capaz de realizar las siguientes tareas:
 La base de datos de referencia se llamará `laboratorio_transacciones`.
 
 | Tabla | Campos necesarios | Requisitos |
-|:----------------|:-------------------------|:-----------------------------|
+|:---------------|:-------------------|:------------------------------------|
 | `cuentas` | `id_cuenta`, `titular`, `saldo` | InnoDB; `id_cuenta` como clave primaria; `saldo` DECIMAL. |
 | `productos` | `id_producto`, `nombre`, `precio`, `stock` | InnoDB; `id_producto` como clave primaria; `precio` DECIMAL y `stock` entero. |
 
@@ -420,8 +420,6 @@ FROM cuentas
 ORDER BY id_cuenta;
 ```
 
-![](images/practica_transacciones_mysql_fig14.png)
-
 B seguirá viendo `1000.00` y `500.00`.
 
 ## Paso 4: Sesión A — Cancelar la transacción
@@ -437,8 +435,6 @@ SELECT id_cuenta, saldo
 FROM cuentas
 ORDER BY id_cuenta;
 ```
-
-![](images/practica_transacciones_mysql_fig15.png)
 
 Ambas verán `1000.00` y `500.00`.
 
@@ -1110,6 +1106,16 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
 ```
 
+comprobamos:
+
+``` sql
+SELECT 
+    CONNECTION_ID() AS conexion,
+    CURRENT_USER() AS cuenta_mysql,
+    @@session.autocommit AS autocommit,
+    @@session.transaction_isolation AS aislamiento;
+```
+
 ### Paso 2: Sesión A — Modificar sin confirmar
 
 ``` sql
@@ -1294,7 +1300,7 @@ En esta transacción explícita con `SERIALIZABLE`, el `SELECT` de B se comporta
 ## Comparación de lo observado
 
 | Nivel | Resultado de la prueba |
-|:----------------------|:------------------------------------------------|
+|:-----------------------|:-----------------------------------------------|
 | **READ UNCOMMITTED** | Se leyó un cambio pendiente que después se canceló. |
 | **READ COMMITTED** | Una segunda lectura vio un cambio confirmado por otra sesión. |
 | **REPEATABLE READ** | Las lecturas consistentes conservaron la instantánea. |
@@ -1638,7 +1644,7 @@ Verificar que se conserva la transferencia y se han deshecho las modificaciones 
 # Ejercicio 17. Relacionar la práctica con ACID
 
 | Propiedad | Relación con lo practicado |
-|:-----------------|:-----------------------------------------------------|
+|:-------------------|:---------------------------------------------------|
 | **Atomicidad** | La transferencia puede confirmarse o cancelarse como una unidad. |
 | **Consistencia** | Se comprueban reglas del negocio, como conservar el total transferido y no vender sin stock. |
 | **Aislamiento** | Se observa qué datos ve cada sesión y cuándo una operación debe esperar. |
@@ -1694,3 +1700,7 @@ Las referencias siguientes corresponden al manual oficial de MySQL 8.4 y permite
 - Ejemplo de interbloqueo
 - Gestión de errores
 - Confirmaciones implícitas
+
+------------------------------------------------------------------------
+
+![](images/paste-1.png)

@@ -1,0 +1,139 @@
+---
+title: "Monitoreo de Procesos, Bloqueos y Resolución de Conflictos"
+format: html
+---
+
+:::: extra
+En un Sistema Gestor de Bases de Datos (SGBD) relacional como MySQL (con el motor InnoDB), cuando múltiples transacciones intentan modificar los mismos recursos de forma simultánea, se generan bloqueos (locks).
+
+Si una transacción no finaliza (por no hacer COMMIT o ROLLBACK), puede dejar filas o tablas bloqueadas indefinidamente, haciendo que otras transacciones queden en estado de espera (Lock Wait Timeout) o generen un bloqueo mutuo (Deadlock).
+
+# Ver y Monitorizar los Procesos Activos
+
+Para inspeccionar qué consultas o transacciones se están ejecutando en tiempo real dentro del servidor, utilizamos las herramientas de inspección de hilos (threads).
+
+## Listar todos los procesos (SHOW PROCESSLIST)
+
+``` sql
+SHOW PROCESSLIST;
+```
+
+Campos clave que debes revisar:
+
+Id: Identificador único del hilo o proceso (ID que se usa para matarlo si es necesario).
+
+User / Host: Usuario y origen de la conexión.
+
+db: Base de datos sobre la que está operando.
+
+Command: Tipo de comando (Sleep, Query, Execute). Si está en Sleep, la conexión está abierta pero inactiva (a menudo una transacción abierta que el cliente olvidó cerrar).
+
+Time: Tiempo en segundos que el proceso lleva en el estado actual.
+
+State: Estado exacto de la ejecución (ej. Updating, Waiting for table metadata lock, Lock wait).
+
+Info: La sentencia SQL exacta que se está ejecutando.
+
+## Consultar la tabla de procesos (information_schema.PROCESSLIST)
+
+Se pueden filtrar los procesos de forma analítica mediante consultas SQL:
+
+``` sql
+SELECT Id, User, Host, db, Command, Time, State, Info
+FROM information_schema.PROCESSLIST
+WHERE Command != 'Sleep' AND Time > 5
+ORDER BY Time DESC;
+```
+
+# Identificación de Bloqueos y Transacciones Retenidas
+
+Un problema común ocurre cuando una sesión tiene un bloqueo activo pero la consulta ya terminó de ejecutarse (quedó en estado Sleep), dejando la transacción abierta.
+
+En MySQL 8.0+, InnoDB proporciona la base de datos performance_schema y la vista sys.innodb_lock_waits para auditar bloqueos.
+
+## Ver transacciones activas en InnoDB
+
+``` sql
+SELECT 
+    trx_id, 
+    trx_state, 
+    trx_started, 
+    trx_mysql_thread_id AS id_proceso,
+    trx_query 
+FROM information_schema.INNODB_TRX;
+```
+
+trx_mysql_thread_id: Corresponde al Id que se visualiza en SHOW PROCESSLIST
+
+## Identificar qué transacción bloquea a cuál (sys.innodb_lock_waits)
+
+Para saber quién está bloqueando a quién en tiempo real:
+
+``` sql
+SELECT 
+    waiting_trx_id AS trx_esperando,
+    waiting_pid AS id_proceso_bloqueado,
+    waiting_query AS consulta_bloqueada,
+    blocking_trx_id AS trx_bloqueadora,
+    blocking_pid AS id_proceso_bloqueador,
+    blocking_query AS consulta_bloqueadora,
+    wait_age_secs AS segundos_esperando
+FROM sys.innodb_lock_waits;
+```
+
+## Estado detallado del motor InnoDB (SHOW ENGINE INNODB STATUS)
+
+Es el comando de diagnóstico más completo. Muestra la sección TRANSACTIONS con información precisa sobre transacciones activas, bloqueos asignados y deadlocks recientes.
+
+``` sql
+SHOW ENGINE INNODB STATUS\G
+```
+
+# Manejo y Finalización de Procesos (KILL)
+
+Si identificas que una conexión o transacción está bloqueando la base de datos de manera indefinida, el DBA / Administrador puede forzar la desconexión del hilo.
+
+Sintaxis de eliminación de procesos
+
+``` sql
+-- Detiene solo la consulta SQL en ejecución sin cerrar la conexión
+KILL QUERY <id_proceso>;
+
+-- Cierra la conexión completa y revierte (ROLLBACK) cualquier transacción pendiente
+KILL <id_proceso>;
+-- o equivalentemente:
+KILL CONNECTION <id_proceso>;
+```
+
+::: nota
+Al ejecutar KILL, el motor de base de datos realiza automáticamente un ROLLBACK de la transacción asociada a esa conexión para mantener la integridad de los datos.
+:::
+
+# Configuración Preventiva de Tiempos de Espera (Timeouts)
+
+Para evitar que un bloqueo cuelgue el sistema indefinidamente cuando un proceso entra en espera de un recurso bloqueado, se pueden configurar parámetros de tiempo de espera:
+
+``` sql
+-- Ver el tiempo máximo de espera por un bloqueo en InnoDB (en segundos)
+SHOW VARIABLES LIKE 'innodb_lock_wait_timeout';
+
+-- Modificar el tiempo límite de espera para la sesión actual (ej. 10 segundos)
+SET innodb_lock_wait_timeout = 10;
+```
+
+Si una transacción excede este tiempo esperando a que se libere un bloqueo, MySQL lanzará el error:`ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction.`
+
+------------------------------------------------------------------------
+
+## Resumen de Comandos Principales 
+
+|  |  |
+|-----------------------|-------------------------------------------------|
+| **Objetivo** | **Comando SQL** |
+| **Ver todos los procesos** | `SHOW FULL PROCESSLIST;` |
+| **Ver transacciones abiertas** | `SELECT * FROM information_schema.INNODB_TRX;` |
+| **Ver quién bloquea a quién** | `SELECT * FROM sys.innodb_lock_waits;` |
+| **Diagnóstico completo de bloqueos** | `SHOW ENGINE INNODB STATUS;` |
+| **Cancelar solo la consulta actual** | `KILL QUERY <id_proceso>;` |
+| **Cerrar conexión y revertir TRX** | `KILL <id_proceso>;` |
+::::

@@ -378,19 +378,19 @@ Imagina un sistema de reservas de billetes de avión.
 
 Esta tabla resume qué ocurre cuando la **Sesión 1** ya tiene un bloqueo sobre una fila y la **Sesión 2** intenta solicitar otro bloqueo sobre esa **misma fila**:
 
-+------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
-|                              |                                                      |                                                                               |
-+==============================+======================================================+===============================================================================+
-| **Si la Sesión 1 tiene...**  | **Y la Sesión 2 pide Bloqueo S (FOR SHARE)**         | **Y la Sesión 2 pide Bloqueo X (FOR UPDATE / UPDATE / DELETE)**               |
-+------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
-| **Bloqueo `S` (Compartido)** | **COMPATIBLE**                                       | **INCOMPATIBLE**                                                              |
-|                              |                                                      |                                                                               |
-|                              | *(La Sesión 2 entra sin esperar)*                    | *(La Sesión 2 se queda en espera)*                                            |
-+------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
-| **Bloqueo `X` (Exclusivo)**  | **INCOMPATIBLE**                                     | **INCOMPATIBLE**                                                              |
-|                              |                                                      |                                                                               |
-|                              | *(La Sesión 2 se queda en espera)*                   | *(La Sesión 2 se queda en espera)*                                            |
-+------------------------------+------------------------------------------------------+-------------------------------------------------------------------------------+
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+|                              |                                              |                                                                 |
++==============================+==============================================+=================================================================+
+| **Si la Sesión 1 tiene...**  | **Y la Sesión 2 pide Bloqueo S (FOR SHARE)** | **Y la Sesión 2 pide Bloqueo X (FOR UPDATE / UPDATE / DELETE)** |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+| **Bloqueo `S` (Compartido)** | **COMPATIBLE**                               | **INCOMPATIBLE**                                                |
+|                              |                                              |                                                                 |
+|                              | *(La Sesión 2 entra sin esperar)*            | *(La Sesión 2 se queda en espera)*                              |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
+| **Bloqueo `X` (Exclusivo)**  | **INCOMPATIBLE**                             | **INCOMPATIBLE**                                                |
+|                              |                                              |                                                                 |
+|                              | *(La Sesión 2 se queda en espera)*           | *(La Sesión 2 se queda en espera)*                              |
++------------------------------+----------------------------------------------+-----------------------------------------------------------------+
 :::
 
 ## Bloqueos explícitos de tablas (`LOCK TABLES` y `UNLOCK TABLES`)
@@ -763,6 +763,26 @@ SELECT @@GLOBAL.transaction_isolation, @@session.transaction_isolation;
 -- Cambiar el nivel para la siguiente transacción en la sesión actual
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 ```
+
+::: {#extra}
+En MySQL, el comando `SET TRANSACTION ISOLATION LEVEL ...` o `SET SESSION TRANSACTION ISOLATION LEVEL ...` **solo aplica para la próxima transacción que se inicie**, no tiene efecto retroactivo ni permite cambiar las reglas a mitad de camino dentro de una transacción que ya está abierta mediante `START TRANSACTION`.
+
+Si intentas cambiar el nivel de aislamiento con una transacción ya abierta, el SGBD podría arrojar un error (como `Transaction active, could not set isolation level`) o no dar error, pero no el resultado no será el esperado.
+
+Ejemplo Sessión A empieza una transacción en REPEATABLE READ y durante la transacción la cambia a READ UNCOMMITED
+
+consultamos el stock:\
+![](images/paste-3.png)
+
+Una vez que hemos cambiado el nivel de aislamiento empezamos una transacción en la sessión B y hacemos un cambio en una de las filas de la tabla, pero no lo confirmamos aún con COMMIT![](images/paste-4.png)
+
+Si a continuación repetimos la consulta de la tabla, no nos muestra la operación en curso a pesar de que estamos en READ UNCOMMITED.\
+![](images/paste-5.png)
+
+Si a continuación salimos de la transacción en la sessión A con COMMIT O ROLLBACK, y ejecutamos la consulta de nuevo, ahora sí funcionará el cambio de nivel de aislamiento y enseñará el valor aún no confirmado de la transacción de B.
+
+![](images/paste-6.png)
+:::
 
 # Mecanismos Internos de Concurrencia en InnoDB
 
