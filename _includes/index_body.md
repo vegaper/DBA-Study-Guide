@@ -53,6 +53,8 @@
 * [Usuarios, Roles y Gestión de Permisos](permisos.html)
 * [Práctica: Usuarios, Privilegios y Roles en Academia IT](practica_usuarios_privilegios_y_roles_en_academia_it.html)
 * [Práctica: Transacciones en MySQL](practica_transacciones_mysql.html)
+* [Control de Flujo de Transacciones en SQL](control_flujo_transacciones.html)
+* [Práctica: Bloqueos en MySQL](practica_bloqueos.html)
 
 ## Anexos
 
