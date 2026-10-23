@@ -16,20 +16,36 @@ Antes de crear y poblar la base de datos, es necesario trasladar los ficheros de
 ## Subir Archivos desde Windows a Ubuntu con SCP
 
 `scp` (Secure Copy Protocol) permite copiar archivos de forma segura mediante SSH. Los siguientes comandos se ejecutan en PowerShell o CMD en Windows.
-
-### Subir todos los archivos CSV de una carpeta
-
+la sintaxis general es: 
 ``` bash
-scp C:\Users\nombre_usuario\Downloads\*.csv sysadmin@10.0.20.100:/home/sysadmin/
+scp [opciones] origen destino
 ```
+como el destino está en otra máquina, se indica el usuario y la IP del servidor remoto, seguido de la ruta de destino en el servidor.
 
-Si hay archivos con los mismos nombres en el destino se sobreescribirán.
+{usuario}@{ip_servidor}:{ruta_destino}
+
+Algunas de las opciones más comunes son:
+-  `-r`: Copia recursivamente directorios completos.
+-  `-P {puerto}`: Especifica un puerto distinto al 22 para la conexión SSH.
+-  `-v`: Modo verbose, muestra información detallada del proceso de copia.
+-  `-C`: Habilita la compresión de datos durante la transferencia, útil para archivos grandes.
+
 
 ### Subir un archivo concreto
 
 ``` bash
 scp C:\Users\nombre_usuario\Downloads\departments.csv sysadmin@10.0.20.100:/home/sysadmin/
 ```
+### Subir usando comodines.
+
+Podemos usar comodines para subir más de un archivo a la vez. Por ejemplo, para subir todos los archivos CSV de la carpeta `Downloads`:
+
+``` bash
+scp C:\Users\nombre_usuario\Downloads\*.csv sysadmin@10.0.20.100:/home/sysadmin/
+```
+Si hay archivos con los mismos nombres en el destino se sobreescribirán.
+
+
 
 ### Subir una carpeta completa
 
@@ -1172,9 +1188,8 @@ ORDER BY o.order_date ASC;
  Un archivo `.sql` contiene instrucciones SQL estructuradas (`CREATE TABLE`, `INSERT`, `ALTER`, etc.) 
 
 ## Ejecución mediante privilegios del sistema operativo (`sudo`) 
- Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios `sudo`), es posible redirigir un archivo `.sql` directamente hacia el cliente de MySQL mediante la entrada estándar, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión: 
- `sudo mysql < {archivo a ejecutar}` 
- `bash sudo mysql < /home/sysadmin/datos.sql` 
+ Cuando se dispone de acceso de administrador en el sistema operativo (usuario con privilegios `sudo`), es posible redirigir un archivo `.sql` directamente hacia el cliente de MySQL mediante la entrada estándar en la terminal, sin necesidad de interactuar con la contraseña del usuario de base de datos dentro de una sesión: 
+ `sudo mysql < {archivo a ejecutar}`. Por ejemplo :  `sudo mysql < /home/sysadmin/datos.sql` 
  Autenticación mediante el Sistema Operativo (sudo): Al anteponer sudo, ejecutas el cliente de MySQL con los privilegios de superusuario de Linux. En las configuraciones por defecto de Ubuntu (con MySQL o MariaDB), el usuario root de la base de datos utiliza el plugin de autenticación por socket (auth_socket). Esto permite que el sistema operativo valide tu identidad al ser el administrador de Linux, evitando tener que introducir una contraseña de MySQL. 
 
 ### Importar indicando la base de datos existente 
@@ -1186,6 +1201,8 @@ Si tenemos que ejecutar el script sobre una base de datos ya creada: `mysql -u {
 Si el archivo SQL contiene la sentencia `CREATE DATABASE` y `USE`, no es necesario indicar la base de datos destino: 
 
 ## Ejecutar el archivo dentro de la consola interactiva de MySQL 
+sql SOURCE {archivo a ejecutar}
+
  `sql SOURCE /home/sysadmin/datos.sql;` 
 
 ![Imagen generada con IA, puede contener errores.](images/practica_sql_base_de_datos_con_carga_de_datos_desde_csv_fig1.jpg)
