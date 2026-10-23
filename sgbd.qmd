@@ -86,8 +86,6 @@ Iniciar directamente la herramienta indicándolo mediante `--sql`:
   mysqlsh museo_app@192.168.1.50:3306 --sql
   ```
 
-  ------------------------------------------------------------------------
-
 ### La Arquitectura Multicapa en Aplicaciones Web
 
 Cuando introducimos un servidor web (Apache2) y un lenguaje de programación (PHP), el cliente del SGBD ya no es el navegador del usuario final, sino la propia aplicación PHP.
@@ -145,7 +143,12 @@ A diferencia de los sistemas operativos tradicionales, donde un usuario se ident
 
 $$\text{Cuenta} = \text{'Usuario'}@\text{'Host'}$$
 
-| **Componente** | **Definición** | **Ejemplo** | | **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` | | **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
+| Componente | Definición | Ejemplo |
+|:-----------------------|:-----------------------|:-----------------------|
+| **Usuario** | Nombre de la cuenta o aplicación. | `'root'`, `'museo_app'` |
+| **Host** | La dirección IP o interfaz desde la cual tiene permitido conectar. | `'localhost'`, `'127.0.0.1'`, `'192.168.1.50'`, `'%'` |
+
+: Componentes de autenticación de usuarios en SQL
 
 ## Los tipos de Host más comunes
 
@@ -227,7 +230,30 @@ donde `-h` significa host y a continuación ponemos la ip del servidor al que no
 Es importante notar que si hacemos exactamente esto y creamos dos usuarios con el mismo nombre de usuario pero distinta dirección de conexión, actúan como usuarios totalmente distintos, con privilegios distintos.
 :::
 
+## El plugin de autenticación por defecto en MySQL 8.4 (`caching_sha256_password`)
+
+A diferencia de versiones anteriores de MySQL (donde el método clásico por defecto era `mysql_native_password`), **MySQL 8.4** utiliza por defecto **`caching_sha256_password`** para la autenticación de usuarios basada en contraseña.
+
+- **¿Por qué importa?** Este plugin ofrece un nivel de seguridad criptográfica muy superior (basado en SHA-256 con caché de claves), pero puede generar incompatibilidades si intentas conectar aplicaciones con librerías, conectores de PHP/PDO, Python o Java que estén desactualizados.
+- **El error típico:** Si el cliente no soporta este mecanismo de forma nativa, la conexión fallará arrojando un error del tipo: `The server requested authentication method unknown to the client`.
+
+### Forzar compatibilidad con clientes antiguos (si fuera necesario)
+
+Si en algún escenario de prácticas o entorno heredado necesitas que un usuario utilice el método clásico compatible con cualquier conector antiguo, puedes indicarlo explícitamente al crearlo:
+
+``` sql
+CREATE USER 'museo_app'@'192.168.1.50' IDENTIFIED WITH mysql_native_password BY 'ContraseñaSegura';
+```
+
 # Interfaces de Escucha y Red (`bind-address` y Puertos)
+
+Para poder acceder a un servidor de base de datos desde otra máquina, no basta con configurar el usuario, el motor debe estar **escuchando** en la interfaz de red correcta y en el puerto adecuado.
+
+El parámetro bind-address configura la IP propia del servidor (el equipo donde corre la base de datos), no el rango de IPs de los clientes.
+
+Cómo funciona exactamente: - El Servidor (bind-address): Le dices al servicio de base de datos que abra el puerto únicamente en la tarjeta de red que tiene la IP de tu servidor en esa red local (por ejemplo, 10.0.20.50).
+
+- Los Clientes (10.0.20.0/24): Como el servidor está escuchando en esa IP, cualquier equipo que esté dentro de ese rango de la red local podrá enviar paquetes a esa dirección y llegar al puerto.
 
 Para que el servidor acepte o rechace conexiones de red, entran en juego los parámetros del protocolo TCP/IP:
 
@@ -235,9 +261,51 @@ Para que el servidor acepte o rechace conexiones de red, entran en juego los par
 
 - **Dirección de Escucha (`bind-address`):** Indica qué tarjetas de red o interfaces del servidor procesarán tráfico entrante:
 
-  - `127.0.0.1` (**Loopback**): El servidor ignora las peticiones que vengan del exterior y solo escucha las internas de la propia máquina.
+  - `127.0.0.1` (**Loopback**): El servidor ignora las peticiones que vengan del exterior y solo escucha las internas de la propia máquina. Esta es la configuración predeterminada en Ubuntu Server.
 
   - `0.0.0.0` (**Todas las interfaces**): Permite recibir peticiones procedentes de cualquier tarjeta de red o IP pública/privada configurada.
+
+  - `10.0.20.50` (**IP específica**): Permite conexiones desde la red local, en este ejemplo 10.0.20.0/24. Bind-address No acepta rangos con barra (/24), solo IPs individuales de la propia máquina. El servidor escucha en una IP específica, limitando las conexiones a aquellas que lleguen a esa dirección concreta, aunque el cliente puede estar en cualquier otra IP de la red local.
+
+  - **Múltiples Direcciones o Redes**: Algunos sistemas gestores permiten enlazar a más de una interfaz de red explícitamente para aislar el tráfico. bind-address = 127.0.0.1, 10.0.20.50 MySQL en versiones antiguas no permite configurar varias direcciones de escucha en el mismo archivo de configuración. Si se requiere que el servidor escuche en varias interfaces, se debe configurar un **proxy inverso** o un **firewall** que redirija el tráfico a la IP del servidor.
+
+  - **Redes Particulares y VPNs (Entornos Empresariales / Cloud)** : Si estás utilizando redes privadas virtuales o túneles seguros (como WireGuard, OpenVPN o VPCs en la nube), el bind-address se vincula a la IP del adaptador virtual. Ejemplo con interfaz VPN (ej. 10.8.0.1 o 172.16.0.x):
+
+  ```         
+  bind-address = 10.8.0.1
+  ```
+
+  ::: nota
+  **La diferencia clave para no confundirse**
+
+  - bind-address (Servidor): Define dónde se abre el servicio (en qué IP de la máquina propia). No acepta rangos con barra (/24), solo IPs individuales de la propia máquina (o 0.0.0.0 para todas).
+
+  - Control de acceso de Clientes (Host): Es donde sí usas el rango o comodines para decir quién puede entrar (por ejemplo, configurando al usuario con el host '10.0.20.%').
+  :::
+
+::: extra
+Seguridad en las Conexiones Remotas (Cifrado SSL/TLS)
+
+Cuando configuras accesos remotos mediante IP (permitiendo que un cliente se conecte desde otra máquina de la red local), **todo el tráfico de red viaja en texto plano de forma predeterminada**. Esto incluye las credenciales de autenticación y los datos transmitidos, lo que expone el sistema a posibles ataques de escucha en la red (*sniffing*).
+
+### Consideraciones clave:
+
+- **Cifrado nativo en MySQL 8.4:** Las versiones modernas de MySQL generan certificados SSL/TLS autofirmados automáticamente durante la instalación inicial, por lo que el servidor está preparado para aceptar canales cifrados sin requerir configuraciones complejas adicionales de certificados manuales.
+
+- **Forzar el uso de SSL por usuario:** Si deseas garantizar que un usuario remoto específico nunca pueda conectarse a través de una red abierta sin cifrado, puedes exigirlo explícitamente al crearlo o modificarlo mediante la cláusula `REQUIRE SSL`:
+
+  ``` sql
+  CREATE USER 'museo_app'@'192.168.1.50' IDENTIFIED BY 'ContraseñaSegura' REQUIRE SSL;
+  ```
+
+  Modos habituales: `PREFERRED` intenta cifrar si el servidor lo soporta, mientras que `REQUIRED` exige obligatoriamente que el canal esté cifrado o abortará la conexión)
+
+  **Conexión segura desde el cliente:** Al conectarse utilizando el cliente de línea de comandos, puedes forzar el uso del canal seguro mediante el parámetro `--ssl-mode`:
+
+  ``` bash
+  mysql --ssl-mode=REQUIRED -h 192.168.1.50 -u museo_app -p
+  ```
+:::
 
 # Archivos de Configuración y Protección de Credenciales
 
@@ -269,6 +337,30 @@ Por ello, se utiliza la regla de **almacenamiento externo y permisos octales red
 
 > 🔗 **Enlace a la Práctica:** Consulta el apartado **"[Crear la conexión con MySQL mediante PDO](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-conexi%C3%B3n-con-mysql-mediante-pdo)"** de la práctica para ver la aplicación técnica de `chown root:www-data` y `chmod 640` sobre el archivo de credenciales.
 
+::: extra
+# Herramientas de Diagnóstico Rápido y Monitorización de Accesos
+
+Una vez configurados los usuarios y la red, como administrador necesitarás comprobar rápidamente si el servicio responde o quién está conectado sin necesidad de iniciar sesión completa en la consola interactiva de SQL.
+
+### Diagnóstico del sistema con `mysqladmin`
+
+Desde la línea de comandos de tu sistema operativo (Ubuntu), puedes utilizar la utilidad `mysqladmin` para comprobar el estado del demonio:
+
+- **Comprobar si el servidor está activo y responde:**
+
+  ``` bash
+  sudo mysqladmin ping
+  ```
+
+(Si el servicio está operativo, devolverá un mensaje indicando que `mysqld is alive`).
+
+- Consultar el estado general y conexiones activas:
+
+  ``` bash
+  sudo mysqladmin -u root -p status
+  ```
+:::
+
 # Estructura Interna: Bases de Datos de Sistema y de Usuario
 
 Al instalar el motor, este crea de forma automática un catálogo del sistema con metadatos indispensables para su funcionamiento:
@@ -289,7 +381,13 @@ En la capa teórica del diseño de tablas, la base de datos es la encargada de m
 
 ## Resumen Teórico de Restricciones y Tipos de Datos Avanzados
 
-|------------------|-------------------------------------|------------------| | **Restricción / Tipo** | **Función Teórica** | **Aplicación en el Modelo del Museo** | | `PRIMARY KEY` | Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. | `id_objeto INT UNSIGNED AUTO_INCREMENT` | | `UNIQUE` | Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. | `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') | | `CHECK` | Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. | `CHECK (mes_inicio BETWEEN 1 AND 12)` | | `ENUM` | Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. | `era ENUM('a.C.', 'd.C.')` | | `NULL` | Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). | Campos opcionales de datación histórica. |
+| Restricción / Tipo | Función Teórica | Aplicación en el Modelo del Museo |
+|:-----------------------|:-----------------------|:-----------------------|
+| `PRIMARY KEY` | Identificador único irrepetible de cada fila. Garantiza que no haya duplicados y crea un índice primario de búsqueda rápida. | `id_objeto INT UNSIGNED AUTO_INCREMENT` |
+| `UNIQUE` | Garantiza que no existan dos filas con el mismo valor en una columna clave alternativa. | `codigo_inventario VARCHAR(50)` (ej. 'MED-0001') |
+| `CHECK` | Expresión lógica que debe cumplirse obligatoriamente para que el `INSERT` o `UPDATE` sea aceptado. | `CHECK (mes_inicio BETWEEN 1 AND 12)` |
+| `ENUM` | Lista cerrada de valores permitidos. Cualquier otro texto es rechazado. | `era ENUM('a.C.', 'd.C.')` |
+| `NULL` | Representa la **ausencia de valor** o información desconocida (se diferencia claramente de `0` o de una cadena vacía `""`). | Campos opcionales de datación histórica. |
 
 > 🔗 **Enlace a la Práctica:** Revisa la sentencia SQL de creación de la tabla en el apartado **"[Crear la base de datos y la tabla Objetos](practica_guiada_aplicaci_n_web_mysql_php.html#crear-la-base-de-datos-y-la-tabla-objetos)"** de la práctica para observar cómo se traducen estos conceptos en una tabla real de MySQL.
 
@@ -335,3 +433,9 @@ Una consulta preparada compila la estructura lógica de la sentencia SQL en el s
 │        └─► Base de Datos: 'museo' ──► Tabla: 'Objetos'                 │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+------------------------------------------------------------------------
+
+![](images/paste-2.png)
+
+![](images/paste-3.png)
