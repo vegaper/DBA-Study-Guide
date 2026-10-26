@@ -64,6 +64,18 @@ Sin embargo, \*\*es una mala práctica depender de esto\*\*. Acostúmbrate a usa
 
 ![](images/sqlLanguage_fig1.png)
 
+# Operadores
+Un operador en sql es un símbolo que indica una operación a realizar sobre uno o más valores. Los operadores pueden ser aritméticos, de comparación, lógicos, de asignación, entre otros.
+Un operador expresa una operación sobre valores: sumar, comparar o combinar condiciones. Una comparación puede ser verdadera, falsa o desconocida. En MySQL se muestran normalmente como 1, 0 y NULL. WHERE conserva únicamente las filas en las que la condición es verdadera.
+
+| Categoría de Operadores / Herramientas | Operadores o Funciones Incluidos | Descripción / Propósito principal |
+| :--- | :--- | :--- |
+| **Control y Tratamiento de NULL** | `IS NULL`, `IS NOT NULL`, `ISNULL()`, `IFNULL()`, `COALESCE()`, `NULLIF()`, `<=>` | Gestionar la ausencia de valores, comprobar nulos de forma segura y ofrecer alternativas de sustitución. |
+| **Comparación** | `=`, `<>` o `!=`, `<`, `>`, `<=`, `>=`, `BETWEEN`, `IN` | Evaluar relaciones entre valores para obtener resultados lógicos (verdadero, falso o desconocido). |
+| **Lógicos y de Existencia** | `AND`, `OR`, `NOT`, `XOR`, `EXISTS`, `NOT EXISTS` | Combinar múltiples condiciones de filtrado o comprobar si existen registros coincidentes dentro de una subconsulta. |
+| **Aritméticos y Numéricos** | `+`, `-`, `*`, `/`, `DIV`, `%` o `MOD`, `ROUND`, `TRUNCATE`, `CEIL`, `FLOOR`, `ABS`, `SIGN` | Realizar operaciones matemáticas, cálculos de importes y redondeos de cifras. |
+| **De Bits** | `&`, `\|`, `^`, `~`, `<<`, `>>`, `BIT_COUNT` | Manipular posiciones y máscaras binarias a nivel de bits. |
+
 # Operadores Lógicos y de Comparación
 
 Disponemos de operadores como `=`, `!=` (o `<>`), `>`, `<`, `>=`, `<=` y `BETWEEN` (que es inclusivo).
@@ -86,8 +98,8 @@ SELECT movie_title, duration
 FROM imdb_movies 
 WHERE duration BETWEEN 90 AND 120;
 ```
-
-> **¡Trampas comunes con `BETWEEN`!**
+::: extra
+> **¡Errores comunes con `BETWEEN`!**
 >
 > 1.  **El orden estricto de los límites:** Siempre debes poner primero el valor más pequeño y luego el más grande. Si por error escribes `WHERE duration BETWEEN 120 AND 90`, el motor SQL buscará valores que sean mayores o iguales a 120 y, al mismo tiempo, menores o iguales a 90. Como esto es imposible, te devolverá cero resultados, ¡y lo peor es que no te dará ningún error de sintaxis para avisarte!
 >
@@ -128,6 +140,8 @@ WHERE duration BETWEEN 90 AND 120;
 
 *Si fuera una fecha: `WHERE fecha_estreno > '2020-01-01'` traería las películas posteriores a esa fecha.*
 
+:::
+
 ## Las trampas lógicas (`NOT`, `AND`, `OR` y `NULL`)
 
 1.  **El peligro de los nulos con `NOT`:** El valor `NULL` en SQL significa "desconocido". Si evalúas `WHERE NOT (Adult_literacy_rate = 96.7)`, las filas con `NULL` **desaparecerán**. Cualquier comparación directa con un nulo da como resultado nulo, y el `WHERE` solo deja pasar lo que es estrictamente `TRUE`. Para trabajar con nulos hay que usar `IS NULL` o `IS NOT NULL`.
@@ -136,39 +150,36 @@ WHERE duration BETWEEN 90 AND 120;
     Esto significa: *"Tráeme cualquier película de USA (dure lo que dure) O BIEN películas de UK que duren más de 120 min"*.\
     **Solución:** Usa siempre paréntesis para forzar la lógica que deseas: `WHERE (Country = 'USA' OR Country = 'UK') AND duration > 120`.
 
-::: nota
-La trampa de los tipos de datos en SQLite:
+::: nota-importante
+Cuidaado con los comparadores y los tipos de datos 
+En SQLite:
 
-En esta tabla tenemos un actor cuyo salario es 'NA' (como cadena de texto, no un nulo) 
-
-Si quiero seleccionar aquellas filas donde el salario no sea desconocido y uso la condición `bondactorsalary > 0`, el filtro falla.
-
-Por qué `"NA" > 0` es verdadero?
-
+En una tabla tenemos un actor cuyo salario es 'NA' (como cadena de texto, no un nulo). Si quiero seleccionar aquellas filas donde el salario no sea desconocido y uso la condición `bondactorsalary > 0`, el filtro no nos  dará el resultado experado, ya que incluirá a dicho actor. 
+**Por qué `"NA" > 0` es verdadero?**
 En motores estrictos (como PostgreSQL o SQL Server), intentar comparar texto puro como `"NA"` con un número `0` te devolvería un error de sintaxis o de conversión. Sin embargo, SQLite utiliza un sistema de **tipado dinámico**, lo que significa que es extremadamente permisivo e intenta resolver la comparación basándose en una jerarquía de clases de almacenamiento.
 
 Cuando comparas distintos tipos de datos, SQLite los ordena de menor a mayor siguiendo esta regla estricta: `NULL` \< `NÚMEROS (Integer/Real)` \< `TEXTO` \< `BLOB`
 
 **¿Qué pasa exactamente en la consulta `WHERE bondactorsalary > 0`?**
 
-1\. El campo `bondactorsalary` es de tipo `TEXT`.
+1. El campo `bondactorsalary` es de tipo `TEXT`.
 
-2\. Al evaluar las filas, si SQLite detecta un número en formato texto (por ejemplo `"-5"`), es lo bastante inteligente como para convertirlo a número temporalmente y evaluar `-5 > 0` (lo cual es Falso, y queda excluido).
+2. Al evaluar las filas, si SQLite detecta un número en formato texto (por ejemplo `"-5"`), es lo bastante inteligente como para convertirlo a número temporalmente y evaluar `-5 > 0` (lo cual es Falso, y queda excluido).
 
-3\. Sin embargo, cuando llega a la fila con el valor `"NA"`, intenta convertirlo a número y falla, por lo que **lo deja como `TEXTO`**.
+3. Sin embargo, cuando llega a la fila con el valor `"NA"`, intenta convertirlo a número y falla, por lo que **lo deja como `TEXTO`**.
 
-4\. Al hacer la comparación final, se enfrenta a la pregunta: *¿Es el `TEXTO` ("NA") mayor que el `NÚMERO` (0)?* Según la jerarquía de SQLite mencionada arriba, **cualquier texto siempre es estrictamente mayor que cualquier número**.
+4. Al hacer la comparación final, se enfrenta a la pregunta: *¿Es el `TEXTO` ("NA") mayor que el `NÚMERO` (0)?* Según la jerarquía de SQLite mencionada arriba, **cualquier texto siempre es estrictamente mayor que cualquier número**.
 
-5\. Por lo tanto, `"NA" > 0` se evalúa como **Verdadero (`TRUE`)**, y esa fila se cuela en tus resultados a pesar de ser texto.
+5. Por lo tanto, `"NA" > 0` se evalúa como **Verdadero (`TRUE`)**, y esa fila se cuela en tus resultados a pesar de ser texto.
 
-> **¿Cómo solucionarlo y hacer la consulta segura?** Para forzar a SQLite a evaluar todo matemáticamente y evitar que las cadenas de texto puro se cuelen en filtros numéricos, debes castear (convertir) explícitamente la columna. En SQLite, si fuerzas un texto como `"NA"` a número, se convierte en `0`, lo que permite que tu filtro funcione como esperabas, pero cuidado, porque esto no va a ser así en todos los motores
->
-> ``` sql
-> -- Forma correcta de filtrar excluyendo textos no numéricos
-> WHERE CAST(bondactorsalary AS REAL) > 0;
-> ```
+ **¿Cómo solucionarlo y hacer la consulta segura?** Para forzar a SQLite a evaluar todo matemáticamente y evitar que las cadenas de texto puro se cuelen en filtros numéricos, debes castear (convertir) explícitamente la columna. En SQLite, si fuerzas un texto como `"NA"` a número, se convierte en `0`, lo que permite que tu filtro funcione como esperabas, pero cuidado, porque esto no va a ser así en todos los motores
 
-¿Por qué `CAST('texto' AS REAL)` se convierte en `0` y no en `NULL` en SQLite?
+ ``` sql
+ -- Forma correcta de filtrar excluyendo textos no numéricos
+ WHERE CAST(bondactorsalary AS REAL) > 0;
+ ```
+
+**¿Por qué `CAST('texto' AS REAL)` se convierte en `0` y no en `NULL` en SQLite?**
 
 Cuando haces un `CAST` explícito de texto a número en SQLite, el motor nunca devuelve `NULL` (a menos que el valor original ya fuera `NULL`). En lugar de eso, o te da un número, o te da un `0`. Esto se debe a su **"Regla del Prefijo"**:
 
@@ -180,41 +191,14 @@ Cuando haces un `CAST` explícito de texto a número en SQLite, el motor nunca d
 
 **¿Por qué no usa `NULL`?** En la lógica de bases de datos, `NULL` significa estrictamente *"Ausencia de valor"* (desconocido). Sin embargo, `"NA"` sí es un valor conocido (es un texto explícito). Como el motor no puede convertir ese texto a matemáticas, asume el valor matemático nulo por defecto: el cero.
 
-> **¡Cuidado con la media (AVG)!** Esto es muy peligroso si estás calculando promedios. Si tus textos `"NA"` se convierten en `0` silenciosamente, tu denominador será mayor y el promedio final bajará artificialmente.
->
-> Si realmente quieres que los textos inválidos sean ignorados en matemáticas, tienes que convertirlos a `NULL` usando `NULLIF` o un `CASE WHEN`:
->
-> ``` sql
-> -- Esto convierte el texto 'NA' explícitamente en NULL real, 
-> -- por lo que las funciones matemáticas (SUM, AVG) simplemente lo ignorarán.
-> SELECT AVG(CAST(NULLIF(bondactorsalary, 'NA') AS REAL)) FROM jamesbond;
-> ```
+ **¡Cuidado con la media (AVG)!**  Esto es muy peligroso si estás calculando promedios. Si tus textos `"NA"` se convierten en `0` silenciosamente, tu denominador será mayor y el promedio final bajará artificialmente.
+Si realmente quieres que los textos inválidos sean ignorados en matemáticas, tienes que convertirlos a `NULL` usando `NULLIF` o un `CASE WHEN`:
+``` sql
+ -- Esto convierte el texto 'NA' explícitamente en NULL real, 
+ -- por lo que las funciones matemáticas (SUM, AVG) simplemente lo ignorarán.
+ SELECT AVG(CAST(NULLIF(bondactorsalary, 'NA') AS REAL)) FROM jamesbond;
+```
 :::
-
-# Valores Únicos (`DISTINCT`)
-
-Si queremos saber qué continentes distintos hay en nuestra tabla, un `SELECT Continent` nos devolverá cientos de filas repetidas. `DISTINCT` elimina los duplicados del conjunto de resultados.
-
-``` sql
-SELECT DISTINCT Continent 
-FROM world_health_org;
-```
-
-# Ordenación y Límites (`ORDER BY`, `LIMIT`)
-
--   **`ORDER BY`**: Ordena por una o varias columnas de forma ascendente (`ASC`, por defecto) o descendente (`DESC`).
--   **`LIMIT`**: Restringe el número de filas devueltas. (En SQL Server se usa `TOP`).
-
-> **¡Trampa del LIMIT huérfano!**\
-> Si ejecutas `SELECT movie_title FROM imdb_movies LIMIT 5;` sin usar `ORDER BY`, **el resultado es no determinista**. El motor te devolverá las primeras 5 filas que encuentre en la memoria o en el disco duro en ese microsegundo. Puede que hoy te devuelva unas películas y mañana otras distintas. **Regla de oro: Nunca uses `LIMIT` sin acompañarlo de un `ORDER BY`** si quieres resultados consistentes.
-
-``` sql
--- Forma correcta de obtener el "Top 5"
-SELECT movie_title, budget 
-FROM imdb_movies 
-ORDER BY budget DESC 
-LIMIT 5;
-```
 
 # Lógica Condicional
 
@@ -306,8 +290,10 @@ Las funciones de agregación (`MAX`, `MIN`, `COUNT`, `SUM`, `AVG`) reducen múlt
 
 ## La regla de oro del `GROUP BY`
 
-Cuando agrupas datos, hay una regla estricta en SQL estándar que genera muchísimos errores de principiante: **Cualquier columna que pongas en el `SELECT` debe estar dentro de una función de agregación (SUM, COUNT...) o debe aparecer explícitamente en la cláusula `GROUP BY`.**
-
+Cuando agrupas datos, hay una regla estricta en SQL estándar que genera muchísimos errores de principiante: 
+::: nota
+Cualquier columna que pongas en el `SELECT` debe estar dentro de una función de agregación (SUM, COUNT...) o debe aparecer explícitamente en la cláusula `GROUP BY`.
+::: 
 ``` sql
 -- INCORRECTO: Dará error porque 'Country' no está agrupado ni agregado. (excepto en SQLite y MySQL antiguo)
 SELECT 
@@ -324,12 +310,12 @@ FROM world_health_org
 GROUP BY Continent;
 ```
 
-:::: nota
+:::: extra
 **La excepción a la regla: SQLite y MySQL antiguo** En motores como **SQLite** (y versiones anteriores a la 5.7 de MySQL), el código incorrecto **sí se ejecutará sin dar error**. A estas columnas no agrupadas ni agregadas se las conoce técnicamente como *"bare columns"* (columnas desnudas). Lo que hace SQLite es simplemente devolver un valor arbitrario (normalmente el de la última o primera fila que procesa dentro de ese grupo) para la columna `Country`. **Peligro:** Aunque el motor te permita ejecutarlo, es una mala práctica profesional depender de este comportamiento, ya que el dato que te devuelve para esa columna extra es impredecible y no determinista.
 
 ### Cómo adaptar las "Bare Columns" a SQL Estándar (SQL Server, PostgreSQL, etc.)
 
-Como vimos, SQLite te permite poner `Country` en el `SELECT` sin agruparlo, devolviéndote un país aleatorio de ese continente. Como los motores estrictos (SQL Server, PostgreSQL, Oracle) no permiten ambigüedades, tienes que decirle explícitamente **qué quieres hacer** con los países de ese continente.
+SQLite te permite poner `Country` en el `SELECT` sin agruparlo, devolviéndote el primer país que encuentre de ese continente. Como los motores estrictos (SQL Server, PostgreSQL, Oracle) no permiten ambigüedades, tienes que decirle explícitamente **qué quieres hacer** con los países de ese continente.
 
 Aquí tienes las tres soluciones equivalentes y estándar, dependiendo de lo que realmente necesites conseguir:
 
@@ -356,7 +342,7 @@ GROUP BY Continent;
 ```
 
 ::: extra
-**El enfoque profesional: Window Functions (esta variante la veremos más adelante)** En el mundo real, cuando alguien escribe esa consulta en SQLite, suele estar intentando buscar **"el país con más población de cada continente"**. Para hacer esto correctamente en SQL estándar sin errores, no usamos un simple `GROUP BY`, usamos funciones de ventana (Window Functions) combinadas con una CTE (Common Table Expression):
+**Window Functions** (esta variante la veremos más adelante) En el mundo real, cuando alguien escribe esa consulta en SQLite, suele estar intentando buscar **"el país con más población de cada continente"**. Para hacer esto correctamente en SQL estándar sin errores, no usamos un simple `GROUP BY`, usamos funciones de ventana (Window Functions) combinadas con una CTE (Common Table Expression):
 
 ``` sql
 WITH PaisesClasificados AS (
@@ -432,13 +418,13 @@ ORDER BY round(sum(bondactorsalary),1) DESC
 
 El `WHERE` actúa como un **portero de discoteca**. Filtra las filas individuales *antes* de que se agrupen.
 
-1\. El motor lee todas las filas de Roger Moore.
+1. El motor lee todas las filas de Roger Moore.
 
-2\. El `WHERE` elimina inmediatamente las filas que tienen `'NA'`.
+2. El `WHERE` elimina inmediatamente las filas que tienen `'NA'`.
 
-3\. Solo pasan las filas con `7.8` y `9.1`.
+3. Solo pasan las filas con `7.8` y `9.1`.
 
-4\. El `GROUP BY` junta esas dos filas supervivientes y el `SUM()` da el resultado correcto: `16.9`.
+4. El `GROUP BY` junta esas dos filas supervivientes y el `SUM()` da el resultado correcto: `16.9`.
 
 **La trampa: Usando la condición en el `HAVING` (y por qué desaparece el actor)**
 
@@ -456,22 +442,22 @@ El `HAVING` evalúa las condiciones *después* de haber hecho el `GROUP BY`. Sir
 
 ¿Por qué desaparece Roger Moore aquí?
 
-1\. El motor agrupa *todas* las filas de Roger Moore (incluyendo los `'NA'`).
+1. El motor agrupa *todas* las filas de Roger Moore (incluyendo los `'NA'`).
 
-2\. Llega al `HAVING` y le pedimos que evalúe `bondactorsalary <> 'NA'`. ¡Pero un momento! La condición sobre la columna `bondactorsalary` no está agregada (no tiene un `SUM`, `MAX`, etc en el *Having* ) y hay muchas filas distintas dentro del grupo de Roger Moore.
+2. Llega al `HAVING` y le pedimos que evalúe `bondactorsalary <> 'NA'`. ¡Pero un momento! La condición sobre la columna `bondactorsalary` no está agregada (no tiene un `SUM`, `MAX`, etc en el *Having* ) y hay muchas filas distintas dentro del grupo de Roger Moore.
 
-3\. Como vimos antes, SQLite permite esto (las famosas *"Bare Columns"*). Para resolverlo, SQLite elige una fila aleatoria del grupo de Roger Moore para representar a todo el grupo en la evaluación del `HAVING`.
+3. Como vimos antes, SQLite permite esto (las famosas *"Bare Columns"*). Para resolverlo, SQLite elige una fila aleatoria del grupo de Roger Moore para representar a todo el grupo en la evaluación del `HAVING`.
 
-4\. En este caso, la fila que SQLite escogió al azar resultó ser una de las que tenía el valor `'NA'`.
+4. En este caso, la fila que SQLite escogió al azar resultó ser una de las que tenía el valor `'NA'`.
 
-5\. Al evaluar la condición, se preguntó: *¿Es `'NA' <> 'NA'`?* Como es Falso, el `HAVING` **descartó a todo el grupo de Roger Moore** de un plumazo.
+5. Al evaluar la condición, se preguntó: *¿Es `'NA' <> 'NA'`?* Como es Falso, el `HAVING` **descartó a todo el grupo de Roger Moore** de un plumazo.
 
 > **Nota para otros motores SQL:** Esta trampa del `HAVING` solo te ocurrirá en SQLite o en versiones antiguas de MySQL. Si intentas ejecutar la consulta del `HAVING` en SQL Server, PostgreSQL u Oracle, te lanzará un error de sintaxis avisándote de que no puedes poner la columna `bondactorsalary` en el `HAVING` a menos que uses una función de agregación (como `MAX`, `MIN`, etc.) o la incluyas en el `GROUP BY`.
 :::
 
-# Agregaciones Condicionales
+# Agregaciones Condicionales 
 
-En unaq agregación condicional restringimos la variable sobre la cual buscamos operar al cumplimiento de una o más condiciones. En otras palabras, realizarmos una operación sobre un subconjunto de observaciones (filas) que cumplan con una o más condiciones especfícas. Para implementar una agreagación condicional podemos usar la función `CASE WHEN` dentro de la función de agregación.
+En una agregación condicional restringimos la variable sobre la cual buscamos operar al cumplimiento de una o más condiciones. En otras palabras, realizarmos una operación sobre un subconjunto de observaciones (filas) que cumplan con una o más condiciones especfícas. Para implementar una agreagación condicional podemos usar la función `CASE WHEN` dentro de la función de agregación.
 
 En la siguiente query contamos cuántas películas duran más de 120 minutos y cuántas duran menos o igual a 120 minutos.
 
@@ -551,21 +537,13 @@ STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para
 ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
 
 -   `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
-
 -   `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
-
 -   `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
-
 -   `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
-
 -   `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
-
 -   `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
-
 -   `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
-
 -   `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
-
 -   `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
 
 ``` sql
@@ -604,6 +582,7 @@ SELECT date('2026-09-02', '-1 year', '-2 month');
 ```
 
 # Funciones y Comandos Esenciales de SQL
+
 
 ## Manejo de valores nulos
 
@@ -683,695 +662,7 @@ select
 from datos_analisis
 ```
 
-::::: practica
-# Práctica Individual SQL 02
 
-Ejercicios prácticos de consultas SQL sobre bases de datos reales. Pon a prueba tus conocimientos de agregación, filtrado y análisis de datos .
-
-------------------------------------------------------------------------
-
-## EJERCICIO 1: Duración de Películas
-
-**Tabla:** `imdb_movies`
-
-Analiza la distribución de películas según su duración utilizando la tabla `imdb_movies` .
-
--   **Menos de 60 min:** ¿Cuántas películas tienen una duración inferior a 60 minutos?
--   **Entre 60 y 100 min:** ¿Cuántas películas se encuentran en el rango de 60 a 100 minutos?
--   **Más de 100 min:** ¿Cuántas películas superan los 100 minutos de duración?
-
-``` sql
-SELECT 
-    COUNT (CASE WHEN duration >100 THEN 1 END) AS duracion_mayor_100,
-    COUNT (CASE WHEN duration BETWEEN 60 AND 100 THEN 1 END) AS duracion_60_100,
-    COUNT (CASE WHEN duration <60 THEN 1 END) AS duracion_menor_60
-FROM imdb_movies  ;
-```
-
-![](images/sqlLanguage_fig9.png)
-
-Otra forma de hacerlo es usando `CASE WHEN` en el `SELECT` y luego agrupando por el mismo `CASE WHEN` en el `GROUP BY`:
-
-``` sql
-SELECT 
-    Case 
-        WHEN imdb_movies.duration <60 THEN '<60'
-        WHEN imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
-        WHEN imdb_movies.duration >100 THEN '>100'
-        ELSE 'Duración desconocida' 
-    END as rango_duracion
-    ,COUNT(*) AS n
-FROM imdb_movies
-GROUP by 
-    Case 
-        WHEN imdb_movies.duration <60 THEN '<60'
-        WHEN imdb_movies.duration BETWEEN 60 AND 100 THEN '60-100'
-        WHEN imdb_movies.duration >100 THEN '>100'
-    END ;
-```
-
-![](images/sqlLanguage_fig10.png)
-
-------------------------------------------------------------------------
-
-## EJERCICIO 2: Películas de Acción Cortas
-
-**Tabla:** `imdb_movies`
-
-Filtra las películas del género acción que tengan una duración inferior a 60 minutos en la tabla `imdb_movies` .
-
--   **Contar:** ¿Cuántas películas de acción duran menos de 60 minutos?
-
-    ``` sql
-    SELECT
-        COUNT (*)
-    FROM imdb_movies
-    WHERE 
-            duration <60 
-            AND gender LIKE '%Action%' ;
-    ```
-
--   **Listar:** Obtén un listado completo con los títulos de dichas películas .
-
-    ``` sql
-    SELECT 
-        duration
-        ,movie_title
-        ,gender
-    FROM imdb_movies
-    WHERE 
-        duration <60 
-        AND gender LIKE '%Action%' ;
-    ```
-
-    ![](images/sqlLanguage_fig11.png)
-
-------------------------------------------------------------------------
-
-## EJERCICIO 3: Bitcoin - Tendencia Alcista en 2018
-
-**Tabla:** `bitcoin_daily_rates_formatdate`
-
-Trabaja con la tabla `bitcoin_daily_rates_formatdate` para analizar el campo `High` durante el año 2018 .
-
--   **Mínimo de cotización:** ¿Cuál sería el día con la cotización más baja dentro de una tendencia alcista (campo `High`) en 2018?
-
-    Nota: hacemos LIMIT 5 para asegurarnos de que no hay empate y por lo tanto más de un día con la mínima, pero luego seleccionaremos sólo el día que tenga el mínimo valor.\
-
-    Podemos simplemente ordenar y ver cuál o cuáles son los valores más bajos
-
-    ``` sql
-    SELECT * 
-    FROM bitcoin_daily_rates_formatdate
-    WHERE 
-        date BETWEEN '2018-00-00' AND '2018-99-99'
-    ORDER BY high ASC
-    LIMIT 5 ;
-    ```
-
-    O podemos usar la agregación MIN para conseguirlo
-
-    ``` sql
-    SELECT 
-        date
-        , min(high) as cotización_mínima
-    FROM bitcoin_daily_rates_formatdate
-    WHERE 
-        date BETWEEN '2018-00-00' AND '2018-99-99' ;
-    ```
-
-![](images/sqlLanguage_fig12.png)
-
--   **Media ese día:** ¿Cuál es la media de cotización correspondiente a ese mismo día?
-
-    ``` sql
-    SELECT 
-      date
-      , min(high) as cotización_mínima 
-      , (open + high +low + close )/4 AS media_cotización
-    FROM bitcoin_daily_rates_formatdate
-    WHERE 
-      date BETWEEN '2018-00-00' AND '2018-99-99' ;
-    ```
-
-![](images/sqlLanguage_fig13.png)
-
-## EJERCICIO 4: Películas por Género y Votos
-
-**Tabla:** `imdb_movies`
-
-Muestra el número de películas por género y la película con mayor número de votos (`num_voted_users`) en cada caso . Respeta el orden indicado: `Action` | `Crime` | `Comedy` | `Drama` | `Romance` y asigna cada película al primero de estos géneros en los que aparezca. Ignora los demás géneros para las agregaciones.
-
--   Para cada género, indica el total de películas y el título con mayor número de votos.
-
-    ``` sql
-    SELECT 
-       CASE 
-          WHEN  gender LIKE '%Action%' THEN 'Action'
-          WHEN  gender LIKE '%Crime%' THEN  'Crime' 
-          WHEN  gender LIKE '%Comedy%' THEN 'Comedy'
-          WHEN  gender LIKE '%Drama%' THEN  'Drama' 
-          WHEN  gender LIKE '%Romance%' THEN 'Romance' 
-       END AS primera_categoria   
-       , MAX(num_voted_users) AS mas_votada  
-       , COUNT(*) as n_pelis
-       , movie_title
-
-    FROM imdb_movies
-    GROUP BY 
-     CASE 
-         WHEN  gender LIKE '%Action%' THEN 'Action'
-         WHEN  gender LIKE '%Crime%' THEN  'Crime' 
-         WHEN  gender LIKE '%Comedy%' THEN 'Comedy'
-         WHEN  gender LIKE '%Drama%' THEN  'Drama' 
-         WHEN  gender LIKE '%Romance%' THEN 'Romance' 
-     END
-    HAVING 
-        primera_categoria != 'NULL'
-    ORDER BY 
-        num_voted_users DESC ;
-    ```
-
-![](images/sqlLanguage_fig14.png)
-
-------------------------------------------------------------------------
-
-## EJERCICIO 5: Personajes de Star Wars
-
-**Tabla:** `star_wars_characters`
-
-Usando la tabla `star_wars_characters`, agrupa los personajes por color de ojos (`eye_color`) y planeta de origen (`homeworld`) .
-
--   **Contar personajes:** Muestra cuántos personajes comparten el mismo color de ojos y planeta de origen .
--   **Filtrar datos:** Excluir colores de ojos `unknown` y planetas sin datos o nombre (`NA`).
-
-El truco aquí está en que al pedirnos personajes que compartan color de ojos y planeta, tenemos que eliminar los que sean solo 1.
-
-``` sql
-SELECT 
-    eye_color
-    ,homeworld
-    ,COUNT (*) AS N
-FROM star_wars_characters_2 
-WHERE 
-    homeworld != 'NA' 
-    AND eye_color != 'unknown'
-GROUP BY 
-    eye_color
-    , homeworld
-HAVING 
-    count(*) >1
-ORDER BY 
-    COUNT(*) DESC ;
-```
-
-![](images/sqlLanguage_fig15.png)
-
-## EJERCICIO 6: James Bond - Presupuesto de Películas
-
-**Tabla:** `jamesbond`
-
-Identifica y calcula el presupuesto de las películas de la saga James Bond que cumplan las siguientes condiciones, usando la tabla `jamesbond` :
-
--   **Director:** Dirigidas por John Glen .
--   **Actor protagonista:** Protagonizadas por Timothy Dalton .
--   **Cálculo:** Calcula el presupuesto total de dichas películas.
-
-``` sql
-SELECT 
-    director
-    ,actor
-    ,SUM(budget) as presupuesto_combinado
-    ,COUNT(DISTINCT jamesbond.film) as películas
-FROM jamesbond
-WHERE 
-    director = 'John Glen' 
-    AND actor = 'Timothy Dalton' ;
-```
-
-![](images/sqlLanguage_fig16.png)
-
-## EJERCICIO 7: Créditos por Estado Personal
-
-**Tabla:** `loan-data`
-
-Analiza la tabla `loan-data` para obtener información sobre los créditos según el estado personal del solicitante .
-
--   **Créditos otorgados:** ¿Cuál es la cantidad y el número de créditos concedidos, agrupados por estado personal?
--   **Créditos no otorgados:** ¿Cuál es la cantidad y el número de créditos denegados, agrupados por estado personal?
-
-``` sql
-SELECT 
-    personal_status
-    , class
-    , SUM (credit_amount)
-    , COUNT(*)
-FROM LoanData
-GROUP BY 
-    personal_status
-    , class ;
-```
-
-![](images/sqlLanguage_fig17.png)
-
-``` sql
-SELECT 
-    personal_status
-    ,SUM (CASE WHEN class = 'good' THEN credit_amount END) AS prestamo_concedido
-    ,SUM (CASE WHEN class = 'good' THEN 1 END) AS n_prestamos_concedidos
-    ,SUM (CASE WHEN class = 'bad' THEN credit_amount END ) AS prestamo_rechazados
-    ,SUM (CASE WHEN class = 'bad' THEN 1 END) AS n_prestamos_rechazados
-FROM LoanData
-GROUP BY personal_status ;
-```
-
-![](images/sqlLanguage_fig18.png)
-
-## EJERCICIO 8: Películas de Acción con Alta Valoración
-
-**Tabla:** `imdb_movies`
-
-Obtén un listado de películas de acción de la tabla `imdb_movies` que cumplan todos los criterios siguientes :
-
-1.  **Likes del actor protagonista:** Más de 10.000 likes en Facebook .
-2.  **Valoración en IMDb:** Puntuación de al menos 8 sobre 10 .
-3.  **Fecha de estreno:** Películas con fecha anterior a 2012 .
-
-``` sql
-SELECT 
-    movie_title
-    , gender
-    , imdb_score
-    , actor_1_facebook
-    , title_year 
-FROM imdb_movies
-WHERE   
-    imdb_movies.actor_1_facebook > 10000
-AND imdb_movies.imdb_score >=8
-AND imdb_movies.title_year < 2012
-AND imdb_movies.gender LIKE '%Action%' ;
-```
-
-![](images/sqlLanguage_fig19.png)
-
-## EJERCICIO 9: Top 20 Películas por Presupuesto y Beneficio
-
-**Tabla:** `imdb_movies`
-
-Usando la tabla `imdb_movies`, obtén las 20 películas junto a su género en cada uno de los siguientes rankings :
-
--   **Mayor presupuesto:** Las 20 películas con el presupuesto más elevado y el género al que pertenecen .
--   **Mayor beneficio:** Las 20 películas con el mayor beneficio obtenido y el género al que pertenecen .
-
-``` sql
-SELECT 
-    movie_title
-    , gender AS genero
-    , budget AS presupuesto
-    , gross AS beneficio
-FROM imdb_movies
-ORDER BY budget DESC 
-LIMIT 20 ;
-```
-
-![](images/sqlLanguage_fig20.png)
-
-``` sql
-SELECT 
-    movie_title
-    , gender AS genero
-    , budget AS presupuesto
-    , gross AS beneficio
-FROM imdb_movies
-ORDER BY gross DESC 
-LIMIT 20 ;
-```
-
-------------------------------------------------------------------------
-
-## Propuesta Adicional: ¡Regala un Ejercicio a tus Compañeros!
-
-Como parte de esta práctica individual, cada estudiante deberá crear y proponer un ejercicio SQL original para compartir con el resto de la clase .
-
--   **Sé creativo:** Diseña una consulta interesante y retadora usando cualquiera de las tablas trabajadas .
--   **Comparte y aprende:** El intercambio de ejercicios enriquece el aprendizaje colectivo y refuerza los conceptos.
-
-------------------------------------------------------------------------
-
-## Ejercicios de los Alumnos:
-
-Usando la tabla fortune:
-
-Clasifica las empresas en tres categorías según su número de empleados (Employees):
-
--   Pequeña: Menos de 10.000 empleados.
-
--   Mediana: Entre 10.000 y 50.000 empleados.
-
--   Grande: Más de 50.000 empleados.
-
-Muestra para cada categoría el número total de empresas, el beneficio total acumulado y el beneficio medio.
-
-Filtra únicamente las empresas del sector *Financials* que pertenezcan a la industria *Commercial Banks* o *Diversified Financials*, Y cuyo volumen de ingresos (Revenue) sea superior a 20.000 millones.
-
-``` sql
-SELECT 
-    CASE 
-        WHEN Employees < 10000 THEN 'Pequeña (<10k)'
-        WHEN Employees BETWEEN 10000 AND 50000 THEN 'Mediana (10k-50k)'
-        WHEN Employees > 50000 THEN 'Grande (>50k)'
-    END AS tamano_empresa,
-    COUNT(*) AS total_empresas,
-    ROUND(SUM(Profits),1) AS beneficio_total,
-    ROUND(AVG(Profits),1) AS beneficio_medio
-
-FROM fortune
-
-WHERE Sector = 'Financials' 
-  AND Industry IN ('Commercial Banks', 'Diversified Financials') 
-  AND Revenue > 20000
-  
-GROUP BY 
-    CASE 
-        WHEN Employees < 10000 THEN 'Pequeña (<10k)'
-        WHEN Employees BETWEEN 10000 AND 50000 THEN 'Mediana (10k-50k)'
-        WHEN Employees > 50000 THEN 'Grande (>50k)'
-    END
-ORDER BY beneficio_medio DESC;
-```
-
-![](images/sqlLanguage_fig21.png)
-
-------------------------------------------------------------------------
-
-Usando la tabla jamesbond:
-
-¿Cuales son las 5 películas de James Bond con mayor margen sobre ingresos (% del beneficio)? Indicar película, director, actor y margen.
-
-Antes de poder hacer esta query tenemos que explicar la fórmula del margen ya que no esperamos que el alumno la conozca:
-
-La lógica del Margen (El "quesito" de las ganancias): El margen sobre ingresos responde a esta pregunta sencilla: "De cada 100 € que entran por taquilla, ¿cuántos euros nos quedan limpios en el bolsillo?"
-
-Si analizamos Dr. No:
-
--   Ingresos (Boxoffice): 448,8 M€ (este es el 100% del dinero recaudado)
-
--   Gasto (Budget): 7,0 M€ (lo que costó hacerla)
-
--   Beneficio (Profit): 441,8 M€ (lo que queda limpio)
-
-Si repartimos la tarta de esos 448,8 M€ recaudados:
-
--   Tan solo el 1,56% de la recaudación sirvió para cubrir los costes de producción ($7 / 448,8$).
-
--   El 98,44% restante ($441,8 / 448,8$) es beneficio puro.
-
-En resumen: De cada 100 € que la gente se gastó en el cine para ver la película, 1,56 € sirvieron para pagar el presupuesto y 98,44 € fueron ganancia neta. De ahí sale ese 98,44%.
-
-Si expresamos esto en una fórmula para poder aplicarlo a cada observación: $\frac{(\text{recaudación} - \text{coste}) \times 100}{\text{recaudación}}$
-
-Otras formas de analizar el beneficio:
-
-**Rentabilidad sobre el gasto (ROI)** o el **multiplicador de la inversión**:
-
-|  |  |  |  |
-|------------------|------------------|------------------|------------------|
-| **Métrica** | **¿Qué pregunta responde?** | **Cálculo en Dr. No** | **Resultado** |
-| **Margen sobre Ingresos** | De lo recaudado, ¿qué % es beneficio? | $441,8 / 448,8 \times 100$ | **98,44%** |
-| **Rentabilidad (ROI)** | Del dinero invertido, ¿qué % hemos ganado? | $441,8 / 7,0 \times 100$ | **6.311%** |
-| **Multiplicador** | ¿Por cuánto se multiplicó el presupuesto? | $448,8 / 7,0$ | **64,1 veces** |
-
-``` sql
-SELECT 
-film
-, director
-, boxoffice
-, budget
-, round ((boxoffice - budget),0) as profit 
-, round ((((boxoffice - budget)*100) /boxoffice),2)  as margen
-FROM jamesbond
-ORDER BY  margen DESC
-LIMIT 5 ;
-```
-
-------------------------------------------------------------------------
-
-Usando la tabla LoanData: Calcular la cantidad de créditos concedidos según hombres y mujeres, clasificados por tres grupos de edad: menos de 30 años, de 30 a 40 años y más de 40 años
-
-Selecciona sólo aquellos que tienen un coche en propiedad y viven en la casa propia.
-
-``` sql
-SELECT 
-    CASE 
-        WHEN age <30 THEN '<30' 
-        WHEN age <=40 THEN '30>=40' 
-        ELSE '>40' 
-    END AS grupo 
-    ,COUNT(CASE WHEN class = 'good' THEN 1 END) AS concecidos 
-    ,COUNT(CASE WHEN class = 'bad' THEN 1 END) AS denegados 
-FROM LoanData 
-WHERE housing = 'own' 
-    AND property_magnitu = 'car' 
-GROUP BY 
-    CASE WHEN age <30 THEN '<30' 
-         WHEN age <=40 THEN '30>=40' 
-         ELSE '>40' 
-    END  ;
-```
-
-------------------------------------------------------------------------
-
-Tabla: gobierno_paro Muestra la cantidad de hombres y mujeres, entre 25 y 45 años de Galicia que están de paro desde marzo de 2018 y cuántos de ellos son del municipio 'Lugo'.
-
-*NOTA: al importar la tabla los hombres de 25 a 45 años aparecen como ¨paro_hombre_edad_10¨ y las mujeres de 25 a 45 años aparecen como ¨paro_mujer_edad_13¨*
-
-``` sql
-SELECT 
-    SUM(paro_hombre_edad_10) AS hombres25a45
-  , SUM(paro_mujer_edad_13) AS mujeres25a45
-  , sum (CASE WHEN municipio = 'Lugo' THEN paro_hombre_edad_10 END) aS hombres25a45_LugoMun
-  , sum (CASE WHEN municipio = 'Lugo' THEN paro_mujer_edad_13 END) aS mujeres25a45_LugoMun
-FROM gobierno_paro
-WHERE 
-    comunidad_autono = 'Galicia'
-    AND codigo_mes >=201803 ;
-```
-
-------------------------------------------------------------------------
-
-Utilizando la tabla bitcoin_daily_rates_formatdate
-
-Analiza las cotizaciones desde el año 2016.
-
-Para cada año muestra:
-
--   Número de días analizados.
-
--   Número de días alcistas, cuando Close es mayor que Open.
-
--   Número de días bajistas, cuando Close es menor que Open.
-
--   Número de días sin variación, cuando Close es igual a Open.
-
--   Valor medio de cierre.
-
--   Cotización máxima anual del campo High.
-
--   Cotización mínima anual del campo Low.
-
-Muestra solamente los años que contengan al menos 50 días de datos y ordénalos cronológicamente.
-
-``` sql
-SELECT  
-    count(DISTINCT bitcoin_daily_rates_formatdate.date) as dias
-    ,SUM(CASE WHEN close > bitcoin_daily_rates_formatdate.open THEN 1 end) as alcistas
-    ,SUM(CASE WHEN close < bitcoin_daily_rates_formatdate.open THEN 1 end) as bajistas
-    ,SUM(CASE WHEN close = bitcoin_daily_rates_formatdate.open THEN 1 end) as no_variacion
-    ,max (high) as cotizacion_maxima
-    ,min (low) as cotizacion_minima 
-    ,round(avg(close),2) as media_cierre
-FROM bitcoin_daily_rates_formatdate
-WHERE date > '2016-00-00'
-group by STRFTIME('%Y', date) 
-having count(DISTINCT bitcoin_daily_rates_formatdate.date) >=50
-ORDER BY bitcoin_daily_rates_formatdate.date ;
-```
-
-------------------------------------------------------------------------
-
-Obten de la tabla ‘jamesbond’:
-
-Las películas de Sean Connery con una recaudación de taquilla de la siguiente manera:  - Mayor a 800=Recaudación_exitosa,
-
--   entre 800 y 500=Recaudación_normal y
-
--   menor a 500=Recaudación_baja
-
-``` sql
-SELECT film
-,CASE WHEN  boxoffice >800 THEN 'exito'
- WHEN boxoffice between 500 and 800 THEN 'normal' 
- WHEN boxoffice < 500 THEN 'baja'
- END
- ,boxoffice
-FROM jamesbond
-WHERE actor= 'Sean Connery' ;
-```
-
-Utilizando la tabla fortune,
-
-Utilizando la tabla videogames_games: Crea una consulta que muestre el nombre del videojuego, su plataforma, sus ventas en Europa y una columna nueva llamada categoría_éxito usando las siguientes condiciones : -superventas si son mayores a 3.0 millones -exitoso si están entre 1.0 y 3.0millones -venta moderada si son menor de 1.0 millones muestra únicamente el top15 de juegos con mayor venta en Europabetw |
-
-``` sql
-select 
-videogames_games.name 
-, platform_code 
-, eu_sales 
-,case WHEN eu_sales >3 THEN 'SUPERVENTAS' 
-      WHEN eu_sales BETWEEN 1 AND 3 THEN 'EXITOSO' 
-      WHEN eu_sales <1 THEN 'VENTA MODERADA' 
-END as categoria_exito 
-from videogames_games 
-ORDER BY eu_sales DESC LIMIT 15
-``` |
-
-Utilizando la tabla videogames_games:
-
-Queremos saber el nombre los videojuegos y plataforma que tuvieron mayor número de ventas global según su generación:
-
-- Gen Y: Juegos lanzados entre 1989 y 1996.
-
-- Gen Z: Juegos lanzados entre 1997 y 2012.
-
-- Gen Alfa: Juegos lanzados a partir de 2013.
-
-``` sql
-select 
-  name
-, platform_code
-, max(round(eu_sales + na_sales + jp_sales + other_sales, 2)) as total_ventas
-,case 
-  WHEN YEAR BETWEEN 1989 AND 1996 THEN 'GEN Y' 
-  WHEN YEAR BETWEEN 1997 AND 2012 THEN 'GEN Z' 
-  WHEN YEAR >2013 THEN 'GEN ALPHA' 
-END as generacion
-from videogames_games
-group by 
-  case 
-    WHEN YEAR BETWEEN 1989 AND 1996 THEN 'GEN Y' 
-    WHEN YEAR BETWEEN 1997 AND 2012 THEN 'GEN Z' 
-    WHEN YEAR >=2013 THEN 'GEN ALPHA' 
-  END 
-
-ORDER BY eu_sales + na_sales + jp_sales + other_sales desc
-```
-
-::: nota-importante
-Esta consulta solo va a funcionar en SQLite, dará error en los otros motores ya que los campos name y platform_code no están incluidos en la agregación y por lo tanto son 'bare columns' como ya vimos.
-
-PostgreSQL, SQL Server y Oracle:
-
-Darán ERROR. El estándar de SQL (ANSI SQL) exige estrictamente que cualquier columna que no esté dentro de una función de agregación (como MAX, SUM) DEBE estar en la cláusula GROUP BY. Al ver name y platform_code fuera del GROUP BY, la consulta directamente no se ejecutará.
-
-MySQL:
-
-Por defecto (con la regla ONLY_FULL_GROUP_BY activada desde MySQL 5.7), también te dará un error.
-
-Si la regla está desactivada, la consulta se ejecutará pero te devolverá valores aleatorios/indeterminados para name y platform_code (no necesariamente los del juego con el máximo de ventas).
-
-SQLite (Tu caso actual):
-
-SQLite tiene una excepción documentada: cuando usas MAX() o MIN() sobre columnas no agrupadas, garantiza que los demás campos extraídos (name, platform_code) pertenezcan a la misma fila donde se encontró ese máximo. Es cómodo para prototipar, pero te genera "malos hábitos" si luego migras a PostgreSQL u otros.
-
-Conseguir el mismo resultado en mySQL puede complicarse mucho y requiere funciones ventana que aún no hemos estudiado:
-
-``` sql
-WITH juegos_clasificados AS (
-    SELECT 
-        name,
-        platform_code,
-        ROUND(eu_sales + na_sales + jp_sales + other_sales, 2) AS total_ventas,
-        CASE 
-            WHEN year BETWEEN 1989 AND 1996 THEN 'GEN Y' 
-            WHEN year BETWEEN 1997 AND 2012 THEN 'GEN Z' 
-            WHEN year >= 2013 THEN 'GEN ALPHA' 
-        END AS generacion,
-        -- Numeramos los juegos de 1 a N dentro de cada generación, ordenados por ventas
-        ROW_NUMBER() OVER (
-            PARTITION BY 
-                CASE 
-                    WHEN year BETWEEN 1989 AND 1996 THEN 'GEN Y' 
-                    WHEN year BETWEEN 1997 AND 2012 THEN 'GEN Z' 
-                    WHEN year >= 2013 THEN 'GEN ALPHA' 
-                END
-            ORDER BY (eu_sales + na_sales + jp_sales + other_sales) DESC
-        ) AS posicion
-    FROM videogames_games
-)
-SELECT 
-    name,
-    platform_code,
-    total_ventas,
-    generacion
-FROM juegos_clasificados
-WHERE posicion = 1 AND generacion IS NOT NULL
-ORDER BY total_ventas DESC;
-```
-:::
-
-Más ejercicios desde internet:
-
-<https://datalemur.com/questions/matching-skills>
-
-``` sql
-SELECT candidate_id
-FROM candidates
-WHERE skill IN ('Python', 'Tableau', 'PostgreSQL')
-GROUP BY candidate_id
-HAVING COUNT(skill) = 3
-ORDER BY candidate_id;
-```
-
-<https://datalemur.com/questions/sql-page-with-no-likes>
-
-``` sql
-SELECT page_id 
-FROM pages
-WHERE page_id NOT IN  (SELECT page_id FROM page_likes) ;
-```
-
-| <https://datalemur.com/questions/tesla-unfinished-parts> |
-|:-----------------------------------------------------------------------|
-| <https://datalemur.com/questions/laptop-mobile-viewership> |
-| `sql SELECT SUM(CASE WHEN device_type IN ('tablet','phone') THEN 1 END) AS 'mobile_views' ,SUM(CASE WHEN device_type = 'laptop' THEN 1 END) AS 'laptop_views' FROM viewership;` |
-
-<https://datalemur.com/questions/sql-average-post-hiatus-1>
-
-::: nota
-nota: MySQL o PostGre no usan las fechas como SQLite, así que tendrás que goglear como se usan las fechas en una de esas variantes, por ejemplo para mySQL: Calcular diferencia en días usa la función DATEDIFF() Ejemplo: Resta la segunda fecha de la primera y da el total de días:SELECT DATEDIFF('2026-12-31', '2026-12-25');year Extraer el año de una fecha usa la función YEAR() Ejemplo: SELECT YEAR('07/10/2021 12:00:00')
-:::
-
-``` sql
-SELECT 
-    user_id
-    ,DATEDIFF(max(post_date),min(post_date)) as days_between
-FROM posts 
-where YEAR(post_date) = 2021
-group by user_id
-having count(*) >1;
-```
-
-<https://datalemur.com/questions/teams-power-users>
-
-NOTA, esta require subqueries que no hemos dado aún. <https://datalemur.com/questions/sql-histogram-tweets>
-
-``` sql
-select 
-   t.posts as tweet_bucket ,count(*) as users_num 
-   from ( SELECT count (*) as posts 
-   FROM tweets where year(tweet_date) =2022 group by user_id ) as t group by posts 
-```
-:::::
 
 # Subconsultas SQL
 
