@@ -1,0 +1,984 @@
+---
+title: "Funciones y Comandos Esenciales de SQL"
+format: html
+---
+
+# Gestión y Tratamiento de Valores `NULL` en SQL
+
+Un valor `NULL` en SQL representa la **ausencia de datos** o un valor **desconocido**. No equivale a cero (`0`) ni a una cadena de texto vacía (`''`), los cuales son valores conocidos y válidos.
+
+
+## Operadores y Comprobaciones de Integridad
+
+Debido a que `NULL` representa lo desconocido, las comparaciones aritméticas u ordinarias con `NULL` no devuelven verdadero (`1`) ni falso (`0`), sino un resultado desconocido (`NULL`).
+
+### Operadores de Comprobación
+
+* **`IS NULL` / `IS NOT NULL`**: Evalúan si un valor está ausente o presente.
+* **`<=>` (Igualdad segura / *NULL-safe equal*)**: Compara dos operandos y devuelve `1` si ambos son iguales o si ambos son `NULL`.
+* **`ISNULL(expr)`**: Función propia de MySQL equivalente al operador `expr IS NULL`.
+
+### Resumen de Comparaciones
+
+| Consulta SQL | Resultado | Explicación |
+| :--- | :---: | :--- |
+| `SELECT NULL = NULL;` | `NULL` | Comparación ordinaria. No se puede determinar si dos desconocidos son iguales. |
+| `SELECT NULL IS NULL;` | `1` | Comprueba expresamente la ausencia de dato. |
+| `SELECT NULL <=> NULL;` | `1` | La igualdad segura considera idénticos dos valores `NULL`. |
+| `SELECT 0 IS NULL;` | `0` | El número cero es un valor conocido. |
+| `SELECT '' IS NULL;` | `0` | Una cadena vacía es un texto de longitud cero, pero conocido. |
+| `SELECT ISNULL(NULL);` | `1` | Equivalente sintáctico de `NULL IS NULL`. |
+
+### GREATEST y LEAST 
+
+Comparan los diferentes valores o expresiones escritos dentro de sus propios paréntesis.   Comportamiento con NULL: Si alguno de los argumentos que se le pasa a GREATEST o LEAST es NULL, la función devolverá NULL.   Ejemplo conceptual: Evaluar directamente varios valores estáticos o columnas de una misma fila para ver cuál es mayor o menor.
+``` sql
+SELECT GREATEST(8, 6, 0) AS mayor,
+    GREATEST(8, 6, 0, NULL) AS lista_con_null,
+    LEAST(8, 6, 0) AS menor,
+    LEAST(8, 6, 0, NULL) AS lista_con_null_2;
+```
++-------+----------------+-------+------------------+
+| mayor | lista_con_null | menor | lista_con_null_2 |
++-------+----------------+-------+------------------+
+|     8 |           NULL |     0 |             NULL |
++-------+----------------+-------+------------------+
+ 
+::: nota
+No confundir con MAX y MIN, que recorren los valores de varias filas. 
+| Característica | `GREATEST` / `LEAST` | `MAX` / `MIN` |
+| :--- | :--- | :--- |
+| **Ámbito de evaluación** | Compara valores pasados como argumentos directos dentro de una misma fila o expresión. | Resumen los valores de una columna a lo largo de múltiples filas (agregación). |
+| **Tratamiento de `NULL`** | Si cualquiera de los argumentos es `NULL`, la función devuelve `NULL`. | Ignoran automáticamente los valores `NULL` al calcular sobre el grupo o columna. |
+:::
+
+## Lógica Trievaluada (Lógica con `NULL`)
+
+En SQL, las expresiones booleanas operan con tres valores posibles: `TRUE` (`1`), `FALSE` (`0`) y `UNKNOWN` (`NULL`).
+
+| Expresión | Resultado | Interpretación Lógica |
+| :--- | :---: | :--- |
+| `SELECT TRUE AND NULL;` | `NULL` | La primera condición se cumple, pero depende del valor desconocido. |
+| `SELECT FALSE AND NULL;` | `0` | Como la primera es falsa, el resultado global es falso sin importar el valor ausente. |
+| `SELECT TRUE OR NULL;` | `1` | Con que una opción sea verdadera, la disyunción es verdadera. |
+| `SELECT FALSE OR NULL;` | `NULL` | La primera es falsa; el resultado depende totalmente de la parte desconocida. |
+| `SELECT NOT NULL;` | `NULL` | Negar lo desconocido sigue siendo desconocido. |
+
+### Comportamiento con `IN` y `NOT IN`
+
+Si una lista contiene un valor `NULL`, evaluar la presencia de un elemento mediante `IN` o `NOT IN` puede arrojar resultados indeterminados:
+
+```sql
+-- Devuelve NULL porque 5 no es 1 ni 2, pero no se sabe si equivale al valor desconocido.
+SELECT 5 NOT IN (1, 2, NULL) AS resultado;
+
+-- Devuelve NULL por la misma razón de incertidumbre.
+SELECT 5 IN (1, 2, NULL) AS resultado;
+```
+
+## Funciones Específicas para Manejo de `NULL`
+
+### `IFNULL(expr1, expr2)`
+
+Sustituye un valor `NULL` por una alternativa especificada. Si `expr1` no es `NULL`, devuelve `expr1`; si es `NULL`, devuelve `expr2`.
+
+* **Nota:** Solo evalúa valores `NULL`. No transforma cadenas vacías (`''`) ni ceros (`0`).
+
+#### Ejemplo de uso:
+```sql
+SELECT IFNULL(NULL, 'Sin asignar') AS resultado_1,
+       IFNULL('Dato válido', 'Sin asignar') AS resultado_2;
+```
+
+**Resultado:**
+```
++-------------+-------------+
+| resultado_1 | resultado_2 |
++-------------+-------------+
+| Sin asignar | Dato válido |
++-------------+-------------+
+```
+
+### `COALESCE(expr1, expr2, ..., exprN)`
+
+Recorre una lista ordenada de argumentos de izquierda a derecha y devuelve **el primer valor que no sea `NULL`**. Si todos los argumentos son `NULL`, devuelve `NULL`.
+
+#### Ejemplo de uso:
+```sql
+-- Devuelve el primer dato disponible en la lista de prioridades
+SELECT COALESCE(NULL, NULL, 'contacto@email.com', 'Telefono por defecto') AS contacto_elegido;
+```
+
+**Resultado:**
+```
++--------------------+
+| contacto_elegido   |
++--------------------+
+| contacto@email.com |
++--------------------+
+```
+
+### `NULLIF(expr1, expr2)`
+
+Compara dos expresiones:
+* Si `expr1 = expr2`, la función devuelve `NULL`.
+* Si `expr1 <> expr2`, devuelve `expr1`.
+
+Resulta útil para **limpiar datos** o convertir valores vacíos/por defecto (como `''` o `0`) en `NULL` antes de procesarlos.
+
+#### Ejemplo de uso:
+```sql
+-- Transforma una cadena vacía en NULL, pero conserva una cadena con texto
+SELECT NULLIF('', '') AS texto_vacio,
+       NULLIF('Hola', '') AS texto_valido;
+```
+
+**Resultado:**
+```
++-------------+--------------+
+| texto_vacio | texto_valido |
++-------------+--------------+
+| NULL        | Hola         |
++-------------+--------------+
+```
+
+
+# Funciones y Operadores Numéricos
+
+## Operaciones Aritméticas Básicas
+
+SQL permite realizar cálculos matemáticos directamente en las consultas mediante los operadores aritméticos estándar (`+`, `-`, `*`, `/`).
+
+### Multiplicación (`*`) y División (`/`)
+
+* El operador `*` realiza multiplicaciones numéricas. Debe distinguirse del uso de `SELECT *`, donde el asterisco indica la selección de todas las columnas.
+* El comportamiento del operador de división (`/`) varía según el motor de base de datos:
+  * **MySQL / PostgreSQL / Oracle:** Realizan una división con resultado decimal (*floating point*). Por ejemplo, `14 / 4` devuelve `3.5000`.
+  * **SQL Server (T-SQL) / SQLite:** Si ambos operandos son enteros, ejecutan una división entera descartando los decimales (`14 / 4` devuelve `3`). Para obtener decimales se debe forzar la conversión (`14.0 / 4` o `CAST(14 AS FLOAT) / 4`).
+
+```sql
+SELECT 3 * 2.85 AS importe_multiplicacion,
+       14 / 4 AS division_decimal;
+```
+```
++------------------------+------------------+
+| importe_multiplicacion | division_decimal |
++------------------------+------------------+
+|                   8.55 |           3.5000 |
++------------------------+------------------+
+```
+
+## Combinación de Operaciones y Jerarquía (Precedencia)
+
+SQL sigue el orden estándar de evaluación matemática (**PEMDAS/BODMAS**):
+
+1. **Paréntesis `()`**: Tienen la máxima prioridad.
+2. **Multiplicación (`*`), División (`/`), Módulo (`MOD` o `%`) y División Entera (`DIV`)**: Evaluados de izquierda a derecha.
+3. **Suma (`+`) y Resta (`-`)**: Tienen la menor prioridad y se evalúan de izquierda a derecha.
+
+```sql
+SELECT 10 + 2 * 3 AS sin_parentesis,       -- Se evalúa 2*3=6, luego 10+6 = 16
+       (10 + 2) * 3 AS con_parentesis,     -- Se evalúa (10+2)=12, luego 12*3 = 36
+       20 / 4 * 2 + 5 AS nivel_combinado; -- 20/4=5 -> 5*2=10 -> 10+5 = 15
+```
+
+```
++----------------+----------------+-----------------+
+| sin_parentesis | con_parentesis | nivel_combinado |
++----------------+----------------+-----------------+
+|             16 |             36 |         15.0000 |
++----------------+----------------+-----------------+
+```
+
+### Aplicación práctica: Cálculo de desgloses con porcentaje
+
+Para calcular un importe con descuento (por ejemplo, un $10\%$), el factor se calcula como `(1 - porcentaje / 100.0)`:
+
+```sql
+SELECT 25.00 AS precio_orig,
+       10.00 AS pct_descuento,
+       25.00 * (1 - 10.00 / 100.0) AS precio_final;
+```
+
+```
++-------------+---------------+--------------+
+| precio_orig | pct_descuento | precio_final |
++-------------+---------------+--------------+
+|       25.00 |         10.00 |  22.50000000 |
++-------------+---------------+--------------+
+```
+
+
+## Redondeo y Truncado: `ROUND` y `TRUNCATE`
+
+Tanto `ROUND` como `TRUNCATE` reducen el número de decimales, pero aplican criterios distintos:
+
+* **`ROUND(numero, decimales)`**: Observa el primer dígito descartado para aproximar el valor (hacia arriba si es $\ge 5$).
+* **`TRUNCATE(numero, decimales)`**: Corta abruptamente la cantidad de decimales sin aproximar.
+
+```sql
+SELECT ROUND(7.856, 2) AS redondeado,
+       TRUNCATE(7.856, 2) AS truncado,
+       ROUND(1234, -2) AS redondeo_centenas;
+```
+
+```
++------------+----------+-------------------+
+| redondeado | truncado | redondeo_centenas |
++------------+----------+-------------------+
+|       7.86 |     7.85 |              1200 |
++------------+----------+-------------------+
+```
+
+## División Entera, Resto y Redondeos Extremos: `DIV`, `MOD`, `FLOOR` y `CEIL`
+
+| Función / Operador | Descripción / Función | Ejemplo SQL | Resultado |
+| ----- | ----- | ----- | ----- |
+| **`DIV`** | Devuelve solo la parte entera de una división (MySQL/MariaDB). | `SELECT 14 DIV 4;` | `3` |
+| **`MOD` / `%`** | Devuelve el resto sobrante de una división entera. | `SELECT MOD(14, 4);` | `2` |
+| **`FLOOR(x)`** | Redondea hacia abajo (entero $\le x$ más próximo). | `SELECT FLOOR(3.7);` | `3` |
+| **`CEIL(x)` / `CEILING(x)`** | Redondea hacia arriba (entero $\ge x$ más próximo). | `SELECT CEIL(3.2);` | `4` |
+
+Se deben organizar $14$ participantes en grupos de $4$. ¿Cuántos grupos completos se forman, cuántos sobran y cuántas mesas de capacidad $4$ hacen falta?
+
+```sql
+SELECT 14 / 4 AS division_exacta,
+       14 DIV 4 AS grupos_completos,
+       MOD(14, 4) AS personas_sobrantes,
+       CEIL(14 / 4.0) AS mesas_necesarias;
+```
+```
++-----------------+------------------+--------------------+------------------+
+| division_exacta | grupos_completos | personas_sobrantes | mesas_necesarias |
++-----------------+------------------+--------------------+------------------+
+|          3.5000 |                3 |                  2 |                4 |
++-----------------+------------------+--------------------+------------------+
+```
+
+## Signo y Distancia: `ABS` y `SIGN`
+
+* **`ABS(x)` (Valor Absoluto)**: Elimina el signo del número, devolviendo siempre una magnitud positiva o cero. Ideal para distancias y desviaciones.
+* **`SIGN(x)` (Signo)**: Devuelve `-1` si el valor es negativo, `0` si es cero, y `1` si es positivo. Ideal para clasificar tendencias.
+
+```sql
+SELECT 8 - 10 AS diferencia_real,
+       ABS(8 - 10) AS distancia_absoluta,
+       SIGN(8 - 10) AS indicador_direccion;
+```
+
+```
++-----------------+--------------------+---------------------+
+| diferencia_real | distancia_absoluta | indicador_direccion |
++-----------------+--------------------+---------------------+
+|              -2 |                  2 |                  -1 |
++-----------------+--------------------+---------------------+
+```
+## Operaciones Avanzadas: `POWER`, `SQRT`, `LN` y `LOG10`
+
+* **`POWER(base, exp)` / `POW`**: Eleva la base al exponente indicado ($base^{exp}$).
+* **`SQRT(x)`**: Calcula la raíz cuadrada positiva ($\sqrt{x}$). Devuelve `NULL` o error si $x < 0$.
+* **`LN(x)`**: Logaritmo natural o neperiano en base $e$ ($x > 0$).
+* **`LOG10(x)`**: Logaritmo decimal en base $10$ ($x > 0$).
+
+```sql
+SELECT POWER(2, 10) AS dos_a_la_diez,
+       SQRT(81) AS raiz_de_81,
+       LN(1) AS log_natural_uno,
+       LOG10(1000) AS log_base10_mil;
+```
+
+```
++----------------+------------+------------------+---------------+
+| dos_a_la_diez  | raiz_de_81 | log_natural_uno  | log_base10_mil|
++----------------+------------+------------------+---------------+
+|           1024 |          9 |                0 |             3 |
++----------------+------------+------------------+---------------+
+```
+
+## Generación de Valores Aleatorios: `RAND`
+
+* **`RAND()`** (en MySQL/SQL Server/SQLite) o **`RANDOM()`** (en PostgreSQL) genera un valor decimal pseudoaleatorio entre $0$ (inclusive) y $1$ (exclusivo): $0 \le x < 1$.
+* **Generación de rangos enteros:** Para obtener un entero aleatorio entre $min$ y $max$, se usa la fórmula: `FLOOR(min + RAND() * (max - min + 1))`.
+**Para qué sirve:** 
+  - Seleccionar muestras aleatorias de una tabla (por ejemplo, combinándolo con `ORDER BY RAND()` en MySQL, aunque requiere precaución en tablas masivas por rendimiento).
+  - Generar valores de prueba aleatorios.
+```sql
+SELECT RAND() AS aleatorio_0_a_1,
+       FLOOR(1 + RAND() * 6) AS tirada_dado_1_a_6,
+       RAND(42) AS aleatorio_fijo_con_semilla;
+```
+
+::: nota
+Si ejecutas `RAND(semilla)` en una consulta que aplica a múltiples filas en SQL Server, la función se evalúa una sola vez por consulta con esa semilla, devolviendo el mismo valor constante para todas las filas devueltas.
+::: 
+
+### Reproducibilidad por Semilla (*Seed*):
+Pasar un argumento entero a `RAND(semilla)` (o usar `setseed()` en PostgreSQL) genera la misma secuencia pseudoaleatoria, permitiendo reproducciones exactas de pruebas.
+
+Al igual que en otros lenguajes de programación (como Python o R), los motores de bases de datos permiten especificar una **semilla (*seed*)**. Al usar una semilla fija, la secuencia de números aleatorios generada será idéntica cada vez que se ejecute la consulta, asegurando la reproductibilidad de las pruebas o análisis.
+
+El mecanismo de configuración varía según el motor:
+
+#### MySQL y MariaDB
+Se pasa un número entero directamente como argumento dentro de `RAND(semilla)`:
+
+```sql
+-- Siempre devolverá exactamente el mismo resultado mientras no cambie la semilla (42)
+SELECT RAND(42) AS aleatorio_reproducible;
+```
+
+#### PostgreSQL
+No acepta un parámetro directo dentro de `RANDOM()`. En su lugar, se invoca previamente la función `setseed()`, la cual recibe un valor de tipo *float* entre `-1.0` y `1.0`:
+
+```sql
+-- 1. Establecer la semilla (ejecutar antes)
+SELECT setseed(0.5);
+
+-- 2. La siguiente consulta producirá una secuencia fija y reproducible
+SELECT RANDOM() AS aleatorio_reproducible;
+```
+
+#### SQL Server (T-SQL)
+Acepta una semilla numérica entera opcional dentro de la función `RAND(semilla)`:
+
+```sql
+SELECT RAND(100) AS aleatorio_reproducible;
+```
+
+``` sql
+SELECT RAND() AS numero_entre_cero_y_uno,
+       FLOOR(1 + RAND() * 6) AS dado;
+```
+
+### Qué debe cumplirse
+
+| Columna                 | Resultado esperado                                |
+|------------------------------------|------------------------------------|
+| numero_entre_cero_y_uno | Un número desde cero incluido hasta uno excluido. |
+| dado                    | Un entero de 1 a 6.                               |
+
+No se espera un número concreto porque la función genera valores aleatorios. En el dado, RAND × 6 produce un valor menor que seis; se suma uno y FLOOR elimina la fracción. RAND no se utiliza para generar secretos criptográficos. Ordenar tablas grandes mediante ORDER BY RAND() puede resultar costoso.
+
+## FORMAT (Formateo de Números y Cadenas)
+
+La función FORMAT permite formatear valores numéricos convirtiéndolos en cadenas de texto con una presentación visual específica (por ejemplo, añadiendo separadores de millares, limitando los decimales o aplicando un formato regional).
+
+1. Sintaxis en MySQL / MariaDB
+
+`FORMAT(numero, decimales [, 'localizacion'])`
+-  numero: El valor numérico que se desea formatear.
+-  decimales: El número exacto de posiciones decimales a mostrar (redondea automáticamente si es necesario).
+-  localizacion (opcional): El código de localización (por ejemplo, 'es_ES', 'en_US') que determina si los separadores de miles/decimales usan coma o punto.
+
+```sql
+-- Formatear con 2 decimales (por defecto usa coma para miles y punto para decimales)
+SELECT FORMAT(1234567.8910, 2); 
+-- Resultado: '1,234,567.89'
+
+-- Formatear especificando localización española (punto para miles, coma para decimales)
+SELECT FORMAT(1234567.8910, 2, 'es_ES'); 
+-- Resultado: '1.234.567,89'
+
+```
+2. Comportamiento en SQL Server (T-SQL)
+En SQL Server, FORMAT es una función más versátil que acepta patrones de formato de estilo .NET (para números, fechas y monedas):
+```sql
+SELECT FORMAT(1234567.8910, 'N2', 'es-ES');
+-- Resultado: '1.234.567,89'
+
+-- Formateo explícito de moneda
+SELECT FORMAT(1234.5, 'C', 'es-ES');
+-- Resultado: '1.234,50 €'
+```
+
+::: nota-importante
+Tipo de datos devuelto: FORMAT convierte el número en una cadena de texto (VARCHAR/CHAR). Una vez formateado, no debes intentar realizar operaciones matemáticas directas (como sumas o promedios) sobre ese valor.
+
+Uso recomendado: Se debe aplicar idealmente en la capa final de presentación / informe de la consulta (SELECT), nunca dentro de filtros (WHERE) o agrupaciones (GROUP BY).
+FORMAT no cambia cómo se guarda un número en la tabla. Devuelve una representación de texto. Para ordenar cantidades se utiliza el valor numérico original, no su presentación con separadores.
+:::
+
+# Funciones y operadores de cadenas
+
+Las funciones de texto permiten unir, recortar, buscar o sustituir partes de una cadena. 
+
+# Funciones de Fecha y Hora
+
+## Trabajando con Fechas y Tiempos en SQL Lite
+
+Trabajar con fechas en SQLite tiene una gran particularidad que suele confundir bastante al principio: SQLite no tiene un tipo de datos nativo para fechas (a diferencia de otros motores como PostgreSQL o SQL Server, que tienen DATE o TIMESTAMP).
+
+En su lugar, SQLite almacena las fechas como datos de tipo texto, entero o decimal, usando sus funciones de fecha incorporadas para operar con ellas.
+
+El estándar recomendado: Cadenas de texto (ISO-8601) La mejor práctica en SQLite es guardar las fechas como texto en formato estándar ISO-8601:
+
+Solo fecha: 'YYYY-MM-DD' (ej. '2026-07-28')
+
+Fecha y hora: 'YYYY-MM-DD HH:MM:SS' (ej. '2026-07-28 10:30:00')
+
+¿Por qué este formato? Porque al usar la estructura año-mes-día, el orden alfabético coincide exactamente con el orden cronológico. Eso permite filtrar con \< o \> y usar ORDER BY directamente sin problemas.
+
+En SQL Lite tenemos que extraer la fecha de una columna de tipo `DATETIME` para poder trabajar con ella. Para ello podemos usar la función `DATE()`.
+
+**Insertar la fecha actual automáticamente**
+
+``` sql
+CREATE TABLE usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    fecha_registro TEXT DEFAULT CURRENT_DATE,          -- Solo 'YYYY-MM-DD'
+    creado_en TEXT DEFAULT CURRENT_TIMESTAMP          -- 'YYYY-MM-DD HH:MM:SS'
+);
+```
+
+**Funciones principales para manipular fechas**
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Función** | **¿Qué devuelve?** | **Ejemplo** | **Resultado** |
+| `date(...)` | La fecha | `SELECT date('now');` | `'2026-07-28'` |
+| `time(...)` | La hora | `SELECT time('now');` | `'10:30:00'` |
+| `datetime(...)` | Fecha y hora | `SELECT datetime('now');` | `'2026-07-28 10:30:00'` |
+| `strftime(...)` | Formato personalizado | `SELECT strftime('%Y', 'now');` | `'2026'` |
+| `julianday(...)` | Días julianos (decimal) | `SELECT julianday('now');` | `2461250.93...` |
+
+**Modificadores (Añadir o restar tiempo)**
+
+``` sql
+-- Sumar o restar días, meses o años
+SELECT date('now', '+7 days');             -- Fecha dentro de una semana
+SELECT date('now', '-1 month');            -- Fecha hace un mes
+SELECT date('now', '+1 year', '-2 days');  -- Combinación de varios modificadores
+
+-- Buscar inicios de periodo
+SELECT date('now', 'start of month');      -- Primer día del mes actual
+SELECT date('now', 'start of year');       -- 1 de enero del año actual
+```
+
+String function time: `strftime()`
+
+STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para extraer el año, mes o día de una fecha, el resultado es un texto, por lo que si queremos hacer comparaciones con números, debemos castear el resultado a `INTEGER` o `REAL`
+
+ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
+
+-   `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
+-   `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
+-   `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
+-   `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
+-   `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
+-   `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
+-   `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
+-   `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
+-   `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
+
+``` sql
+SELECT 
+    strftime('%Y-%m', fecha_venta) AS mes,
+    COUNT(*) AS total_ventas
+FROM ventas
+GROUP BY mes;
+```
+
+**Calcular la diferencia de días entre dos fechas**
+
+Dado que las fechas en texto no se pueden restar directamente, convertimos la fecha a días julianos con `julianday()`:
+
+``` sql
+SELECT 
+    nombre_tarea,
+    CAST(julianday(fecha_fin) - julianday(fecha_inicio) AS INTEGER) AS dias_duracion
+FROM proyectos;
+```
+
+Añadir or restar de fechas
+
+``` sql
+-- Restar 1 día
+SELECT date('now', '-1 day');
+
+-- Restar 1 mes a una fecha específica
+SELECT date('2026-09-02', '-1 month');
+
+-- Restar 1 año
+SELECT date('now', '-1 year');
+
+-- Combinar varias restas (ej. restar 1 año y 2 meses)
+SELECT date('2026-09-02', '-1 year', '-2 month');
+```
+
+## Trabajando con fechas y horas en otros motores sql
+### Extracción de Componentes de Fecha
+
+SQL dispone de funciones dedicadas para aislar componentes de una fecha o timestamp:
+
+* **`YEAR(fecha)`**, **`MONTH(fecha)`**, **`DAY(fecha)`** (o `DAYOFMONTH`)
+* **`EXTRACT(unidad FROM fecha)`**: Sintaxis estándar ANSI SQL.
+
+```sql
+SELECT YEAR('2026-10-15') AS anio,
+       MONTH('2026-10-15') AS mes,
+       DAY('2026-10-15') AS dia,
+       EXTRACT(WEEK FROM DATE '2026-10-15') AS numero_semana;
+```
+
+```
++------+------+------+---------------+
+| anio | mes  | dia  | numero_semana |
++------+------+------+---------------+
+| 2026 |   10 |   15 |            42 |
++------+------+------+---------------+
+```
+### EXTRACT 
+Esta función ofrece otra sintaxis para extraer unidades:
+
+``` sql
+SELECT EXTRACT(MONTH FROM DATE '2026-10-15') AS mes;
+```
+```sql
+SELECT nombre, fecha_inicio,
+       EXTRACT(YEAR FROM fecha_inicio) AS anio,
+       EXTRACT(MONTH FROM fecha_inicio) AS mes,
+       EXTRACT(DAY FROM fecha_inicio) AS dia
+FROM cursos
+ORDER BY id;
+```
+mysql>SELECT nombre, fecha_inicio,
+    ->        EXTRACT(YEAR FROM fecha_inicio) AS anio,
+    ->        EXTRACT(MONTH FROM fecha_inicio) AS mes,
+    ->        EXTRACT(DAY FROM fecha_inicio) AS dia
+    -> FROM cursos
+    -> ORDER BY id;
++--------+--------------+------+------+------+
+| nombre | fecha_inicio | anio | mes  | dia  |
++--------+--------------+------+------+------+
+| Redes  | 2026-10-01   | 2026 |   10 |    1 |
+| SQL    | 2026-10-15   | 2026 |   10 |   15 |
+| Linux  | 2026-11-01   | 2026 |   11 |    1 |
++--------+--------------+------+------+------+
+
+
+## Separar Fecha y Hora: `DATE` y `TIME`
+
+Dada una marca temporal completa (`DATETIME` o `TIMESTAMP`), las funciones `DATE()` y `TIME()` aíslan la parte de la fecha o la hora respectivamente.
+
+```sql
+SELECT DATE('2026-10-18 12:30:00') AS solo_fecha,
+       TIME('2026-10-18 12:30:00') AS solo_hora;
+```
+
+```
++------------+-----------+
+| solo_fecha | solo_hora |
++------------+-----------+
+| 2026-10-18 | 12:30:00  |
++------------+-----------+
+```
+
+## CALCULAR DIFERENCIAS ENTRE FECHAS (DATEDIFF)
+
+La función DATEDIFF sirve para calcular la distancia o el tiempo transcurrido entre dos fechas. Sin embargo, este es uno de los puntos críticos al cambiar de motor de bases de datos, ya que su sintaxis y su comportamiento cambian radicalmente entre SQL Server y MySQL.  
+
+1. En MySQL / MariaDB
+Sintaxis:` DATEDIFF(end_date, start_date)`   Características:   Requiere solo 2 argumentos.Solo calcula diferencias en días. No permite elegir unidades como meses o años de forma nativa en la misma función.Ignora las horas, minutos y segundos, evaluando únicamente la parte de la fecha.   
+```sql
+-- Ojo al orden: primero la fecha final, luego la inicial
+SELECT DATEDIFF('2026-01-10', '2026-01-01') AS dias_totales;
+-- Resultado: 9
+```
+2. En SQL Server (T-SQL)
+Sintaxis:` DATEDIFF(datepart, start_date, end_date)` Requiere 3 argumentos.El primer argumento (datepart) indica explícitamente la unidad de medida que deseas obtener (day, month, year, hour, etc.).   Ejemplo:
+```sql
+-- Calcula los días transcurridos entre dos fechas
+SELECT DATEDIFF(day, '2026-01-01', '2026-01-10') AS dias_totales;
+-- Resultado: 9
+
+-- Calcula la diferencia en años
+SELECT DATEDIFF(year, '2022-01-01', '2026-01-01') AS anos_totales;
+-- Resultado: 4
+```
+### Aritmética de Fechas con Intervalos: `DATE_ADD`, `DATE_SUB` e `INTERVAL`
+
+Pe
+DATE_ADD, DATE_SUB e INTERVAL (Aritmética de Fechas)
+Estas herramientas permiten sumar o restar intervalos de tiempo específicos (días, meses, años, horas, etc.) a una fecha o marca temporal base.
+
+1. Sintaxis en MySQL y MariaDB
+En MySQL, la manipulación de fechas con intervalos se apoya en la palabra clave INTERVAL combinada con funciones dedicadas o mediante operadores aritméticos directos.
+
+A. Usando DATE_ADD y DATE_SUB
+DATE_ADD(fecha, INTERVAL valor unidad): Suma un intervalo a una fecha.
+
+DATE_SUB(fecha, INTERVAL valor unidad): Resta un intervalo a una fecha.
+
+Ejemplos:
+```sql
+-- Sumar 10 días a una fecha
+SELECT DATE_ADD('2026-01-01', INTERVAL 10 DAY) AS nueva_fecha;
+``` 
++-------------+
+| nueva_fecha |
++-------------+
+| 2026-01-11  |
++-------------+
+Sumar un mes a una fecha
+```sql
+SELECT DATE_ADD(DATE '2026-01-15', INTERVAL 1 MONTH) AS fecha;
+```
++------------+
+| fecha      |
++------------+
+| 2026-02-15 |
++------------+
+
+ Restar 3 meses a una fecha
+```sql  
+SELECT DATE_SUB('2026-06-01', INTERVAL 3 MONTH) AS fecha_anterior;
+```
++----------------+
+| fecha_anterior |
++----------------+
+| 2026-03-01     |
++----------------+
+
+::: nota
+Cálculo dependiendo del número de días del mes:
+
+``` sql
+SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
+```
+mysql>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
++------------+
+| fecha      |
++------------+
+| 2026-02-28 |
++------------+
+Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
+::: 
+
+B. Aritmética directa con el operador + y -
+MySQL permite utilizar directamente los operadores matemáticos junto con INTERVAL de una forma muy limpia y legible:
+```sql
+-- Sumar 2 años
+SELECT '2026-05-15' + INTERVAL 2 YEAR;
+
+-- Restar 15 horas
+SELECT NOW() - INTERVAL 15 HOUR;
+```
+**Unidades de tiempo más comunes (unit)**
+Las unidades que acepta la cláusula INTERVAL pueden escribirse en singular o plural:
+
+DAY / DAYS (Días)
+MONTH / MONTHS (Meses)
+YEAR / YEARS (Años)
+HOUR / HOURS (Horas)
+MINUTE / MINUTES (Minutos)
+SECOND / SECONDS (Segundos)
+WEEK / WEEKS (Semanas)
+
+::: nota-importante
+Compatibilidad (SQL Server)
+Si en algún momento trabajas con SQL Server (T-SQL), recuerda que no existe la estructura con la palabra INTERVAL. En su lugar se utiliza una función llamada DATEADD, donde el orden de los factores cambia (primero la unidad, luego el valor numérico y finalmente la fecha):
+```sql
+-- Equivalente en SQL Server:
+SELECT DATEADD(day, 10, '2026-01-01');
+```
+:::
+
+### Diferencias Precisas por Unidades: `TIMESTAMPDIFF`
+
+La función TIMESTAMPDIFF es la herramienta definitiva en MySQL y MariaDB para calcular la diferencia entre dos fechas o marcas temporales (datetimes) especificando la unidad exacta que deseas obtener.
+sintaxis: `TIMESTAMPDIFF(unidad, fecha_inicio, fecha_fin)`
+
+-  unidad: La unidad de tiempo en la que quieres el resultado (por ejemplo: YEAR, MONTH, DAY, HOUR, MINUTE, SECOND).
+-  fecha_inicio: La fecha o marca temporal más antigua (el punto de partida).
+-  fecha_fin: La fecha o marca temporal más reciente (el punto de llegada). El cálculo interno que realiza es: fecha_fin - fecha_inicio.
+
+Es ideal para calcular edades o antigüedad. Tiene en cuenta no solo los años, sino los meses y los días, así vemos con este ejemplo como sólo calcula la edad de 1 año cuando la persona llega a su primer cumpleaños.
+
+**Sintaxis:** `TIMESTAMPDIFF(UNIDAD, fecha_inicio, fecha_fin)`
+
+Devuelve un número entero calculado como `fecha_fin - fecha_inicio`. Solo incrementa el contador cuando el período se ha completado íntegramente (por ejemplo, el cálculo de edades).
+
+```sql
+SELECT TIMESTAMPDIFF(YEAR, '2000-10-19', '2026-10-18') AS edad_un_dia_antes,
+       TIMESTAMPDIFF(YEAR, '2000-10-19', '2026-10-19') AS edad_cumpleanios,
+       TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_completados;
+```
+
+```
++--------------------+------------------+-------------------+
+| edad_un_dia_antes  | edad_cumpleanios | meses_completados |
++--------------------+------------------+-------------------+
+|                 25 |               26 |                 8 |
++--------------------+------------------+-------------------+
+```
+```sql
+SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
+```
+mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
++------+
+| edad |
++------+
+|    1 |
++------+
+
+Si hacemos la misma consulta sobre un día antes: 
+```sql
+SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
+```
+
+mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
++------+
+| edad |
++------+
+|    0 |
++------+
+
+Calcular la diferencia en meses
+```sql
+SELECT TIMESTAMPDIFF(MONTH, '2026-01-01', '2026-10-01') AS meses_totales;
+```
++---------------+
+| meses_totales |
++---------------+
+|             9 |
++---------------+
+
+```sql
+SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
+```
+mysql>SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
++---------------+
+| meses_totales |
++---------------+
+|             8 |
++---------------+
+### `TIMEDIFF`, `SEC_TO_TIME`, `TIME_TO_SEC`
+
+Para medir diferencias de tiempo detalladas en horas, minutos y segundos:
+
+1. **`TIMEDIFF(expr1, expr2)`**: Resta dos expresiones de hora/fecha del mismo tipo y devuelve un formato `TIME` (`HH:MM:SS`). Está limitado al rango máximo del tipo `TIME` (máximo 838 horas $\approx 34$ días).
+2. **`SEC_TO_TIME(segundos)`**: Convierte una cantidad entera de segundos en formato de reloj `HH:MM:SS`.
+3. **`TIME_TO_SEC(hora)`**: Convierte una hora en formato `HH:MM:SS` a un entero total de segundos.
+
+
+#### TIMEDIFF (Diferencia devuelta como formato de Hora)
+La función TIMEDIFF resta dos expresiones de tipo TIME, DATETIME o TIMESTAMP y devuelve el resultado como un valor de tipo TIME (es decir, en formato de horas, minutos y segundos: HH:MM:SS).
+Características principales:
+
+-  Ambos argumentos deben ser del mismo tipo (TIME o DATETIME).
+::: nota-importante
+Límite de rango: Como devuelve un tipo TIME en MySQL, el resultado está limitado al rango de horas admitido por este tipo, que va desde -838:59:59 hasta 838:59:59. Si la diferencia entre las dos fechas supera las ~35 días, la función se satura y devuelve el valor máximo/mínimo permitido con una advertencia.
+:::
+
+```sql
+SELECT TIMEDIFF('2026-10-26 14:30:00', '2026-10-26 08:00:00') AS diferencia_tiempo;
+```
++-------------------+
+| diferencia_tiempo |
++-------------------+
+| 06:30:00          |
++-------------------+
+
+```sql
+SELECT TIMEDIFF('2026-03-26 14:30:00', '2026-10-26 08:00:00') AS fallo_diferencia_tiempo;
+```
++-------------------------+
+| fallo_diferencia_tiempo |
++-------------------------+
+| -838:59:59              |
++-------------------------+
+
+#### SEC_TO_TIME (Conversión de Segundos a Formato de Tiempo)
+La función SEC_TO_TIME en MySQL y MariaDB se utiliza para transformar una cantidad numérica de segundos en un formato de hora, minuto y segundo (HH:MM:SS) de tipo TIME. 
+sintaxis: `SEC_TO_TIME(segundos)`. segundos: El número total de segundos que deseas convertir (puede incluir decimales para fracciones de segundo).
+
+```sql
+SELECT SEC_TO_TIME(3665) AS tiempo_formateado;
+```
++-------------------+
+| tiempo_formateado |
++-------------------+
+| 01:01:05          |
++-------------------+
+
+#### Su función inversa: TIME_TO_SEC 
+Si necesitas hacer lo opuesto (convertir un formato de hora, minuto y segundo a su equivalente total en segundos), cuentas con la función complementaria TIME_TO_SEC:
+```sql
+SELECT TIME_TO_SEC('01:01:05') AS segundos_totales;
+```
+Es útil para calcular promedios de tiempo:
+A menudo se usa combinada con funciones de agregación como AVG() o sumas de tiempos previamente convertidos a segundos:
+Imagina que calculas la media de segundos que tarda un proceso
+
+```sql
+SELECT SEC_TO_TIME(AVG(TIME_TO_SEC(duracion))) AS tiempo_medio FROM procesos;
+``` 
+::: nota-importante
+Limitación importante
+Al igual que ocurría con TIMEDIFF, como SEC_TO_TIME devuelve un valor de tipo TIME, su resultado está sujeto al rango permitido en MySQL, que va desde -838:59:59 hasta 838:59:59 (aproximadamente 3019999 segundos). Si le pasas un número de segundos mayor, el valor se truncará al límite máximo.
+:::
+
+``` sql
+SELECT TIMEDIFF('12:30:00', '10:00:00') AS duracion,
+       TIMESTAMPDIFF(
+           MINUTE, '2026-10-18 10:00:00', '2026-10-18 12:30:00'
+       ) AS minutos,
+       TIME_TO_SEC('02:30:00') AS segundos,
+       SEC_TO_TIME(9000) AS duracion_recuperada;
+```
++----------+---------+----------+---------------------+
+| duracion | minutos | segundos | duracion_recuperada |
++----------+---------+----------+---------------------+
+| 02:30:00 |     150 |     9000 | 02:30:00            |
++----------+---------+----------+---------------------+
+
+
+## Transformación entre Fechas y Cadenas (DATE_FORMAT y STR_TO_DATE)
+Estas dos funciones en MySQL y MariaDB son complementarias y resultan imprescindibles cuando necesitas cambiar la forma en que se muestran las fechas (hacia texto) o cuando tienes fechas guardadas como texto y necesitas convertirlas a un formato de fecha real para operar con ellas.
+
+### DATE_FORMAT (De Fecha a Texto con formato personalizado)
+Toma un valor de tipo fecha/hora y lo convierte en una cadena de texto (VARCHAR) aplicando un patrón de formato específico.
+sintaxis `DATE_FORMAT(fecha, 'formato')`
+
+Modificadores (Formatos) más comunes:
+
+%Y: Año de 4 dígitos (ej. 2026)
+%y: Año de 2 dígitos (ej. 26)
+%m: Mes numérico con ceros iniciales (01-12)
+%M: Nombre completo del mes en inglés (January, February...)
+%d: Día del mes con ceros iniciales (01-31)
+%H: Hora en formato de 24 horas (00-23)
+%i: Minutos (00-59)
+%s o %S: Segundos (00-59)
+
+Convertir una fecha estándar a un formato personalizado
+``` sql
+SELECT DATE_FORMAT('2026-10-26 14:30:00', '%Y-%m-%d a las %H:%i') AS fecha_personalizada;
+```
++------------------------+
+| fecha_personalizada    |
++------------------------+
+| 2026-10-26 a las 14:30 |
++------------------------+
+El tipo de salida será VARCHAR
+
+### STR_TO_DATE (De Texto a Fecha real)
+Es la función inversa a la anterior. Analiza una cadena de texto que contiene una fecha y la convierte en un tipo de dato temporal real (DATE, DATETIME o TIME) siguiendo el patrón que le indiques.
+Sintaxis: `STR_TO_DATE('cadena_texto', 'formato')`
+```sql
+SELECT STR_TO_DATE('2026-10-26 a las 14:30 ', '%Y-%m-%d a las %H:%i') AS fecha_real;
+```
+
++---------------------+
+| fecha_real          |
++---------------------+
+| 2026-10-26 14:30:00 |
++---------------------+
+
+
+| Operación   | Entrada          | Salida           |
+|-------------|------------------|------------------|
+| DATE_FORMAT | Fecha 2026-10-18 | Texto 18/10/2026 |
+| STR_TO_DATE | Texto 18/10/2026 | Fecha 2026-10-18 |
+
+
+## Funciones de Calendario y Componentes Temporales (LAST_DAY, DAYOFWEEK, QUARTER, etc.)
+Estas funciones permiten extraer información avanzada sobre el calendario (como fin de mes, día de la semana o trimestre) sin necesidad de hacer cálculos manuales complejos. Como ocurre con la mayoría de las herramientas de fecha y hora, su soporte varía notablemente entre motores.
+
+### LAST_DAY (Último día del mes)
+Qué hace: Devuelve la fecha correspondiente al último día del mes de la fecha indicada. Es sumamente útil para cierres contables, reportes mensuales o validaciones de periodos.
+
+Compatibilidad y Sintaxis: 
+MySQL / MariaDB: Directo y nativo.
+```sql
+SELECT LAST_DAY('2026-10-15') AS ultimo_dia;
+```
+SQL Server (T-SQL): No existe LAST_DAY, pero cuenta con una función específica llamada EOMONTH() (End Of Month): `SELECT EOMONTH('2026-10-15');`
+
+PostgreSQL: No tiene una función nativa directa, pero se resuelve fácilmente sumando un mes al inicio del mes truncado y restando un día:
+```sql
+SELECT (DATE_TRUNC('month', TIMESTAMP '2026-10-15') + INTERVAL '1 month - 1 day')::date;
+```
+
+### QUARTER (Trimestre del año)
+Devuelve un número entero del 1 al 4 indicando a qué trimestre pertenece la fecha.
+MySQL: SELECT QUARTER('2026-10-26'); 
+SQL Server: SELECT DATEPART(quarter, '2026-10-26');
+PostgreSQL: SELECT EXTRACT(QUARTER FROM DATE '2026-10-26');
+
+### DAYOFWEEK / WEEKDAY (Día de la semana)
+Permiten identificar qué día de la semana es, aunque cuidado con la numeración, ya que cambia según el motor y la función:
+-  En MySQL:
+    -  DAYOFWEEK(fecha): Devuelve del 1 (Domingo) al 7 (Sábado).
+    -  WEEKDAY(fecha): Devuelve del 0 (Lunes) al 6 (Domingo).
+-  En SQL Server y PostgreSQL: Se suele preferir el uso de DATEPART(weekday, ...) o EXTRACT(ISODOW FROM ...) (donde el lunes suele ser el día 1).
+
+### Nombres de Días y Meses (DAYNAME y MONTHNAME)
+En MySQL, estas funciones devuelven directamente el nombre textual del día o del mes (por defecto en inglés, según la configuración del servidor):
+```sql
+SELECT DAYNAME('2026-10-26');   -- Resultado: 'Monday'
+SELECT MONTHNAME('2026-10-26'); -- Resultado: 'October'
+```
+En otros motores (como PostgreSQL o SQL Server): No suelen existir como funciones independientes; se logra formateando la fecha mediante funciones de cadenas (como TO_CHAR en Postgres).
+
+
+### Ejemplo 
+``` sql
+SELECT LAST_DAY(DATE '2026-02-10') AS fin_de_mes,
+       DAYOFWEEK(DATE '2026-10-18') AS dia_domingo_uno,
+       WEEKDAY(DATE '2026-10-18') AS dia_lunes_cero,
+       WEEK(DATE '2026-10-18', 3) AS semana,
+       YEARWEEK(DATE '2026-10-18', 3) AS semana_iso;
+```
++------------+-----------------+----------------+--------+------------+
+| fin_de_mes | dia_domingo_uno | dia_lunes_cero | semana | semana_iso |
++------------+-----------------+----------------+--------+------------+
+| 2026-02-28 |               1 |              6 |     42 |     202642 |
++------------+-----------------+----------------+--------+------------+
+
+La fecha 18 de octubre de 2026 es domingo. DAYOFWEEK cuenta domingo como uno; WEEKDAY cuenta lunes como cero y domingo como seis. YEARWEEK con modo 3 devuelve el año y la semana ISO; WEEK obtiene solo la semana y conviene indicar su modo.
+
+## Funciones del momento actual
+
+``` sql
+SELECT CURDATE() AS fecha_actual,
+       CURTIME() AS hora_actual,
+       NOW() AS fecha_y_hora,
+       UTC_TIMESTAMP() AS fecha_y_hora_utc;
+```
+
+### Qué debe observarse
+
+| Función       | Qué devuelve                             |
+|---------------|------------------------------------------|
+| CURDATE       | La fecha actual de la sesión.            |
+| CURTIME       | La hora actual de la sesión.             |
+| NOW           | Fecha y hora del inicio de la sentencia. |
+| UTC_TIMESTAMP | Fecha y hora en UTC.                     |
+
+Estas funciones no tienen una salida fija en la guía. La zona de la sesión puede cambiar la fecha u hora local. SYSDATE obtiene el instante de su ejecución y puede diferir de NOW dentro de una sentencia prolongada.
+
+## Cambiar de zona horaria y representar segundos Unix
+
+``` sql
+SELECT CONVERT_TZ(
+           '2026-10-18 12:00:00', '+00:00', '+02:00'
+       ) AS hora_convertida;
+```
+
+### Resultado
+
+| hora_convertida     |
+|---------------------|
+| 2026-10-18 14:00:00 |
+
+Se representa el mismo instante con dos horas de diferencia de desplazamiento. Un desplazamiento fijo no contiene reglas de horario de verano. Para nombres como Europe/Madrid se necesitan las tablas de zonas horarias cargadas.
+
+``` sql
+SELECT UNIX_TIMESTAMP() AS segundos_actuales,
+       FROM_UNIXTIME(0) AS origen_en_la_zona_de_sesion;
+```
+
+UNIX_TIMESTAMP expresa un instante como segundos desde el comienzo de 1970 UTC. FROM_UNIXTIME lo representa como fecha y hora en la zona de la sesión. Por ello la segunda columna no debe memorizarse como una fecha local universal: depende de esa zona.
+

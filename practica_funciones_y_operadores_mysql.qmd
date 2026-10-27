@@ -137,18 +137,6 @@ mysql>SELECT alumno, nota
 Empty set (0,00 sec)
 
 
-**Comprobaciones que conviene distinguir**
-
-| Sentencia SQL | Resultado | Por qué |
-|----------------|--------|------------------------------------------------|
-| SELECT NULL = NULL; | NULL | Una comparación ordinaria ¿Son iguales los valores desconocidos? NULL: no se puede determinar |
-| SELECT NULL IS NULL; | 1 | Se comprueba si el valor está ausente (desconocido). |
-| SELECT NULL \<=\> NULL; | 1 | La igualdad segura considera iguales dos NULL. |
-| SELECT 0 IS NULL; | 0 | Cero es un número conocido. |
-| SELECT '' IS NULL; | 0 | Un texto vacío sigue siendo un valor de texto. |
-
-El operador \<=\> permite comparar también los casos NULL: devuelve 1 cuando ambos lados son NULL y 0 cuando solo uno lo es. IS NOT NULL selecciona los valores conocidos.
-
 ### La lógica cuando aparece un valor desconocido
 
 | Expresión | Resultado | Lectura |
@@ -185,30 +173,6 @@ mysql>SELECT alumno,
 | Diego  |              1 |               1 |
 +--------+----------------+-----------------+
 
-
-### IN / NOT IN y la presencia de NULL
-
-Si incluimos un valor NULL en la lista de alternativas, IN / NOT IN no puede asegurar que un valor distinto de los visibles sea distinto del desconocido. Por eso devuelve NULL.
-``` sql
-SELECT 5 NOT IN (1, 2, NULL) AS comprobacion;
-```
-mysql>SELECT 5 NOT IN (1, 2, NULL) AS comprobacion;
-+--------------+
-| comprobacion |
-+--------------+
-|         NULL |
-+--------------+
-
-Cinco es distinto de uno y de dos, pero no se puede asegurar que sea distinto del tercer valor, porque se desconoce. 
-
-```sql
-mysql>SELECT 5 IN (1, 2, NULL) AS comprobacion;
-```
-+--------------+
-| comprobacion |
-+--------------+
-|         NULL |
-+--------------+
 
 ### IFNULL como sustitución sencilla
 
@@ -255,19 +219,7 @@ ORDER BY id;
 | Sara   | Sin contacto   |
 +--------+----------------+
 
-
 COALESCE recorre sus argumentos de izquierda a derecha y devuelve el primero que no sea NULL. No une los argumentos y no devuelve todos ellos: elige uno. Un texto vacío también es un valor de texto y se elegiría si apareciera antes de las demás alternativas.
-
-``` sql
-SELECT COALESCE(NULL, NULL, 'Disponible') AS elegido;
-```
-+------------+
-| elegido    |
-+------------+
-| Disponible |
-+------------+
-
-La primera alternativa es NULL y se descarta. La segunda también es NULL. La tercera contiene el texto Disponible, por lo que se devuelve ese texto. Esta sentencia muestra el mecanismo; el ejemplo anterior explica una necesidad práctica de utilizarlo.
 
 ### NULLIF para transformar un valor en NULL
 
@@ -340,42 +292,6 @@ mysql>SELECT alumno, nota
 
 
 El mismo cálculo se utiliza primero para mostrar una comprobación y después para filtrar. En el segundo caso, las notas pendientes quedan fuera del resultado junto con las condiciones falsas, aunque su significado sea distinto.
-
-
-| Operador | Pregunta | Sentencia SQL | Resultado |
-|:-----------------|:-----------------|:-----------------|:-----------------|
-| **=** | ¿Los valores son iguales? | `SELECT 8 = 8;`<br>*(Con NULL: `SELECT NULL = NULL;`)* | `1`<br>*(Con NULL: `NULL`)* |
-| **\<=\>** | ¿Son iguales de forma segura (incluyendo NULL)? | `SELECT NULL <=> NULL;` | `1` |
-| **\<\> o !=** | ¿Son distintos? | `SELECT 8 <> 6;`<br>*(Con NULL: `SELECT NULL <> 5;`)* | `1`<br>*(Con NULL: `NULL`)* |
-| **\> y \<** | ¿Es mayor o menor? | `SELECT 8 > 6, 8 < 6;`<br>*(Con NULL: `SELECT NULL > 5, NULL < 5;`)* | `1 y 0`<br>*(Con NULL: `NULL y NULL`)* |
-| **\>= y \<=** | ¿Incluye también la igualdad? | `SELECT 5 >= 5, 5 <= 5;`<br>*(Con NULL: `SELECT NULL >= 5, NULL <= 5;`)* | `1 y 1`<br>*(Con NULL: `NULL y NULL`)* |
-
-### GREATEST y LEAST 
-
-Comparan los diferentes valores o expresiones escritos dentro de sus propios paréntesis.   Comportamiento con NULL: Si alguno de los argumentos que se le pasa a GREATEST o LEAST es NULL, la función devolverá NULL.   Ejemplo conceptual: Evaluar directamente varios valores estáticos o columnas de una misma fila para ver cuál es mayor o menor.
-``` sql
-SELECT GREATEST(8, 6, 0) AS mayor,
-    GREATEST(8, 6, 0, NULL) AS lista_con_null,
-    LEAST(8, 6, 0) AS menor,
-    LEAST(8, 6, 0, NULL) AS lista_con_null_2;
-```
-mysql>SELECT GREATEST(8, 6, 0) AS mayor,
-    GREATEST(8, 6, 0, NULL) AS lista_con_null,
-    LEAST(8, 6, 0) AS menor,
-    LEAST(8, 6, 0, NULL) AS lista_con_null_2;
-+-------+----------------+-------+------------------+
-| mayor | lista_con_null | menor | lista_con_null_2 |
-+-------+----------------+-------+------------------+
-|     8 |           NULL |     0 |             NULL |
-+-------+----------------+-------+------------------+
- 
-::: nota
-No confundir con MAX y MIN, que recorren los valores de varias filas. 
-| Característica | `GREATEST` / `LEAST` | `MAX` / `MIN` |
-| :--- | :--- | :--- |
-| **Ámbito de evaluación** | Compara valores pasados como argumentos directos dentro de una misma fila o expresión. | Resumen los valores de una columna a lo largo de múltiples filas (agregación). |
-| **Tratamiento de `NULL`** | Si cualquiera de los argumentos es `NULL`, la función devuelve `NULL`. | Ignoran automáticamente los valores `NULL` al calcular sobre el grupo o columna. |
-:::
 
 ### BETWEEN e IN
 
@@ -577,8 +493,6 @@ mysql>SELECT p.nombre, p.apellido1
 +--------+-----------+
 
 # Control de flujo 
-
-Estas herramientas permiten elegir qué valor mostrar. Se estudian primero por separado: CASE clasifica; IF elige entre dos alternativas; 
 
 ## CASE para decidir según una condición
 
@@ -1125,120 +1039,6 @@ Estas funciones avanzadas permiten realizar operaciones exponenciales y logarít
 | Calcular el logaritmo natural de uno. | SELECT LN(1); | 0 |
 | Determinar el exponente de diez que produce mil. | SELECT LOG10(1000); | 3 |
 
-# RAND (Generación de Números Aleatorios)
-
-Esta función permite introducir aleatoriedad en tus consultas, siendo muy útil para tareas de muestreo, simulación, experimentos o generación de datos de prueba.
-
----
-
-### 1. `RAND` / `RANDOM` (Número Aleatorio)
-
-- **Qué hace:** Genera un número decimal pseudoaleatorio flotante comprendido entre **0 (inclusive) y 1 (exclusivo)** ($0 \le x < 1$).
-- **Para qué sirve:** 
-  - Seleccionar muestras aleatorias de una tabla (por ejemplo, combinándolo con `ORDER BY RAND()` en MySQL, aunque requiere precaución en tablas masivas por rendimiento).
-  - Generar valores de prueba aleatorios.
-- **Sintaxis básica por motor:**
-  - **MySQL / SQL Server / SQLite:** `RAND()`
-  - **PostgreSQL:** `RANDOM()`
-
-#### Ejemplos de uso
-
-```sql
--- Obtener un decimal aleatorio simple entre 0 y 1
-SELECT RAND() AS numero_aleatorio;
-
--- Truco: Generar un número entero aleatorio en un rango entre 1 y 10
-SELECT FLOOR(1 + RAND() * 10) AS entero_aleatorio;
-```
-
----
-
-### 2. Reproducibilidad mediante Semilla (*Seed*)
-
-Al igual que en otros lenguajes de programación (como Python o R), los motores de bases de datos permiten especificar una **semilla (*seed*)**. Al usar una semilla fija, la secuencia de números aleatorios generada será idéntica cada vez que se ejecute la consulta, asegurando la reproductibilidad de las pruebas o análisis.
-
-El mecanismo de configuración varía según el motor:
-
-#### MySQL y MariaDB
-Se pasa un número entero directamente como argumento dentro de `RAND(semilla)`:
-
-```sql
--- Siempre devolverá exactamente el mismo resultado mientras no cambie la semilla (42)
-SELECT RAND(42) AS aleatorio_reproducible;
-```
-
-#### PostgreSQL
-No acepta un parámetro directo dentro de `RANDOM()`. En su lugar, se invoca previamente la función `setseed()`, la cual recibe un valor de tipo *float* entre `-1.0` y `1.0`:
-
-```sql
--- 1. Establecer la semilla (ejecutar antes)
-SELECT setseed(0.5);
-
--- 2. La siguiente consulta producirá una secuencia fija y reproducible
-SELECT RANDOM() AS aleatorio_reproducible;
-```
-
-#### SQL Server (T-SQL)
-Acepta una semilla numérica entera opcional dentro de la función `RAND(semilla)`:
-
-```sql
-SELECT RAND(100) AS aleatorio_reproducible;
-```
-
-> **Nota:** Si ejecutas `RAND(semilla)` en una consulta que aplica a múltiples filas en SQL Server, la función se evalúa una sola vez por consulta con esa semilla, devolviendo el mismo valor constante para todas las filas devueltas.
-
-``` sql
-SELECT RAND() AS numero_entre_cero_y_uno,
-       FLOOR(1 + RAND() * 6) AS dado;
-```
-
-### Qué debe cumplirse
-
-| Columna                 | Resultado esperado                                |
-|------------------------------------|------------------------------------|
-| numero_entre_cero_y_uno | Un número desde cero incluido hasta uno excluido. |
-| dado                    | Un entero de 1 a 6.                               |
-
-No se espera un número concreto porque la función genera valores aleatorios. En el dado, RAND × 6 produce un valor menor que seis; se suma uno y FLOOR elimina la fracción. RAND no se utiliza para generar secretos criptográficos. Ordenar tablas grandes mediante ORDER BY RAND() puede resultar costoso.
-
-## FORMAT (Formateo de Números y Cadenas)
-
-La función FORMAT permite formatear valores numéricos convirtiéndolos en cadenas de texto con una presentación visual específica (por ejemplo, añadiendo separadores de millares, limitando los decimales o aplicando un formato regional).
-
-1. Sintaxis en MySQL / MariaDB
-
-`FORMAT(numero, decimales [, 'localizacion'])`
--  numero: El valor numérico que se desea formatear.
--  decimales: El número exacto de posiciones decimales a mostrar (redondea automáticamente si es necesario).
--  localizacion (opcional): El código de localización (por ejemplo, 'es_ES', 'en_US') que determina si los separadores de miles/decimales usan coma o punto.
-
-```sql
--- Formatear con 2 decimales (por defecto usa coma para miles y punto para decimales)
-SELECT FORMAT(1234567.8910, 2); 
--- Resultado: '1,234,567.89'
-
--- Formatear especificando localización española (punto para miles, coma para decimales)
-SELECT FORMAT(1234567.8910, 2, 'es_ES'); 
--- Resultado: '1.234.567,89'
-
-```
-2. Comportamiento en SQL Server (T-SQL)
-En SQL Server, FORMAT es una función más versátil que acepta patrones de formato de estilo .NET (para números, fechas y monedas):
-```sql
-SELECT FORMAT(1234567.8910, 'N2', 'es-ES');
--- Resultado: '1.234.567,89'
-
--- Formateo explícito de moneda
-SELECT FORMAT(1234.5, 'C', 'es-ES');
--- Resultado: '1.234,50 €'
-```
-
-::: nota-importante
-Tipo de datos devuelto: FORMAT convierte el número en una cadena de texto (VARCHAR/CHAR). Una vez formateado, no debes intentar realizar operaciones matemáticas directas (como sumas o promedios) sobre ese valor.
-
-Uso recomendado: Se debe aplicar idealmente en la capa final de presentación / informe de la consulta (SELECT), nunca dentro de filtros (WHERE) o agrupaciones (GROUP BY).
-FORMAT no cambia cómo se guarda un número en la tabla. Devuelve una representación de texto. Para ordenar cantidades se utiliza el valor numérico original, no su presentación con separadores.
-:::
 
 # Funciones de fecha y hora
 
@@ -1276,72 +1076,6 @@ mysql>SELECT nombre, fecha_inicio,
 
 YEAR, MONTH y DAY devuelven la parte indicada. DAY y DAYOFMONTH son equivalentes. 
 
-### EXTRACT 
-Esta función ofrece otra sintaxis para extraer unidades:
-
-``` sql
-SELECT EXTRACT(MONTH FROM DATE '2026-10-15') AS mes;
-```
-```sql
-SELECT nombre, fecha_inicio,
-       EXTRACT(YEAR FROM fecha_inicio) AS anio,
-       EXTRACT(MONTH FROM fecha_inicio) AS mes,
-       EXTRACT(DAY FROM fecha_inicio) AS dia
-FROM cursos
-ORDER BY id;
-```
-mysql>SELECT nombre, fecha_inicio,
-    ->        EXTRACT(YEAR FROM fecha_inicio) AS anio,
-    ->        EXTRACT(MONTH FROM fecha_inicio) AS mes,
-    ->        EXTRACT(DAY FROM fecha_inicio) AS dia
-    -> FROM cursos
-    -> ORDER BY id;
-+--------+--------------+------+------+------+
-| nombre | fecha_inicio | anio | mes  | dia  |
-+--------+--------------+------+------+------+
-| Redes  | 2026-10-01   | 2026 |   10 |    1 |
-| SQL    | 2026-10-15   | 2026 |   10 |   15 |
-| Linux  | 2026-11-01   | 2026 |   11 |    1 |
-+--------+--------------+------+------+------+
-
-## DATE y TIME separan fecha y hora
-
-``` sql
-SELECT DATE('2026-10-18 12:30:00') AS fecha,
-       TIME('2026-10-18 12:30:00') AS hora;
-```
-mysql>SELECT DATE('2026-10-18 12:30:00') AS fecha,
-    ->        TIME('2026-10-18 12:30:00') AS hora;
-+------------+----------+
-| fecha      | hora     |
-+------------+----------+
-| 2026-10-18 | 12:30:00 |
-+------------+----------+
-
-
-## CALCULAR DIFERENCIAS ENTRE FECHAS (DATEDIFF)
-
-La función DATEDIFF sirve para calcular la distancia o el tiempo transcurrido entre dos fechas. Sin embargo, este es uno de los puntos críticos al cambiar de motor de bases de datos, ya que su sintaxis y su comportamiento cambian radicalmente entre SQL Server y MySQL.  
-
-1. En MySQL / MariaDB
-Sintaxis:` DATEDIFF(end_date, start_date)`   Características:   Requiere solo 2 argumentos.Solo calcula diferencias en días. No permite elegir unidades como meses o años de forma nativa en la misma función.Ignora las horas, minutos y segundos, evaluando únicamente la parte de la fecha.   
-```sql
--- Ojo al orden: primero la fecha final, luego la inicial
-SELECT DATEDIFF('2026-01-10', '2026-01-01') AS dias_totales;
--- Resultado: 9
-```
-2. En SQL Server (T-SQL)
-Sintaxis:` DATEDIFF(datepart, start_date, end_date)` Requiere 3 argumentos.El primer argumento (datepart) indica explícitamente la unidad de medida que deseas obtener (day, month, year, hour, etc.).   Ejemplo:
-```sql
--- Calcula los días transcurridos entre dos fechas
-SELECT DATEDIFF(day, '2026-01-01', '2026-01-10') AS dias_totales;
--- Resultado: 9
-
--- Calcula la diferencia en años
-SELECT DATEDIFF(year, '2022-01-01', '2026-01-01') AS anos_totales;
--- Resultado: 4
-```
-
 
 El curso SQL empieza el día quince de octubre y termina el veinte. Entre las dos fechas hay cinco días de diferencia; si se cuentan ambos días de impartición, se abarcan seis fechas de calendario.
 
@@ -1368,91 +1102,6 @@ mysql>SELECT nombre,
 Para SQL se cuentan 15, 16, 17, 18, 19 y 20: seis fechas. DATEDIFF devuelve fecha final menos fecha inicial en días e ignora las horas. Los días incluidos no son necesariamente días lectivos: un calendario de clases debe considerar fines de semana y festivos.
 
 ## DATE_ADD, DATE_SUB e INTERVAL
-
-DATE_ADD, DATE_SUB e INTERVAL (Aritmética de Fechas)
-Estas herramientas permiten sumar o restar intervalos de tiempo específicos (días, meses, años, horas, etc.) a una fecha o marca temporal base.
-
-1. Sintaxis en MySQL y MariaDB
-En MySQL, la manipulación de fechas con intervalos se apoya en la palabra clave INTERVAL combinada con funciones dedicadas o mediante operadores aritméticos directos.
-
-A. Usando DATE_ADD y DATE_SUB
-DATE_ADD(fecha, INTERVAL valor unidad): Suma un intervalo a una fecha.
-
-DATE_SUB(fecha, INTERVAL valor unidad): Resta un intervalo a una fecha.
-
-Ejemplos:
-```sql
--- Sumar 10 días a una fecha
-SELECT DATE_ADD('2026-01-01', INTERVAL 10 DAY) AS nueva_fecha;
-``` 
-+-------------+
-| nueva_fecha |
-+-------------+
-| 2026-01-11  |
-+-------------+
-Sumar un mes a una fecha
-```sql
-SELECT DATE_ADD(DATE '2026-01-15', INTERVAL 1 MONTH) AS fecha;
-```
-+------------+
-| fecha      |
-+------------+
-| 2026-02-15 |
-+------------+
-
- Restar 3 meses a una fecha
-```sql  
-SELECT DATE_SUB('2026-06-01', INTERVAL 3 MONTH) AS fecha_anterior;
-```
-+----------------+
-| fecha_anterior |
-+----------------+
-| 2026-03-01     |
-+----------------+
-
-::: nota
-Cálculo dependiendo del número de días del mes:
-
-``` sql
-SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
-```
-mysql>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
-+------------+
-| fecha      |
-+------------+
-| 2026-02-28 |
-+------------+
-Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
-::: 
-
-B. Aritmética directa con el operador + y -
-MySQL permite utilizar directamente los operadores matemáticos junto con INTERVAL de una forma muy limpia y legible:
-```sql
--- Sumar 2 años
-SELECT '2026-05-15' + INTERVAL 2 YEAR;
-
--- Restar 15 horas
-SELECT NOW() - INTERVAL 15 HOUR;
-```
-**Unidades de tiempo más comunes (unit)**
-Las unidades que acepta la cláusula INTERVAL pueden escribirse en singular o plural:
-
-DAY / DAYS (Días)
-MONTH / MONTHS (Meses)
-YEAR / YEARS (Años)
-HOUR / HOURS (Horas)
-MINUTE / MINUTES (Minutos)
-SECOND / SECONDS (Segundos)
-WEEK / WEEKS (Semanas)
-
-::: nota-importante
-Compatibilidad (SQL Server)
-Si en algún momento trabajas con SQL Server (T-SQL), recuerda que no existe la estructura con la palabra INTERVAL. En su lugar se utiliza una función llamada DATEADD, donde el orden de los factores cambia (primero la unidad, luego el valor numérico y finalmente la fecha):
-```sql
--- Equivalente en SQL Server:
-SELECT DATEADD(day, 10, '2026-01-01');
-```
-:::
 
 Ejercicio:
 Necesidad: calcular una fecha de aviso siete días antes del inicio de cada curso y una fecha de seguimiento siete días después de su finalización.
@@ -1486,59 +1135,6 @@ INTERVAL 7 DAY expresa una cantidad y una unidad. También puede escribirse `fec
 
 ## Cálculo Preciso de Diferencias de Tiempo (TIMESTAMPDIFF)
 
-La función TIMESTAMPDIFF es la herramienta definitiva en MySQL y MariaDB para calcular la diferencia entre dos fechas o marcas temporales (datetimes) especificando la unidad exacta que deseas obtener.
-sintaxis: `TIMESTAMPDIFF(unidad, fecha_inicio, fecha_fin)`
-
--  unidad: La unidad de tiempo en la que quieres el resultado (por ejemplo: YEAR, MONTH, DAY, HOUR, MINUTE, SECOND).
--  fecha_inicio: La fecha o marca temporal más antigua (el punto de partida).
--  fecha_fin: La fecha o marca temporal más reciente (el punto de llegada). El cálculo interno que realiza es: fecha_fin - fecha_inicio.
-
-### Ejemplos Prácticos
-Calcular la diferencia en años (ideal para calcular edades o antigüedad) 
-Tiene en cuenta no solo los años, sino los meses y los días, así vemos con este ejemplo como sólo calcula la edad de 1 año cuando la persona llega a su primer cumpleaños.
-
-```sql
-SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
-```
-mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
-+------+
-| edad |
-+------+
-|    1 |
-+------+
-
-Si hacemos la misma consulta sobre un día antes: 
-```sql
-SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
-```
-
-mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
-+------+
-| edad |
-+------+
-|    0 |
-+------+
-
-Calcular la diferencia en meses
-```sql
-SELECT TIMESTAMPDIFF(MONTH, '2026-01-01', '2026-10-01') AS meses_totales;
-```
-+---------------+
-| meses_totales |
-+---------------+
-|             9 |
-+---------------+
-
-```sql
-SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
-```
-mysql>SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
-+---------------+
-| meses_totales |
-+---------------+
-|             8 |
-+---------------+
-
 Ejercicio
 Qué edad tenían las personas el 18 de octubre de 2026. 
 
@@ -1563,229 +1159,6 @@ ORDER BY id;
 
 Pablo nació el 19 de octubre de 2000: todavía tiene veinticinco años, porque cumple veintiséis al día siguiente.
 
-## Cálculo de diferencias de tiempo  (TIMEDIFF y TIMESTAMPDIFF y SEC_TO_TIME)
-
-Aunque ambas funciones sirven para calcular diferencias temporales en MySQL, devuelven resultados de tipos totalmente distintos y tienen propósitos diferentes.
-
-1. TIMEDIFF (Diferencia devuelta como formato de Hora)
-La función TIMEDIFF resta dos expresiones de tipo TIME, DATETIME o TIMESTAMP y devuelve el resultado como un valor de tipo TIME (es decir, en formato de horas, minutos y segundos: HH:MM:SS).
-Características principales:
-
--  Ambos argumentos deben ser del mismo tipo (TIME o DATETIME).
--  Límite de rango: Como devuelve un tipo TIME en MySQL, el resultado está limitado al rango de horas admitido por este tipo, que va desde -838:59:59 hasta 838:59:59. Si la diferencia entre las dos fechas supera las ~35 días, la función se satura y devuelve el valor máximo/mínimo permitido con una advertencia.
-
-```sql
-SELECT TIMEDIFF('2026-10-26 14:30:00', '2026-10-26 08:00:00') AS diferencia_tiempo;
-```
-+-------------------+
-| diferencia_tiempo |
-+-------------------+
-| 06:30:00          |
-+-------------------+
-
-```sql
-SELECT TIMEDIFF('2026-03-26 14:30:00', '2026-10-26 08:00:00') AS fallo_diferencia_tiempo;
-```
-+-------------------------+
-| fallo_diferencia_tiempo |
-+-------------------------+
-| -838:59:59              |
-+-------------------------+
-
-2. SEC_TO_TIME (Conversión de Segundos a Formato de Tiempo)
-La función SEC_TO_TIME en MySQL y MariaDB se utiliza para transformar una cantidad numérica de segundos en un formato de hora, minuto y segundo (HH:MM:SS) de tipo TIME. 
-sintaxis: `SEC_TO_TIME(segundos)`. segundos: El número total de segundos que deseas convertir (puede incluir decimales para fracciones de segundo).
-
-```sql
-SELECT SEC_TO_TIME(3665) AS tiempo_formateado;
-```
-+-------------------+
-| tiempo_formateado |
-+-------------------+
-| 01:01:05          |
-+-------------------+
-
-3. Su función inversa: TIME_TO_SEC 
-Si necesitas hacer lo opuesto (convertir un formato de hora, minuto y segundo a su equivalente total en segundos), cuentas con la función complementaria TIME_TO_SEC:
-```sql
-SELECT TIME_TO_SEC('01:01:05') AS segundos_totales;
-```
-Es útil para calcular promedios de tiempo:
-A menudo se usa combinada con funciones de agregación como AVG() o sumas de tiempos previamente convertidos a segundos:
-Imagina que calculas la media de segundos que tarda un proceso
-
-```sql
-SELECT SEC_TO_TIME(AVG(TIME_TO_SEC(duracion))) AS tiempo_medio FROM procesos;
-``` 
-::: nota-importante
-Limitación importante
-Al igual que ocurría con TIMEDIFF, como SEC_TO_TIME devuelve un valor de tipo TIME, su resultado está sujeto al rango permitido en MySQL, que va desde -838:59:59 hasta 838:59:59 (aproximadamente 3019999 segundos). Si le pasas un número de segundos mayor, el valor se truncará al límite máximo.
-:::
-
-``` sql
-SELECT TIMEDIFF('12:30:00', '10:00:00') AS duracion,
-       TIMESTAMPDIFF(
-           MINUTE, '2026-10-18 10:00:00', '2026-10-18 12:30:00'
-       ) AS minutos,
-       TIME_TO_SEC('02:30:00') AS segundos,
-       SEC_TO_TIME(9000) AS duracion_recuperada;
-```
-+----------+---------+----------+---------------------+
-| duracion | minutos | segundos | duracion_recuperada |
-+----------+---------+----------+---------------------+
-| 02:30:00 |     150 |     9000 | 02:30:00            |
-+----------+---------+----------+---------------------+
-
-
-## Transformación entre Fechas y Cadenas (DATE_FORMAT y STR_TO_DATE)
-Estas dos funciones en MySQL y MariaDB son complementarias y resultan imprescindibles cuando necesitas cambiar la forma en que se muestran las fechas (hacia texto) o cuando tienes fechas guardadas como texto y necesitas convertirlas a un formato de fecha real para operar con ellas.
-
-### DATE_FORMAT (De Fecha a Texto con formato personalizado)
-Toma un valor de tipo fecha/hora y lo convierte en una cadena de texto (VARCHAR) aplicando un patrón de formato específico.
-sintaxis `DATE_FORMAT(fecha, 'formato')`
-
-Modificadores (Formatos) más comunes:
-
-%Y: Año de 4 dígitos (ej. 2026)
-%y: Año de 2 dígitos (ej. 26)
-%m: Mes numérico con ceros iniciales (01-12)
-%M: Nombre completo del mes en inglés (January, February...)
-%d: Día del mes con ceros iniciales (01-31)
-%H: Hora en formato de 24 horas (00-23)
-%i: Minutos (00-59)
-%s o %S: Segundos (00-59)
-
-Convertir una fecha estándar a un formato personalizado
-``` sql
-SELECT DATE_FORMAT('2026-10-26 14:30:00', '%Y-%m-%d a las %H:%i') AS fecha_personalizada;
-```
-+------------------------+
-| fecha_personalizada    |
-+------------------------+
-| 2026-10-26 a las 14:30 |
-+------------------------+
-El tipo de salida será VARCHAR
-
-### STR_TO_DATE (De Texto a Fecha real)
-Es la función inversa a la anterior. Analiza una cadena de texto que contiene una fecha y la convierte en un tipo de dato temporal real (DATE, DATETIME o TIME) siguiendo el patrón que le indiques.
-Sintaxis: `STR_TO_DATE('cadena_texto', 'formato')`
-```sql
-SELECT STR_TO_DATE('2026-10-26 a las 14:30 ', '%Y-%m-%d a las %H:%i') AS fecha_real;
-```
-
-+---------------------+
-| fecha_real          |
-+---------------------+
-| 2026-10-26 14:30:00 |
-+---------------------+
-
-
-| Operación   | Entrada          | Salida           |
-|-------------|------------------|------------------|
-| DATE_FORMAT | Fecha 2026-10-18 | Texto 18/10/2026 |
-| STR_TO_DATE | Texto 18/10/2026 | Fecha 2026-10-18 |
-
-
-
-## Funciones de Calendario y Componentes Temporales (LAST_DAY, DAYOFWEEK, QUARTER, etc.)
-Estas funciones permiten extraer información avanzada sobre el calendario (como fin de mes, día de la semana o trimestre) sin necesidad de hacer cálculos manuales complejos. Como ocurre con la mayoría de las herramientas de fecha y hora, su soporte varía notablemente entre motores.
-
-### LAST_DAY (Último día del mes)
-Qué hace: Devuelve la fecha correspondiente al último día del mes de la fecha indicada. Es sumamente útil para cierres contables, reportes mensuales o validaciones de periodos.
-
-Compatibilidad y Sintaxis: 
-MySQL / MariaDB: Directo y nativo.
-```sql
-SELECT LAST_DAY('2026-10-15') AS ultimo_dia;
-```
-SQL Server (T-SQL): No existe LAST_DAY, pero cuenta con una función específica llamada EOMONTH() (End Of Month): `SELECT EOMONTH('2026-10-15');`
-
-PostgreSQL: No tiene una función nativa directa, pero se resuelve fácilmente sumando un mes al inicio del mes truncado y restando un día:
-```sql
-SELECT (DATE_TRUNC('month', TIMESTAMP '2026-10-15') + INTERVAL '1 month - 1 day')::date;
-```
-
-### QUARTER (Trimestre del año)
-Devuelve un número entero del 1 al 4 indicando a qué trimestre pertenece la fecha.
-MySQL: SELECT QUARTER('2026-10-26'); 
-SQL Server: SELECT DATEPART(quarter, '2026-10-26');
-PostgreSQL: SELECT EXTRACT(QUARTER FROM DATE '2026-10-26');
-
-### DAYOFWEEK / WEEKDAY (Día de la semana)
-Permiten identificar qué día de la semana es, aunque cuidado con la numeración, ya que cambia según el motor y la función:
--  En MySQL:
-    -  DAYOFWEEK(fecha): Devuelve del 1 (Domingo) al 7 (Sábado).
-    -  WEEKDAY(fecha): Devuelve del 0 (Lunes) al 6 (Domingo).
--  En SQL Server y PostgreSQL: Se suele preferir el uso de DATEPART(weekday, ...) o EXTRACT(ISODOW FROM ...) (donde el lunes suele ser el día 1).
-
-### Nombres de Días y Meses (DAYNAME y MONTHNAME)
-En MySQL, estas funciones devuelven directamente el nombre textual del día o del mes (por defecto en inglés, según la configuración del servidor):
-```sql
-SELECT DAYNAME('2026-10-26');   -- Resultado: 'Monday'
-SELECT MONTHNAME('2026-10-26'); -- Resultado: 'October'
-```
-En otros motores (como PostgreSQL o SQL Server): No suelen existir como funciones independientes; se logra formateando la fecha mediante funciones de cadenas (como TO_CHAR en Postgres).
-
-
-### Ejemplo 
-``` sql
-SELECT LAST_DAY(DATE '2026-02-10') AS fin_de_mes,
-       DAYOFWEEK(DATE '2026-10-18') AS dia_domingo_uno,
-       WEEKDAY(DATE '2026-10-18') AS dia_lunes_cero,
-       WEEK(DATE '2026-10-18', 3) AS semana,
-       YEARWEEK(DATE '2026-10-18', 3) AS semana_iso;
-```
-+------------+-----------------+----------------+--------+------------+
-| fin_de_mes | dia_domingo_uno | dia_lunes_cero | semana | semana_iso |
-+------------+-----------------+----------------+--------+------------+
-| 2026-02-28 |               1 |              6 |     42 |     202642 |
-+------------+-----------------+----------------+--------+------------+
-
-La fecha 18 de octubre de 2026 es domingo. DAYOFWEEK cuenta domingo como uno; WEEKDAY cuenta lunes como cero y domingo como seis. YEARWEEK con modo 3 devuelve el año y la semana ISO; WEEK obtiene solo la semana y conviene indicar su modo.
-
-## Funciones del momento actual
-
-``` sql
-SELECT CURDATE() AS fecha_actual,
-       CURTIME() AS hora_actual,
-       NOW() AS fecha_y_hora,
-       UTC_TIMESTAMP() AS fecha_y_hora_utc;
-```
-
-### Qué debe observarse
-
-| Función       | Qué devuelve                             |
-|---------------|------------------------------------------|
-| CURDATE       | La fecha actual de la sesión.            |
-| CURTIME       | La hora actual de la sesión.             |
-| NOW           | Fecha y hora del inicio de la sentencia. |
-| UTC_TIMESTAMP | Fecha y hora en UTC.                     |
-
-Estas funciones no tienen una salida fija en la guía. La zona de la sesión puede cambiar la fecha u hora local. SYSDATE obtiene el instante de su ejecución y puede diferir de NOW dentro de una sentencia prolongada.
-
-## Cambiar de zona horaria y representar segundos Unix
-
-``` sql
-SELECT CONVERT_TZ(
-           '2026-10-18 12:00:00', '+00:00', '+02:00'
-       ) AS hora_convertida;
-```
-
-### Resultado
-
-| hora_convertida     |
-|---------------------|
-| 2026-10-18 14:00:00 |
-
-Se representa el mismo instante con dos horas de diferencia de desplazamiento. Un desplazamiento fijo no contiene reglas de horario de verano. Para nombres como Europe/Madrid se necesitan las tablas de zonas horarias cargadas.
-
-``` sql
-SELECT UNIX_TIMESTAMP() AS segundos_actuales,
-       FROM_UNIXTIME(0) AS origen_en_la_zona_de_sesion;
-```
-
-UNIX_TIMESTAMP expresa un instante como segundos desde el comienzo de 1970 UTC. FROM_UNIXTIME lo representa como fecha y hora en la zona de la sesión. Por ello la segunda columna no debe memorizarse como una fecha local universal: depende de esa zona.
-
 ## Filtrar fechas usando su valor original
 
 ``` sql
@@ -1795,15 +1168,14 @@ WHERE fecha_inicio >= DATE '2026-10-01'
   AND fecha_inicio < DATE '2026-11-01'
 ORDER BY id;
 ```
-
-### Resultado — cursos que empiezan en octubre
-
++--------+--------------+
 | nombre | fecha_inicio |
-|--------|--------------|
++--------+--------------+
 | Redes  | 2026-10-01   |
 | SQL    | 2026-10-15   |
++--------+--------------+
 
-El intervalo utiliza un límite superior exclusivo. Esta forma conserva la columna sin envolverla en YEAR o DATE_FORMAT y permite considerar un acceso por rango si existe un índice adecuado. EXPLAIN muestra el plan real que el optimizador elige.
+El intervalo utiliza un límite superior exclusivo. Esta forma conserva la columna sin envolverla en YEAR o DATE_FORMAT y permite considerar un acceso por rango si existe un índice adecuado. 
 
 # Funciones y operadores de cadenas
 
@@ -1829,9 +1201,6 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
-
-### Resultado
-
 | nombre | nombre_y_apellido |
 |--------|-------------------|
 | Ana    | Ana García        |
@@ -1848,13 +1217,12 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
-
-### Resultado
-
-| nombre | apellido2 | completo         |
-|--------|-----------|------------------|
-| Ana    | López     | Ana García López |
-| Luis   | NULL      | NULL             |
++--------+--------------------+
+| nombre | completo           |
++--------+--------------------+
+| Ana    | Ana García López   |
+| Luis   | NULL               |
++--------+--------------------+
 
 CONCAT devuelve NULL si alguno de sus argumentos es NULL. La función no puede suponer qué texto debería sustituir al segundo apellido desconocido de Luis.
 
@@ -1867,13 +1235,12 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
-
-### Resultado
-
-| nombre | completo         |
-|--------|------------------|
-| Ana    | Ana García López |
-| Luis   | Luis López       |
++--------+--------------------+
+| nombre | completo           |
++--------+--------------------+
+| Ana    | Ana García López   |
+| Luis   | Luis López         |
++--------+--------------------+
 
 El primer argumento de CONCAT_WS es el separador. Los siguientes son las partes del texto. Omite los argumentos NULL posteriores al separador y coloca un espacio entre las partes conservadas. No omite textos vacíos: '' y NULL son distintos.
 
@@ -1892,97 +1259,13 @@ SELECT email,
 FROM personas
 WHERE id = 5;
 ```
-
-### Resultado
-
-| email                | recortado          | normalizado        |
-|----------------------|--------------------|--------------------|
-| ' ELENA\@CENTRO.ES ' | 'ELENA\@CENTRO.ES' | 'elena\@centro.es' |
++-------------------+-----------------+-----------------+
+| email             | recortado       | normalizado     |
++-------------------+-----------------+-----------------+
+|  ELENA@CENTRO.ES  | ELENA@CENTRO.ES | elena@centro.es |
++-------------------+-----------------+-----------------+
 
 TRIM elimina los espacios de los extremos. LOWER pasa el resultado a minúsculas. Se muestra primero la operación interior para entender la combinación. UPPER realiza la transformación contraria:
-
-``` sql
-SELECT UPPER('Ana García') AS nombre_en_mayusculas;
-```
-
-### Resultado
-
-| nombre_en_mayusculas |
-|----------------------|
-| ANA GARCÍA           |
-
-## Recortes de un solo extremo
-
-| Sentencia SQL          | Resultado visible |
-|------------------------|-------------------|
-| SELECT LTRIM(' Ana '); | 'Ana '            |
-| SELECT RTRIM(' Ana '); | ' Ana'            |
-
-LTRIM recorta a la izquierda y RTRIM a la derecha. Estas funciones no eliminan automáticamente todos los espacios interiores ni todos los caracteres que podrían considerarse espacio en blanco.
-
-## Contar caracteres y contar bytes
-
-``` sql
-SELECT CHAR_LENGTH(_utf8mb4'José') AS caracteres,
-       LENGTH(_utf8mb4'José') AS bytes,
-       OCTET_LENGTH(_utf8mb4'José') AS octetos;
-```
-
-### Resultado
-
-| caracteres | bytes | octetos |
-|------------|-------|---------|
-| 4          | 5     | 5       |
-
-José tiene cuatro caracteres. En utf8mb4, la letra é de este literal ocupa dos bytes y las otras tres letras ocupan uno cada una: cinco bytes en total. LENGTH y OCTET_LENGTH cuentan lo mismo. El prefijo \_utf8mb4 hace explícito el juego de caracteres del ejemplo.
-
-## LEFT RIGHT y SUBSTRING para extraer partes
-
-Se utiliza el código CUR-2026-015. La parte inicial identifica el tipo, los cuatro caracteres centrales el año y los tres finales el número.
-
-``` sql
-SELECT LEFT('CUR-2026-015', 3) AS tipo,
-       SUBSTRING('CUR-2026-015', 5, 4) AS anio,
-       RIGHT('CUR-2026-015', 3) AS numero;
-```
-
-### Resultado
-
-| tipo | anio | numero |
-|------|------|--------|
-| CUR  | 2026 | 015    |
-
-LEFT extrae tres caracteres desde la izquierda. SUBSTRING empieza en la posición cinco y toma cuatro; la primera posición es uno. RIGHT toma los tres últimos caracteres. SUBSTRING con una posición negativa cuenta desde el final: SUBSTRING('CUR-2026-015', -3) devuelve 015.
-
-## SUBSTRING_INDEX LOCATE e INSTR para un correo
-
-``` sql
-SELECT SUBSTRING_INDEX('ana@centro.es', '@', 1) AS usuario,
-       SUBSTRING_INDEX('ana@centro.es', '@', -1) AS dominio,
-       LOCATE('@', 'ana@centro.es') AS posicion_locate,
-       INSTR('ana@centro.es', '@') AS posicion_instr;
-```
-
-### Resultado
-
-| usuario | dominio   | posicion_locate | posicion_instr |
-|---------|-----------|-----------------|----------------|
-| ana     | centro.es | 4               | 4              |
-
-SUBSTRING_INDEX toma la parte anterior al separador con un contador positivo y la posterior con un contador negativo. LOCATE e INSTR devuelven la posición del fragmento buscado; devuelven cero si no lo encuentran. Cambia el orden de los argumentos: LOCATE busca primero qué fragmento; INSTR recibe primero el texto.
-
-## REPLACE LPAD RPAD y REPEAT
-
-### Transformaciones de datos concretos
-
-| Necesidad | Sentencia SQL | Resultado |
-|------------------------|------------------------|------------------------|
-| Cambiar separadores de un código. | SELECT REPLACE('A-B-C', '-', '/'); | A/B/C |
-| Mostrar el número 27 con cinco posiciones. | SELECT LPAD('27', 5, '0'); | 00027 |
-| Rellenar una etiqueta hasta cuatro caracteres. | SELECT RPAD('A', 4, '.'); | A... |
-| Repetir un fragmento tres veces. | SELECT REPEAT('ab', 3); | ababab |
-
-REPLACE sustituye las coincidencias de un texto. LPAD rellena a la izquierda y RPAD a la derecha hasta alcanzar la longitud indicada. Si se pide una longitud menor que la cadena original, pueden recortarla. El resultado 00027 es texto, de modo que puede conservar los ceros iniciales.
 
 ## LIKE para buscar un patrón sencillo
 
@@ -1994,12 +1277,11 @@ FROM personas
 WHERE nombre LIKE 'A%'
 ORDER BY id;
 ```
-
-### Resultado
-
++--------+
 | nombre |
-|--------|
++--------+
 | Ana    |
++--------+
 
 ### Qué significan los comodines
 
@@ -2009,81 +1291,9 @@ ORDER BY id;
 | %ar% | Contiene ar en alguna posición. | Marta y Sara |
 | \_na | Un carácter cualquiera seguido de na. | Ana |
 
-El carácter % representa una secuencia de longitud variable y \_ representa exactamente un carácter. Si se desea buscar un porcentaje literal, se puede utilizar un carácter de escape:
+El carácter % representa una secuencia de longitud variable y \_ representa exactamente un carácter. 
 
-``` sql
-SELECT '100%' LIKE '100!%' ESCAPE '!' AS coincidencia;
-```
 
-### Resultado
-
-| coincidencia |
-|--------------|
-| 1            |
-
-## REGEXP para reconocer una estructura
-
-Una expresión regular es un patrón más detallado. Se quiere reconocer un código con tres letras mayúsculas, un guion y tres dígitos.
-
-``` sql
-SELECT REGEXP_LIKE('CUR-015', '^[A-Z]{3}-[0-9]{3}$', 'c')
-          AS codigo_correcto,
-       REGEXP_LIKE('CUR-15', '^[A-Z]{3}-[0-9]{3}$', 'c')
-          AS codigo_incompleto;
-```
-
-### Resultado
-
-| codigo_correcto | codigo_incompleto |
-|-----------------|-------------------|
-| 1               | 0                 |
-
-\^ fija el comienzo, \[A-Z\]{3} exige tres letras, el guion es literal, \[0-9\]{3} exige tres dígitos y \$ fija el final. La opción c exige distinguir mayúsculas. El segundo código falla porque solo tiene dos dígitos.
-
-## Otras funciones de expresiones regulares
-
-| Sentencia SQL | Resultado | Lectura |
-|------------------------|------------------------|------------------------|
-| SELECT REGEXP_REPLACE('600-123-456', '\[\^0-9\]', ''); | 600123456 | Sustituye por texto vacío cada carácter que no sea un dígito. |
-| SELECT REGEXP_SUBSTR('Aula 27 planta 2', '\[0-9\]+'); | 27 | Extrae la primera secuencia de uno o más dígitos. |
-| SELECT REGEXP_INSTR('Aula 27', '\[0-9\]+'); | 6 | Indica dónde empieza la primera secuencia de dígitos. |
-
-## Intercalaciones para comparar textos
-
-Una intercalación, o collation, define reglas de comparación. Por ejemplo, una comparación puede ignorar las diferencias entre mayúsculas y minúsculas o entre letras con y sin acento.
-
-``` sql
-SELECT
-    (_utf8mb4'Álvaro' COLLATE utf8mb4_0900_ai_ci)
-        = _utf8mb4'alvaro' AS ignora_diferencias,
-    (_utf8mb4'Álvaro' COLLATE utf8mb4_0900_as_cs)
-        = _utf8mb4'alvaro' AS distingue_diferencias;
-```
-
-### Resultado
-
-| ignora_diferencias | distingue_diferencias |
-|--------------------|-----------------------|
-| 1                  | 0                     |
-
-ai indica insensibilidad a acentos y ci a mayúsculas. as y cs indican sensibilidad. La primera comparación considera iguales esos textos; la segunda los distingue. El texto almacenado no cambia por compararse de una forma u otra.
-
-## HEX y Base64 representan bytes
-
-``` sql
-SELECT HEX('SQL') AS hexadecimal,
-       CAST(UNHEX('53514C') AS CHAR) AS desde_hexadecimal,
-       TO_BASE64('SQL') AS base64,
-       CAST(FROM_BASE64('U1FM') AS CHAR) AS desde_base64;
-```
-
-### Resultado
-
-| hexadecimal | desde_hexadecimal | base64 | desde_base64 |
-|-------------|-------------------|--------|--------------|
-| 53514C      | SQL               | U1FM   | SQL          |
-
-HEX y TO_BASE64 representan bytes de otra forma. UNHEX y FROM_BASE64 recuperan esos bytes. CAST AS CHAR permite mostrarlos como texto; su conversión se explica en el apartado 14.10. Son codificaciones reversibles y no protegen la confidencialidad.
 
 # Búsqueda de texto completo
 
@@ -2112,12 +1322,11 @@ WHERE MATCH(titulo, contenido)
       AGAINST('MySQL' IN NATURAL LANGUAGE MODE)
 ORDER BY id;
 ```
-
-### Resultado con los datos y el analizador habitual del laboratorio
-
-| id  | titulo                  |
-|-----|-------------------------|
-| 3   | Administración de MySQL |
++----+--------------------------+
+| id | titulo                   |
++----+--------------------------+
+|  3 | Administración de MySQL  |
++----+--------------------------+
 
 MATCH indica las columnas indexadas. AGAINST contiene los términos de búsqueda y el modo. El documento tres contiene MySQL; los demás no. No es necesario utilizar % como en LIKE.
 
@@ -2128,6 +1337,15 @@ SELECT id, titulo,
 FROM documentos
 ORDER BY relevancia DESC, id;
 ```
++----+--------------------------+--------------------+
+| id | titulo                   | relevancia         |
++----+--------------------------+--------------------+
+|  3 | Administración de MySQL  | 0.9771181344985962 |
+|  1 | Seguridad en redes       |                  0 |
+|  2 | Seguridad en Linux       |                  0 |
+|  4 | Copias de seguridad      |                  0 |
+|  5 | Hojas de cálculo         |                  0 |
++----+--------------------------+--------------------+
 
 La relevancia del documento tres será positiva y la de los demás cero con esta colección y configuración. Su cifra concreta depende de las frecuencias y del índice; no es un porcentaje de calidad del documento.
 
@@ -2142,13 +1360,12 @@ WHERE MATCH(titulo, contenido)
       AGAINST('+seguridad -redes' IN BOOLEAN MODE)
 ORDER BY id;
 ```
-
-### Resultado con los datos del laboratorio
-
-| id  | titulo              |
-|-----|---------------------|
-| 2   | Seguridad en Linux  |
-| 4   | Copias de seguridad |
++----+---------------------+
+| id | titulo              |
++----+---------------------+
+|  2 | Seguridad en Linux  |
+|  4 | Copias de seguridad |
++----+---------------------+
 
 +seguridad exige ese término. -redes excluye cualquier documento que contenga redes. El documento uno queda fuera aunque contenga seguridad, porque también contiene redes.
 
@@ -2159,12 +1376,11 @@ WHERE MATCH(titulo, contenido)
       AGAINST('admin*' IN BOOLEAN MODE)
 ORDER BY id;
 ```
-
-### Resultado
-
-| id  | titulo                  |
-|-----|-------------------------|
-| 3   | Administración de MySQL |
++----+--------------------------+
+| id | titulo                   |
++----+--------------------------+
+|  3 | Administración de MySQL  |
++----+--------------------------+
 
 El asterisco final busca términos que empiezan por admin. Los signos +, - y \* de este ejemplo son parte del lenguaje de búsqueda dentro del texto de AGAINST.
 
@@ -2177,6 +1393,12 @@ WHERE MATCH(titulo, contenido)
       AGAINST('MySQL' WITH QUERY EXPANSION)
 ORDER BY id;
 ```
++----+--------------------------+
+| id | titulo                   |
++----+--------------------------+
+|  3 | Administración de MySQL  |
+|  4 | Copias de seguridad      |
++----+--------------------------+
 
 La función utiliza los primeros documentos relevantes para ampliar la búsqueda con términos relacionados. Por ejemplo, un documento sobre bases de datos puede aportar vocabulario para la segunda búsqueda. No se promete una lista fija: su resultado depende de la colección y de la configuración. Se utiliza cuando interesa ampliar resultados, aceptando una posible pérdida de precisión.
 
@@ -2241,46 +1463,6 @@ ORDER BY id;
 | Pablo  | 0.00          |
 
 Para Ana y Pablo se elige el texto de la nota. Para Marta, la conversión devuelve NULL y COALESCE elige Pendiente. Esta operación prepara la presentación, mientras la columna nota original sigue siendo numérica.
-
-## CONVERT y conversiones implícitas
-
-``` sql
-SELECT CONVERT('12.50', DECIMAL(6,2)) AS numero,
-       CAST('2026-10-18' AS DATE) AS fecha;
-```
-
-### Resultado
-
-| numero | fecha      |
-|--------|------------|
-| 12.50  | 2026-10-18 |
-
-CONVERT también admite una conversión de juego de caracteres mediante USING. El ejemplo siguiente convierte un literal que solo contiene caracteres compartidos:
-
-``` sql
-SELECT CONVERT(_latin1'cafe' USING utf8mb4) AS texto;
-```
-
-### Resultado
-
-| texto |
-|-------|
-| cafe  |
-
-``` sql
-SELECT '10' + 5 AS suma,
-       CONCAT('10', '5') AS textos_unidos;
-```
-
-### Resultado
-
-| suma | textos_unidos |
-|------|---------------|
-| 15   | 105           |
-
-- pide una suma y provoca una conversión numérica del texto. CONCAT une cadenas. Confiar en conversiones automáticas de entradas no válidas puede dar advertencias o errores, además de resultados inesperados. Por ello se eligen tipos coherentes y se convierten de forma explícita cuando la intención no es evidente.
-
-Para comparar bytes puede utilizarse CAST(valor AS BINARY). Se evita el operador unario BINARY en ejemplos nuevos porque está obsoleto en versiones recientes de MySQL 8.0.
 
 # Cifrado, huellas y compresión
 

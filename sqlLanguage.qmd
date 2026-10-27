@@ -76,15 +76,101 @@ Un operador expresa una operación sobre valores: sumar, comparar o combinar con
 | **Aritméticos y Numéricos** | `+`, `-`, `*`, `/`, `DIV`, `%` o `MOD`, `ROUND`, `TRUNCATE`, `CEIL`, `FLOOR`, `ABS`, `SIGN` | Realizar operaciones matemáticas, cálculos de importes y redondeos de cifras. |
 | **De Bits** | `&`, `\|`, `^`, `~`, `<<`, `>>`, `BIT_COUNT` | Manipular posiciones y máscaras binarias a nivel de bits. |
 
-# Operadores Lógicos y de Comparación
+# Operadores Lógicos y Precedencia de Operaciones en SQL
 
 Disponemos de operadores como `=`, `!=` (o `<>`), `>`, `<`, `>=`, `<=` y `BETWEEN` (que es inclusivo).
+
+Los operadores lógicos permiten combinar múltiples condiciones en una cláusula `WHERE` o en expresiones booleanas. Devuelven `1` (`TRUE`), `0` (`FALSE`) o `NULL` (cuando interviene un valor desconocido).
+
+## Operadores Lógicos Principales
+
+ SQL cuenta con cuatro operadores lógicos fundamentales para construir condiciones:
+
+| Operador | Significado | Ejemplo SQL | Resultado | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| **`AND`** | Conjunción | `SELECT (8 >= 5) AND (8 <= 9);` | `1` | Devuelve `TRUE` solo si **ambas** condiciones se cumplen. |
+| **`OR`** | Disyunción | `SELECT (8 < 5) OR (8 = 8);` | `1` | Devuelve `TRUE` si **al menos una** de las condiciones se cumple. |
+| **`NOT`** | Negación | `SELECT NOT (8 >= 5);` | `0` | Invierte el resultado de una condición conocida. |
+| **`XOR`** | OR Exclusivo | `SELECT (8 >= 5) XOR (8 < 5);` | `1` | Devuelve `TRUE` si **exactamente una** de las dos condiciones se cumple. |
+
+## Precedencia de Operadores Lógicos y Uso de Paréntesis
+
+Al combinar múltiples operadores lógicos en una misma expresión, SQL aplica una regla estricta de **precedencia (prioridad)**:
+
+1. **`NOT`** (Máxima prioridad lógica)
+2. **`AND`**
+3. **`OR`** / **`XOR`** (Menor prioridad)
+
+> **Regla fundamental:** El operador `AND` siempre se evalúa **antes** que el operador `OR`, a menos que se utilicen **paréntesis `()`** para alterar el orden de evaluación.
+
+## Demostración Práctica: La Importancia de Agrupar con Paréntesis
+
+Para comprender cómo afecta la precedencia, analicemos la evaluación booleana pura de tres variables hipotéticas: `activo`, `es_garcia` y `es_lopez`.
+
+### Caso A: Uso correcto de paréntesis (Intención deseada)
+
+**Objetivo:** Evaluar si un registro cumple estar *activo* **Y** además tener como apellido *García* o *López*.
+
+```sql
+-- Evaluamos el caso de un registro inactivo (0) con el apellido 'López' (1)
+SELECT 0 AS activo, 
+       0 AS es_garcia, 
+       1 AS es_lopez, 
+       (0 = 1 AND (0 = 1 OR 1 = 1)) AS resultado_filtro;
+```
+
+**Resultado:**
+
+```text
++--------+-----------+----------+------------------+
+| activo | es_garcia | es_lopez | resultado_filtro |
++--------+-----------+----------+------------------+
+|      0 |         0 |        1 |                0 |
++--------+-----------+----------+------------------+
+```
+
+* **Explicación:** Los paréntesis fuerzan a SQL a resolver primero la disyunción `(es_garcia OR es_lopez)`. El resultado parcial es `TRUE` (1). Posteriormente, el operador `AND` comprueba si `activo = 1 AND TRUE`, lo cual devuelve `FALSE` (0) porque no está activo. El registro se descarta correctamente.
+
+### Caso B: Sin paréntesis (Error común por precedencia implícita)
+
+**Expresión escrita:** `activo = 1 AND es_garcia OR es_lopez`
+
+Al no incluir paréntesis, SQL aplica `AND` primero. La expresión se evalúa implícitamente como:
+$$\text{(activo = 1 AND es\_garcia) OR es\_lopez}$$
+
+```sql
+-- Evaluamos exactamente los mismos datos del Caso A
+SELECT 0 AS activo, 
+       0 AS es_garcia, 
+       1 AS es_lopez, 
+       (0 = 1 AND 0 = 1 OR 1 = 1) AS resultado_filtro;
+```
+
+**Resultado:**
+
+```text
++--------+-----------+----------+------------------+
+| activo | es_garcia | es_lopez | resultado_filtro |
++--------+-----------+----------+------------------+
+|      0 |         0 |        1 |                0 | -> ¡Devuelve 1 (TRUE)!
++--------+-----------+----------+------------------+
+```
+
+* **Explicación:** 
+  1. Primero evalúa el `AND`: `(0 = 1 AND 0 = 1)` $\rightarrow$ `0` (`FALSE`).
+  2. Luego evalúa el `OR`: `0 OR 1 = 1` $\rightarrow$ `1` (`TRUE`).
+* **Consecuencia:** Se seleccionará a cualquier persona que se apellide *López*, **sin importar si está activa o no**, violando el requerimiento inicial.
+
+## Buenas Prácticas
+
+1. **Usar paréntesis explícitos:** Aunque conozcas las reglas de precedencia, utilizar paréntesis al combinar `AND` y `OR` hace que el código sea legible y evita errores sutiles de lógica.
+2. **Clarificación visual:** Agrupar bloques de condiciones facilita la tarea de mantenimiento y auditoría de las consultas SQL.
 
 ## Operadores en campos no numéricos (Texto y Fechas)
 
 Los operadores de comparación no se LIMITan a números. Si los usamos con texto o fechas, SQL aplica un orden lexicográfico (alfabético) o cronológico.
 
-## El Operador `BETWEEN` (Rangos inclusivos)
+# El Operador `BETWEEN` (Rangos inclusivos)
 
 El operador `BETWEEN` se utiliza en la cláusula `WHERE` para filtrar datos que caen dentro de un rango específico. Es muy versátil porque se puede aplicar a números, textos y fechas.
 
@@ -206,8 +292,9 @@ Si realmente quieres que los textos inválidos sean ignorados en matemáticas, t
 
 `CASE WHEN` permite crear nuevas columnas evaluando condiciones fila a fila.
 
-> **¡Trampa de la ejecución en cascada (Cortocircuito)!**\
-> El `CASE` evalúa las condiciones de arriba a abajo y **se detiene en la primera que resulta verdadera (TRUE)**. El orden importa muchísimo.
+::: nota 
+ El `CASE` evalúa las condiciones de arriba a abajo y **se detiene en la primera que resulta verdadera (TRUE)**. El orden importa muchísimo.
+
 
 Observa este ejemplo MAL diseñado:
 
@@ -233,6 +320,58 @@ SELECT movie_title, imdb_score,
     END AS categoria
 FROM imdb_movies;
 ```
+:::
+
+
+### Las dos formas de escribir CASE
+
+Las dos formas de escribir la expresión CASE en SQL
+La estructura condicional CASE en MySQL permite evaluar expresiones y devolver diferentes resultados según se cumplan ciertas condiciones. Existen dos sintaxis principales: la forma simple y la forma buscada.
+
+1. Forma Simple (CASE con expresión evaluada)
+En esta modalidad, se indica una expresión o columna justo después de CASE, y cada cláusula WHEN compara directamente su valor con las alternativas.
+
+```sql
+-- Ejemplo autónomo de CASE simple
+SELECT producto, stock,
+       CASE stock
+           WHEN 0 THEN 'Agotado'
+           WHEN 1 THEN 'Última unidad'
+           ELSE 'Disponible'
+       END AS estado_stock
+FROM (
+    SELECT 'Ratón' AS producto, 5 AS stock UNION ALL
+    SELECT 'Teclado', 0 UNION ALL
+    SELECT 'Monitor', 1
+) AS productos;
+```
+
+Funcionamiento: CASE stock toma el valor de la columna stock y lo compara de forma sucesiva con los valores especificados en cada WHEN (0, 1, etc.).
+
+2. Forma Buscada (CASE condicional)
+En esta modalidad, la palabra CASE no va acompañada de ningún valor inicial. Cada cláusula WHEN incluye una condición lógica completa y evaluable de forma independiente.
+```sql
+-- Ejemplo autónomo de CASE buscado
+SELECT empleado, salario,
+       CASE 
+           WHEN salario < 1500 THEN 'Bajo'
+           WHEN salario BETWEEN 1500 AND 3000 THEN 'Medio'
+           ELSE 'Alto'
+       END AS nivel_salarial
+FROM (
+    SELECT 'Carlos' AS empleado, 1200 AS salario UNION ALL
+    SELECT 'Elena', 2400 UNION ALL
+    SELECT 'Sofía', 3500
+) AS empleados;
+```
+Funcionamiento: Permite evaluar rangos, operadores lógicos (AND, OR), o comparaciones complejas que no se basan estrictamente en la igualdad estricta de un solo campo.
+
+Comparación y consideraciones con valores lógicos (TRUE / FALSE)
+En MySQL, el valor booleano TRUE equivale internamente a 1 y FALSE a 0. Por tanto, se pueden emplear operadores de verdad al evaluar condiciones:
+
+CASE campo WHEN TRUE THEN ... realiza una comparación directa con el valor numérico 1.
+CASE WHEN campo IS TRUE THEN ... evalúa la condición lógica general (admite cualquier número distinto de cero).
+
 
 ## Lógica condicional rápida: `IF` e `IIF`
 
@@ -479,128 +618,10 @@ SELECT
 FROM fortune;
 ```
 
-# Trabajando con Fechas y Tiempos en SQL Lite
 
-Trabajar con fechas en SQLite tiene una gran particularidad que suele confundir bastante al principio: SQLite no tiene un tipo de datos nativo para fechas (a diferencia de otros motores como PostgreSQL o SQL Server, que tienen DATE o TIMESTAMP).
+# Funciones de ventana
 
-En su lugar, SQLite almacena las fechas como datos de tipo texto, entero o decimal, usando sus funciones de fecha incorporadas para operar con ellas.
-
-El estándar recomendado: Cadenas de texto (ISO-8601) La mejor práctica en SQLite es guardar las fechas como texto en formato estándar ISO-8601:
-
-Solo fecha: 'YYYY-MM-DD' (ej. '2026-07-28')
-
-Fecha y hora: 'YYYY-MM-DD HH:MM:SS' (ej. '2026-07-28 10:30:00')
-
-¿Por qué este formato? Porque al usar la estructura año-mes-día, el orden alfabético coincide exactamente con el orden cronológico. Eso permite filtrar con \< o \> y usar ORDER BY directamente sin problemas.
-
-En SQL Lite tenemos que extraer la fecha de una columna de tipo `DATETIME` para poder trabajar con ella. Para ello podemos usar la función `DATE()`.
-
-**Insertar la fecha actual automáticamente**
-
-``` sql
-CREATE TABLE usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT,
-    fecha_registro TEXT DEFAULT CURRENT_DATE,          -- Solo 'YYYY-MM-DD'
-    creado_en TEXT DEFAULT CURRENT_TIMESTAMP          -- 'YYYY-MM-DD HH:MM:SS'
-);
-```
-
-**Funciones principales para manipular fechas**
-
-|  |  |  |  |
-|------------------|------------------|------------------|------------------|
-| **Función** | **¿Qué devuelve?** | **Ejemplo** | **Resultado** |
-| `date(...)` | La fecha | `SELECT date('now');` | `'2026-07-28'` |
-| `time(...)` | La hora | `SELECT time('now');` | `'10:30:00'` |
-| `datetime(...)` | Fecha y hora | `SELECT datetime('now');` | `'2026-07-28 10:30:00'` |
-| `strftime(...)` | Formato personalizado | `SELECT strftime('%Y', 'now');` | `'2026'` |
-| `julianday(...)` | Días julianos (decimal) | `SELECT julianday('now');` | `2461250.93...` |
-
-**Modificadores (Añadir o restar tiempo)**
-
-``` sql
--- Sumar o restar días, meses o años
-SELECT date('now', '+7 days');             -- Fecha dentro de una semana
-SELECT date('now', '-1 month');            -- Fecha hace un mes
-SELECT date('now', '+1 year', '-2 days');  -- Combinación de varios modificadores
-
--- Buscar inicios de periodo
-SELECT date('now', 'start of month');      -- Primer día del mes actual
-SELECT date('now', 'start of year');       -- 1 de enero del año actual
-```
-
-String function time: `strftime()`
-
-STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para extraer el año, mes o día de una fecha, el resultado es un texto, por lo que si queremos hacer comparaciones con números, debemos castear el resultado a `INTEGER` o `REAL`
-
-ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
-
--   `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
--   `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
--   `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
--   `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
--   `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
--   `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
--   `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
--   `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
--   `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
-
-``` sql
-SELECT 
-    strftime('%Y-%m', fecha_venta) AS mes,
-    COUNT(*) AS total_ventas
-FROM ventas
-GROUP BY mes;
-```
-
-**Calcular la diferencia de días entre dos fechas**
-
-Dado que las fechas en texto no se pueden restar directamente, convertimos la fecha a días julianos con `julianday()`:
-
-``` sql
-SELECT 
-    nombre_tarea,
-    CAST(julianday(fecha_fin) - julianday(fecha_inicio) AS INTEGER) AS dias_duracion
-FROM proyectos;
-```
-
-Añadir or restar de fechas
-
-``` sql
--- Restar 1 día
-SELECT date('now', '-1 day');
-
--- Restar 1 mes a una fecha específica
-SELECT date('2026-09-02', '-1 month');
-
--- Restar 1 año
-SELECT date('now', '-1 year');
-
--- Combinar varias restas (ej. restar 1 año y 2 meses)
-SELECT date('2026-09-02', '-1 year', '-2 month');
-```
-
-# Funciones y Comandos Esenciales de SQL
-
-
-## Manejo de valores nulos
-
-### COALESCE()
-
-Coalesce(valor1, valor2, ....)
-
-Lo que hace esta función es devolver el primero valor NO NULO de la lista que le pasamos. Normalmente introduciremos campos en los valores, y como último valor introduciremos un valor que queramos poner por defecto si todos los demás son nulos, pero no es obligatorio este último.
-
-``` sql
-coalesce(telefono_movil, telefono_fijo, 'sin teléfono de contacto.')
-```
-
-Una nota importante es que coalesce va a devolver cualquier valor que no sea nulo, incluyendo celdas en blanco.
-
-## Funcines de ventana
-
-### OVER()
+## OVER()
 
 Define una ventana de filas sobre la que se aplica una función, sin colapsar el resultado en una sola fila como haría el group by.
 
@@ -612,7 +633,7 @@ SELECT
  FROM datos_analisis
 ```
 
-### PARTITION BY()
+## PARTITION BY()
 
 La funcion OVER se aplica sobre un grupo definido en Partition By
 
@@ -624,7 +645,7 @@ SELECT
  FROM datos_analisis
 ```
 
-### DENSE_RANK()
+## DENSE_RANK()
 
 Asigna un rango consecutivo a cada fila. Si hay empate, les asigna el mismo ranking y al siguiente le asigna el siguiente rango disponible, es decir, puede haber 1,1,1,1,2,2,3,4,4,4,5....
 
@@ -636,7 +657,7 @@ SELECT
 FROM datos_analisis
 ```
 
-### ROW_NUMBER()
+## ROW_NUMBER()
 
 Asigna un número secuencial único a cada fila dentro de la ventana, sin importar los empates. Cada fila tiene un número distinto.
 
@@ -652,7 +673,7 @@ SELECT
 FROM datos_analisis
 ```
 
-### LAG() y LEAD()
+## LAG() y LEAD()
 
 Accede a valores de filas anteriores o siguientes.
 
@@ -661,7 +682,6 @@ select
     ventas - LAG(ventas, 1) OVER (order by mes) as variacion
 from datos_analisis
 ```
-
 
 
 # Subconsultas SQL
@@ -762,3 +782,122 @@ FROM ventas v
 WHERE v.categoria = p.categoria) AS total_cat
 FROM productos p;
 ```
+
+# Operadores Subqueried: `EXISTS` y `NOT EXISTS`
+
+Los operadores `EXISTS` y `NOT EXISTS` son operadores lógicos que evalúan la **existencia de filas** devueltas por una subconsulta (*subquery*). 
+
+A diferencia de operadores como `IN` o `=`, a `EXISTS` no le importan los valores devueltos ni las columnas seleccionadas; únicamente comprueba si la subconsulta produce **al menos una fila**.
+
+## Funcionamiento Fundamental
+
+* **`EXISTS (subconsulta)`**: Devuelve `1` (`TRUE`) si la subconsulta devuelve **una o más filas**. Devuelve `0` (`FALSE`) si la subconsulta devuelve un conjunto vacío.
+* **`NOT EXISTS (subconsulta)`**: Devuelve `1` (`TRUE`) si la subconsulta devuelve **cero filas**. Devuelve `0` (`FALSE`) si devuelve al menos una fila.
+
+> **Optimización y Rendimiento:** `EXISTS` utiliza evaluación en cortocircuito (*short-circuit evaluation*). En cuanto la subconsulta encuentra el primer registro que cumple la condición, detiene la búsqueda y devuelve `TRUE`.
+
+## Comparativa Sintáctica y Buenas Prácticas
+
+En la subconsulta dentro de un `EXISTS`, es habitual encontrar `SELECT 1` o `SELECT *`. Ambos tienen exactamente el mismo rendimiento y comportamiento en la mayoría de los motores SQL modernos.
+
+```
+-- Ambass formas son equivalentes y válidas
+SELECT EXISTS (SELECT 1 FROM ... WHERE ...);
+SELECT EXISTS (SELECT * FROM ... WHERE ...);
+
+```
+
+### Resumen de Evaluación
+
+| Operador | Subconsulta con Filas | Subconsulta Vacía |
+| ----- | ----- | ----- |
+| **`EXISTS`** | `1` (`TRUE`) | `0` (`FALSE`) |
+| **`NOT EXISTS`** | `0` (`FALSE`) | `1` (`TRUE`) |
+
+## 3. Demostración Práctica 
+
+Para comprender cómo funcionan las **subconsultas correlacionadas** con `EXISTS`, podemos utilizar tablas temporales definidas en la propia consulta (`WITH` / CTE):
+
+### Ejemplo 1: Detectar registros con coincidencias (`EXISTS`)
+
+**Escenario:** Queremos listar los departamentos que tienen al menos un empleado asignado.
+
+```
+WITH 
+  Departamentos AS (
+    SELECT 1 AS dep_id, 'Tecnología' AS nombre UNION ALL
+    SELECT 2 AS dep_id, 'Marketing' AS nombre UNION ALL
+    SELECT 3 AS dep_id, 'Recursos Humanos' AS nombre
+  ),
+  Empleados AS (
+    SELECT 'Ana' AS emp_name, 1 AS dep_id UNION ALL
+    SELECT 'Luis' AS emp_name, 1 AS dep_id UNION ALL
+    SELECT 'Marta' AS emp_name, 2 AS dep_id
+  )
+SELECT d.nombre AS departamento_con_personal
+FROM Departamentos d
+WHERE EXISTS (
+    SELECT 1 
+    FROM Empleados e 
+    WHERE e.dep_id = d.dep_id
+);
+
+```
+
+**Resultado:**
+
+```
++----------------------------+
+| departamento_con_personal  |
++----------------------------+
+| Tecnología                 |
+| Marketing                  |
++----------------------------+
+
+```
+
+* **Explicación:** Para "Tecnología" (id 1) y "Marketing" (id 2), la subconsulta encuentra coincidencias en la tabla `Empleados`. Para "Recursos Humanos" (id 3), la subconsulta devuelve 0 filas, por lo que `EXISTS` se evalúa como falso.
+
+### Ejemplo 2: Detectar ausencias o elementos huérfanos (`NOT EXISTS`)
+
+**Escenario:** Queremos identificar los departamentos que **no** tienen ningún empleado asignado.
+
+```
+WITH 
+  Departamentos AS (
+    SELECT 1 AS dep_id, 'Tecnología' AS nombre UNION ALL
+    SELECT 2 AS dep_id, 'Marketing' AS nombre UNION ALL
+    SELECT 3 AS dep_id, 'Recursos Humanos' AS nombre
+  ),
+  Empleados AS (
+    SELECT 'Ana' AS emp_name, 1 AS dep_id UNION ALL
+    SELECT 'Luis' AS emp_name, 1 AS dep_id UNION ALL
+    SELECT 'Marta' AS emp_name, 2 AS dep_id
+  )
+SELECT d.nombre AS departamento_vacio
+FROM Departamentos d
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM Empleados e 
+    WHERE e.dep_id = d.dep_id
+);
+
+```
+
+**Resultado:**
+
+```
++--------------------+
+| departamento_vacio |
++--------------------+
+| Recursos Humanos   |
++--------------------+
+
+```
+
+## `NOT EXISTS` frente a `NOT IN` con valores `NULL`
+
+Una diferencia crucial entre `NOT EXISTS` y `NOT IN` es cómo gestionan los valores `NULL`:
+
+* Si la subconsulta de un `NOT IN` devuelve **al menos un valor `NULL`**, toda la condición `NOT IN` devolverá `NULL` y no filtrará ningún registro.
+* `NOT EXISTS` es **seguro frente a valores `NULL`**, ya que solo comprueba si la fila existe o no, ignorando si los datos internos son `NULL`. Por esta razón, se prefiere habitualmente `NOT EXISTS` sobre `NOT IN` al trabajar con subconsultas.

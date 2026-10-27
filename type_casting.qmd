@@ -1,0 +1,228 @@
+---
+title: "Conversiones de Tipos de Datos (Type Casting) en SQL"
+format: html
+---
+
+
+En SQL, la conversión de tipos es el proceso de transformar un valor de un tipo de datos (por ejemplo, texto) a otro (por ejemplo, número entero o fecha). Se divide en dos categorías: **conversión explícita** (mediante funciones) y **conversión implícita** (realizada automáticamente por el motor).
+
+## Conversión Explícita Estándar: `CAST()`
+
+La función `CAST()` es la forma estándar definida en la especificación ANSI SQL para realizar conversiones explícitas de tipos.
+
+```sql
+CAST(expresion AS tipo_dato[(longitud_o_precision)])
+```
+### Compatibilidad
+**Universal** (MySQL, MariaDB, PostgreSQL, SQL Server, Oracle, SQLite).
+
+```sql
+SELECT 
+    CAST('123.45' AS DECIMAL(10, 2)) AS texto_a_decimal,
+    CAST(45.67 AS SIGNED)             AS decimal_a_entero,
+    CAST('2026-10-27' AS DATE)        AS texto_a_fecha,
+    CAST(12345 AS CHAR(10))           AS numero_a_texto;
+```
++-----------------+------------------+---------------+----------------+
+| texto_a_decimal | decimal_a_entero | texto_a_fecha | numero_a_texto |
++-----------------+------------------+---------------+----------------+
+|          123.45 |               46 | 2026-10-27    | 12345          |
++-----------------+------------------+---------------+----------------+
+
+#### Tipos de datos habituales para `CAST()` en MySQL / MariaDB:
+* `BINARY` / `CHAR` (cadenas de texto o bytes).
+* `DATE` / `DATETIME` / `TIME`.
+* `DECIMAL[(M[, D])]` / `FLOAT` / `DOUBLE`.
+* `SIGNED` / `UNSIGNED` (enteros con o sin signo).
+* `JSON` (disponible a partir de MySQL 5.7+).
+
+## Conversión Explícita Específica: `CONVERT()`
+
+La función `CONVERT()` realiza conversiones similares a `CAST()`, pero su sintaxis y capacidades varían drásticamente según el motor de base de datos.
+
+### `CONVERT()` en MySQL y MariaDB
+En MySQL, `CONVERT()` tiene dos firmas principales:
+1. **Conversión de tipo:** `CONVERT(expresion, tipo_dato)` (los argumentos van invertidos en comparación con otros motores).
+2. **Conversión de conjunto de caracteres (*charset*):** `CONVERT(expresion USING conjunto_caracteres)`.
+
+#### Compatibilidad
+Exclusiva de **MySQL / MariaDB**.
+
+```sql
+-- Conversión de tipo
+SELECT CONVERT('987.65', DECIMAL(10,2)) AS numero_convertido;
+
+-- Conversión de conjunto de caracteres (Encoding)
+SELECT CONVERT('Texto en UTF8' USING latin1) AS texto_latin1;
+```
++-------------------+
+| numero_convertido |
++-------------------+
+|            987.65 |
++-------------------+
++---------------+
+| texto_latin1  |
++---------------+
+| Texto en UTF8 |
++---------------+
+
+### `CONVERT()` en SQL Server (T-SQL)
+En SQL Server, `CONVERT()` incluye un tercer parámetro opcional llamado **estilo (*style*)**, que permite formatear fechas y monedas a cadenas (o viceversa) según estándares internacionales (como ISO, USA, GERMAN, etc.).
+
+```sql
+CONVERT(tipo_dato[(longitud)], expresion [, estilo])
+```
+
+#### Compatibilidad
+Exclusiva de **SQL Server**.
+
+#### Ejemplos ilustrativos (T-SQL)
+```sql
+-- Convertir fecha actual a texto con formato ISO 8601 (estilo 126: YYYY-MM-DDTHH:MM:SS)
+SELECT CONVERT(VARCHAR(30), GETDATE(), 126) AS fecha_iso;
+
+-- Convertir fecha a formato estándar europeo (estilo 103: DD/MM/YYYY)
+SELECT CONVERT(VARCHAR(10), GETDATE(), 103) AS fecha_europea;
+```
+
+## Operador de Conversión Rápido en PostgreSQL: `::`
+
+PostgreSQL proporciona una sintaxis abreviada y muy utilizada mediante el operador de doble dos puntos `::`.
+
+```sql
+expresion::tipo_dato
+```
+
+### Compatibilidad
+Exclusiva de **PostgreSQL**.
+
+### Ejemplos ilustrativos (PostgreSQL)
+```sql
+SELECT '150.75'::NUMERIC(10,2) AS valor_numeric,
+       '2026-10-27'::DATE AS valor_fecha,
+       100::TEXT AS valor_texto;
+```
+
+## Conversiones Seguras sin Errores: `TRY_CAST()` y `TRY_CONVERT()`
+
+Si una conversión falla (por ejemplo, intentar convertir el texto `'abc'` a un entero `INT`), las funciones `CAST()` o `CONVERT()` tradicionales provocan un **error en tiempo de ejecución** y abortan la consulta.
+
+Las funciones `TRY_CAST()` y `TRY_CONVERT()` intentan realizar la conversión:
+* Si la conversión **es exitosa**, devuelven el valor convertido.
+* Si la conversión **falla**, devuelven `NULL` en lugar de lanzar un error.
+
+### Compatibilidad
+* **`TRY_CAST()`**: SQL Server (2012+), PostgreSQL (vía módulos/extensiones), DuckDB, Snowflake. *(En MySQL 8.0.29+ se introduce soporte para `CAST(... RETURNING NULL ON ERROR)`)*.
+* **`TRY_CONVERT()`**: SQL Server (2012+).
+
+```sql
+SELECT TRY_CAST('12345' AS INT)  AS conversion_correcta;   
+ 
+```
+```sql
+SELECT TRY_CAST('ABCDE' AS INT)  AS conversion_fallida;  
+```
+
+## Conversiones Avanzadas de Cadenas a Fechas/Números
+
+### `STR_TO_DATE()` (MySQL / MariaDB)
+Parsea una cadena de texto y la convierte en un objeto de tipo `DATE` o `DATETIME` basándose en una plantilla de formato.
+
+* **Compatibilidad:** MySQL, MariaDB.
+
+```sql
+SELECT STR_TO_DATE('27/10/2026', '%d/%m/%Y') AS fecha_parseada,
+       STR_TO_DATE('2026-10-27 14:30:00', '%Y-%m-%d %H:%i:%s') AS datetime_parseado;
+```
+
+---
+
+### 5.2. `TO_DATE()`, `TO_NUMBER()`, `TO_CHAR()` (Oracle / PostgreSQL)
+Son las funciones estándar en Oracle y PostgreSQL para la conversión estructurada entre tipos textuales y tipos numéricos/temporales.
+
+* **Compatibilidad:** Oracle, PostgreSQL.
+
+```sql
+-- Ejemplo ilustrativo (Oracle / PostgreSQL)
+SELECT TO_DATE('27-10-2026', 'DD-MM-YYYY') AS fecha_oracle,
+       TO_NUMBER('1.234,56', '9G999D99')  AS numero_oracle;
+```
++----------------+---------------------+
+| fecha_parseada | datetime_parseado   |
++----------------+---------------------+
+| 2026-10-27     | 2026-10-27 14:30:00 |
++----------------+---------------------+
+
+### `PARSE()` y `TRY_PARSE()` (SQL Server)
+Convierte cadenas de texto a tipos de fecha/hora o numéricos teniendo en cuenta el **idioma/cultura (*culture*)**.
+
+* **Compatibilidad:** SQL Server (2012+).
+
+```sql
+-- Ejemplo ilustrativo (T-SQL)
+SELECT PARSE('27/10/2026' AS DATE USING 'es-ES') AS fecha_espanola,
+       TRY_PARSE('$1,234.56' AS MONEY USING 'en-US') AS moneda_americana;
+```
+
+
+## Conversión Implícita (Coerción Automática de Tipos)
+
+La conversión implícita ocurre cuando SQL detecta una operación entre dos tipos de datos distintos y convierte automáticamente uno de ellos para poder completar la operación.
+
+### Ejemplos en MySQL
+```sql
+-- MySQL convierte automáticamente la cadena '50' a número para realizar la suma
+SELECT '50' + 25 AS resultado_suma;  -- Devuelve 75 (numérico)
+```
++----------------+
+| resultado_suma |
++----------------+
+|             75 |
++----------------+
+```sql
+SELECT '50' + ' TEXTO' AS resultado_suma;
+```
++----------------+
+| resultado_suma |
++----------------+
+|             50 |
++----------------+
+
+```sql
+SELECT CONCAT('Código: ', 100) AS resultado_texto; -- Devuelve 'Código: 100'
+```
++-----------------+
+| resultado_texto |
++-----------------+
+| Código: 100     |
++-----------------+
+
+::: nota-importante
+ Riesgos y Buenas Prácticas de la Conversión Implícita
+
+1. **Pérdida de Rendimiento y Desactivación de Índices (*SARGability*):**
+   Si una columna indexada de tipo texto (`VARCHAR`) se compara contra un valor numérico, el motor aplicará una conversión implícita a **cada fila** de la tabla, impidiendo el uso del índice (*Index Scan* en lugar de *Index Seek*).
+
+   ```sql
+   -- MAL (Ineficiente): La columna 'telefono' (VARCHAR) se convierte implícitamente a entero fila por fila.
+   SELECT * FROM usuarios WHERE telefono = 600111222;
+
+   -- BIEN (Eficiente): Se compara texto contra texto, manteniendo la capacidad del índice.
+   SELECT * FROM usuarios WHERE telefono = '600111222';
+   ```
+
+2. **Inconsistencias entre Motores:**
+   Mientras que MySQL intenta convertir cadenas numéricas en operaciones aritméticas (`'10' + 2 = 12`), motores más estrictos como **PostgreSQL** lanzarán un error de tipos si no se realiza un `CAST` explícito (`'10'::INT + 2`).
+
+:::
+
+## Tabla Comparativa de Funciones de Conversión por Motor
+
+| Función | MySQL / MariaDB | PostgreSQL | SQL Server | Oracle | Estándar ANSI |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **`CAST()`** | Sí | Sí | Sí | Sí | **Sí** |
+| **`CONVERT()`** | Sí (sintaxis propia) | No | Sí (con *styles*) | No | No |
+| **`::` (Operador)** | No | Sí | No | No | No |
+| **`TRY_CAST()`** | No / Parcial | Vía módulo | Sí | No | No |
+| **`STR_TO_DATE()`** | Sí | No (`TO_DATE`) | No (`PARSE`) | No (`TO_DATE`) | No |
+| **`TO_CHAR() / TO_DATE()`**| No | Sí | No | Sí | No |
