@@ -1,0 +1,40 @@
+---
+title: "Análisis de Consultas"
+format: html
+---
+
+# Normalización y Análisis de Consultas con `STATEMENT_DIGEST`
+
+Para diagnosticar el rendimiento y optimizar bases de datos, es fundamental agrupar consultas SQL que comparten la misma estructura lógica pero varían en sus argumentos o parámetros de búsqueda.
+
+## Huella Sintáctica (`STATEMENT_DIGEST`)
+
+``` sql
+-- Comparar si dos consultas tienen la misma estructura abstrayendo los literales
+SELECT STATEMENT_DIGEST(
+    'SELECT nota FROM calificaciones WHERE id = 1'
+) = STATEMENT_DIGEST(
+    'SELECT nota FROM calificaciones WHERE id = 2'
+) AS misma_estructura;
+-- Devuelve 1 (Ambas consultas representan el mismo patrón)
+```
+
+## Visualización de la Estructura Normalizada (`STATEMENT_DIGEST_TEXT`)
+
+``` sql
+SELECT STATEMENT_DIGEST_TEXT(
+    'SELECT nota FROM calificaciones WHERE id = 1'
+) AS estructura_normalizada;
+-- Resultado típicamente devuelto: SELECT `nota` FROM `calificaciones` WHERE `id` = ?
+```
+
+-   **Aplicación en Diagnóstico:** La tabla `events_statements_summary_by_digest` del esquema `performance_schema` utiliza este mecanismo para contabilizar cuántas veces se ejecuta cada tipo de consulta y medir tiempos medios de respuesta, identificando cuellos de botella sin saturar el análisis por diferencias en los valores de los filtros.
+
+## ¿Cuándo usar `STATEMENT_DIGEST` (Digest de consultas)?
+
+-   **El escenario:** Trabajas optimizando bases de datos y tienes millones de consultas llegando al servidor por segundo. Quieres saber cuáles son las consultas más lentas, pero te da igual si un cliente buscó el `id = 1` o el `id = 2`.
+
+-   **Ejemplo práctico:** Quieres agrupar y unificar consultas que hacen exactamente lo mismo estructuralmente (por ejemplo, `SELECT nota FROM calificaciones WHERE id = 1` y `SELECT nota FROM calificaciones WHERE id = 2`). Con el digest, el motor entiende que ambas responden al mismo patrón y te ayuda a diagnosticar problemas de rendimiento de forma agrupada.
+
+
+

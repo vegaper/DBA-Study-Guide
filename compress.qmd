@@ -1,0 +1,68 @@
+---
+title: "Compresión de Datos con `COMPRESS` y `UNCOMPRESS`"
+format: html
+---
+
+La compresión reduce el tamaño de almacenamiento en memoria o disco para campos con alta redundancia o volumen de texto significativo (por ejemplo, documentos JSON o logs embebidos).
+
+# Implementación en SQL
+
+``` sql
+-- Crear un texto largo repetitivo (1000 caracteres 'A')
+SET @texto_largo = REPEAT('A', 1000);
+SET @texto_comprimido = COMPRESS(@texto_largo);
+
+-- Analizar la reducción de espacio y la longitud recuperable
+SELECT 
+    LENGTH(@texto_largo) AS bytes_originales,
+    LENGTH(@texto_comprimido) AS bytes_comprimidos,
+    UNCOMPRESSED_LENGTH(@texto_comprimido) AS longitud_original;
+
+-- Comprobar la restauración exacta del contenido
+SELECT 
+    CAST(UNCOMPRESS(@texto_comprimido) AS CHAR) = @texto_largo AS recuperado_correctamente;
+-- Devuelve 1 (Verdadero)
+```
+
+# Directrices Técnicas de Compresión
+
+-   **Almacenamiento:** Al igual que el cifrado, el resultado de `COMPRESS()` es un string binario que incluye cabeceras de longitud; se debe guardar en columnas `BLOB` o `VARBINARY`.
+
+-   **Sobrecarga (Overhead):** Si el texto introducido es muy corto o de alta entropía (como un archivo comprimido previamente o un valor aleatorio), el resultado de `COMPRESS()` puede ser **más grande** que el valor original debido a los metadatos de cabecera.
+
+-   **Compresión a Nivel de Servidor:** Hoy en día, muchas arquitecturas prefieren la compresión transparente a nivel de motor de almacenamiento (como InnoDB Page Compression o ZSTD/LZ4 en MariaDB) antes que usar la función SQL `COMPRESS()`, liberando así al desarrollador de desempaquetar manualmente los datos.
+
+# ¿Cuándo usar `COMPRESS` y `UNCOMPRESS` (Compresión)?
+
+-   **El escenario:** Tu base de datos almacena campos de texto gigantes o muy repetitivos (por ejemplo, registros de actividad o bloques de texto repetitivos como 1,000 letras 'A') y quieres ahorrar espacio de almacenamiento en el disco duro.
+
+-   **Ejemplo práctico:** Antes de guardar un texto larguísimo en una columna de tipo `BLOB` o `VARBINARY`, ejecutas `COMPRESS()` para reducir su tamaño físico. Cuando un usuario abre la aplicación para consultarlo, aplicas `UNCOMPRESS()` para recuperar el texto original completo de manera transparente.
+
+Se utilizará un texto de mil letras A. Es repetitivo, por lo que permite ver la finalidad de comprimir sin depender del contenido de una tabla.
+
+``` sql
+SET @texto_largo = REPEAT('A', 1000);
+SET @texto_comprimido = COMPRESS(@texto_largo);
+
+SELECT LENGTH(@texto_largo) AS bytes_originales,
+       LENGTH(@texto_comprimido) AS bytes_comprimidos,
+       UNCOMPRESSED_LENGTH(@texto_comprimido) AS longitud_original;
+```
+
+| bytes_originales | bytes_comprimidos | longitud_original |
+|----|----|----|
+| 1000 | Un valor mucho menor en esta entrada repetitiva. | 1000 |
+
+COMPRESS devuelve los bytes comprimidos. UNCOMPRESSED_LENGTH permite conocer la longitud original sin mostrar toda la cadena. El tamaño comprimido concreto puede depender de la biblioteca y de la versión.
+
+``` sql
+SELECT CAST(UNCOMPRESS(@texto_comprimido) AS CHAR)
+          = @texto_largo AS recuperado_correctamente;
+```
+| recuperado_correctamente |
+|--------------------------|
+| 1                        |
+
+UNCOMPRESS recupera los bytes originales. La comparación da uno porque se recupera exactamente el mismo texto. La compresión necesita soporte en el servidor; los resultados binarios se guardan en BLOB o VARBINARY. Una cadena corta o poco repetitiva puede ocupar más al comprimirse.
+
+

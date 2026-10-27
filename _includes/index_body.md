@@ -34,7 +34,11 @@
 * [Ejercicio: Modelado de Datos](ejercicio_modelado_datos.html)
 * [SQL: Structured Query Language y sus variantes](sql.html)
 * [Tipos de datos en SQL](sql_tipos_datos.html)
+* [Conversiones de Tipos de Datos (Type Casting) en SQL](type_casting.html)
 * [Introducción a las Consultas Lenguajes SQL](sqlLanguage.html)
+* [Practica: introducción a las sentencias SQL](practica_sentencias_sql.html)
+* [Funciones y Comandos Esenciales de SQL](funciones_esenciales_mysql.html)
+* [Funciones y Operadores de Texto (Cadenas de Caracteres) en SQL](funciones_texto_sql.html)
 * [Ejercicio resuelto: Consultas SQL sobre una base de datos de empleados](Consultas_SQL_Empleados_Completo.html)
 * [Práctica: Subconsultas en SQL](practica_subconsultas.html)
 * [Tipos de Join en SQL](sql_join.html)
@@ -55,6 +59,10 @@
 * [Práctica: Transacciones en MySQL](practica_transacciones_mysql.html)
 * [Control de Flujo de Transacciones en SQL](control_flujo_transacciones.html)
 * [Práctica: Bloqueos en MySQL](practica_bloqueos.html)
+* [Práctica: Funciones y Operadores en MySQL](practica_funciones_y_operadores_mysql.html)
+* [Compresión de Datos con `COMPRESS` y `UNCOMPRESS`](compress.html)
+* [Cifrado y Huellas (Hashing)](cifrado.html)
+* [Análisis de consultas](analisis_consultas.html)
 
 ## Anexos
 

@@ -1,0 +1,293 @@
+---
+title: "Cifrado y Huellas (Hashing)"
+format: html
+---
+
+En las bases de datos relacionales (como MySQL/MariaDB), garantizar la confidencialidad, la integridad de los datos y la optimización del almacenamiento exige conocer las diferencias técnicas entre funciones de hash, cifrado simétrico, encoding y compresión.
+
+|  |  |  |  |  |
+|--------------|--------------|---------|---------|--------------------------|
+| **Operación / Necesidad** | **Herramientas (MySQL/MariaDB)** | **¿Requiere Clave?** | **¿Es Reversible?** | **Propósito Principal** |
+| **Huella Digital (Hash)** | `SHA2()`, `MD5()`, `SHA1()` | No | **No** | Verificar la integridad de los datos y comparar contenidos sin revelar el original. |
+| **Cifrado Simétrico** | `AES_ENCRYPT()`, `AES_DECRYPT()` | **Sí** | **Sí** (con la clave correcta) | Ocultar datos confidenciales (*data at rest*) permitiendo su posterior recuperación. |
+| **Codificación (Encoding)** | `HEX()`, `TO_BASE64()`, `FROM_BASE64()` | No | **Sí** | Adaptar formatos binarios a texto seguro para su transporte o almacenamiento plano. **No es seguridad**. |
+| **Compresión** | `COMPRESS()`, `UNCOMPRESS()` | No | **Sí** | Reducir el espacio en disco/memoria para datos altamente repetitivos. |
+| **Digest de Consultas** | `STATEMENT_DIGEST()`, `STATEMENT_DIGEST_TEXT()` | No | **No** | Normalizar y agrupar la estructura sintáctica de consultas SQL para monitorización de rendimiento. |
+
+# Hashing e Integridad de Datos con `SHA2`
+
+Un **hash** es el resultado de aplicar un algoritmo matemático unidireccional a un conjunto de datos. Genera una salida de longitud fija (digest) independientemente del tamaño de la entrada.
+
+## Propiedades de una Función Hash Criptográfica
+
+1.  **Unidireccionalidad:** Es imposible computar la entrada original a partir del hash devuelto.
+
+2.  **Determinismo:** Una misma entrada siempre genera la misma huella.
+
+3.  **Efecto Avalancha:** Un cambio insignificante en la entrada (por ejemplo, cambiar una letra o un espacio) altera radicalmente el hash resultante.
+
+4.  **Resistencia a colisiones:** Es computacionalmente infactible encontrar dos entradas distintas que produzcan el mismo hash.
+
+## Verificación de Integridad en SQL
+
+``` sql
+-- Generar una huella SHA-256 (devuelve 64 caracteres en hexadecimal)
+SELECT SHA2('abc', 256) AS huella;
+-- Resultado: ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+
+-- Demostración del determinismo frente al efecto avalancha
+SELECT 
+    SHA2('abc', 256) = SHA2('abc', 256) AS mismo_contenido,    -- Devuelve 1 (Verdadero)
+    SHA2('abc', 256) = SHA2('abd', 256) AS contenido_cambiado; -- Devuelve 0 (Falso)
+```
+
+## Consideraciones de Seguridad y Buenas Prácticas
+
+-   **Algoritmos Obsoletos:** `MD5()` y `SHA1()` presentan colisiones demostradas. **No deben emplearse** en nuevos desarrollos para fines criptográficos o de seguridad.
+
+-   **Almacenamiento de Contraseñas:** `SHA2()` directo **tampoco es suficiente** para guardar contraseñas de usuarios. Los hashes directos son vulnerables a *Rainbow Tables* (tablas precalculadas) y ataques de fuerza bruta por GPU.
+
+-   **Buenas prácticas:** Para autenticación de usuarios deben emplearse algoritmos con "sal de contraseña" (*salts*) y retardo computacional deliberado (*key stretching*) como **Argon2**, **bcrypt** o **PBKDF2**, gestionados habitualmente por el backend de la aplicación o plugins específicos del gestor.
+
+## ¿Cuándo usar `SHA2` (Huellas / Hashes)?
+
+-   **El escenario:** Imagina que necesitas comprobar si un archivo gigante o un bloque de texto ha sido modificado, o quieres comparar dos contenidos idénticos de forma rápida sin comparar todo el texto byte a byte.
+
+-   **Ejemplo práctico:** Quieres verificar si un usuario ha cambiado un solo carácter en un documento crítico (`'abc'` frente a `'abd'`). Al generar el hash con `SHA2`, las huellas serán totalmente distintas y sabrás de inmediato que el contenido fue alterado. Ojo: esto sirve para comparar o verificar integridad, no para ocultar contraseñas de usuarios ni para descifrar nada, porque el hash no se puede revertir.
+
+# Generación de Entropía y Datos Aleatorios con `RANDOM_BYTES`
+
+Para generar claves de cifrado, vectores de inicialización (IV) o tokens de sesión de alta seguridad, el motor requiere una fuente de entropía criptográficamente segura.
+
+``` sql
+SELECT 
+    OCTET_LENGTH(RANDOM_BYTES(16)) AS bytes_generados,
+    CHAR_LENGTH(HEX(RANDOM_BYTES(16))) AS caracteres_hex;
+```
+
+-   **`RANDOM_BYTES(N)`:** Genera una cadena binaria de $N$ bytes aleatorios.
+
+-   **`HEX(str)`:** Convierte cada byte (8 bits) en 2 caracteres hexadecimales (0-9, A-F). Por ello, 16 bytes generados binariamente se representan como 32 caracteres visibles.
+
+-   **Propiedad:** Cada llamada a `RANDOM_BYTES()` es independiente e impredecible; nunca debe asumirse que dos ejecuciones consecutivas darán el mismo resultado.
+
+# Cifrado Simétrico y Descifrado de Datos con `AES`
+
+El cifrado simétrico permite ocultar información privada y recuperarla utilizando la **misma clave secreta**. En MySQL/MariaDB, esto se gestiona con `AES_ENCRYPT()` y `AES_DECRYPT()`.
+
+## Modos de Cifrado y Vector de Inicialización (IV)
+
+El estándar AES admite diferentes tamaños de clave (128, 192, 256 bits) y modos de operación:
+
+-   **ECB (Electronic Codebook):** Modo por defecto histórico. Cifra cada bloque de datos de forma independiente. **Inseguro:** bloques de texto plano idénticos producen bloques cifrados idénticos.
+
+-   **CBC (Cipher Block Chaining):** Recomendado para la mayoría de escenarios. Cada bloque se combina con el bloque cifrado anterior. Requiere un **IV (Vector de Inicialización)** aleatorio único por cada cifrado para evitar patrones.
+
+## Ejemplo Práctico Completo en Sesión SQL
+
+``` sql
+-- 1. Guardar y configurar el modo de cifrado a AES-128-CBC
+SET @modo_anterior = @@SESSION.block_encryption_mode;
+SET SESSION block_encryption_mode = 'aes-128-cbc';
+
+-- 2. Inicializar variables de trabajo
+SET @texto_demo = 'Nota de Ana 8';
+SET @clave_demo = RANDOM_BYTES(16); -- Clave simétrica de 128 bits
+SET @iv_demo    = RANDOM_BYTES(16); -- Vector de inicialización de 128 bits
+
+-- 3. Cifrar la información
+SET @cifrado_demo = AES_ENCRYPT(@texto_demo, @clave_demo, @iv_demo);
+
+-- 4. Descifrar los bytes y castear de binario a texto visible (CHAR)
+SELECT 
+    @texto_demo AS original,
+    CAST(AES_DECRYPT(@cifrado_demo, @clave_demo, @iv_demo) AS CHAR) AS recuperado;
+
+-- 5. Restaurar la configuración original del servidor
+SET SESSION block_encryption_mode = @modo_anterior;
+```
+
+## Arquitectura y Gestión de Claves en Entornos de Producción
+
+1.  **Tipo de columna:** Los resultados de `AES_ENCRYPT()` son datos binarios sin formato legible. Deben almacenarse en tipos de datos binarios como `VARBINARY(n)` o `BLOB`, nunca en `VARCHAR`.
+
+2.  **Custodia de Claves:** Pasar la clave directamente dentro de las consultas SQL (`AES_ENCRYPT('dato', 'mi_clave')`) puede exponerla en los logs del servidor (*general log*, *slow query log*). La gestión ideal de claves debe hacerse mediante un sistema KMS (*Key Management Service*) o la biblioteca de la aplicación cliente, limitando el cifrado en la base de datos a casos puntuales.
+
+3.  **Integridad:** El modo CBC previene la lectura sin clave, pero **no garantiza la autenticidad del mensaje** (un atacante podría manipular los bytes cifrados). Para entornos donde se requiera detectar alteración de datos, se combinan modos autenticados (como GCM) o se firma el ciphertext con un HMAC.
+
+## ¿Cuándo usar `AES_ENCRYPT` y `AES_DECRYPT` (Cifrado simétrico)?
+
+-   **El escenario:** Tienes datos muy sensibles en una tabla de tu base de datos (como historiales médicos, números de tarjetas o notas privadas como `"Nota de Ana 8"`) y por normativas de seguridad **deben estar ilegibles en el disco**, pero tu aplicación necesita poder **recuperarlos y leerlos** más adelante.
+
+-   **Ejemplo práctico:** Usas `AES_ENCRYPT` con una clave secreta y un vector de inicialización (`@iv`) para guardar la nota cifrada. Si alguien roba el servidor o entra a la base de datos sin permiso, solo verá bytes extraños. Cuando la aplicación legítima lo solicite, usas `AES_DECRYPT` con la misma clave para volver a mostrar "Nota de Ana 8" en pantalla.
+
+## Custodia de claves
+
+### Caso práctico en entorno de aplicaciones:
+
+Imagina que estás programando una aplicación (por ejemplo, una web en Python o Node.js) que guarda datos de tarjetas de crédito o notas privadas en tu base de datos usando `AES_ENCRYPT`.
+
+Podrías pensar en escribir esto directamente en tu código de la aplicación:
+
+``` sql
+INSERT INTO notas (contenido) VALUES (AES_ENCRYPT('Mi nota secreta', 'clave_super_secreta_123'));
+```
+
+**¿Por qué es un problema grave en producción?**
+
+1.  **Los Logs del Servidor:** Las bases de datos guardan registros de lo que pasa (en el *general log* o el *slow query log*). Si un administrador revisa los logs, o si hay una brecha y alguien accede a ellos, **la clave en texto plano quedará expuesta** para siempre junto con la consulta.
+
+2.  **Control de acceso:** Si la clave viaja escrita en el código fuente de la aplicación o en la consulta SQL, cualquier desarrollador con acceso al código repositorio sabrá la clave maestra para descifrar toda la base de datos.
+
+#### ¿Cómo se hace en la vida real en producción?
+
+En un entorno profesional real, la clave de cifrado **nunca viaja en la consulta SQL ni está escrita en el código**. Se separa la responsabilidad de los datos y de las claves utilizando dos enfoques principales:
+
+#### 1. Mediante la Biblioteca de la Aplicación Cliente (Cifrado a nivel de aplicación)
+
+En lugar de pedirle a MySQL que cifre usando funciones, **la aplicación web cifra el dato antes de enviarlo**.
+
+-   La clave maestra **no está en la base de datos ni en el código fuente**, sino que se carga de forma segura en la memoria de la aplicación leyéndola desde una variable de entorno protegida (`process.env.ENCRYPTION_KEY`) en el servidor de la aplicación.
+
+-   La aplicación envía a la base de datos únicamente los **bytes ya cifrados**. Por lo tanto, si alguien mira los logs de la base de datos, solo verá una ristra de bytes ilegibles, y la base de datos jamás sabrá cuál es la clave.
+
+#### 2. Mediante un KMS (Key Management Service)
+
+En arquitecturas más avanzadas o corporativas (usando AWS KMS, Google Cloud KMS, HashiCorp Vault, etc.):
+
+-   La aplicación **no almacena la clave en ninguna parte**, ni siquiera en variables de entorno.
+
+-   Cada vez que la aplicación necesita guardar o leer un dato sensible, hace una llamada segura y cifrada a un servicio externo especializado en gestión de claves (el KMS).
+
+-   El KMS es el único que custodia la llave maestra y le dice a la aplicación: *"Aquí tienes el texto cifrado"* o *"Aquí tienes el texto descifrado"*. Las llaves rotan automáticamente cada cierto tiempo sin que nadie tenga que cambiarlas a mano.
+
+### Caso práctico sobre la base de datos directamente
+
+Si estás trabajando directamente sobre la base de datos (por ejemplo, mediante una consola interactiva, scripts manuales o consultas directas) y no tienes una aplicación o servicio intermediario, la estrategia cambia radicalmente.
+
+En este escenario, el gestor de base de datos (como MySQL o MariaDB) incorpora herramientas nativas para que no tengas que escribir la clave en texto plano dentro de tus sentencias `AES_ENCRYPT`.
+
+#### Uso de Variables de Sesión o Usuario (Ocultar en la consulta)
+
+En lugar de pasar la clave como un literal (ej. `'mi_clave_secreta'`), la guardas primero en una variable de sesión al inicio de tu conexión. Aunque la clave sigue viajando en el script, se aísla de las consultas principales:
+
+``` sql
+-- 1. Asignas la clave de forma segura al inicio de tu sesión
+SET @mi_clave = 'clave_secreta_muy_segura';
+
+-- 2. Usas la variable para cifrar sin exponer el texto plano en el INSERT
+INSERT INTO documentos (contenido) 
+VALUES (AES_ENCRYPT('Texto confidencial', @mi_clave));
+
+-- 3. Limpias la variable de la memoria al terminar
+SET @mi_clave = NULL;
+```
+
+**Ventaja:** Si alguien consulta el historial rápido de consultas o las sentencias repetitivas, no verá la clave escrita directamente en la sentencia `INSERT`.
+
+#### Uso de Gestión de Claves del Servidor (Plugins y Archivos de Llavero)
+
+Para bases de datos de producción donde no hay una aplicación externa y se consulta directamente, los motores profesionales (como MySQL Enterprise o MariaDB Server) utilizan **Plugins de Gestión de Claves (*Key Management Plugins*)**:
+
+-   **Cómo funciona:** La base de datos lee una clave maestra desde un archivo de texto protegido en el disco del servidor (fuera del alcance de los usuarios de SQL) o desde un servicio externo de cifrado al arrancar el servicio.
+
+-   **El beneficio:** El administrador de la base de datos configura el almacenamiento cifrado por columnas (*Data-at-Rest Encryption*) o tablas enteras. Una vez configurado, **tú no tienes que pasar ninguna clave en tus consultas**. El motor de la base de datos cifra y descifra los datos de forma completamente transparente en segundo plano cuando tú haces un `SELECT` o un `INSERT`.
+
+El cifrado transparente (*Data-at-Rest Encryption*) **no protege contra usuarios maliciosos que ya tienen acceso legítimo a la base de datos** mediante una conexión SQL autorizada. Su objetivo principal es proteger contra el **robo físico o el acceso indebido a los archivos en el disco duro**.
+
+-   **Si un atacante roba los discos duros del servidor**, clona las particiones o roba las copias de seguridad de los archivos de datos (`.ibd` en InnoDB):
+
+    -   Al abrir esos archivos con un editor hexadecimal o intentar montarlos en otra máquina, **solo verán bytes aleatorios e ilegibles**.
+
+    -   Los datos en reposo están completamente cifrados.
+
+-   **¿Cuándo y dónde ocurre el descifrado?**
+
+    -   El motor de la base de datos (MariaDB o MySQL) lee los bloques cifrados del disco y los descifra **únicamente en la memoria RAM del servidor** de forma temporal cuando un usuario autenticado y con permisos ejecuta una consulta (`SELECT`).
+
+    -   Si el servidor de bases de datos está apagado, o si alguien roba el disco sin la clave maestra que arranca el servicio, los datos son inútiles.
+
+La seguridad descansa en una cadena de confianza: el sistema operativo protege el archivo de claves y los permisos de los ficheros del sistema de ficheros, y la base de datos protege los datos en el almacenamiento físico.
+
+#### Buenas prácticas operativas si trabajas directamente
+
+Si eres tú quien gestiona y consulta la base de datos directamente, debes tener en cuenta estas precauciones para que el cifrado tenga sentido:
+
+1.  **Cuidado con el historial de la terminal:** Si usas herramientas como la línea de comandos de MySQL (`mysql`), los comandos que escribes se guardan en un archivo de historial en tu ordenador (por ejemplo, `~/.mysql_history`). Si escribes `AES_ENCRYPT('dato', 'clave')`, la clave quedará grabada en texto plano en ese archivo de historial.
+
+2.  **Desactivar los logs de depuración:** Asegúrate de que el *General Query Log* esté desactivado en entornos de producción si vas a realizar pruebas con datos sensibles, ya que ese registro anota absolutamente todo lo que entra al servidor.
+
+::: practica
+**Ejemplo práctico en MariaDB / MySQL)**
+
+Para lograr esto sin tener que escribir claves en tus consultas SQL, se utiliza un **Plugin de Gestión de Claves**. Vamos a ver los pasos generales de cómo se configura (por ejemplo, usando el plugin `file_key_management` en MariaDB):
+
+**Paso 1: Crear un archivo de claves seguro**
+
+Se crea un archivo de texto plano (por ejemplo, `/etc/mysql/encryption_keys.txt`) que contiene identificadores de clave y las claves hexadecimales correspondientes:
+
+``` plaintext
+1;992980A76B8989A98689689689689689
+2;4A6B8989A98689689689689689689689
+```
+
+Este archivo se protege a nivel de sistema operativo para que solo el usuario del sistema que ejecuta la base de datos (mysql) pueda leerlo.
+
+**Paso 2: Configurar el archivo de inicio del servidor (my.cnf o my.ini)** Se le indica al motor de base de datos que cargue el plugin de cifrado y dónde encontrar el archivo de claves: Ini, TOML
+
+```         
+[mysqld]
+# Cargar el plugin de gestión de claves por archivo
+plugin_load_add = file_key_management
+file_key_management_filename = /etc/mysql/encryption_keys.txt
+file_key_management_filekey = passphrase,not_very_secret_in_this_example
+
+# Forzar que las nuevas tablas se cifren por defecto
+innodb_encryption_threads = 4
+innodb_encrypt_tables = ON
+```
+
+**Paso 3: Crear tablas con cifrado activo** Una vez configurado el servidor, al crear una tabla puedes indicar explícitamente que utilice el cifrado:
+
+``` sql
+CREATE TABLE clientes (
+    id INT PRIMARY KEY,
+    tarjeta_credito VARCHAR(16),
+    datos_personales TEXT
+) ENGINE=InnoDB ENCRYPTED=YES ENCRYPTION_KEY_ID=1;
+```
+
+A partir de aquí: Cuando tú hagas un SELECT \* FROM clientes; desde tu CLI de forma normal, verás los datos legibles en tu pantalla porque el motor los descifra en memoria RAM. Pero si apagas el servidor y alguien extrae el archivo de datos físico de la tabla, los datos dentro de él permanecerán cifrados de forma irreversible sin el archivo de claves.
+:::
+
+# Cifrado de columnas
+
+**Es totalmente posible cifrar columnas específicas**, y de hecho es una práctica muy habitual cuando solo una pequeña parte de los registros de una tabla (como números de tarjetas, datos fiscales o notas privadas) requiere confidencialidad estricta.
+
+Dependiendo de cómo quieras gestionarlo, existen dos enfoques principales:
+
+## Cifrado directo por columna con funciones (`AES_ENCRYPT`)
+
+Es el método en el que aplicas el cifrado fila por fila directamente desde tus consultas o scripts.
+
+-   **Cómo se estructura:** Creas una columna de tipo binario (`VARBINARY` o `BLOB`) destinada a guardar exclusivamente el texto cifrado de esa columna en particular. Las demás columnas de la misma tabla (como identificadores, fechas o nombres) se mantienen en texto plano.
+
+-   **Ejemplo práctico:**
+
+    ``` sql
+    CREATE TABLE notas_privadas (
+        id INT PRIMARY KEY,
+        titulo VARCHAR(100),               -- Columna legible (texto plano)
+        contenido_cifrado VARBINARY(512)   -- Columna específica cifrada con AES
+    );
+    ```
+
+**Ventaja:** Te permite decidir con precisión milimétrica qué campo exacto va cifrado sin afectar al rendimiento o legibilidad del resto de la tabla.
+
+### Aislamiento mediante Cifrado Transparente de Tablas (TDE)
+
+Como los sistemas de cifrado transparente en disco (*Data-at-Rest Encryption*) suelen operar a **nivel de tabla completa**, no permiten marcar una única columna suelta dentro de una tabla compartida.
+
+-   **Estrategia de diseño:** Si utilizas TDE a nivel de servidor pero quieres proteger solo unos pocos datos muy sensibles, la solución estándar de arquitectura es **normalizar y separar esos datos en una tabla independiente** (relacionada por una clave foránea).
+
+-   De este modo, la tabla principal permanece ligera y accesible, mientras que la tabla satélite con las columnas críticas se cifra por completo en el almacenamiento físico mediante el motor del gestor.

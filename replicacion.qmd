@@ -1,0 +1,44 @@
+---
+title: "Funciones de Replicación en Bases de Datos (GTID, Esperas y Group Replication)"
+format: html
+---
+
+## 1. ¿Qué es la Replicación y por qué existen estas Funciones?
+
+En un entorno de producción profesional, una sola base de datos suele quedarse corta para gestionar todo el tráfico. Para solucionar esto se utiliza la **replicación**: los cambios (transacciones) ejecutados en un servidor principal (**Origen / Primario**) se copian y aplican en uno o varios servidores secundarios (**Réplicas**).
+
+### El problema fundamental: El "Desfase" (Replication Lag)
+
+Las réplicas funcionan de forma **asíncrona** o **semisíncrona**. Esto significa que cuando el servidor principal guarda un dato, la réplica tarda unos milisegundos (o segundos) en recibirlo y aplicarlo.
+
+Las **Funciones de Replicación** en SQL no crean ni configuran la red de servidores. Son **herramientas de control y comparación** que nos permiten responder a tres preguntas clave:
+
+1.  **Comparación:** ¿Qué transacciones tiene el servidor A que aún no han llegado al servidor B?
+
+2.  **Sincronización:** ¿Cómo puedo hacer que una consulta espere exactamente a que la réplica se ponga al día antes de leer datos?
+
+3.  **Coordinación:** ¿Cómo inspecciono el estado de salud de un clúster de servidores interconectados?
+
+## 2. Identificación por GTID (`GTID_SUBSET` y `GTID_SUBTRACT`)
+
+### ¿Qué es un GTID?
+
+Un **GTID** (*Global Transaction Identifier*) es un identificador único asignado a cada transacción que se ejecuta en el origen. Tiene el formato:
+
+\$\$\\text{UUID\\\_del\\\_Servidor}:\\text{Número\\\_Transacción}\$\$
+
+*(Por ejemplo: `11111111-2222-3333-4444-555555555555:1-5` indica de la transacción 1 a la 5 de ese servidor).*
+
+### Casos Reales en el Mundo Real
+
+#### Escenario A: Auditoría de Réplicas Atrasadas
+
+Un administrador de sistemas tiene 5 réplicas de lectura. Quiere un script automático que alerte si alguna réplica se está quedando muy atrás respecto al origen sin tener que conectarse manualmente a cada máquina.
+
+#### Escenario B: Reenganche tras una Caída
+
+El servidor origen se cae. Hay dos réplicas candidates a ser el nuevo origen. Usando `GTID_SUBTRACT`, el sistema calcula automáticamente cuál de las dos réplicas tiene la lista de transacciones más completa para promocionarla a servidora principal sin perder datos.
+
+### Laboratorio Práctico: Comparación de Listas
+
+Ambas funciones son **puramente analíticas** (comparan cadenas de texto con formato GTID); no necesitan una topología de replicación real para probarse en SQL.

@@ -1,0 +1,154 @@
+---
+title: "Bloqueos con Nombre (User-Level / Advisory Locks) en Bases de Datos"
+format: html
+---
+
+Los **bloqueos con nombre** (también conocidos como *User-Level Locks* o *Advisory Locks*) son un mecanismo de sincronización a nivel de sesión que permite a las aplicaciones coordinar tareas concurrentes en la base de datos utilizando cadenas de texto arbitrarias como identificadores de bloqueo.
+
+A diferencia de los bloqueos implícitos de un motor de base de datos (como el bloqueo de filas en InnoDB o el bloqueo de tablas en MyISAM), los bloqueos con nombre **no afectan directamente los datos físicamente almacenados**. Son bloqueos puramente **consultivos** (*advisory*): funcionan únicamente si todas las sesiones o procesos concurrentes acuerdan respetar el uso del mismo nombre de bloqueo. A diferencia de un bloqueo de filas normal (que protege datos dentro de una tabla), un bloqueo con nombre protege una lógica de negocio o una tarea. ---
+
+# Motores y Bases de Datos Compatibles
+
+Las funciones de bloqueo con nombre están ampliamente implementadas en los SGBD relacionales principales, aunque la sintaxis y el comportamiento interno varían ligeramente entre ellos.
+
+| Gestor de Base de Datos | Compatibilidad / Nombre de Funciones | Comportamiento Reentrante |
+|:-----------------------|:-----------------------|:-----------------------|
+| **MySQL (5.7.5+) & MariaDB** | `GET_LOCK()`, `RELEASE_LOCK()`, `IS_FREE_LOCK()`, `IS_USED_LOCK()`, `RELEASE_ALL_LOCKS()` | **Sí**: Una misma sesión puede adquirir el mismo candado múltiples veces (reentrante/recursivo). |
+| **PostgreSQL** | `pg_advisory_lock()`, `pg_try_advisory_lock()`, `pg_advisory_unlock()` | **Sí**: Soporta bloqueos a nivel de sesión (`pg_advisory_lock`) y a nivel de transacción (`pg_advisory_xact_lock`). |
+| **Microsoft SQL Server** | `sp_getapplock`, `sp_releaseapplock` | **Sí**: Controlado mediante procedimientos almacenados del sistema. |
+| **Oracle Database** | Paquete `DBMS_LOCK` | **Sí**: Permite asignar identificadores o nombres explícitos mediante `DBMS_LOCK.REQUEST`. |
+
+# Situaciones de Uso y Casos Reales
+
+Los bloqueos con nombre son ideales para coordinar procesos a nivel de aplicación cuando los mecanismos estándar de SQL (como `SELECT ... FOR UPDATE` o transacciones ACID) resultan insuficientes o ineficientes.
+
+## Casos de Uso Recomendados:
+
+1.  **Evitar Ejecuciones Duplicadas de Tareas Pesadas (Cron Jobs / Jobs Batch):**
+    -   *Escenario:* Tienes múltiples servidores web o workers de procesamiento en segundo plano. A medianoche, se dispara un script de generación de informes o consolidación nocturna.
+    -   *Solución:* El primer worker ejecuta `GET_LOCK('proceso_nocturno_ventas', 0)`. Si devuelve `1`, ejecuta la tarea. Los demás workers reciben `0` de inmediato y se saltan la ejecución sin sobrecargar el servidor.
+    -   Ejemplos :
+        -   Tienes un script programado (un cron job) que cada noche a las 3:00 AM genera un informe masivo de ventas muy pesado que tarda 20 minutos en calcularse. Un día, por un retraso en el servidor, el proceso de la noche anterior todavía sigue corriendo a las 3:01 AM cuando se dispara el nuevo. Como ambos intentan escribir y calcular lo mismo al mismo tiempo, colapsan la CPU y corrompen los datos. Para evitarlo, antes de empezar a calcular nada, el script ejecuta `SELECT GET_LOCK('proceso_informe_nocturno', 0);`Si devuelve 1, significa que nadie más lo está haciendo. Si devuelve 0, significa que el informe anterior todavía está en marcha. El segundo script dice "Vaya, ya hay otro trabajando" y se cancela limpiamente sin romper nada. Cuando el primer script termina, libera el bloqueo con RELEASE_LOCK('proceso_informe_nocturno').
+        -   Un usuario impaciente hace doble clic muy rápido en el botón de "Pagar pedido" en una pasarela web. Las dos peticiones del navegador llegan a la base de datos de manera simultánea en milisegundos. Como la primera petición aún no ha terminado de guardar el pedido, ambas peticiones consultan la cuenta, ven que hay saldo y procesan la compra dos veces. Cómo se soluciona con un bloqueo con nombre: Antes de procesar el pago de ese usuario concreto, la aplicación solicita un bloqueo exclusivo basado en su ID de usuario: `SELECT GET_LOCK(CONCAT('pago_usuario_', 9876), 3);` La primera petición del doble clic adquiere el bloqueo inmediatamente y procesa el pago. La segunda petición llega al mismo instante, intenta obtener el bloqueo, pero como ya está cogido, se espera o da error de "Operación en curso". Se evita así que el usuario compre el mismo producto dos veces por error.
+        -   Sincronizar scripts en varios servidores (Tareas de mantenimiento): Tu aplicación web está tan concurrida que corre en **tres servidores distintos** conectados a la misma base de datos central. Cada servidor tiene un script que revisa cada hora si hay carritos de compra abandonados para enviar un email recordatorio. Si los tres servidores ejecutan la tarea a la vez, los clientes recibirán tres emails idénticos. Cómo se soluciona con un bloqueo con nombre: Los tres servidores compiten a la misma hora exacta por el mismo bloqueo: `SELECT GET_LOCK('limpieza_carritos_abandonados', 0);` El **Servidor A** es más rápido, gana el bloqueo y hace la limpieza y los envíos. El **Servidor B y el C** intentan cogerlo, ven que está ocupado (`0`), pasan de largo y se ahorran hacer el trabajo duplicado.
+2.  **Migraciones de Esquema o Datos en Clústeres Web:**
+    -   *Escenario:* Un despliegue automatizado lanza varias instancias de una aplicación al mismo tiempo y solo una debe aplicar los parches o scripts de base de datos iniciales.
+3.  **Prevención del "Efecto Estampida" en Cachés (Cache Stampede / Thundering Herd):**
+    -   *Escenario:* Un valor complejo o consulta pesada expira de la memoria caché y miles de usuarios la solicitan en el mismo milisegundo.
+    -   *Solución:* La primera petición adquiere el bloqueo con nombre, regenera la caché y la guarda. Mientras tanto, las demás peticiones esperan unos segundos con `GET_LOCK()` o leen un valor temporal obsoleto.
+4.  **Coordinación de Recursos Externos a la Base de Datos:**
+    -   *Escenario:* Tienes que interactuar con una API de terceros que limita las llamadas a una única petición simultánea por cliente.
+
+# Comparativa: Bloqueos con Nombre vs. Bloqueos Transaccionales (InnoDB)
+
+Es indispensable no confundir los bloqueos con nombre con la concurrencia tradicional sobre filas o tablas.
+
+| Característica | Bloqueos con Nombre (`GET_LOCK`) | Bloqueos Transaccionales (`SELECT FOR UPDATE`) |
+|:--------------|:-----------------------|:--------------------------------|
+| **Objeto bloqueado** | Una cadena de texto (ej. `'proceso_pdf'`). | Filas o índices específicos de una tabla. |
+| **Modo de protección** | Consultivo (*Advisory*): Requiere cooperación del código. | Impositivo (*Mandatory*): El motor detiene escrituras/lecturas concurrentes. |
+| **Efecto de `COMMIT` / `ROLLBACK`** | **Ninguno.** El bloqueo pertenece a la sesión y no a la transacción. | **Libera el bloqueo.** Los bloqueos de fila expiran al cerrar la transacción. |
+| **Dependencia del Motor** | Funciona independientemente del motor de almacenamiento (InnoDB, MyISAM, Memory). | Requiere motores transaccionales (principalmente InnoDB). |
+| **Ámbito de Servidor** | **Servidor único.** No coordina clústeres distribuidos (ej. Galera / MySQL NDB) por sí solo. | Gestionado internamente por el motor de transacciones del nodo. |
+
+# Ejemplo Práctico Guiado (Paso a Paso)
+
+A continuación se detalla el comportamiento de los bloqueos con nombre coordinando dos conexiones en un servidor MySQL/MariaDB.
+
+## Situación de Partida
+
+Dos conexiones quieren generar el mismo informe. Se acuerda utilizar el nombre `laboratorio_funciones.informe` para que solo una de ellas realice ese trabajo a la vez. Es un acuerdo entre las conexiones: no bloquea automáticamente las tablas.
+
+### Participantes y condición inicial
+
+| Elemento | Situación |
+|:-----------------------------------|:-----------------------------------|
+| **Sesión A** | Primera conexión a MySQL. |
+| **Sesión B** | Segunda conexión independiente al mismo servidor. |
+| **Nombre del bloqueo** | `laboratorio_funciones.informe` |
+| **Estado inicial** | El nombre está libre y estas sesiones no conservan otros bloqueos con nombre. |
+
+## Paso 1: La Sesión A obtiene el bloqueo
+
+``` sql
+-- Ejecutar en la sesión A
+SELECT GET_LOCK('laboratorio_funciones.informe', 1) AS obtenido;
+```
+
+### Resultado en A:
+
+| obtenido |
+|:--------:|
+|    1     |
+
+`GET_LOCK` intenta adquirir el nombre. El segundo argumento (`1`) limita la espera en segundos. El valor `1` indica que A lo ha adquirido correctamente.
+
+------------------------------------------------------------------------
+
+## Paso 2: La Sesión B comprueba el estado e intenta obtenerlo
+
+``` sql
+-- Ejecutar en B mientras A conserva el bloqueo
+SELECT IS_FREE_LOCK('laboratorio_funciones.informe') AS libre;
+SELECT IS_USED_LOCK('laboratorio_funciones.informe') AS propietario;
+SELECT GET_LOCK('laboratorio_funciones.informe', 1) AS intento;
+```
+
+### Resultados sucesivos en B:
+
+| Consulta | Resultado | Interpretación |
+|:---------------------|:--------------------------:|:---------------------|
+| `IS_FREE_LOCK` | `0` | El nombre está ocupado. |
+| `IS_USED_LOCK` | `ID_Sesion_A` | Devuelve el ID de la conexión A (el número de proceso asignado por el servidor). |
+| `GET_LOCK` | `0` | B no lo obtiene tras agotar el tiempo de espera (1 segundo). |
+
+## Paso 3: Demostración de Independencia Transaccional (`COMMIT`)
+
+``` sql
+-- Ejecutar en A
+COMMIT;
+SELECT IS_FREE_LOCK('laboratorio_funciones.informe') AS libre;
+```
+
+### Resultado en A:
+
+| libre |
+|:-----:|
+|  `0`  |
+
+`COMMIT` finaliza la transacción actual si existe, pero **el bloqueo con nombre pertenece a la sesión de usuario y continúa ocupado**. Ejecutar `ROLLBACK` tampoco libera el bloqueo. Esta es la diferencia clave con los bloqueos de filas en InnoDB.
+
+## Paso 4: Liberación del bloqueo y cesión del control a B
+
+``` sql
+-- 1. Ejecutar en A para liberar
+SELECT RELEASE_LOCK('laboratorio_funciones.informe') AS liberado;
+
+-- 2. Ejecutar inmediatamente después en B
+SELECT GET_LOCK('laboratorio_funciones.informe', 1) AS obtenido;
+SELECT RELEASE_ALL_LOCKS() AS liberados;
+```
+
+### Resultados en este orden:
+
+| Acción | Resultado | Explicación |
+|:---------------------|:--------------------------:|:---------------------|
+| A libera el nombre | `1` | A liberó exitosamente la adquisición. |
+| B obtiene el nombre | `1` | Como el nombre está libre, B lo adquiere. |
+| B libera sus bloqueos | `1` | `RELEASE_ALL_LOCKS()` libera todas las adquisiciones activas en B. |
+
+# Resumen de Funciones y Valores de Retorno
+
+| Función | Parámetros | Retorno y Significado |
+|:-----------------------|:-----------------------|:-----------------------|
+| `GET_LOCK(str, timeout)` | Nombre (`str`), Tiempo máximo de espera en seg (`timeout`). | `1`: Adquirido con éxito.<br>`0`: Tiempo agotado sin obtener el bloqueo.<br>`NULL`: Error inesperado (ej. memoria agotada). |
+| `IS_FREE_LOCK(str)` | Nombre del bloqueo (`str`). | `1`: Está libre.<br>`0`: Está en uso. |
+| `IS_USED_LOCK(str)` | Nombre del bloqueo (`str`). | `ID_Conexión`: Devuelve el ID del proceso propietario.<br>`NULL`: El bloqueo está libre. |
+| `RELEASE_LOCK(str)` | Nombre del bloqueo (`str`). | `1`: Liberado con éxito.<br>`0`: El bloqueo pertenece a otra sesión.<br>`NULL`: El bloqueo no existía. |
+| `RELEASE_ALL_LOCKS()` | Sin parámetros. | Devuelve el número entero de bloqueos liberados por la sesión actual. |
+
+# Puntos Clave a Recordar para Exámenes o Producción
+
+1.  **Cierre de Conexión Implícito:** Si la conexión del cliente se interrumpe o se cierra de forma inesperada, el servidor libera automáticamente todos los bloqueos con nombre asociados a esa sesión.
+2.  **Reentrabilidad / Anidamiento:** En versiones modernas de MySQL (5.7.5+), si ejecutas `GET_LOCK('x', 1)` dos veces seguidas en la misma sesión, se requiere ejecutar `RELEASE_LOCK('x')` dos veces (o una llamada a `RELEASE_ALL_LOCKS()`) para liberarlo completamente.
+3.  **No Impide Acceso Directo:** Si una tercera sesión (C) ignora el protocolo y ejecuta un `UPDATE` sobre la tabla del informe, la base de datos se lo permitirá. La seguridad depende del cumplimiento estricto del protocolo por parte de todas las aplicaciones participantes.

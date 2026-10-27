@@ -64,6 +64,33 @@ Sin embargo, \*\*es una mala práctica depender de esto\*\*. Acostúmbrate a usa
 
 ![](images/sqlLanguage_fig1.png)
 
+
+# Valores Únicos (`DISTINCT`)
+
+Si queremos saber qué continentes distintos hay en nuestra tabla, un `SELECT Continent` nos devolverá cientos de filas repetidas. `DISTINCT` elimina los duplicados del conjunto de resultados.
+
+``` sql
+SELECT DISTINCT Continent 
+FROM world_health_org;
+```
+
+# Ordenación y Límites (`ORDER BY`, `LIMIT`)
+
+-   **`ORDER BY`**: Ordena por una o varias columnas de forma ascendente (`ASC`, por defecto) o descendente (`DESC`).
+-   **`LIMIT`**: Restringe el número de filas devueltas. (En SQL Server se usa `TOP`).
+
+> **¡Trampa del LIMIT huérfano!**\
+> Si ejecutas `SELECT movie_title FROM imdb_movies LIMIT 5;` sin usar `ORDER BY`, **el resultado es no determinista**. El motor te devolverá las primeras 5 filas que encuentre en la memoria o en el disco duro en ese microsegundo. Puede que hoy te devuelva unas películas y mañana otras distintas. **Regla de oro: Nunca uses `LIMIT` sin acompañarlo de un `ORDER BY`** si quieres resultados consistentes.
+
+``` sql
+-- Forma correcta de obtener el "Top 5"
+SELECT movie_title, budget 
+FROM imdb_movies 
+ORDER BY budget DESC 
+LIMIT 5;
+```
+
+
 # Operadores
 Un operador en sql es un símbolo que indica una operación a realizar sobre uno o más valores. Los operadores pueden ser aritméticos, de comparación, lógicos, de asignación, entre otros.
 Un operador expresa una operación sobre valores: sumar, comparar o combinar condiciones. Una comparación puede ser verdadera, falsa o desconocida. En MySQL se muestran normalmente como 1, 0 y NULL. WHERE conserva únicamente las filas en las que la condición es verdadera.
@@ -237,9 +264,8 @@ WHERE duration BETWEEN 90 AND 120;
     **Solución:** Usa siempre paréntesis para forzar la lógica que deseas: `WHERE (Country = 'USA' OR Country = 'UK') AND duration > 120`.
 
 ::: nota-importante
-Cuidaado con los comparadores y los tipos de datos 
+Cuidado con los comparadores y los tipos de datos 
 En SQLite:
-
 En una tabla tenemos un actor cuyo salario es 'NA' (como cadena de texto, no un nulo). Si quiero seleccionar aquellas filas donde el salario no sea desconocido y uso la condición `bondactorsalary > 0`, el filtro no nos  dará el resultado experado, ya que incluirá a dicho actor. 
 **Por qué `"NA" > 0` es verdadero?**
 En motores estrictos (como PostgreSQL o SQL Server), intentar comparar texto puro como `"NA"` con un número `0` te devolvería un error de sintaxis o de conversión. Sin embargo, SQLite utiliza un sistema de **tipado dinámico**, lo que significa que es extremadamente permisivo e intenta resolver la comparación basándose en una jerarquía de clases de almacenamiento.
@@ -801,14 +827,12 @@ A diferencia de operadores como `IN` o `=`, a `EXISTS` no le importan los valore
 En la subconsulta dentro de un `EXISTS`, es habitual encontrar `SELECT 1` o `SELECT *`. Ambos tienen exactamente el mismo rendimiento y comportamiento en la mayoría de los motores SQL modernos.
 
 ```
--- Ambass formas son equivalentes y válidas
+-- Ambas formas son equivalentes y válidas
 SELECT EXISTS (SELECT 1 FROM ... WHERE ...);
 SELECT EXISTS (SELECT * FROM ... WHERE ...);
-
 ```
 
-### Resumen de Evaluación
-
+### Resumen 
 | Operador | Subconsulta con Filas | Subconsulta Vacía |
 | ----- | ----- | ----- |
 | **`EXISTS`** | `1` (`TRUE`) | `0` (`FALSE`) |
@@ -842,19 +866,12 @@ WHERE EXISTS (
     WHERE e.dep_id = d.dep_id
 );
 
-```
-
-**Resultado:**
-
-```
 +----------------------------+
 | departamento_con_personal  |
 +----------------------------+
 | Tecnología                 |
 | Marketing                  |
 +----------------------------+
-
-```
 
 * **Explicación:** Para "Tecnología" (id 1) y "Marketing" (id 2), la subconsulta encuentra coincidencias en la tabla `Empleados`. Para "Recursos Humanos" (id 3), la subconsulta devuelve 0 filas, por lo que `EXISTS` se evalúa como falso.
 
@@ -882,18 +899,12 @@ WHERE NOT EXISTS (
     WHERE e.dep_id = d.dep_id
 );
 
-```
-
-**Resultado:**
-
-```
 +--------------------+
 | departamento_vacio |
 +--------------------+
 | Recursos Humanos   |
 +--------------------+
 
-```
 
 ## `NOT EXISTS` frente a `NOT IN` con valores `NULL`
 

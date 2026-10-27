@@ -1464,62 +1464,6 @@ ORDER BY id;
 
 Para Ana y Pablo se elige el texto de la nota. Para Marta, la conversión devuelve NULL y COALESCE elige Pendiente. Esta operación prepara la presentación, mientras la columna nota original sigue siendo numérica.
 
-# Cifrado, huellas y compresión
-
-## Tres necesidades distintas
-
-| Necesidad | Herramienta | ¿Se recupera el original? |
-|------------------------|------------------------|------------------------|
-| Comparar contenidos mediante una huella “hash” | SHA2 | No existe una operación de descifrado del hash. |
-| Ocultar un contenido y recuperarlo con una clave. | AES_ENCRYPT y AES_DECRYPT | Sí, con los parámetros correctos. |
-| Reducir el tamaño de datos repetitivos. | COMPRESS y UNCOMPRESS | Sí, sin una clave secreta. |
-
-Una codificación como Base64 tampoco es un cifrado. Representa los mismos bytes de otra forma y cualquiera puede invertirla. La elección depende del objetivo, no de que la salida parezca difícil de leer.
-
-## SHA2 para obtener una huella
-
-Se quiere comprobar si dos contenidos idénticos generan la misma huella y si un cambio del contenido cambia esa huella.
-
-``` sql
-SELECT SHA2('abc', 256) AS huella;
-```
-
-### Resultado SHA-256
-
-| huella                                                           |
-|------------------------------------------------------------------|
-| ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad |
-
-La salida son sesenta y cuatro caracteres hexadecimales. No es el texto abc cifrado con una clave: es una huella calculada a partir de ese texto.
-
-``` sql
-SELECT SHA2('abc', 256) = SHA2('abc', 256) AS mismo_contenido,
-       SHA2('abc', 256) = SHA2('abd', 256) AS contenido_cambiado;
-```
-
-### Resultado
-
-| mismo_contenido | contenido_cambiado |
-|-----------------|--------------------|
-| 1               | 0                  |
-
-Las entradas iguales producen la misma huella. En el ejemplo, cambiar c por d produce otra distinta. Una huella permite comparar contenidos, pero no prueba por sí sola quién los produjo. Para contraseñas de una aplicación se utilizan mecanismos específicos de hash de contraseñas; SHA2 directo no basta. MD5 y SHA1 son opciones heredadas que no deben elegirse para nuevos usos criptográficos.
-
-## RANDOM_BYTES para claves y otros valores aleatorios
-
-``` sql
-SELECT OCTET_LENGTH(RANDOM_BYTES(16)) AS bytes_generados,
-       CHAR_LENGTH(HEX(RANDOM_BYTES(16))) AS caracteres_hex;
-```
-
-### Resultado
-
-| bytes_generados | caracteres_hex |
-|-----------------|----------------|
-| 16              | 32             |
-
-RANDOM_BYTES genera bytes aleatorios. HEX representa cada byte con dos caracteres; dieciséis bytes necesitan treinta y dos caracteres hexadecimales. Las dos llamadas producen valores independientes. El contenido aleatorio no tiene una salida fija que deba memorizarse.
-
 ## Cifrar y recuperar un texto con AES
 
 Situación: se desea ocultar el texto Nota de Ana 8 y recuperarlo después. Se utiliza la misma sesión para conservar las variables. El ejemplo usa CBC, que necesita una clave y un vector de inicialización.
@@ -1554,9 +1498,6 @@ SELECT @texto_demo AS original,
 
 SET SESSION block_encryption_mode = @modo_anterior;
 ```
-
-### Resultado
-
 | original      | recuperado    |
 |---------------|---------------|
 | Nota de Ana 8 | Nota de Ana 8 |
@@ -1565,66 +1506,6 @@ La recuperación funciona porque se conserva la clave, el vector y el modo que s
 
 Este ejemplo enseña la operación. Un sistema real también necesita custodia de claves, transporte protegido e integridad de los mensajes. CBC por sí solo no autentica el contenido. El modo predeterminado del servidor no debe suponerse adecuado para cualquier uso.
 
-## COMPRESS, UNCOMPRESS y UNCOMPRESSED_LENGTH
-
-Se utilizará un texto de mil letras A. Es repetitivo, por lo que permite ver la finalidad de comprimir sin depender del contenido de una tabla.
-
-``` sql
-SET @texto_largo = REPEAT('A', 1000);
-SET @texto_comprimido = COMPRESS(@texto_largo);
-
-SELECT LENGTH(@texto_largo) AS bytes_originales,
-       LENGTH(@texto_comprimido) AS bytes_comprimidos,
-       UNCOMPRESSED_LENGTH(@texto_comprimido) AS longitud_original;
-```
-
-### Resultado que debe observarse
-
-| bytes_originales | bytes_comprimidos | longitud_original |
-|----|----|----|
-| 1000 | Un valor mucho menor en esta entrada repetitiva. | 1000 |
-
-COMPRESS devuelve los bytes comprimidos. UNCOMPRESSED_LENGTH permite conocer la longitud original sin mostrar toda la cadena. El tamaño comprimido concreto puede depender de la biblioteca y de la versión.
-
-``` sql
-SELECT CAST(UNCOMPRESS(@texto_comprimido) AS CHAR)
-          = @texto_largo AS recuperado_correctamente;
-```
-
-### Resultado
-
-| recuperado_correctamente |
-|--------------------------|
-| 1                        |
-
-UNCOMPRESS recupera los bytes originales. La comparación da uno porque se recupera exactamente el mismo texto. La compresión necesita soporte en el servidor; los resultados binarios se guardan en BLOB o VARBINARY. Una cadena corta o poco repetitiva puede ocupar más al comprimirse.
-
-## STATEMENT_DIGEST para agrupar consultas parecidas
-
-En un informe de rendimiento puede interesar agrupar dos consultas que solo cambian el identificador buscado. Las funciones de digest reciben SQL como texto; no ejecutan ese SQL.
-
-``` sql
-SELECT STATEMENT_DIGEST(
-           'SELECT nota FROM calificaciones WHERE id = 1'
-       ) = STATEMENT_DIGEST(
-           'SELECT nota FROM calificaciones WHERE id = 2'
-       ) AS misma_estructura;
-```
-
-### Resultado
-
-| misma_estructura |
-|------------------|
-| 1                |
-
-La estructura es la misma: seleccionar nota filtrando por id. Cambia el valor uno por dos. STATEMENT_DIGEST devuelve una huella de la estructura normalizada.
-
-``` sql
-SELECT STATEMENT_DIGEST_TEXT(
-    'SELECT nota FROM calificaciones WHERE id = 1') AS estructura;
-```
-
-STATEMENT_DIGEST_TEXT muestra la forma normalizada, con un marcador en lugar del valor literal. La puntuación y el formato de esa representación pueden variar. Su utilidad se retoma en el apartado de diagnóstico.
 
 # Funciones de bloqueo con nombre
 
