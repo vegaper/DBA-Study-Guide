@@ -2,38 +2,308 @@
 title: "Procedimientos almacenados"
 format: html
 ---
-variables. 
-tipos local, session... 
-sintaxis declare set 
 
-Stored procedures
-En cada apartado, diferencias principales entre motores.
+# Variables 
 
-que son. diferencias con views
+Antes de trabajar con procedimientos almacenados, es fundamental entender cómo se gestionan y almacenan los datos de forma temporal mediante variables.
 
-tipos in out inout
-sintaxis: begin end delimiter
-como listar todas las procedures
-ver el contenido de un procedure. parametro \G para verlo mejor.
-llamar a un procedimiento
-modificar un procedimiento
-borrar un procedimiento.
-permisos invoker vs definer
+## Concepto de Variable
 
+En el contexto de las bases de datos relacionales, una **variable** es una estructura de almacenamiento temporal identificada por un nombre que reserva un espacio en la memoria RAM del motor durante el tiempo de ejecución.
 
-Bloques condicionales procedimentales: La estructura IF ... ELSE
-Si necesitamos evaluar una regla compleja de varias líneas dentro de un bloque de código (y no en una simple línea como IF() o CASE), MySQL permite utilizar la estructura condicional clásica de bloques.
-```sql
+Se utiliza para capturar, almacenar y manipular datos de forma dinámica dentro de scripts, procedimientos almacenados, funciones o sesiones de usuario, evitando tener que reescribir o recalcular valores en consultas posteriores.
+
+## ¿Qué se puede almacenar en una variable?
+
+El contenido que puede albergar una variable depende de si almacena un **valor único** o una **estructura compleja**:
+
+### Valores Escalares (Un único dato)
+
+Todos los motores de bases de datos permiten guardar un dato escalar individual que corresponda a cualquier tipo de dato nativo del motor:
+
+-   **Números:** Enteros (`INT`, `BIGINT`), decimales (`DECIMAL`, `FLOAT`).
+
+-   **Cadenas de texto:** `VARCHAR`, `TEXT`, `CHAR`.
+
+-   **Fechas y horas:** `DATE`, `TIMESTAMP`, `DATETIME`.
+
+-   **Valores booleanos / Lógicos:** `BOOLEAN` (o `BIT` en T-SQL).
+
+-   **Identificadores y BLOBs:** Guids (`UUID`), archivos binarios o fragmentos `JSON`.
+
+### Conjuntos de Datos y Tablas (Variables Complejas)
+
+No todos los motores permiten almacenar tablas completas directamente en una variable. La capacidad de guardar conjuntos de filas y columnas varía según el motor:
+
+-   **SQL Server (T-SQL) - `TABLE` type:** Permite definir explícitamente variables de tipo tabla (`DECLARE @mi_tabla TABLE (...)`). Se comportan como tablas temporales residentes en memoria y se pueden consultar con un `SELECT` normal.
+
+-   **PostgreSQL (PL/pgSQL) - `RECORD` y Cursores:** No tiene un tipo "variable tabla" explícito como T-SQL, pero permite asignar la fila entera de un resultado a una variable de tipo `RECORD`, o iterar sobre conjuntos de datos complejos mediante **cursores**.
+
+-   **MySQL / MariaDB:** **No permite almacenar tablas completas en variables.** Una variable solo puede almacenar un valor escalar único. Si un `SELECT ... INTO` devuelve más de una fila en MySQL, el motor lanzará un error (`Result consisted of more than one row`). Para manejar conjuntos de filas en MySQL dentro de un procedimiento, se deben utilizar **Tablas Temporales** (`CREATE TEMPORARY TABLE`) o **Cursores**.
+
+| Motor | Valores Escalares | Almacenar Filas/Registros (`RECORD`) | Variable Tipo Tabla (`TABLE`) |
+|----------------|-----------|---------------------|-------------------------|
+| **MySQL / MariaDB** | Sí | No | No (requiere `TEMPORARY TABLE`) |
+| **SQL Server (T-SQL)** | Sí | Sí | **Sí** (`DECLARE @t TABLE (...)`) |
+| **PostgreSQL (PL/pgSQL)** | Sí | **Sí** (`RECORD` / %ROWTYPE) | Mediante funciones que devuelven `SETOF` / `TABLE` |
+
+## Tipos de variables por ambito (scope) en MySQL / MariaDB
+
+### Variables Locales
+
+-   **Ámbito (Scope):** Solo existen dentro del bloque `BEGIN ... END` donde han sido declaradas (por ejemplo, dentro de un procedimiento almacenado o función).
+-   **Vida útil:** Se crean al ejecutar el bloque y se destruyen al finalizar.
+-   **Declaración:** Se deben declarar al inicio del bloque mediante la palabra clave `DECLARE`.
+
+``` sql
+DECLARE v_total_mascotas INT DEFAULT 0; --DECLARACION
+SET v_total_mascotas =1 ---ASIGNACION
+```
+
+### Variables de Sesión (Variables de Usuario)
+
+Ámbito (Scope): Disponibles globalmente durante toda la conexión/sesión actual del usuario. Sintaxis: Se identifican por llevar el prefijo \@ (@nombre_variable). Vida útil: Persisten hasta que el usuario cierra la sesión o finaliza la conexión con el servidor. No requieren declaración previa de tipo.
+
+``` sql
+SET @nota_alumno = 6.5;
+SELECT @nota_alumno;
+```
+
+### Variables de Sistema
+
+Ámbito (Scope): Configuran el comportamiento del propio servidor MySQL/MariaDB (pueden ser de ámbito GLOBAL o SESSION). Sintaxis: Llevan el prefijo \@\@ (\@@global.variable o \@@session.variable). Stored procedures
+
+``` sql
+SELECT @@version, @@sql_mode;
+```
+
+## Asignación mediante SELECT ... INTO
+
+Permite guardar directamente el resultado de una consulta escalar dentro de una variable local o de sesión:
+
+``` sql
+SELECT COUNT(*) INTO v_total_mascotas 
+FROM mascotas 
+WHERE estado = 'En adopción';
+```
+
+## Tipos de variables por ambito (scope) en SQL Server / T-SQL
+
+En T-SQL ocurre algo que confunde mucho a quienes vienen de MySQL: **el símbolo `@` se utiliza para las variables locales**, no para las de sesión.
+
+-   **Variables Locales / de Procedimiento (`@var`):** En T-SQL, cualquier variable declarada con `DECLARE @mi_var INT` dentro de un procedimiento o lote (*batch*) tiene ámbito local a ese bloque o lote de ejecución, y **desaparece al terminar**.
+
+-   **Variables de Sesión personalizadas:** T-SQL **no tiene** un equivalente directo a las variables de usuario `@` de MySQL que persistan de forma independiente durante toda la sesión sin declararse previamente. Si necesitas persistencia a nivel de sesión, se suelen usar tablas temporales (`#tabla`) o parámetros de configuración.
+
+-   **Variables del Sistema (`@@`):** A diferencia de MySQL (donde `@` es usuario y `@@` es sistema), en T-SQL las variables del sistema globales (como `@@ROWCOUNT` o `@@ERROR`) también usan el doble `@@`, pero son de solo lectura y controladas por el motor.
+
+## Tipos de variables por ambito (scope) en PostgreSQL / PL/pgSQL 
+
+PostgreSQL es mucho más estricto con el tipado y los ámbitos:
+
+-   **Variables Locales:** Se declaran exclusivamente en la sección `DECLARE` de una función o procedimiento y su ámbito se limita a ese bloque de código.
+
+-   **Variables de Sesión:** PostgreSQL **no soporta** el uso de variables de usuario con prefijo `@`. Para almacenar valores a nivel de sesión o pasar configuraciones personalizadas, se utilizan los **parámetros de configuración de sesión** mediante los comandos `SET` y se recuperan con la función `current_setting('mi.variable')`.
+
+|  |  |  |  |
+|----|----|----|----|
+| **Concepto de Ámbito** | **MySQL / MariaDB** | **SQL Server (T-SQL)** | **PostgreSQL** |
+| **Variable Local (en bloque/stored procedure)** | `DECLARE var INT;` | `DECLARE @var INT;` | En sección `DECLARE` |
+| **Variable de Sesión / Usuario** | `@var` (Persiste toda la conexión) | ❌ No existe de forma nativa con `@` | Mediante parámetros de sesión (`set` / `current_setting`) |
+| **Variables del Servidor / Sistema** | `@@global.` / `@@session.` | `@@VERSION`, `@@ROWCOUNT` (Solo lectura) | `SHOW` / `current_setting()` |
+
+# Procedimientos Almacenados (Stored Procedures)
+
+## ¿Qué es un Procedimiento Almacenado?
+
+Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y guardadas directamente en el servidor de base de datos. Permite ejecutar rutinas complejas, automatizar tareas y encapsular la lógica de negocio directamente en el motor.
+
+### Diferencias principales con respecto a las Vistas (`VIEWS`)
+
+|  |  |  |
+|------------|------------------------------|------------------------------|
+| **Característica** | **Vista (VIEW)** | **Procedimiento Almacenado (STORED PROCEDURE)** |
+| **Naturaleza** | Consulta `SELECT` guardada que actúa como una tabla virtual. | Un conjunto de instrucciones procedurales (algoritmo). |
+| **Parámetros** | No acepta parámetros de entrada/salida. | Acepta parámetros de entrada (`IN`), salida (`OUT`) y mixtos (`INOUT`). |
+| **Operaciones** | Orientada a lectura/proyección de datos (`SELECT`). | Puede ejecutar `SELECT`, `INSERT`, `UPDATE`, `DELETE`, transacciones, etc. |
+| **Control de flujo** | No permite estructuras de control (`IF`, `LOOP`, `WHILE`). | Permite lógica de programación compleja (`IF`, `CASE`, bucles). |
+
+## Diferencias Principales entre Motores
+
+Aunque el estándar ANSI SQL define la sintaxis general, cada motor implementa sus propias particularidades en el lenguaje procedural:
+
+-   **MySQL / MariaDB:** Utiliza la sintaxis estándar `BEGIN ... END`, requiere cambiar el delimitador (`DELIMITER`), soporta tipos `IN`, `OUT` e `INOUT`.
+
+-   **PostgreSQL:** Utiliza `PL/pgSQL`. Soporta procedimientos (`CREATE PROCEDURE`) y funciones avanzadas. Las variables se declaran en una sección explícita `DECLARE` previa al bloque `BEGIN ... END`, y el código del procedimiento se escribe entre comillas de dólar (`$$ ... $$`).
+
+-   **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
+
+-   **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
+
+## Tipos de Parámetros: `IN`, `OUT`, `INOUT`
+
+1.  **`IN` (Entrada):** Parámetro por defecto. Pasa un valor desde el exterior hacia el procedimiento. El procedimiento puede leerlo pero no devolver modificaciones al exterior.
+
+2.  **`OUT` (Salida):** Se utiliza para devolver valores desde el procedimiento al entorno que lo llamó. Inicialmente es `NULL` dentro del procedimiento.
+
+3.  **`INOUT` (Entrada/Salida):** Se pasa un valor de entrada al procedimiento, este puede modificarlo y devolver el nuevo valor a la variable original de sesión.
+
+## Sintaxis en MySQL: `DELIMITER`, `BEGIN` y `END`
+
+Dado que un procedimiento contiene múltiples sentencias finalizadas en punto y coma (`;`), el cliente SQL necesita saber dónde termina la definición del procedimiento. Para ello, se cambia temporalmente el delimitador de instrucciones con la palabra clave `DELIMITER`.
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE sp_registrar_adopcion (
+    IN p_mascota_id INT,
+    IN p_adoptante_id INT,
+    OUT p_resultado VARCHAR(100)
+)
+BEGIN
+    DECLARE v_disponible INT;
+
+    -- Comprobar si la mascota está disponible
+    SELECT COUNT(*) INTO v_disponible 
+    FROM mascotas 
+    WHERE id = p_mascota_id AND estado = 'En adopción';
+
+    IF v_disponible > 0 THEN
+        UPDATE mascotas SET estado = 'Adoptado' WHERE id = p_mascota_id;
+        SET p_resultado = 'Adopción registrada correctamente';
+    ELSE
+        SET p_resultado = 'Error: La mascota no está disponible';
+    END IF;
+END //
+
+DELIMITER ;
+```
+
+## Mantenimiento y Administración de Procedimientos
+
+### Listar todos los procedimientos almacenados
+
+``` sql
+-- Ver procedimientos en la base de datos actual
+SHOW PROCEDURE STATUS WHERE db = DATABASE();
+
+-- O consultando el catálogo del sistema
+SELECT routine_name, routine_type 
+FROM information_schema.routines 
+WHERE routine_schema = DATABASE() AND routine_type = 'PROCEDURE';
+```
+
+### Ver el contenido de un procedimiento
+
+Para revisar el código fuente original de un procedimiento:
+
+``` sql
+SHOW CREATE PROCEDURE sp_registrar_adopcion;
+```
+
+**Consejo CLI (Línea de comandos):** En el cliente de consola de MySQL/MariaDB, añade `\G` al final de la sentencia en lugar de `;` para formatear el resultado verticalmente y facilitar su lectura: `SHOW CREATE PROCEDURE sp_registrar_adopcion\G`
+
+### Llamar a un procedimiento 
+
+MySQL: `CALL`
+
+``` sql
+-- Asignamos una variable de sesión para recibir el parámetro OUT
+CALL sp_registrar_adopcion(1, 10, @mensaje);
+
+-- Consultamos la respuesta
+SELECT @mensaje;
+```
+
+## Diferencias en la Creación y Ejecución por Motores
+
+### 1. SQL Server (T-SQL)
+
+-   **Bloque procedural:** No utiliza las palabras clave `BEGIN ... END` de la misma manera que MySQL para delimitar todo el cuerpo principal del script; en su lugar, se emplea frecuentemente `AS` seguido opcionalmente de bloques `BEGIN ... END` internos si hay múltiples sentencias. Tampoco se utiliza el comando `DELIMITER`.
+
+-   **Declaración de variables:** Las variables locales llevan obligatoriamente el prefijo `@` y deben declararse con `DECLARE` al principio del bloque.
+
+-   **Llamada (Ejecución):** Para ejecutar un procedimiento almacenado en T-SQL, se utiliza obligatoriamente la palabra clave `EXEC` o `EXECUTE`.
+
+    ``` sql
+    -- Creación en SQL Server (T-SQL)
+    CREATE PROCEDURE sp_consultar_mascota
+        @p_id INT
+    AS
+    BEGIN
+        SELECT * FROM mascotas WHERE id = @p_id;
+    END;
+    GO
+
+    -- Llamada en SQL Server
+    EXEC sp_consultar_mascota @p_id = 1;
+    ```
+
+### 2. PostgreSQL (PL/pgSQL)
+
+-   **Bloque procedural:** Utiliza delimitadores de texto (comillas de dólar `$$ ... $$`) para envolver el código del procedimiento.
+
+-   **Declaración de variables:** Las variables locales se definen estrictamente dentro de una sección `DECLARE` situada antes del bloque `BEGIN`.
+
+-   **Llamada (Ejecución):** Se invoca mediante la instrucción estándar `CALL` (para procedimientos) o `SELECT` (para funciones).
+
+    ``` sql
+    -- Creación en PostgreSQL (PL/pgSQL)
+    CREATE OR REPLACE PROCEDURE sp_actualizar_estado(p_id INT, p_nuevo_estado VARCHAR)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        UPDATE mascotas SET estado = p_nuevo_estado WHERE id = p_id;
+    END;
+    $$;
+
+    -- Llamada en PostgreSQL
+    CALL sp_actualizar_estado(1, 'Adoptado');
+    ```
+
+### Modificar un procedimiento
+
+Para cambiar la lógica interna de un procedimiento en MySQL/MariaDB, la práctica habitual es eliminarlo y volver a crearlo (`DROP PROCEDURE IF EXISTS` + `CREATE PROCEDURE`).
+
+`ALTER PROCEDURE` solo permite modificar características de metadatos (como comentarios o la cláusula de seguridad), no el cuerpo `BEGIN ... END`.
+
+### Borrar un procedimiento
+
+``` sql
+DROP PROCEDURE IF EXISTS sp_registrar_adopcion;
+```
+
+## Permisos de Ejecución: `DEFINER` vs. `INVOKER`
+
+Al crear un procedimiento almacenado, se puede especificar el contexto de seguridad con el que se ejecutará la rutina mediante la cláusula `SQL SECURITY`:
+
+``` sql
+CREATE PROCEDURE sp_ejemplo()
+SQL SECURITY DEFINER -- O SQL SECURITY INVOKER
+BEGIN
+    -- Cuerpo del procedimiento
+END;
+```
+
+-   **`DEFINER` (Por defecto):** El procedimiento se ejecuta con los permisos del **usuario que creó** el procedimiento. Permite dar acceso controlado a operaciones sensibles a usuarios que no tienen permisos directos sobre las tablas subyacentes.
+
+-   **`INVOKER`:** El procedimiento se ejecuta con los permisos del **usuario que lo está llamando** en ese momento. Si el usuario que llama no tiene permisos sobre las tablas consultadas dentro del procedimiento, la ejecución fallará.
+
+# Bloques Condicionales Procedimentales: La Estructura `IF ... ELSE`
+
+Si necesitamos evaluar una regla compleja de varias líneas dentro de un bloque procedural (`BEGIN ... END`), MySQL permite utilizar la estructura condicional clásica de bloques.
+
+``` sql
 IF condicion THEN
     -- Sentencias si se cumple la condición
 ELSE
     -- Sentencias si no se cumple
 END IF;
 ```
-Ejemplo Sencillo (Evaluando una variable de sesión)
-Imagina que queremos evaluar una variable de usuario que ya tenemos cargada, mostrando un mensaje u otro sin necesidad de crear todavía una función o procedimiento almacenado completo:
 
-```sql
+Ejemplo Sencillo (Evaluando una variable de sesión) Imagina que queremos evaluar una variable de usuario que ya tenemos cargada, mostrando un mensaje u otro sin necesidad de crear todavía una función o procedimiento almacenado completo:
+
+``` sql
 -- Simulamos una variable con una nota de prueba
 SET @nota_alumno = 6.5;
 
@@ -44,8 +314,7 @@ else
     SELECT 'El alumno debe recuperar la materia' AS resultado;
 END IF;
 ```
-Cuándo usar cada opción:
 
-Utiliza CASE WHEN dentro de tus consultas SELECT normales cuando estés transformando filas de una tabla.
+-   **Utiliza `CASE WHEN`** dentro de tus consultas `SELECT` normales cuando estés transformando filas de una tabla individualmente.
 
-Utiliza la estructura IF ... ELSE ... END IF cuando estés escribiendo bloques lógicos de control más extensos o scripts de automatización donde las expresiones de una sola línea se queden cortas.
+-   **Utiliza la estructura `IF ... ELSE ... END IF`** cuando estés escribiendo bloques lógicos de control más extensos dentro de un procedimiento almacenado, función o script de automatización donde las expresiones de una sola línea se queden cortas.
