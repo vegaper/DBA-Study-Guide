@@ -2,86 +2,101 @@
 title: "Funciones y Operadores de Texto (Cadenas de Caracteres) en SQL"
 format: html
 ---
+
 Las funciones de cadena permiten manipular, transformar, analizar y filtrar valores de texto en SQL.
 
 # Operadores de Búsqueda y Coincidencia de Patrones
 
 ## `LIKE` y `NOT LIKE`
-Permite buscar patrones sencillos dentro de cadenas de texto utilizando dos caracteres comodín:
-* `%`: Representa cero, uno o múltiples caracteres.
-* `_`: Representa exactamente un único carácter.
 
-* **Compatibilidad:** **Universal** (MySQL, MariaDB, PostgreSQL, SQL Server, Oracle, SQLite).
-  * *Nota:* En PostgreSQL la búsqueda con `LIKE` es sensible a mayúsculas/minúsculas (*case-sensitive*); se usa `ILIKE` para búsquedas insensibles.
+Permite buscar patrones sencillos dentro de cadenas de texto utilizando dos caracteres comodín: \* `%`: Representa cero, uno o múltiples caracteres. \* `_`: Representa exactamente un único carácter.
 
-```sql
+- **Compatibilidad:** **Universal** (MySQL, MariaDB, PostgreSQL, SQL Server, Oracle, SQLite).
+  - *Nota:* En PostgreSQL la búsqueda con `LIKE` es sensible a mayúsculas/minúsculas (*case-sensitive*); se usa `ILIKE` para búsquedas insensibles.
+
+``` sql
 SELECT 'Juan Pérez' LIKE 'J%' AS empieza_con_j,       -- 1 (True)
        'Juan Pérez' LIKE 'J_an%' AS segundo_caracter, -- 1 (True)
        'Texto' NOT LIKE '%xyz' AS no_termina_xyz;     -- 1 (True)
 ```
+
 Si se desea buscar un porcentaje literal, se puede utilizar un carácter de escape:
 
 ``` sql
 SELECT '100%' LIKE '100!%' ESCAPE '!' AS coincidencia;
 ```
+
 ## `REGEXP` / `RLIKE` (Expresiones Regulares)
+
 Permite realizar búsquedas mediante patrones de expresiones regulares (POSIX / PCRE).
 
-* **Compatibilidad:**
-  * **MySQL / MariaDB:** `REGEXP` o `RLIKE`.
-  * **PostgreSQL:** Operadores `~` (sensible) y `~*` (insensible) o `REGEXP_LIKE()`.
-  * **Oracle:** `REGEXP_LIKE()`.
-  * **SQL Server:** No soporta `REGEXP` nativamente (utiliza patrones extendidos con `LIKE` o funciones CLR).
+- **Compatibilidad:**
+  - **MySQL / MariaDB:** `REGEXP` o `RLIKE`.
+  - **PostgreSQL:** Operadores `~` (sensible) y `~*` (insensible) o `REGEXP_LIKE()`.
+  - **Oracle:** `REGEXP_LIKE()`.
+  - **SQL Server:** No soporta `REGEXP` nativamente (utiliza patrones extendidos con `LIKE` o funciones CLR).
 
-```sql
+``` sql
 -- Buscar si la cadena contiene solo dígitos (MySQL / MariaDB)
 SELECT '12345' REGEXP '^[0-9]+$' AS es_numerico,  -- 1 (True)
        'A-123' REGEXP '^[0-9]+$' AS es_numerico2; -- 0 (False)
 ```
+
 ### Otras funciones de expresiones regulares
 
-| Sentencia SQL | Resultado | Lectura |
-|------------------------|------------------------|------------------------|
-| SELECT REGEXP_REPLACE('600-123-456', '\[\^0-9\]', ''); | 600123456 | Sustituye por texto vacío cada carácter que no sea un dígito. |
-| SELECT REGEXP_SUBSTR('Aula 27 planta 2', '\[0-9\]+'); | 27 | Extrae la primera secuencia de uno o más dígitos. |
-| SELECT REGEXP_INSTR('Aula 27', '\[0-9\]+'); | 6 | Indica dónde empieza la primera secuencia de dígitos. |
-
++--------------------------------------------------------+----------------------+---------------------------------------------------------------+
+| Sentencia SQL                                          | Resultado            | Lectura                                                       |
++========================================================+======================+===============================================================+
+| SELECT REGEXP_REPLACE('600-123-456', '\[\^0-9\]', ''); | 600123456            | Sustituye por texto vacío cada carácter que no sea un dígito. |
++--------------------------------------------------------+----------------------+---------------------------------------------------------------+
+| SELECT REGEXP_SUBSTR('Aula 27 planta 2', '\[0-9\]+');  | 27                   | Extrae la primera secuencia de uno o más dígitos.             |
++--------------------------------------------------------+----------------------+---------------------------------------------------------------+
+| SELECT REGEXP_INSTR('Aula 27', '\[0-9\]+');            | 6                    | Indica dónde empieza la primera secuencia de dígitos.         |
++--------------------------------------------------------+----------------------+---------------------------------------------------------------+
 
 # Cotejo y Ordenación (`COLLATE`)
 
 El operador `COLLATE` invalida o especifica el cotejo (*collation*) de una cadena para cambiar cómo se comparan u ordenan los caracteres (sensibilidad a mayúsculas, tildes, etc.).
 
-* **Sintaxis común:** `columna COLLATE nombre_cotejo`
-* **Cotejos habituales en MySQL:**
-  * `utf8mb4_bin`: Comparación exacta a nivel binario (sensible a mayúsculas y tildes).
-  * `utf8mb4_general_ci` / `utf8mb4_unicode_ci`: Insensible a mayúsculas (*ci = case insensitive*).
-* **Compatibilidad:** **Alta** (MySQL, MariaDB, PostgreSQL, SQL Server, Oracle).
+- **Sintaxis común:** `columna COLLATE nombre_cotejo`
+- **Cotejos habituales en MySQL:**
+  - `utf8mb4_bin`: Comparación exacta a nivel binario (sensible a mayúsculas y tildes).
+  - `utf8mb4_general_ci` / `utf8mb4_unicode_ci`: Insensible a mayúsculas (*ci = case insensitive*).
+- **Compatibilidad:** **Alta** (MySQL, MariaDB, PostgreSQL, SQL Server, Oracle).
 
-```sql
+``` sql
 SELECT 'hola' COLLATE utf8mb4_bin = 'Hola' AS comparacion_binaria,      
        'hola' COLLATE utf8mb4_general_ci = 'Hola' AS comparacion_ci;   
 ```
+
 +---------------------+----------------+
+|                     |                |
++=====================+================+
 | comparacion_binaria | comparacion_ci |
 +---------------------+----------------+
-|                   0 |              1 |
+| ```                 | ```            |
+|               0     |          1     |
+| ```                 | ```            |
 +---------------------+----------------+
+
 # Concatenación de Cadenas
 
 ## `CONCAT(str1, str2, ...)`
+
 Une dos o más cadenas de texto en una sola.
 
-* **Casuística `NULL`:** Si **cualquiera** de los argumentos es `NULL`, la función devuelve `NULL`.
-* **Compatibilidad:**
-  * **MySQL / MariaDB / Oracle / PostgreSQL:** Soportada.
-  * **SQL Server:** Disponible a partir de SQL Server 2012 (en versiones anteriores se usa el operador `+`).
-  * *Nota:* En Oracle y PostgreSQL, el operador estándar ANSI SQL es `||`.
+- **Casuística `NULL`:** Si **cualquiera** de los argumentos es `NULL`, la función devuelve `NULL`.
+- **Compatibilidad:**
+  - **MySQL / MariaDB / Oracle / PostgreSQL:** Soportada.
+  - **SQL Server:** Disponible a partir de SQL Server 2012 (en versiones anteriores se usa el operador `+`).
+  - *Nota:* En Oracle y PostgreSQL, el operador estándar ANSI SQL es `||`.
 
-```sql
+``` sql
 SELECT CONCAT('Base', ' de ', 'Datos') AS resultado_exitoso,
        CONCAT('Base', NULL, 'Datos') AS resultado_con_null;
 ```
-```
+
+```         
 +-------------------+--------------------+
 | resultado_exitoso | resultado_con_null |
 +-------------------+--------------------+
@@ -90,18 +105,22 @@ SELECT CONCAT('Base', ' de ', 'Datos') AS resultado_exitoso,
 ```
 
 ## `CONCAT_WS(separator, str1, str2, ...)`
+
 Significa *Concatenate With Separator*. El primer argumento actúa como delimitador entre el resto de las cadenas.
 
-* **Casuística `NULL`:** 
-  * Si el **separador** es `NULL`, la función devuelve `NULL`.
-  * Si alguno de los **valores a concatenar** es `NULL`, la función simplemente lo **ignora** y continúa con los demás.
-* **Compatibilidad:** **MySQL, MariaDB, PostgreSQL (9.1+), SQL Server (2017+)**. No soportado nativamente en Oracle.
+- **Casuística `NULL`:**
+  - Si el **separador** es `NULL`, la función devuelve `NULL`.
+  - Si alguno de los **valores a concatenar** es `NULL`, la función simplemente lo **ignora** y continúa con los demás.
+- **Compatibilidad:** **MySQL, MariaDB, PostgreSQL (9.1+), SQL Server (2017+)**. No soportado nativamente en Oracle.
 
-```sql
+``` sql
 SELECT CONCAT_WS(', ', 'Ana', 'Luis', NULL, 'Marta') AS con_null_ignorado,
        CONCAT_WS(NULL, 'Ana', 'Luis') AS separador_null;
 ```
+
 +-------------------+----------------+
+|                   |                |
++===================+================+
 | con_null_ignorado | separador_null |
 +-------------------+----------------+
 | Ana, Luis, Marta  | NULL           |
@@ -110,144 +129,184 @@ SELECT CONCAT_WS(', ', 'Ana', 'Luis', NULL, 'Marta') AS con_null_ignorado,
 # Limpieza y Transformación de Caja (Mayúsculas/Minúsculas)
 
 ## `TRIM`, `LTRIM`, `RTRIM`
+
 Eliminan espacios en blanco (u otros caracteres especificados) del inicio o del final de una cadena.
 
-* `LTRIM(str)`: Elimina espacios a la izquierda.
-* `RTRIM(str)`: Elimina espacios a la derecha.
-* `TRIM([BOTH | LEADING | TRAILING] [remstr FROM] str)`: Elimina caracteres por ambos lados o por uno específico.
-* **Compatibilidad:** **Universal**.
+- `LTRIM(str)`: Elimina espacios a la izquierda.
+- `RTRIM(str)`: Elimina espacios a la derecha.
+- `TRIM([BOTH | LEADING | TRAILING] [remstr FROM] str)`: Elimina caracteres por ambos lados o por uno específico.
+- **Compatibilidad:** **Universal**.
 
-```sql
+``` sql
 SELECT LTRIM('   Hola') AS izquierda,
        RTRIM('Hola   ') AS derecha,
        TRIM('   Hola   ') AS ambos,
        TRIM(BOTH '-' FROM '---SQL---') AS quitar_guiones;
 ```
-+-----------+---------+-------+----------------+
-| izquierda | derecha | ambos | quitar_guiones |
-+-----------+---------+-------+----------------+
-| Hola      | Hola    | Hola  | SQL            |
-+-----------+---------+-------+----------------+
+
++-----------+----------+----------+----------------+
+|           |          |          |                |
++===========+==========+==========+================+
+| izquierda | derecha  | ambos    | quitar_guiones |
++-----------+----------+----------+----------------+
+| Hola      | Hola     | Hola     | SQL            |
++-----------+----------+----------+----------------+
 
 ## `UPPER` y `LOWER`
+
 Convierten todo el texto a mayúsculas o minúsculas respectivamente. (También se conocen como `UCASE` y `LCASE` en MySQL).
 
-* **Compatibilidad:** **Universal**.
+- **Compatibilidad:** **Universal**.
 
-```sql
+``` sql
 SELECT UPPER('Base de Datos') AS mayusculas,
        LOWER('Base de Datos') AS minusculas;
 ```
+
 +---------------+---------------+
+|               |               |
++===============+===============+
 | mayusculas    | minusculas    |
 +---------------+---------------+
 | BASE DE DATOS | base de datos |
 +---------------+---------------+
+
 # Medición de Cadenas: Longitud de Caracteres vs. Bytes
 
 Dependiendo de la codificación (ej. UTF-8), un carácter puede ocupar entre 1 y 4 bytes. Por ello, SQL distingue entre contar caracteres y contar bytes.
 
-| Función | Descripción | Ejemplo (`'España'`) |
-| :--- | :--- | :--- |
-| `CHAR_LENGTH(str)` / `CHARACTER_LENGTH()` | Cuenta el **número de caracteres**. | 6 caracteres |
-| `LENGTH(str)` | En MySQL/MariaDB cuenta **bytes**. | 7 bytes (`ñ` ocupa 2 bytes en UTF-8) |
-| `OCTET_LENGTH(str)` | Es equivalente a `LENGTH()` (mide bytes). | 7 bytes |
++-------------------------------------------+-------------------------------------------+--------------------------------------+
+| Función                                   | Descripción                               | Ejemplo (`'España'`)                 |
++:==========================================+:==========================================+:=====================================+
+| `CHAR_LENGTH(str)` / `CHARACTER_LENGTH()` | Cuenta el **número de caracteres**.       | 6 caracteres                         |
++-------------------------------------------+-------------------------------------------+--------------------------------------+
+| `LENGTH(str)`                             | En MySQL/MariaDB cuenta **bytes**.        | 7 bytes (`ñ` ocupa 2 bytes en UTF-8) |
++-------------------------------------------+-------------------------------------------+--------------------------------------+
+| `OCTET_LENGTH(str)`                       | Es equivalente a `LENGTH()` (mide bytes). | 7 bytes                              |
++-------------------------------------------+-------------------------------------------+--------------------------------------+
 
-* **Compatibilidad:**
-  * `CHAR_LENGTH()`: MySQL, MariaDB, PostgreSQL. En SQL Server se usa `LEN()`. En Oracle `LENGTH()`.
-  * `LENGTH()`: En MySQL/MariaDB cuenta **bytes**. En Oracle/PostgreSQL cuenta **caracteres** (para bytes se usa `LENGTHB()` u `OCTET_LENGTH()`).
-  * `OCTET_LENGTH()`: Estándar ANSI SQL (MySQL, MariaDB, PostgreSQL).
+- **Compatibilidad:**
+  - `CHAR_LENGTH()`: MySQL, MariaDB, PostgreSQL. En SQL Server se usa `LEN()`. En Oracle `LENGTH()`.
+  - `LENGTH()`: En MySQL/MariaDB cuenta **bytes**. En Oracle/PostgreSQL cuenta **caracteres** (para bytes se usa `LENGTHB()` u `OCTET_LENGTH()`).
+  - `OCTET_LENGTH()`: Estándar ANSI SQL (MySQL, MariaDB, PostgreSQL).
 
-```sql
+``` sql
 SELECT CHAR_LENGTH('España') AS num_caracteres,
        LENGTH('España') AS num_bytes,
        OCTET_LENGTH('España') AS num_octetos;
 ```
-+----------------+-----------+-------------+
-| num_caracteres | num_bytes | num_octetos |
-+----------------+-----------+-------------+
-|              6 |         7 |           7 |
-+----------------+-----------+-------------+
+
++----------------+--------------+--------------+
+|                |              |              |
++================+==============+==============+
+| num_caracteres | num_bytes    | num_octetos  |
++----------------+--------------+--------------+
+| ```            | ```          | ```          |
+|          6     |     7        |       7      |
+| ```            | ```          | ```          |
++----------------+--------------+--------------+
 
 # Extracción e Inspección de Subcadenas
 
 ## `LEFT(str, len)` y `RIGHT(str, len)`
+
 Extraen los `len` caracteres más a la izquierda o más a la derecha de una cadena.
 
-* **Compatibilidad:** **MySQL, MariaDB, PostgreSQL, SQL Server**. (En Oracle se debe simular con `SUBSTR`).
+- **Compatibilidad:** **MySQL, MariaDB, PostgreSQL, SQL Server**. (En Oracle se debe simular con `SUBSTR`).
 
-```sql
+``` sql
 SELECT LEFT('Servidor SQL', 8) AS izquierda,
        RIGHT('Servidor SQL', 3) AS derecha;
 ```
+
 +-----------+---------+
+|           |         |
++===========+=========+
 | izquierda | derecha |
 +-----------+---------+
 | Servidor  | SQL     |
 +-----------+---------+
 
 ## `SUBSTRING(str, pos [, len])` / `SUBSTR()`
+
 Extrae una porción de texto comenzando en la posición `pos` (basado en índice 1) con una longitud opcional de `len` caracteres. Si `pos` es negativo, cuenta desde el final hacia el principio.
 
-* **Compatibilidad:** **Universal** (`SUBSTRING` o `SUBSTR`).
+- **Compatibilidad:** **Universal** (`SUBSTRING` o `SUBSTR`).
 
-```sql
+``` sql
 SELECT SUBSTRING('Base de Datos', 9, 5) AS desde_pos_9,
        SUBSTRING('Base de Datos', -5) AS ultimos_5;
 ```
+
 +-------------+-----------+
+|             |           |
++=============+===========+
 | desde_pos_9 | ultimos_5 |
 +-------------+-----------+
 | Datos       | Datos     |
 +-------------+-----------+
 
 ## `SUBSTRING_INDEX(str, delim, count)`
+
 Devuelve la subcadena previa a la aparición del delimitador `delim` el número de veces indicado por `count`. Si `count` es positivo, cuenta desde la izquierda; si es negativo, desde la derecha.
 
-* **Compatibilidad:** **Exclusivo / Nativo de MySQL y MariaDB**.
+- **Compatibilidad:** **Exclusivo / Nativo de MySQL y MariaDB**.
 
-```sql
+``` sql
 SELECT SUBSTRING_INDEX('usuario@dominio.com', '@', 1) AS usuario,
        SUBSTRING_INDEX('usuario@dominio.com', '@', -1) AS dominio,
        SUBSTRING_INDEX('192.168.1.50', '.', 2) AS primeros_dos_octetos;
 ```
-+---------+-------------+----------------------+
-| usuario | dominio     | primeros_dos_octetos |
-+---------+-------------+----------------------+
-| usuario | dominio.com | 192.168              |
-+---------+-------------+----------------------+
 
++------------+-------------+----------------------+
+|            |             |                      |
++============+=============+======================+
+| usuario    | dominio     | primeros_dos_octetos |
++------------+-------------+----------------------+
+| usuario    | dominio.com | 192.168              |
++------------+-------------+----------------------+
 
 # Localización y Reemplazo
 
 ## `LOCATE(substr, str [, pos])` e `INSTR(str, substr)`
+
 Buscan la posición de la primera aparición de una subcadena dentro de un texto. Devuelven `0` si no la encuentran (índice basado en 1).
 
-* `LOCATE(substr, str)`: Primero la subcadena buscada, luego el texto general.
-* `INSTR(str, substr)`: Primero el texto general, luego la subcadena buscada.
-* **Compatibilidad:**
-  * `INSTR()`: MySQL, MariaDB, Oracle, SQLite, PostgreSQL.
-  * `LOCATE()`: MySQL, MariaDB, SQL Server (como `CHARINDEX`).
+- `LOCATE(substr, str)`: Primero la subcadena buscada, luego el texto general.
+- `INSTR(str, substr)`: Primero el texto general, luego la subcadena buscada.
+- **Compatibilidad:**
+  - `INSTR()`: MySQL, MariaDB, Oracle, SQLite, PostgreSQL.
+  - `LOCATE()`: MySQL, MariaDB, SQL Server (como `CHARINDEX`).
 
-```sql
+``` sql
 SELECT LOCATE('de', 'Base de Datos') AS pos_locate,
        INSTR('Base de Datos', 'de') AS pos_instr,
        LOCATE('xyz', 'Base de Datos') AS no_encontrado;
 ```
-+------------+-----------+---------------+
-| pos_locate | pos_instr | no_encontrado |
-+------------+-----------+---------------+
-|          6 |         6 |             0 |
-+------------+-----------+---------------+
+
++--------------+--------------+---------------+
+|              |              |               |
++==============+==============+===============+
+| pos_locate   | pos_instr    | no_encontrado |
++--------------+--------------+---------------+
+| ```          | ```          | ```           |
+|      6       |     6        |         0     |
+| ```          | ```          | ```           |
++--------------+--------------+---------------+
+
 ## `REPLACE(str, from_str, to_str)`
+
 Reemplaza todas las apariciones del texto `from_str` por `to_str` dentro de `str`.
 
-* **Compatibilidad:** **Universal**.
+- **Compatibilidad:** **Universal**.
 
-```sql
+``` sql
 SELECT REPLACE('2026-10-27', '-', '/') AS fecha_formateada;
 ```
+
 +------------------+
+|                  |
++==================+
 | fecha_formateada |
 +------------------+
 | 2026/10/27       |
@@ -256,65 +315,130 @@ SELECT REPLACE('2026-10-27', '-', '/') AS fecha_formateada;
 # Relleno y Repetición
 
 ## `LPAD(str, len, padstr)` y `RPAD(str, len, padstr)`
+
 Rellenan una cadena a la izquierda (`LPAD`) o a la derecha (`RPAD`) con el texto `padstr` hasta alcanzar una longitud total de `len` caracteres.
 
-* **Compatibilidad:** **MySQL, MariaDB, PostgreSQL, Oracle**. (En SQL Server no existen nativamente hasta versiones recientes; se usa `FORMAT` o `RIGHT`).
+- **Compatibilidad:** **MySQL, MariaDB, PostgreSQL, Oracle**. (En SQL Server no existen nativamente hasta versiones recientes; se usa `FORMAT` o `RIGHT`).
 
-```sql
+``` sql
 SELECT LPAD('45', 5, '0') AS codigo_factura,  -- '00045'
        RPAD('Item', 10, '.') AS alineado_derecha;
 ```
+
 +----------------+------------------+
+|                |                  |
++================+==================+
 | codigo_factura | alineado_derecha |
 +----------------+------------------+
 | 00045          | Item......       |
 +----------------+------------------+
 
 ## `REPEAT(str, count)`
+
 Repite una cadena de texto el número de veces especificado.
 
-* **Compatibilidad:** **MySQL, MariaDB, PostgreSQL**. En SQL Server se llama `REPLICATE()`. En Oracle se simula con `RPAD`.
+- **Compatibilidad:** **MySQL, MariaDB, PostgreSQL**. En SQL Server se llama `REPLICATE()`. En Oracle se simula con `RPAD`.
 
-```sql
+``` sql
 SELECT REPEAT('*', 5) AS estrellas;
 ```
-+-----------+
-| estrellas |
-+-----------+
-| *****     |
-+-----------+
+
++--------------------------------------------------------------------------+
+|                                                                          |
++==========================================================================+
+| estrellas                                                                |
++--------------------------------------------------------------------------+
+| ------------------------------------------------------------------------ |
++--------------------------------------------------------------------------+
+
+## GROUP_CONCAT
+
+GROUP_CONCAT es una función de agregación que permite fusionar o concatenar los valores de varias filas en una sola cadena de texto, agrupándolos normalmente mediante una cláusula GROUP BY.
+
+En lugar de devolver un resultado con muchas filas (una por cada registro), compacta los datos en una sola línea por grupo.
+
+Imagina que tienes una tabla de `empleados_proyectos` donde un mismo empleado puede estar asignado a varios proyectos:
+
+|              |               |
+|--------------|---------------|
+| **empleado** | **proyecto**  |
+| Ana          | Base de datos |
+| Ana          | Seguridad     |
+| Carlos       | Frontend      |
+
+Si quieres ver **en una sola fila** todos los proyectos en los que trabaja Ana y Carlos:
+
+``` sql
+SELECT 
+    empleado, 
+    GROUP_CONCAT(proyecto SEPARATOR ', ') AS lista_proyectos
+FROM empleados_proyectos
+GROUP BY empleado;
+```
+
+El resultado será
+
++--------------+---------------------------------------------------------+
+|              |                                                         |
++==============+=========================================================+
+| **empleado** | **lista_proyectos**                                     |
++--------------+---------------------------------------------------------+
+| Ana          | Base de datos, Seguridad                                |
++--------------+---------------------------------------------------------+
+| Carlos       | Frontend                                                |
++--------------+---------------------------------------------------------+
+
+- **Gestión de Valores Nulos (`NULL`):** Al igual que otras funciones de agregación, `GROUP_CONCAT` **ignora por completo los valores `NULL`** de la columna que está concatenando.
+
+- **El Separador (`SEPARATOR`):** Por defecto, los elementos se unen usando una coma (`,`). Si prefieres otro separador (un guion, un espacio o una barra), puedes indicarlo explícitamente con `SEPARATOR '...'`.
+
+- **Límite de Longitud (`group_concat_max_len`):** El resultado devuelto tiene un límite de caracteres predeterminado en el servidor (habitualmente 1024 bytes). Si el texto concatenado es muy largo (por ejemplo, al unir muchos textos o JSONs), el resultado se cortará de forma silenciosa a menos que amplíes esa variable de sesión o global:
+
+  ``` sql
+  SET SESSION group_concat_max_len = 10000;
+  ```
+
+- **Ordenación interna (`ORDER BY`):** Opcionalmente, dentro de la propia función puedes ordenar los elementos antes de unirlos, por ejemplo: `GROUP_CONCAT(proyecto ORDER BY fecha ASC)`.
 
 # Codificación: Hexadecimal y Base64
 
 ## `HEX(str_or_num)` y `UNHEX(str)`
+
 Convierten una cadena de texto o número a su representación Hexadecimal en formato ASCII/UTF-8 y viceversa.
 
-* **Compatibilidad:** **MySQL, MariaDB**. (En otros motores se utilizan funciones de conversión como `ENCODE/DECODE` o `CONVERT`).
+- **Compatibilidad:** **MySQL, MariaDB**. (En otros motores se utilizan funciones de conversión como `ENCODE/DECODE` o `CONVERT`).
 
-```sql
+``` sql
 SELECT HEX('SQL') AS a_hexadecimal,       
        UNHEX('53514C') AS a_texto;        
 ```
-+---------------+------------------+
-| a_hexadecimal | a_texto          |
-+---------------+------------------+
-| 53514C        | 0x53514C         |
-+---------------+------------------+
+
++---------------+----------------+
+|               |                |
++===============+================+
+| a_hexadecimal | a_texto        |
++---------------+----------------+
+| 53514C        | 0x53514C       |
++---------------+----------------+
 
 ## `TO_BASE64(str)` y `FROM_BASE64(str)`
+
 Convierten una cadena a formato codificado en Base64 y viceversa.
 
-* **Compatibilidad:** **MySQL (5.6+), MariaDB**. (En PostgreSQL se usa `encode() / decode()`, en SQL Server `CAST` con `XML`).
+- **Compatibilidad:** **MySQL (5.6+), MariaDB**. (En PostgreSQL se usa `encode() / decode()`, en SQL Server `CAST` con `XML`).
 
-```sql
+``` sql
 SELECT TO_BASE64('Texto Secreto') AS en_base64,
        FROM_BASE64('VGV4dG8gU2VjcmV0bw==') AS texto_original;
 ```
-+----------------------+--------------------------------+
-| en_base64            | texto_original                 |
-+----------------------+--------------------------------+
-| VGV4dG8gU2VjcmV0bw== | 0x546578746F205365637265746F   |
-+----------------------+--------------------------------+
+
++----------------------+-------------------------------+
+|                      |                               |
++======================+===============================+
+| en_base64            | texto_original                |
++----------------------+-------------------------------+
+| VGV4dG8gU2VjcmV0bw== | 0x546578746F205365637265746F  |
++----------------------+-------------------------------+
 
 ``` sql
 SELECT HEX('SQL') AS hexadecimal,
@@ -322,32 +446,38 @@ SELECT HEX('SQL') AS hexadecimal,
        TO_BASE64('SQL') AS base64,
        CAST(FROM_BASE64('U1FM') AS CHAR) AS desde_base64;
 ```
-+-------------+-------------------+--------+--------------+
-| hexadecimal | desde_hexadecimal | base64 | desde_base64 |
-+-------------+-------------------+--------+--------------+
-| 53514C      | SQL               | U1FM   | SQL          |
-+-------------+-------------------+--------+--------------+
+
++-------------+-------------------+------------+--------------+
+|             |                   |            |              |
++=============+===================+============+==============+
+| hexadecimal | desde_hexadecimal | base64     | desde_base64 |
++-------------+-------------------+------------+--------------+
+| 53514C      | SQL               | U1FM       | SQL          |
++-------------+-------------------+------------+--------------+
 
 # Búsquedas de Texto Completo: `FULLTEXT`
 
 Las búsquedas `FULLTEXT` están diseñadas para buscar palabras o frases dentro de columnas con bloques grandes de texto (tipos `TEXT`, `VARCHAR`), utilizando índices invertidos especiales.
 
-* **Compatibilidad:** 
-  * **MySQL / MariaDB:** Funciona en tablas InnoDB y MyISAM usando `MATCH(...) AGAINST(...)`.
-  * **PostgreSQL:** Utiliza `to_tsvector()` y `to_tsquery()` con el operador `@@`.
-  * **SQL Server:** Utiliza `CONTAINS()` o `FREETEXT()`.
+- **Compatibilidad:**
+  - **MySQL / MariaDB:** Funciona en tablas InnoDB y MyISAM usando `MATCH(...) AGAINST(...)`.
+  - **PostgreSQL:** Utiliza `to_tsvector()` y `to_tsquery()` con el operador `@@`.
+  - **SQL Server:** Utiliza `CONTAINS()` o `FREETEXT()`.
 
 ## Sintaxis Básica en MySQL / MariaDB
+
 Para usar estas funciones, la columna debe tener un índice de tipo `FULLTEXT`:
-```sql
+
+``` sql
 -- Creación conceptual de un índice Fulltext
 ALTER TABLE artículos ADD FULLTEXT INDEX idx_ft_contenido (titulo, contenido);
 ```
 
 ## Modo Natural (`IN NATURAL LANGUAGE MODE`)
+
 Es el modo por defecto. Evalúa la relevancia de las palabras clave ignorando palabras vacías (*stopwords* como "de", "el", "y") y palabras demasiado cortas.
 
-```sql
+``` sql
 -- Ejemplo sintáctico de consulta natural (requiere tabla real e índice FULLTEXT)
 SELECT titulo, 
        MATCH(titulo, contenido) AGAINST('optimizacion datos' IN NATURAL LANGUAGE MODE) AS relevancia
@@ -356,17 +486,24 @@ WHERE MATCH(titulo, contenido) AGAINST('optimizacion datos' IN NATURAL LANGUAGE 
 ```
 
 ## Modo Booleano (`IN BOOLEAN MODE`)
+
 Permite utilizar operadores especiales para controlar de forma fina las palabras que deben o no estar presentes:
 
-| Operador | Significado | Ejemplo |
-| :---: | :--- | :--- |
-| `+` | La palabra **debe** estar presente. | `'+servidor +SQL'` |
-| `-` | La palabra **no debe** estar presente. | `'+servidor -Oracle'` |
-| `*` | Comodín de truncado (empieza por). | `'optimiza*'` |
-| `""` | Busca la **frase exacta**. | `'"base de datos"'` |
-| `>` `<` | Aumenta o disminuye la relevancia de una palabra. | `'+SQL >MySQL <Oracle'` |
++--------------------------+---------------------------------------------------+-------------------------+
+| Operador                 | Significado                                       | Ejemplo                 |
++:========================:+:==================================================+:========================+
+| `+`                      | La palabra **debe** estar presente.               | `'+servidor +SQL'`      |
++--------------------------+---------------------------------------------------+-------------------------+
+| `-`                      | La palabra **no debe** estar presente.            | `'+servidor -Oracle'`   |
++--------------------------+---------------------------------------------------+-------------------------+
+| `*`                      | Comodín de truncado (empieza por).                | `'optimiza*'`           |
++--------------------------+---------------------------------------------------+-------------------------+
+| `""`                     | Busca la **frase exacta**.                        | `'"base de datos"'`     |
++--------------------------+---------------------------------------------------+-------------------------+
+| `>` `<`                  | Aumenta o disminuye la relevancia de una palabra. | `'+SQL >MySQL <Oracle'` |
++--------------------------+---------------------------------------------------+-------------------------+
 
-```sql
+``` sql
 -- Buscar registros que contengan "servidor", obligatoriamente "SQL" y NINGUNA mención a "Oracle"
 SELECT titulo 
 FROM articulos
@@ -374,9 +511,10 @@ WHERE MATCH(titulo, contenido) AGAINST('+servidor +SQL -Oracle' IN BOOLEAN MODE)
 ```
 
 ## Modo con Expansión de Consulta (`WITH QUERY EXPANSION`)
+
 Realiza una doble búsqueda: primero ejecuta una búsqueda en modo natural y, con los resultados más relevantes obténidos, extrae palabras clave adicionales para realizar una segunda búsqueda más amplia (*blind query expansion*).
 
-```sql
+``` sql
 SELECT titulo 
 FROM articulos
 WHERE MATCH(titulo, contenido) AGAINST('base de datos' WITH QUERY EXPANSION);

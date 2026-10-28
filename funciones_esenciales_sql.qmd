@@ -7,68 +7,128 @@ format: html
 
 Un valor `NULL` en SQL representa la **ausencia de datos** o un valor **desconocido**. No equivale a cero (`0`) ni a una cadena de texto vacía (`''`), los cuales son valores conocidos y válidos.
 
-
 ## Operadores y Comprobaciones de Integridad
 
 Debido a que `NULL` representa lo desconocido, las comparaciones aritméticas u ordinarias con `NULL` no devuelven verdadero (`1`) ni falso (`0`), sino un resultado desconocido (`NULL`).
 
 ### Operadores de Comprobación
 
-* **`IS NULL` / `IS NOT NULL`**: Evalúan si un valor está ausente o presente.
-* **`<=>` (Igualdad segura / *NULL-safe equal*)**: Compara dos operandos y devuelve `1` si ambos son iguales o si ambos son `NULL`.
-* **`ISNULL(expr)`**: Función propia de MySQL equivalente al operador `expr IS NULL`.
+- **`IS NULL` / `IS NOT NULL`**: Evalúan si un valor está ausente o presente.
+- **`<=>` (Igualdad segura / *NULL-safe equal*)**: Compara dos operandos y devuelve `1` si ambos son iguales o si ambos son `NULL`.
+- **`ISNULL(expr)`**: Función propia de MySQL equivalente al operador `expr IS NULL`.
 
 ### Resumen de Comparaciones
 
-| Consulta SQL | Resultado | Explicación |
-| :--- | :---: | :--- |
-| `SELECT NULL = NULL;` | `NULL` | Comparación ordinaria. No se puede determinar si dos desconocidos son iguales. |
-| `SELECT NULL IS NULL;` | `1` | Comprueba expresamente la ausencia de dato. |
-| `SELECT NULL <=> NULL;` | `1` | La igualdad segura considera idénticos dos valores `NULL`. |
-| `SELECT 0 IS NULL;` | `0` | El número cero es un valor conocido. |
-| `SELECT '' IS NULL;` | `0` | Una cadena vacía es un texto de longitud cero, pero conocido. |
-| `SELECT ISNULL(NULL);` | `1` | Equivalente sintáctico de `NULL IS NULL`. |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| Consulta SQL            | Resultado  | Explicación                                                                    |
++:========================+:==========:+:===============================================================================+
+| `SELECT NULL = NULL;`   | `NULL`     | Comparación ordinaria. No se puede determinar si dos desconocidos son iguales. |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| `SELECT NULL IS NULL;`  | `1`        | Comprueba expresamente la ausencia de dato.                                    |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| `SELECT NULL <=> NULL;` | `1`        | La igualdad segura considera idénticos dos valores `NULL`.                     |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| `SELECT 0 IS NULL;`     | `0`        | El número cero es un valor conocido.                                           |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| `SELECT '' IS NULL;`    | `0`        | Una cadena vacía es un texto de longitud cero, pero conocido.                  |
++-------------------------+------------+--------------------------------------------------------------------------------+
+| `SELECT ISNULL(NULL);`  | `1`        | Equivalente sintáctico de `NULL IS NULL`.                                      |
++-------------------------+------------+--------------------------------------------------------------------------------+
 
-### GREATEST y LEAST 
+### GREATEST y LEAST
 
-Comparan los diferentes valores o expresiones escritos dentro de sus propios paréntesis.   Comportamiento con NULL: Si alguno de los argumentos que se le pasa a GREATEST o LEAST es NULL, la función devolverá NULL.   Ejemplo conceptual: Evaluar directamente varios valores estáticos o columnas de una misma fila para ver cuál es mayor o menor.
+Comparan los diferentes valores o expresiones escritos dentro de sus propios paréntesis. Comportamiento con NULL: Si alguno de los argumentos que se le pasa a GREATEST o LEAST es NULL, la función devolverá NULL. Ejemplo conceptual: Evaluar directamente varios valores estáticos o columnas de una misma fila para ver cuál es mayor o menor.
+
 ``` sql
 SELECT GREATEST(8, 6, 0) AS mayor,
     GREATEST(8, 6, 0, NULL) AS lista_con_null,
     LEAST(8, 6, 0) AS menor,
     LEAST(8, 6, 0, NULL) AS lista_con_null_2;
 ```
-+-------+----------------+-------+------------------+
-| mayor | lista_con_null | menor | lista_con_null_2 |
-+-------+----------------+-------+------------------+
-|     8 |           NULL |     0 |             NULL |
-+-------+----------------+-------+------------------+
- 
-::: nota
-No confundir con MAX y MIN, que recorren los valores de varias filas. 
-| Característica | `GREATEST` / `LEAST` | `MAX` / `MIN` |
-| :--- | :--- | :--- |
-| **Ámbito de evaluación** | Compara valores pasados como argumentos directos dentro de una misma fila o expresión. | Resumen los valores de una columna a lo largo de múltiples filas (agregación). |
-| **Tratamiento de `NULL`** | Si cualquiera de los argumentos es `NULL`, la función devuelve `NULL`. | Ignoran automáticamente los valores `NULL` al calcular sobre el grupo o columna. |
+
++---------------+----------------+---------------+------------------+
+|               |                |               |                  |
++===============+================+===============+==================+
+| mayor         | lista_con_null | menor         | lista_con_null_2 |
++---------------+----------------+---------------+------------------+
+| ```           | ```            | ```           | ```              |
+| 8             |       NULL     | 0             |         NULL     |
+| ```           | ```            | ```           | ```              |
++---------------+----------------+---------------+------------------+
+
+### Funciones de agregación sobre columnas con valores NULL
+
+Las funciones de agregación (SUM, AVG, MIN, MAX) comparten una regla de oro en SQL: ignoran por completo los valores NULL y realizan sus cálculos únicamente con las filas que contienen datos válidos.
+
+Imagina que creamos una tabla temporal o de pruebas llamada puntuaciones con una columna nota que contiene algunos valores numéricos y otros NULL:
+
++----------------------------------+-------------------------------+
+| id                               | nota                          |
++==================================+===============================+
+| 1                                | 10                            |
++----------------------------------+-------------------------------+
+| 2                                | 20                            |
++----------------------------------+-------------------------------+
+| 3                                | NULL                          |
++----------------------------------+-------------------------------+
+| 4                                | 30                            |
++----------------------------------+-------------------------------+
+
+``` sql
+SELECT 
+    COUNT(nota) AS total_no_nulos,
+    SUM(nota) AS suma_total,
+    AVG(nota) AS promedio,
+    MIN(nota) AS valor_minimo,
+    MAX(nota) AS valor_maximo
+FROM puntuaciones;
+```
+
+### Resultados y Explicación
+
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|                                |               |                                                                                                                                                                                                     |
++================================+===============+=====================================================================================================================================================================================================+
+| **Columna**                    | **Resultado** | **Explicación detallada**                                                                                                                                                                           |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **`total_no_nulos`** (`COUNT`) | **`3`**       | Cuenta solo las filas con datos (`10`, `20`, `30`), ignorando el `NULL`.                                                                                                                            |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **`suma_total`** (`SUM`)       | **`60`**      | Suma $10 + 20 + 30$. El `NULL` no suma cero; simplemente no se contempla.                                                                                                                           |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **`promedio`** (`AVG`)         | **`20.0000`** | Divide la suma total (`60`) entre la cantidad de elementos **no nulos** (`3`), dando $60 / 3 = 20$. *(Ojo: si hubiera tomado el `NULL` como cero, habría dividido entre 4 y el promedio sería 15).* |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **`valor_minimo`** (`MIN`)     | **`10`**      | Busca el menor valor entre los datos existentes, ignorando el `NULL`.                                                                                                                               |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **`valor_maximo`** (`MAX`)     | **`30`**      | Busca el mayor valor entre los datos existentes, ignorando el `NULL`.                                                                                                                               |
++--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+::: nota-importante
+Si **todos** los registros de la columna fueran `NULL`, las funciones `SUM`, `AVG`, `MIN` y `MAX` devolverían `NULL` como resultado general, mientras que `COUNT(columna)` devolvería `0`.
 :::
 
 ## Lógica Trievaluada (Lógica con `NULL`)
 
 En SQL, las expresiones booleanas operan con tres valores posibles: `TRUE` (`1`), `FALSE` (`0`) y `UNKNOWN` (`NULL`).
 
-| Expresión | Resultado | Interpretación Lógica |
-| :--- | :---: | :--- |
-| `SELECT TRUE AND NULL;` | `NULL` | La primera condición se cumple, pero depende del valor desconocido. |
-| `SELECT FALSE AND NULL;` | `0` | Como la primera es falsa, el resultado global es falso sin importar el valor ausente. |
-| `SELECT TRUE OR NULL;` | `1` | Con que una opción sea verdadera, la disyunción es verdadera. |
-| `SELECT FALSE OR NULL;` | `NULL` | La primera es falsa; el resultado depende totalmente de la parte desconocida. |
-| `SELECT NOT NULL;` | `NULL` | Negar lo desconocido sigue siendo desconocido. |
++--------------------------+------------+---------------------------------------------------------------------------------------+
+| Expresión                | Resultado  | Interpretación Lógica                                                                 |
++:=========================+:==========:+:======================================================================================+
+| `SELECT TRUE AND NULL;`  | `NULL`     | La primera condición se cumple, pero depende del valor desconocido.                   |
++--------------------------+------------+---------------------------------------------------------------------------------------+
+| `SELECT FALSE AND NULL;` | `0`        | Como la primera es falsa, el resultado global es falso sin importar el valor ausente. |
++--------------------------+------------+---------------------------------------------------------------------------------------+
+| `SELECT TRUE OR NULL;`   | `1`        | Con que una opción sea verdadera, la disyunción es verdadera.                         |
++--------------------------+------------+---------------------------------------------------------------------------------------+
+| `SELECT FALSE OR NULL;`  | `NULL`     | La primera es falsa; el resultado depende totalmente de la parte desconocida.         |
++--------------------------+------------+---------------------------------------------------------------------------------------+
+| `SELECT NOT NULL;`       | `NULL`     | Negar lo desconocido sigue siendo desconocido.                                        |
++--------------------------+------------+---------------------------------------------------------------------------------------+
 
 ### Comportamiento con `IN` y `NOT IN`
 
 Si una lista contiene un valor `NULL`, evaluar la presencia de un elemento mediante `IN` o `NOT IN` puede arrojar resultados indeterminados:
 
-```sql
+``` sql
 -- Devuelve NULL porque 5 no es 1 ni 2, pero no se sabe si equivale al valor desconocido.
 SELECT 5 NOT IN (1, 2, NULL) AS resultado;
 
@@ -76,22 +136,36 @@ SELECT 5 NOT IN (1, 2, NULL) AS resultado;
 SELECT 5 IN (1, 2, NULL) AS resultado;
 ```
 
+## COUNT y DISTINCT con valores nulos
+
+cómo interactúan COUNT y DISTINCT con los valores nulos (NULL) en SQL:
+
+- COUNT(\*): Cuenta todas las filas de la tabla o del resultado, sin importar si contienen valores nulos o no.
+
+- COUNT(columna): Cuenta únicamente las filas donde la columna no sea nula, ignorando por completo los valores NULL.
+
+- COUNT(DISTINCT columna): Cuenta los valores únicos excluyendo los nulos. Los NULL no se contabilizan.
+
+- DISTINCT (por sí solo): Trata el NULL como un valor único más. Si hay múltiples filas con NULL en una consulta con DISTINCT, el resultado mostrará una única línea con NULL.
+
 ## Funciones Específicas para Manejo de `NULL`
 
 ### `IFNULL(expr1, expr2)`
 
 Sustituye un valor `NULL` por una alternativa especificada. Si `expr1` no es `NULL`, devuelve `expr1`; si es `NULL`, devuelve `expr2`.
 
-* **Nota:** Solo evalúa valores `NULL`. No transforma cadenas vacías (`''`) ni ceros (`0`).
+- **Nota:** Solo evalúa valores `NULL`. No transforma cadenas vacías (`''`) ni ceros (`0`).
 
 #### Ejemplo de uso:
-```sql
+
+``` sql
 SELECT IFNULL(NULL, 'Sin asignar') AS resultado_1,
        IFNULL('Dato válido', 'Sin asignar') AS resultado_2;
 ```
 
 **Resultado:**
-```
+
+```         
 +-------------+-------------+
 | resultado_1 | resultado_2 |
 +-------------+-------------+
@@ -104,13 +178,15 @@ SELECT IFNULL(NULL, 'Sin asignar') AS resultado_1,
 Recorre una lista ordenada de argumentos de izquierda a derecha y devuelve **el primer valor que no sea `NULL`**. Si todos los argumentos son `NULL`, devuelve `NULL`.
 
 #### Ejemplo de uso:
-```sql
+
+``` sql
 -- Devuelve el primer dato disponible en la lista de prioridades
 SELECT COALESCE(NULL, NULL, 'contacto@email.com', 'Telefono por defecto') AS contacto_elegido;
 ```
 
 **Resultado:**
-```
+
+```         
 +--------------------+
 | contacto_elegido   |
 +--------------------+
@@ -120,28 +196,27 @@ SELECT COALESCE(NULL, NULL, 'contacto@email.com', 'Telefono por defecto') AS con
 
 ### `NULLIF(expr1, expr2)`
 
-Compara dos expresiones:
-* Si `expr1 = expr2`, la función devuelve `NULL`.
-* Si `expr1 <> expr2`, devuelve `expr1`.
+Compara dos expresiones: \* Si `expr1 = expr2`, la función devuelve `NULL`. \* Si `expr1 <> expr2`, devuelve `expr1`.
 
 Resulta útil para **limpiar datos** o convertir valores vacíos/por defecto (como `''` o `0`) en `NULL` antes de procesarlos.
 
 #### Ejemplo de uso:
-```sql
+
+``` sql
 -- Transforma una cadena vacía en NULL, pero conserva una cadena con texto
 SELECT NULLIF('', '') AS texto_vacio,
        NULLIF('Hola', '') AS texto_valido;
 ```
 
 **Resultado:**
-```
+
+```         
 +-------------+--------------+
 | texto_vacio | texto_valido |
 +-------------+--------------+
 | NULL        | Hola         |
 +-------------+--------------+
 ```
-
 
 # Funciones y Operadores Numéricos
 
@@ -151,16 +226,17 @@ SQL permite realizar cálculos matemáticos directamente en las consultas median
 
 ### Multiplicación (`*`) y División (`/`)
 
-* El operador `*` realiza multiplicaciones numéricas. Debe distinguirse del uso de `SELECT *`, donde el asterisco indica la selección de todas las columnas.
-* El comportamiento del operador de división (`/`) varía según el motor de base de datos:
-  * **MySQL / PostgreSQL / Oracle:** Realizan una división con resultado decimal (*floating point*). Por ejemplo, `14 / 4` devuelve `3.5000`.
-  * **SQL Server (T-SQL) / SQLite:** Si ambos operandos son enteros, ejecutan una división entera descartando los decimales (`14 / 4` devuelve `3`). Para obtener decimales se debe forzar la conversión (`14.0 / 4` o `CAST(14 AS FLOAT) / 4`).
+- El operador `*` realiza multiplicaciones numéricas. Debe distinguirse del uso de `SELECT *`, donde el asterisco indica la selección de todas las columnas.
+- El comportamiento del operador de división (`/`) varía según el motor de base de datos:
+  - **MySQL / PostgreSQL / Oracle:** Realizan una división con resultado decimal (*floating point*). Por ejemplo, `14 / 4` devuelve `3.5000`.
+  - **SQL Server (T-SQL) / SQLite:** Si ambos operandos son enteros, ejecutan una división entera descartando los decimales (`14 / 4` devuelve `3`). Para obtener decimales se debe forzar la conversión (`14.0 / 4` o `CAST(14 AS FLOAT) / 4`).
 
-```sql
+``` sql
 SELECT 3 * 2.85 AS importe_multiplicacion,
        14 / 4 AS division_decimal;
 ```
-```
+
+```         
 +------------------------+------------------+
 | importe_multiplicacion | division_decimal |
 +------------------------+------------------+
@@ -172,17 +248,17 @@ SELECT 3 * 2.85 AS importe_multiplicacion,
 
 SQL sigue el orden estándar de evaluación matemática (**PEMDAS/BODMAS**):
 
-1. **Paréntesis `()`**: Tienen la máxima prioridad.
-2. **Multiplicación (`*`), División (`/`), Módulo (`MOD` o `%`) y División Entera (`DIV`)**: Evaluados de izquierda a derecha.
-3. **Suma (`+`) y Resta (`-`)**: Tienen la menor prioridad y se evalúan de izquierda a derecha.
+1.  **Paréntesis `()`**: Tienen la máxima prioridad.
+2.  **Multiplicación (`*`), División (`/`), Módulo (`MOD` o `%`) y División Entera (`DIV`)**: Evaluados de izquierda a derecha.
+3.  **Suma (`+`) y Resta (`-`)**: Tienen la menor prioridad y se evalúan de izquierda a derecha.
 
-```sql
+``` sql
 SELECT 10 + 2 * 3 AS sin_parentesis,       -- Se evalúa 2*3=6, luego 10+6 = 16
        (10 + 2) * 3 AS con_parentesis,     -- Se evalúa (10+2)=12, luego 12*3 = 36
        20 / 4 * 2 + 5 AS nivel_combinado; -- 20/4=5 -> 5*2=10 -> 10+5 = 15
 ```
 
-```
+```         
 +----------------+----------------+-----------------+
 | sin_parentesis | con_parentesis | nivel_combinado |
 +----------------+----------------+-----------------+
@@ -194,13 +270,13 @@ SELECT 10 + 2 * 3 AS sin_parentesis,       -- Se evalúa 2*3=6, luego 10+6 = 16
 
 Para calcular un importe con descuento (por ejemplo, un $10\%$), el factor se calcula como `(1 - porcentaje / 100.0)`:
 
-```sql
+``` sql
 SELECT 25.00 AS precio_orig,
        10.00 AS pct_descuento,
        25.00 * (1 - 10.00 / 100.0) AS precio_final;
 ```
 
-```
+```         
 +-------------+---------------+--------------+
 | precio_orig | pct_descuento | precio_final |
 +-------------+---------------+--------------+
@@ -208,21 +284,20 @@ SELECT 25.00 AS precio_orig,
 +-------------+---------------+--------------+
 ```
 
-
 ## Redondeo y Truncado: `ROUND` y `TRUNCATE`
 
 Tanto `ROUND` como `TRUNCATE` reducen el número de decimales, pero aplican criterios distintos:
 
-* **`ROUND(numero, decimales)`**: Observa el primer dígito descartado para aproximar el valor (hacia arriba si es $\ge 5$).
-* **`TRUNCATE(numero, decimales)`**: Corta abruptamente la cantidad de decimales sin aproximar.
+- **`ROUND(numero, decimales)`**: Observa el primer dígito descartado para aproximar el valor (hacia arriba si es $\ge 5$).
+- **`TRUNCATE(numero, decimales)`**: Corta abruptamente la cantidad de decimales sin aproximar.
 
-```sql
+``` sql
 SELECT ROUND(7.856, 2) AS redondeado,
        TRUNCATE(7.856, 2) AS truncado,
        ROUND(1234, -2) AS redondeo_centenas;
 ```
 
-```
+```         
 +------------+----------+-------------------+
 | redondeado | truncado | redondeo_centenas |
 +------------+----------+-------------------+
@@ -232,22 +307,28 @@ SELECT ROUND(7.856, 2) AS redondeado,
 
 ## División Entera, Resto y Redondeos Extremos: `DIV`, `MOD`, `FLOOR` y `CEIL`
 
-| Función / Operador | Descripción / Función | Ejemplo SQL | Resultado |
-| ----- | ----- | ----- | ----- |
-| **`DIV`** | Devuelve solo la parte entera de una división (MySQL/MariaDB). | `SELECT 14 DIV 4;` | `3` |
-| **`MOD` / `%`** | Devuelve el resto sobrante de una división entera. | `SELECT MOD(14, 4);` | `2` |
-| **`FLOOR(x)`** | Redondea hacia abajo (entero $\le x$ más próximo). | `SELECT FLOOR(3.7);` | `3` |
-| **`CEIL(x)` / `CEILING(x)`** | Redondea hacia arriba (entero $\ge x$ más próximo). | `SELECT CEIL(3.2);` | `4` |
++------------------------------+----------------------------------------------------------------+----------------------+------------+
+| Función / Operador           | Descripción / Función                                          | Ejemplo SQL          | Resultado  |
++==============================+================================================================+======================+============+
+| **`DIV`**                    | Devuelve solo la parte entera de una división (MySQL/MariaDB). | `SELECT 14 DIV 4;`   | `3`        |
++------------------------------+----------------------------------------------------------------+----------------------+------------+
+| **`MOD` / `%`**              | Devuelve el resto sobrante de una división entera.             | `SELECT MOD(14, 4);` | `2`        |
++------------------------------+----------------------------------------------------------------+----------------------+------------+
+| **`FLOOR(x)`**               | Redondea hacia abajo (entero $\le x$ más próximo).             | `SELECT FLOOR(3.7);` | `3`        |
++------------------------------+----------------------------------------------------------------+----------------------+------------+
+| **`CEIL(x)` / `CEILING(x)`** | Redondea hacia arriba (entero $\ge x$ más próximo).            | `SELECT CEIL(3.2);`  | `4`        |
++------------------------------+----------------------------------------------------------------+----------------------+------------+
 
 Se deben organizar $14$ participantes en grupos de $4$. ¿Cuántos grupos completos se forman, cuántos sobran y cuántas mesas de capacidad $4$ hacen falta?
 
-```sql
+``` sql
 SELECT 14 / 4 AS division_exacta,
        14 DIV 4 AS grupos_completos,
        MOD(14, 4) AS personas_sobrantes,
        CEIL(14 / 4.0) AS mesas_necesarias;
 ```
-```
+
+```         
 +-----------------+------------------+--------------------+------------------+
 | division_exacta | grupos_completos | personas_sobrantes | mesas_necesarias |
 +-----------------+------------------+--------------------+------------------+
@@ -257,37 +338,83 @@ SELECT 14 / 4 AS division_exacta,
 
 ## Signo y Distancia: `ABS` y `SIGN`
 
-* **`ABS(x)` (Valor Absoluto)**: Elimina el signo del número, devolviendo siempre una magnitud positiva o cero. Ideal para distancias y desviaciones.
-* **`SIGN(x)` (Signo)**: Devuelve `-1` si el valor es negativo, `0` si es cero, y `1` si es positivo. Ideal para clasificar tendencias.
+Estas dos funciones matemáticas permiten trabajar con el signo y la magnitud de los valores numéricos, siendo especialmente útiles en análisis de variaciones, diferencias o control de datos.
 
-```sql
+- **`ABS(x)` (Valor Absoluto)**: Elimina el signo del número, devolviendo siempre una magnitud positiva o cero. Ideal para distancias y desviaciones.
+- **`SIGN(x)` (Signo)**: Devuelve `-1` si el valor es negativo, `0` si es cero, y `1` si es positivo. Ideal para clasificar tendencias.
+
+1.  ABS (Valor Absoluto) Qué hace: Devuelve el valor absoluto de un número, es decir, su valor sin tener en cuenta el signo (transforma cualquier número negativo en positivo y deja los positivos o ceros tal cual).
+
+Para qué sirve: Muy útil para calcular diferencias absolutas o desviaciones donde el sentido de la variación (si sube o baja) no importa, solo la magnitud de la distancia.
+
+Ejemplo:
+
+ABS(-15.5) -\> Devuelve 15.5
+
+ABS(15.5) -\> Devuelve 15.5
+
+2.  SIGN (Función Signo) Qué hace: Analiza un número y devuelve -1 si es negativo, 0 si es cero, o 1 si es positivo.
+
+Para qué sirve: Ideal para identificar la dirección de un cambio o tendencia (crecimiento frente a decrecimiento) o para aplicar lógica condicional simplificada basada en si un valor está por encima o por debajo de cero.
+
+Ejemplo:
+
+SIGN(-45) -\> Devuelve -1
+
+SIGN(0) -\> Devuelve 0
+
+SIGN(120) -\> Devuelve 1
+
+``` sql
 SELECT 8 - 10 AS diferencia_real,
        ABS(8 - 10) AS distancia_absoluta,
        SIGN(8 - 10) AS indicador_direccion;
 ```
 
-```
+```         
 +-----------------+--------------------+---------------------+
 | diferencia_real | distancia_absoluta | indicador_direccion |
 +-----------------+--------------------+---------------------+
 |              -2 |                  2 |                  -1 |
 +-----------------+--------------------+---------------------+
 ```
-## Operaciones Avanzadas: `POWER`, `SQRT`, `LN` y `LOG10`
 
-* **`POWER(base, exp)` / `POW`**: Eleva la base al exponente indicado ($base^{exp}$).
-* **`SQRT(x)`**: Calcula la raíz cuadrada positiva ($\sqrt{x}$). Devuelve `NULL` o error si $x < 0$.
-* **`LN(x)`**: Logaritmo natural o neperiano en base $e$ ($x > 0$).
-* **`LOG10(x)`**: Logaritmo decimal en base $10$ ($x > 0$).
+## Operaciones Avanzadas
 
-```sql
+### `POWER`, `SQRT`, `LN` y `LOG10`
+
+Estas funciones avanzadas permiten realizar operaciones exponenciales y logarítmicas, fundamentales para cálculos estadísticos, modelado de datos y transformaciones de escala.
+
+- **`POWER(base, exp)` / `POW`**: Eleva la base al exponente indicado ($base^{exp}$).
+- **`SQRT(x)`**: Calcula la raíz cuadrada positiva ($\sqrt{x}$). Devuelve `NULL` o error si $x < 0$.
+- **`LN(x)`**: Logaritmo natural o neperiano en base $e$ ($x > 0$).
+- **`LOG10(x)`**: Logaritmo decimal en base $10$ ($x > 0$).
+
+1.  POWER (Potencia): Eleva un número base a una potencia determinada ($base^{exponente}$). También se puede encontrar como POW en algunos motores como MySQL. Para qué sirve: Útil para fórmulas de crecimiento, cálculos de interés compuesto o modelos matemáticos y geométricos.Ejemplo:POWER(2, 3) $\rightarrow$ Devuelve 8 (porque $2^3 = 2 \times 2 \times 2$).
+2.  SQRT (Raíz Cuadrada): Calcula la raíz cuadrada positiva de un número dado.Precaución: Si le pasas un número negativo, la mayoría de los motores devolverán un error o un valor NULL, ya que no opera con números complejos en este nivel.Ejemplo:SQRT(9) $\rightarrow$ Devuelve 3.
+3.  LN (Logaritmo Natural / Neperiano): Calcula el logaritmo natural de un número (en base $e$, donde $e \approx 2.718$). El número de entrada debe ser estrictamente mayor que cero. Para qué sirve: Muy empleado en análisis estadístico y ciencia de datos para normalizar distribuciones sesgadas o trabajar con tasas de crecimiento exponencial.Ejemplo:LN(2.71828) $\rightarrow$ Devuelve aproximadamente 1.
+4.  LOG10 (Logaritmo en Base 10): Calcula el logaritmo en base 10 de un número. Al igual que el logaritmo natural, el valor de entrada debe ser mayor que cero. Para qué sirve: Ideal para trabajar con escalas logarítmicas (como magnitudes de datos o rangos muy amplios de valores donde comprimir la escala facilita la visualización).Ejemplo:LOG10(100) $\rightarrow$ Devuelve 2 (porque $10^2 = 100$).
+
++----------------------------------------------------+----------------------+---------------+
+| Necesidad                                          | Sentencia SQL        | Resultado     |
++====================================================+======================+===============+
+| Calcular dos elevado a diez.                       | SELECT POWER(2, 10); | 1024          |
++----------------------------------------------------+----------------------+---------------+
+| Encontrar el lado de una cuadrícula de 81 puestos. | SELECT SQRT(81);     | 9             |
++----------------------------------------------------+----------------------+---------------+
+| Calcular el logaritmo natural de uno.              | SELECT LN(1);        | 0             |
++----------------------------------------------------+----------------------+---------------+
+| Determinar el exponente de diez que produce mil.   | SELECT LOG10(1000);  | 3             |
++----------------------------------------------------+----------------------+---------------+
+
+``` sql
 SELECT POWER(2, 10) AS dos_a_la_diez,
        SQRT(81) AS raiz_de_81,
        LN(1) AS log_natural_uno,
        LOG10(1000) AS log_base10_mil;
 ```
 
-```
+```         
 +----------------+------------+------------------+---------------+
 | dos_a_la_diez  | raiz_de_81 | log_natural_uno  | log_base10_mil|
 +----------------+------------+------------------+---------------+
@@ -295,24 +422,50 @@ SELECT POWER(2, 10) AS dos_a_la_diez,
 +----------------+------------+------------------+---------------+
 ```
 
+### Funciones de Varianza y Desviación Típica
+
+Estas funciones estadísticas de agregación miden la **dispersión o variabilidad** de un conjunto de datos numéricos respecto a su media:
+
+- **Varianza (`VARIANCE` / `VAR_POP` / `VAR_SAMP`):** Mide la dispersión media al cuadrado de los datos respecto al promedio.
+
+- **Desviación Típica / Estándar (`STDDEV` / `STDDEV_POP` / `STDDEV_SAMP`):** Es la raíz cuadrada de la varianza. Devuelve la dispersión en la **misma unidad de medida** que los datos originales, facilitando su interpretación.
+
+*(Nota: En la mayoría de gestores, las variantes terminadas en `_POP` calculan la estadística poblacional y las terminadas en `_SAMP` calculan la muestral).*
+
+``` sql
+SELECT 
+    COUNT(nota) AS total_datos,
+    AVG(nota) AS media,
+    VARIANCE(nota) AS varianza_poblacional,
+    STDDEV(nota) AS desviacion_tipica
+FROM estadisticas_notas;
+```
+
+**Gestión de Valores Nulos (`NULL`)**
+
+Al igual que `SUM`, `AVG`, `MIN` y `MAX`, estas funciones **ignoran por completo los valores `NULL`**. Solo realizan el cálculo matemático con las filas que contienen valores numéricos válidos, sin alterar el denominador por culpa de los nulos.
+
 ## Generación de Valores Aleatorios: `RAND`
 
-* **`RAND()`** (en MySQL/SQL Server/SQLite) o **`RANDOM()`** (en PostgreSQL) genera un valor decimal pseudoaleatorio entre $0$ (inclusive) y $1$ (exclusivo): $0 \le x < 1$.
-* **Generación de rangos enteros:** Para obtener un entero aleatorio entre $min$ y $max$, se usa la fórmula: `FLOOR(min + RAND() * (max - min + 1))`.
-**Para qué sirve:** 
+- **`RAND()`** (en MySQL/SQL Server/SQLite) o **`RANDOM()`** (en PostgreSQL) genera un valor decimal pseudoaleatorio entre $0$ (inclusive) y $1$ (exclusivo): $0 \le x < 1$.
+
+- **Generación de rangos enteros:** Para obtener un entero aleatorio entre $min$ y $max$, se usa la fórmula: `FLOOR(min + RAND() * (max - min + 1))`. **Para qué sirve:**
+
   - Seleccionar muestras aleatorias de una tabla (por ejemplo, combinándolo con `ORDER BY RAND()` en MySQL, aunque requiere precaución en tablas masivas por rendimiento).
   - Generar valores de prueba aleatorios.
-```sql
-SELECT RAND() AS aleatorio_0_a_1,
+
+  ``` sql
+  SELECT RAND() AS aleatorio_0_a_1,
        FLOOR(1 + RAND() * 6) AS tirada_dado_1_a_6,
        RAND(42) AS aleatorio_fijo_con_semilla;
-```
+  ```
 
 ::: nota
 Si ejecutas `RAND(semilla)` en una consulta que aplica a múltiples filas en SQL Server, la función se evalúa una sola vez por consulta con esa semilla, devolviendo el mismo valor constante para todas las filas devueltas.
-::: 
+:::
 
 ### Reproducibilidad por Semilla (*Seed*):
+
 Pasar un argumento entero a `RAND(semilla)` (o usar `setseed()` en PostgreSQL) genera la misma secuencia pseudoaleatoria, permitiendo reproducciones exactas de pruebas.
 
 Al igual que en otros lenguajes de programación (como Python o R), los motores de bases de datos permiten especificar una **semilla (*seed*)**. Al usar una semilla fija, la secuencia de números aleatorios generada será idéntica cada vez que se ejecute la consulta, asegurando la reproductibilidad de las pruebas o análisis.
@@ -320,17 +473,19 @@ Al igual que en otros lenguajes de programación (como Python o R), los motores 
 El mecanismo de configuración varía según el motor:
 
 #### MySQL y MariaDB
+
 Se pasa un número entero directamente como argumento dentro de `RAND(semilla)`:
 
-```sql
+``` sql
 -- Siempre devolverá exactamente el mismo resultado mientras no cambie la semilla (42)
 SELECT RAND(42) AS aleatorio_reproducible;
 ```
 
 #### PostgreSQL
+
 No acepta un parámetro directo dentro de `RANDOM()`. En su lugar, se invoca previamente la función `setseed()`, la cual recibe un valor de tipo *float* entre `-1.0` y `1.0`:
 
-```sql
+``` sql
 -- 1. Establecer la semilla (ejecutar antes)
 SELECT setseed(0.5);
 
@@ -339,9 +494,10 @@ SELECT RANDOM() AS aleatorio_reproducible;
 ```
 
 #### SQL Server (T-SQL)
+
 Acepta una semilla numérica entera opcional dentro de la función `RAND(semilla)`:
 
-```sql
+``` sql
 SELECT RAND(100) AS aleatorio_reproducible;
 ```
 
@@ -352,10 +508,13 @@ SELECT RAND() AS numero_entre_cero_y_uno,
 
 ### Qué debe cumplirse
 
++-------------------------+---------------------------------------------------+
 | Columna                 | Resultado esperado                                |
-|------------------------------------|------------------------------------|
++=========================+===================================================+
 | numero_entre_cero_y_uno | Un número desde cero incluido hasta uno excluido. |
++-------------------------+---------------------------------------------------+
 | dado                    | Un entero de 1 a 6.                               |
++-------------------------+---------------------------------------------------+
 
 No se espera un número concreto porque la función genera valores aleatorios. En el dado, RAND × 6 produce un valor menor que seis; se suma uno y FLOOR elimina la fracción. RAND no se utiliza para generar secretos criptográficos. Ordenar tablas grandes mediante ORDER BY RAND() puede resultar costoso.
 
@@ -363,14 +522,11 @@ No se espera un número concreto porque la función genera valores aleatorios. E
 
 La función FORMAT permite formatear valores numéricos convirtiéndolos en cadenas de texto con una presentación visual específica (por ejemplo, añadiendo separadores de millares, limitando los decimales o aplicando un formato regional).
 
-1. Sintaxis en MySQL / MariaDB
+1.  Sintaxis en MySQL / MariaDB
 
-`FORMAT(numero, decimales [, 'localizacion'])`
--  numero: El valor numérico que se desea formatear.
--  decimales: El número exacto de posiciones decimales a mostrar (redondea automáticamente si es necesario).
--  localizacion (opcional): El código de localización (por ejemplo, 'es_ES', 'en_US') que determina si los separadores de miles/decimales usan coma o punto.
+`FORMAT(numero, decimales [, 'localizacion'])` - numero: El valor numérico que se desea formatear. - decimales: El número exacto de posiciones decimales a mostrar (redondea automáticamente si es necesario). - localizacion (opcional): El código de localización (por ejemplo, 'es_ES', 'en_US') que determina si los separadores de miles/decimales usan coma o punto.
 
-```sql
+``` sql
 -- Formatear con 2 decimales (por defecto usa coma para miles y punto para decimales)
 SELECT FORMAT(1234567.8910, 2); 
 -- Resultado: '1,234,567.89'
@@ -378,11 +534,11 @@ SELECT FORMAT(1234567.8910, 2);
 -- Formatear especificando localización española (punto para miles, coma para decimales)
 SELECT FORMAT(1234567.8910, 2, 'es_ES'); 
 -- Resultado: '1.234.567,89'
-
 ```
-2. Comportamiento en SQL Server (T-SQL)
-En SQL Server, FORMAT es una función más versátil que acepta patrones de formato de estilo .NET (para números, fechas y monedas):
-```sql
+
+2.  Comportamiento en SQL Server (T-SQL) En SQL Server, FORMAT es una función más versátil que acepta patrones de formato de estilo .NET (para números, fechas y monedas):
+
+``` sql
 SELECT FORMAT(1234567.8910, 'N2', 'es-ES');
 -- Resultado: '1.234.567,89'
 
@@ -394,13 +550,8 @@ SELECT FORMAT(1234.5, 'C', 'es-ES');
 ::: nota-importante
 Tipo de datos devuelto: FORMAT convierte el número en una cadena de texto (VARCHAR/CHAR). Una vez formateado, no debes intentar realizar operaciones matemáticas directas (como sumas o promedios) sobre ese valor.
 
-Uso recomendado: Se debe aplicar idealmente en la capa final de presentación / informe de la consulta (SELECT), nunca dentro de filtros (WHERE) o agrupaciones (GROUP BY).
-FORMAT no cambia cómo se guarda un número en la tabla. Devuelve una representación de texto. Para ordenar cantidades se utiliza el valor numérico original, no su presentación con separadores.
+Uso recomendado: Se debe aplicar idealmente en la capa final de presentación / informe de la consulta (SELECT), nunca dentro de filtros (WHERE) o agrupaciones (GROUP BY). FORMAT no cambia cómo se guarda un número en la tabla. Devuelve una representación de texto. Para ordenar cantidades se utiliza el valor numérico original, no su presentación con separadores.
 :::
-
-# Funciones y operadores de cadenas
-
-Las funciones de texto permiten unir, recortar, buscar o sustituir partes de una cadena. 
 
 # Funciones de Fecha y Hora
 
@@ -433,14 +584,21 @@ CREATE TABLE usuarios (
 
 **Funciones principales para manipular fechas**
 
-|  |  |  |  |
-|------------------|------------------|------------------|------------------|
-| **Función** | **¿Qué devuelve?** | **Ejemplo** | **Resultado** |
-| `date(...)` | La fecha | `SELECT date('now');` | `'2026-07-28'` |
-| `time(...)` | La hora | `SELECT time('now');` | `'10:30:00'` |
-| `datetime(...)` | Fecha y hora | `SELECT datetime('now');` | `'2026-07-28 10:30:00'` |
-| `strftime(...)` | Formato personalizado | `SELECT strftime('%Y', 'now');` | `'2026'` |
-| `julianday(...)` | Días julianos (decimal) | `SELECT julianday('now');` | `2461250.93...` |
++------------------+-------------------------+---------------------------------+-------------------------+
+|                  |                         |                                 |                         |
++==================+=========================+=================================+=========================+
+| **Función**      | **¿Qué devuelve?**      | **Ejemplo**                     | **Resultado**           |
++------------------+-------------------------+---------------------------------+-------------------------+
+| `date(...)`      | La fecha                | `SELECT date('now');`           | `'2026-07-28'`          |
++------------------+-------------------------+---------------------------------+-------------------------+
+| `time(...)`      | La hora                 | `SELECT time('now');`           | `'10:30:00'`            |
++------------------+-------------------------+---------------------------------+-------------------------+
+| `datetime(...)`  | Fecha y hora            | `SELECT datetime('now');`       | `'2026-07-28 10:30:00'` |
++------------------+-------------------------+---------------------------------+-------------------------+
+| `strftime(...)`  | Formato personalizado   | `SELECT strftime('%Y', 'now');` | `'2026'`                |
++------------------+-------------------------+---------------------------------+-------------------------+
+| `julianday(...)` | Días julianos (decimal) | `SELECT julianday('now');`      | `2461250.93...`         |
++------------------+-------------------------+---------------------------------+-------------------------+
 
 **Modificadores (Añadir o restar tiempo)**
 
@@ -461,15 +619,15 @@ STRFTIME() nos permite formatear la fecha a nuestro gusto, y podemos usarla para
 
 ejemplo: `SELECT cast (STRFTIME('%m', fecha) AS integer) AS mes_numerico`
 
--   `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
--   `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
--   `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
--   `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
--   `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
--   `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
--   `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
--   `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
--   `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
+- `STRFTIME('%m', fecha)` nos devuelve el mes de la fecha,
+- `STRFTIME('%Y', fecha)` nos devuelve el año de la fecha,
+- `STRFTIME('%d', fecha)` nos devuelve el día de la fecha,
+- `STRFTIME('%H', fecha)` nos devuelve la hora de la fecha,
+- `STRFTIME('%M', fecha)` nos devuelve los minutos de la fecha,
+- `STRFTIME('%S', fecha)` nos devuelve los segundos de la fecha,
+- `STRFTIME('%W', fecha)` nos devuelve el número de semana del año de la fecha,
+- `STRFTIME('%j', fecha)` nos devuelve el número de día del año de la fecha,
+- `STRFTIME('%w', fecha)` nos devuelve el número de día de la semana de la fecha (0=domingo, 1=lunes, ..., 6=sábado).
 
 ``` sql
 SELECT 
@@ -507,34 +665,38 @@ SELECT date('2026-09-02', '-1 year', '-2 month');
 ```
 
 ## Trabajando con fechas y horas en otros motores sql
+
 ### Extracción de Componentes de Fecha
 
 SQL dispone de funciones dedicadas para aislar componentes de una fecha o timestamp:
 
-* **`YEAR(fecha)`**, **`MONTH(fecha)`**, **`DAY(fecha)`** (o `DAYOFMONTH`)
-* **`EXTRACT(unidad FROM fecha)`**: Sintaxis estándar ANSI SQL.
+- **`YEAR(fecha)`**, **`MONTH(fecha)`**, **`DAY(fecha)`** (o `DAYOFMONTH`)
+- **`EXTRACT(unidad FROM fecha)`**: Sintaxis estándar ANSI SQL.
 
-```sql
+``` sql
 SELECT YEAR('2026-10-15') AS anio,
        MONTH('2026-10-15') AS mes,
        DAY('2026-10-15') AS dia,
        EXTRACT(WEEK FROM DATE '2026-10-15') AS numero_semana;
 ```
 
-```
+```         
 +------+------+------+---------------+
 | anio | mes  | dia  | numero_semana |
 +------+------+------+---------------+
 | 2026 |   10 |   15 |            42 |
 +------+------+------+---------------+
 ```
-### EXTRACT 
+
+### EXTRACT
+
 Esta función ofrece otra sintaxis para extraer unidades:
 
 ``` sql
 SELECT EXTRACT(MONTH FROM DATE '2026-10-15') AS mes;
 ```
-```sql
+
+``` sql
 SELECT nombre, fecha_inicio,
        EXTRACT(YEAR FROM fecha_inicio) AS anio,
        EXTRACT(MONTH FROM fecha_inicio) AS mes,
@@ -542,31 +704,19 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY id;
 ```
-mysql>SELECT nombre, fecha_inicio,
-    ->        EXTRACT(YEAR FROM fecha_inicio) AS anio,
-    ->        EXTRACT(MONTH FROM fecha_inicio) AS mes,
-    ->        EXTRACT(DAY FROM fecha_inicio) AS dia
-    -> FROM cursos
-    -> ORDER BY id;
-+--------+--------------+------+------+------+
-| nombre | fecha_inicio | anio | mes  | dia  |
-+--------+--------------+------+------+------+
-| Redes  | 2026-10-01   | 2026 |   10 |    1 |
-| SQL    | 2026-10-15   | 2026 |   10 |   15 |
-| Linux  | 2026-11-01   | 2026 |   11 |    1 |
-+--------+--------------+------+------+------+
 
+mysql\>SELECT nombre, fecha_inicio, -\> EXTRACT(YEAR FROM fecha_inicio) AS anio, -\> EXTRACT(MONTH FROM fecha_inicio) AS mes, -\> EXTRACT(DAY FROM fecha_inicio) AS dia -\> FROM cursos -\> ORDER BY id; +--------+--------------+------+------+------+ \| nombre \| fecha_inicio \| anio \| mes \| dia \| +--------+--------------+------+------+------+ \| Redes \| 2026-10-01 \| 2026 \| 10 \| 1 \| \| SQL \| 2026-10-15 \| 2026 \| 10 \| 15 \| \| Linux \| 2026-11-01 \| 2026 \| 11 \| 1 \| +--------+--------------+------+------+------+
 
 ## Separar Fecha y Hora: `DATE` y `TIME`
 
 Dada una marca temporal completa (`DATETIME` o `TIMESTAMP`), las funciones `DATE()` y `TIME()` aíslan la parte de la fecha o la hora respectivamente.
 
-```sql
+``` sql
 SELECT DATE('2026-10-18 12:30:00') AS solo_fecha,
        TIME('2026-10-18 12:30:00') AS solo_hora;
 ```
 
-```
+```         
 +------------+-----------+
 | solo_fecha | solo_hora |
 +------------+-----------+
@@ -576,18 +726,19 @@ SELECT DATE('2026-10-18 12:30:00') AS solo_fecha,
 
 ## CALCULAR DIFERENCIAS ENTRE FECHAS (DATEDIFF)
 
-La función DATEDIFF sirve para calcular la distancia o el tiempo transcurrido entre dos fechas. Sin embargo, este es uno de los puntos críticos al cambiar de motor de bases de datos, ya que su sintaxis y su comportamiento cambian radicalmente entre SQL Server y MySQL.  
+La función DATEDIFF sirve para calcular la distancia o el tiempo transcurrido entre dos fechas. Sin embargo, este es uno de los puntos críticos al cambiar de motor de bases de datos, ya que su sintaxis y su comportamiento cambian radicalmente entre SQL Server y MySQL.
 
-1. En MySQL / MariaDB
-Sintaxis:` DATEDIFF(end_date, start_date)`   Características:   Requiere solo 2 argumentos.Solo calcula diferencias en días. No permite elegir unidades como meses o años de forma nativa en la misma función.Ignora las horas, minutos y segundos, evaluando únicamente la parte de la fecha.   
-```sql
+1.  En MySQL / MariaDB Sintaxis:`DATEDIFF(end_date, start_date)` Características: Requiere solo 2 argumentos.Solo calcula diferencias en días. No permite elegir unidades como meses o años de forma nativa en la misma función.Ignora las horas, minutos y segundos, evaluando únicamente la parte de la fecha.\
+
+``` sql
 -- Ojo al orden: primero la fecha final, luego la inicial
 SELECT DATEDIFF('2026-01-10', '2026-01-01') AS dias_totales;
 -- Resultado: 9
 ```
-2. En SQL Server (T-SQL)
-Sintaxis:` DATEDIFF(datepart, start_date, end_date)` Requiere 3 argumentos.El primer argumento (datepart) indica explícitamente la unidad de medida que deseas obtener (day, month, year, hour, etc.).   Ejemplo:
-```sql
+
+2.  En SQL Server (T-SQL) Sintaxis:`DATEDIFF(datepart, start_date, end_date)` Requiere 3 argumentos.El primer argumento (datepart) indica explícitamente la unidad de medida que deseas obtener (day, month, year, hour, etc.). Ejemplo:
+
+``` sql
 -- Calcula los días transcurridos entre dos fechas
 SELECT DATEDIFF(day, '2026-01-01', '2026-01-10') AS dias_totales;
 -- Resultado: 9
@@ -596,43 +747,55 @@ SELECT DATEDIFF(day, '2026-01-01', '2026-01-10') AS dias_totales;
 SELECT DATEDIFF(year, '2022-01-01', '2026-01-01') AS anos_totales;
 -- Resultado: 4
 ```
+
 ### Aritmética de Fechas con Intervalos: `DATE_ADD`, `DATE_SUB` e `INTERVAL`
 
 Estas herramientas permiten sumar o restar intervalos de tiempo específicos (días, meses, años, horas, etc.) a una fecha o marca temporal base.
 
-**Sintaxis en MySQL y MariaDB**
-En MySQL, la manipulación de fechas con intervalos se apoya en la palabra clave INTERVAL combinada con funciones dedicadas o mediante operadores aritméticos directos.
+**Sintaxis en MySQL y MariaDB** En MySQL, la manipulación de fechas con intervalos se apoya en la palabra clave INTERVAL combinada con funciones dedicadas o mediante operadores aritméticos directos.
 
-A. Usando DATE_ADD y DATE_SUB
-DATE_ADD(fecha, INTERVAL valor unidad): Suma un intervalo a una fecha.
+A. Usando DATE_ADD y DATE_SUB DATE_ADD(fecha, INTERVAL valor unidad): Suma un intervalo a una fecha.
 
 DATE_SUB(fecha, INTERVAL valor unidad): Resta un intervalo a una fecha.
 
 Ejemplos:
-```sql
+
+``` sql
 -- Sumar 10 días a una fecha
 SELECT DATE_ADD('2026-01-01', INTERVAL 10 DAY) AS nueva_fecha;
-``` 
+```
+
 +-------------+
+|             |
++=============+
 | nueva_fecha |
 +-------------+
 | 2026-01-11  |
 +-------------+
+
 Sumar un mes a una fecha
-```sql
+
+``` sql
 SELECT DATE_ADD(DATE '2026-01-15', INTERVAL 1 MONTH) AS fecha;
 ```
+
 +------------+
+|            |
++============+
 | fecha      |
 +------------+
 | 2026-02-15 |
 +------------+
 
- Restar 3 meses a una fecha
-```sql  
+Restar 3 meses a una fecha
+
+``` sql
 SELECT DATE_SUB('2026-06-01', INTERVAL 3 MONTH) AS fecha_anterior;
 ```
+
 +----------------+
+|                |
++================+
 | fecha_anterior |
 +----------------+
 | 2026-03-01     |
@@ -644,39 +807,28 @@ Cálculo dependiendo del número de días del mes:
 ``` sql
 SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
 ```
-mysql>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
-+------------+
-| fecha      |
-+------------+
-| 2026-02-28 |
-+------------+
-Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
-::: 
 
-B. Aritmética directa con el operador + y -
-MySQL permite utilizar directamente los operadores matemáticos junto con INTERVAL de una forma muy limpia y legible:
-```sql
+mysql\>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha; +------------+ \| fecha \| +------------+ \| 2026-02-28 \| +------------+ Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
+:::
+
+B. Aritmética directa con el operador + y - MySQL permite utilizar directamente los operadores matemáticos junto con INTERVAL de una forma muy limpia y legible:
+
+``` sql
 -- Sumar 2 años
 SELECT '2026-05-15' + INTERVAL 2 YEAR;
 
 -- Restar 15 horas
 SELECT NOW() - INTERVAL 15 HOUR;
 ```
-**Unidades de tiempo más comunes (unit)**
-Las unidades que acepta la cláusula INTERVAL pueden escribirse en singular o plural:
 
-DAY / DAYS (Días)
-MONTH / MONTHS (Meses)
-YEAR / YEARS (Años)
-HOUR / HOURS (Horas)
-MINUTE / MINUTES (Minutos)
-SECOND / SECONDS (Segundos)
-WEEK / WEEKS (Semanas)
+**Unidades de tiempo más comunes (unit)** Las unidades que acepta la cláusula INTERVAL pueden escribirse en singular o plural:
+
+DAY / DAYS (Días) MONTH / MONTHS (Meses) YEAR / YEARS (Años) HOUR / HOURS (Horas) MINUTE / MINUTES (Minutos) SECOND / SECONDS (Segundos) WEEK / WEEKS (Semanas)
 
 ::: nota-importante
-Compatibilidad (SQL Server)
-Si en algún momento trabajas con SQL Server (T-SQL), recuerda que no existe la estructura con la palabra INTERVAL. En su lugar se utiliza una función llamada DATEADD, donde el orden de los factores cambia (primero la unidad, luego el valor numérico y finalmente la fecha):
-```sql
+Compatibilidad (SQL Server) Si en algún momento trabajas con SQL Server (T-SQL), recuerda que no existe la estructura con la palabra INTERVAL. En su lugar se utiliza una función llamada DATEADD, donde el orden de los factores cambia (primero la unidad, luego el valor numérico y finalmente la fecha):
+
+``` sql
 -- Equivalente en SQL Server:
 SELECT DATEADD(day, 10, '2026-01-01');
 ```
@@ -684,12 +836,11 @@ SELECT DATEADD(day, 10, '2026-01-01');
 
 ### Diferencias Precisas por Unidades: `TIMESTAMPDIFF`
 
-La función TIMESTAMPDIFF es la herramienta definitiva en MySQL y MariaDB para calcular la diferencia entre dos fechas o marcas temporales (datetimes) especificando la unidad exacta que deseas obtener.
-sintaxis: `TIMESTAMPDIFF(unidad, fecha_inicio, fecha_fin)`
+La función TIMESTAMPDIFF es la herramienta definitiva en MySQL y MariaDB para calcular la diferencia entre dos fechas o marcas temporales (datetimes) especificando la unidad exacta que deseas obtener. sintaxis: `TIMESTAMPDIFF(unidad, fecha_inicio, fecha_fin)`
 
--  unidad: La unidad de tiempo en la que quieres el resultado (por ejemplo: YEAR, MONTH, DAY, HOUR, MINUTE, SECOND).
--  fecha_inicio: La fecha o marca temporal más antigua (el punto de partida).
--  fecha_fin: La fecha o marca temporal más reciente (el punto de llegada). El cálculo interno que realiza es: fecha_fin - fecha_inicio.
+- unidad: La unidad de tiempo en la que quieres el resultado (por ejemplo: YEAR, MONTH, DAY, HOUR, MINUTE, SECOND).
+- fecha_inicio: La fecha o marca temporal más antigua (el punto de partida).
+- fecha_fin: La fecha o marca temporal más reciente (el punto de llegada). El cálculo interno que realiza es: fecha_fin - fecha_inicio.
 
 Es ideal para calcular edades o antigüedad. Tiene en cuenta no solo los años, sino los meses y los días, así vemos con este ejemplo como sólo calcula la edad de 1 año cuando la persona llega a su primer cumpleaños.
 
@@ -697,124 +848,130 @@ Es ideal para calcular edades o antigüedad. Tiene en cuenta no solo los años, 
 
 Devuelve un número entero calculado como `fecha_fin - fecha_inicio`. Solo incrementa el contador cuando el período se ha completado íntegramente (por ejemplo, el cálculo de edades).
 
-```sql
+``` sql
 SELECT TIMESTAMPDIFF(YEAR, '2000-10-19', '2026-10-18') AS edad_un_dia_antes,
        TIMESTAMPDIFF(YEAR, '2000-10-19', '2026-10-19') AS edad_cumpleanios,
        TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_completados;
 ```
 
-```
+```         
 +--------------------+------------------+-------------------+
 | edad_un_dia_antes  | edad_cumpleanios | meses_completados |
 +--------------------+------------------+-------------------+
 |                 25 |               26 |                 8 |
 +--------------------+------------------+-------------------+
 ```
-```sql
+
+``` sql
 SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
 ```
-mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
-+------+
-| edad |
-+------+
-|    1 |
-+------+
 
-Si hacemos la misma consulta sobre un día antes: 
-```sql
+mysql\>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
+
++------+ \| edad \| +------+ \| 1 \| +------+
+
+Si hacemos la misma consulta sobre un día antes:
+
+``` sql
 SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
 ```
 
-mysql>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
-+------+
-| edad |
-+------+
-|    0 |
-+------+
+mysql\>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
+
++------+ \| edad \| +------+ \| 0 \| +------+
 
 Calcular la diferencia en meses
-```sql
+
+``` sql
 SELECT TIMESTAMPDIFF(MONTH, '2026-01-01', '2026-10-01') AS meses_totales;
 ```
+
 +---------------+
+|               |
++===============+
 | meses_totales |
 +---------------+
-|             9 |
+| ```           |
+|         9     |
+| ```           |
 +---------------+
 
-```sql
+``` sql
 SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
 ```
-mysql>SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
-+---------------+
-| meses_totales |
-+---------------+
-|             8 |
-+---------------+
-### `TIMEDIFF`, `SEC_TO_TIME`, `TIME_TO_SEC`
+
++---------------+ \| meses_totales \| +---------------+ \| 8 \| +---------------+
+
+\### `TIMEDIFF`, `SEC_TO_TIME`, `TIME_TO_SEC`
 
 Para medir diferencias de tiempo detalladas en horas, minutos y segundos:
 
-1. **`TIMEDIFF(expr1, expr2)`**: Resta dos expresiones de hora/fecha del mismo tipo y devuelve un formato `TIME` (`HH:MM:SS`). Está limitado al rango máximo del tipo `TIME` (máximo 838 horas $\approx 34$ días).
-2. **`SEC_TO_TIME(segundos)`**: Convierte una cantidad entera de segundos en formato de reloj `HH:MM:SS`.
-3. **`TIME_TO_SEC(hora)`**: Convierte una hora en formato `HH:MM:SS` a un entero total de segundos.
-
+1.  **`TIMEDIFF(expr1, expr2)`**: Resta dos expresiones de hora/fecha del mismo tipo y devuelve un formato `TIME` (`HH:MM:SS`). Está limitado al rango máximo del tipo `TIME` (máximo 838 horas $\approx 34$ días).
+2.  **`SEC_TO_TIME(segundos)`**: Convierte una cantidad entera de segundos en formato de reloj `HH:MM:SS`.
+3.  **`TIME_TO_SEC(hora)`**: Convierte una hora en formato `HH:MM:SS` a un entero total de segundos.
 
 #### TIMEDIFF (Diferencia devuelta como formato de Hora)
-La función TIMEDIFF resta dos expresiones de tipo TIME, DATETIME o TIMESTAMP y devuelve el resultado como un valor de tipo TIME (es decir, en formato de horas, minutos y segundos: HH:MM:SS).
-Características principales:
 
--  Ambos argumentos deben ser del mismo tipo (TIME o DATETIME).
-::: nota-importante
-Límite de rango: Como devuelve un tipo TIME en MySQL, el resultado está limitado al rango de horas admitido por este tipo, que va desde -838:59:59 hasta 838:59:59. Si la diferencia entre las dos fechas supera las ~35 días, la función se satura y devuelve el valor máximo/mínimo permitido con una advertencia.
-:::
+La función TIMEDIFF resta dos expresiones de tipo TIME, DATETIME o TIMESTAMP y devuelve el resultado como un valor de tipo TIME (es decir, en formato de horas, minutos y segundos: HH:MM:SS). Características principales:
 
-```sql
+- Ambos argumentos deben ser del mismo tipo (TIME o DATETIME). ::: nota-importante Límite de rango: Como devuelve un tipo TIME en MySQL, el resultado está limitado al rango de horas admitido por este tipo, que va desde -838:59:59 hasta 838:59:59. Si la diferencia entre las dos fechas supera las \~35 días, la función se satura y devuelve el valor máximo/mínimo permitido con una advertencia. :::
+
+``` sql
 SELECT TIMEDIFF('2026-10-26 14:30:00', '2026-10-26 08:00:00') AS diferencia_tiempo;
 ```
+
 +-------------------+
+|                   |
++===================+
 | diferencia_tiempo |
 +-------------------+
 | 06:30:00          |
 +-------------------+
 
-```sql
+``` sql
 SELECT TIMEDIFF('2026-03-26 14:30:00', '2026-10-26 08:00:00') AS fallo_diferencia_tiempo;
 ```
+
 +-------------------------+
+|                         |
++=========================+
 | fallo_diferencia_tiempo |
 +-------------------------+
 | -838:59:59              |
 +-------------------------+
 
 #### SEC_TO_TIME (Conversión de Segundos a Formato de Tiempo)
-La función SEC_TO_TIME en MySQL y MariaDB se utiliza para transformar una cantidad numérica de segundos en un formato de hora, minuto y segundo (HH:MM:SS) de tipo TIME. 
-sintaxis: `SEC_TO_TIME(segundos)`. segundos: El número total de segundos que deseas convertir (puede incluir decimales para fracciones de segundo).
 
-```sql
+La función SEC_TO_TIME en MySQL y MariaDB se utiliza para transformar una cantidad numérica de segundos en un formato de hora, minuto y segundo (HH:MM:SS) de tipo TIME. sintaxis: `SEC_TO_TIME(segundos)`. segundos: El número total de segundos que deseas convertir (puede incluir decimales para fracciones de segundo).
+
+``` sql
 SELECT SEC_TO_TIME(3665) AS tiempo_formateado;
 ```
+
 +-------------------+
+|                   |
++===================+
 | tiempo_formateado |
 +-------------------+
 | 01:01:05          |
 +-------------------+
 
-#### Su función inversa: TIME_TO_SEC 
+#### Su función inversa: TIME_TO_SEC
+
 Si necesitas hacer lo opuesto (convertir un formato de hora, minuto y segundo a su equivalente total en segundos), cuentas con la función complementaria TIME_TO_SEC:
-```sql
+
+``` sql
 SELECT TIME_TO_SEC('01:01:05') AS segundos_totales;
 ```
-Es útil para calcular promedios de tiempo:
-A menudo se usa combinada con funciones de agregación como AVG() o sumas de tiempos previamente convertidos a segundos:
-Imagina que calculas la media de segundos que tarda un proceso
 
-```sql
+Es útil para calcular promedios de tiempo: A menudo se usa combinada con funciones de agregación como AVG() o sumas de tiempos previamente convertidos a segundos: Imagina que calculas la media de segundos que tarda un proceso
+
+``` sql
 SELECT SEC_TO_TIME(AVG(TIME_TO_SEC(duracion))) AS tiempo_medio FROM procesos;
-``` 
+```
+
 ::: nota-importante
-Limitación importante
-Al igual que ocurría con TIMEDIFF, como SEC_TO_TIME devuelve un valor de tipo TIME, su resultado está sujeto al rango permitido en MySQL, que va desde -838:59:59 hasta 838:59:59 (aproximadamente 3019999 segundos). Si le pasas un número de segundos mayor, el valor se truncará al límite máximo.
+Limitación importante Al igual que ocurría con TIMEDIFF, como SEC_TO_TIME devuelve un valor de tipo TIME, su resultado está sujeto al rango permitido en MySQL, que va desde -838:59:59 hasta 838:59:59 (aproximadamente 3019999 segundos). Si le pasas un número de segundos mayor, el valor se truncará al límite máximo.
 :::
 
 ``` sql
@@ -825,103 +982,111 @@ SELECT TIMEDIFF('12:30:00', '10:00:00') AS duracion,
        TIME_TO_SEC('02:30:00') AS segundos,
        SEC_TO_TIME(9000) AS duracion_recuperada;
 ```
-+----------+---------+----------+---------------------+
-| duracion | minutos | segundos | duracion_recuperada |
-+----------+---------+----------+---------------------+
-| 02:30:00 |     150 |     9000 | 02:30:00            |
-+----------+---------+----------+---------------------+
 
++--------------+-------------------------------------------+--------------+---------------------+
+|              |                                           |              |                     |
++==============+===========================================+==============+=====================+
+| duracion     | minutos                                   | segundos     | duracion_recuperada |
++--------------+-------------------------------------------+--------------+---------------------+
+| 02:30:00     | ```                                       |              |                     |
+|              |       |           | 02:30:00            | |              |                     |
+|              | ```                                       |              |                     |
+|              |                                           |              |                     |
+|              | 150 \| 9000 \| \| \| \|                   |              |                     |
++--------------+-------------------------------------------+--------------+---------------------+
 
 ## Transformación entre Fechas y Cadenas (DATE_FORMAT y STR_TO_DATE)
+
 Estas dos funciones en MySQL y MariaDB son complementarias y resultan imprescindibles cuando necesitas cambiar la forma en que se muestran las fechas (hacia texto) o cuando tienes fechas guardadas como texto y necesitas convertirlas a un formato de fecha real para operar con ellas.
 
 ### DATE_FORMAT (De Fecha a Texto con formato personalizado)
-Toma un valor de tipo fecha/hora y lo convierte en una cadena de texto (VARCHAR) aplicando un patrón de formato específico.
-sintaxis `DATE_FORMAT(fecha, 'formato')`
+
+Toma un valor de tipo fecha/hora y lo convierte en una cadena de texto (VARCHAR) aplicando un patrón de formato específico. sintaxis `DATE_FORMAT(fecha, 'formato')`
 
 Modificadores (Formatos) más comunes:
 
-%Y: Año de 4 dígitos (ej. 2026)
-%y: Año de 2 dígitos (ej. 26)
-%m: Mes numérico con ceros iniciales (01-12)
-%M: Nombre completo del mes en inglés (January, February...)
-%d: Día del mes con ceros iniciales (01-31)
-%H: Hora en formato de 24 horas (00-23)
-%i: Minutos (00-59)
-%s o %S: Segundos (00-59)
+%Y: Año de 4 dígitos (ej. 2026) %y: Año de 2 dígitos (ej. 26) %m: Mes numérico con ceros iniciales (01-12) %M: Nombre completo del mes en inglés (January, February...) %d: Día del mes con ceros iniciales (01-31) %H: Hora en formato de 24 horas (00-23) %i: Minutos (00-59) %s o %S: Segundos (00-59)
 
 Convertir una fecha estándar a un formato personalizado
+
 ``` sql
 SELECT DATE_FORMAT('2026-10-26 14:30:00', '%Y-%m-%d a las %H:%i') AS fecha_personalizada;
 ```
+
 +------------------------+
+|                        |
++========================+
 | fecha_personalizada    |
 +------------------------+
 | 2026-10-26 a las 14:30 |
 +------------------------+
+
 El tipo de salida será VARCHAR
 
 ### STR_TO_DATE (De Texto a Fecha real)
-Es la función inversa a la anterior. Analiza una cadena de texto que contiene una fecha y la convierte en un tipo de dato temporal real (DATE, DATETIME o TIME) siguiendo el patrón que le indiques.
-Sintaxis: `STR_TO_DATE('cadena_texto', 'formato')`
-```sql
+
+Es la función inversa a la anterior. Analiza una cadena de texto que contiene una fecha y la convierte en un tipo de dato temporal real (DATE, DATETIME o TIME) siguiendo el patrón que le indiques. Sintaxis: `STR_TO_DATE('cadena_texto', 'formato')`
+
+``` sql
 SELECT STR_TO_DATE('2026-10-26 a las 14:30 ', '%Y-%m-%d a las %H:%i') AS fecha_real;
 ```
 
 +---------------------+
+|                     |
++=====================+
 | fecha_real          |
 +---------------------+
 | 2026-10-26 14:30:00 |
 +---------------------+
-
 
 | Operación   | Entrada          | Salida           |
 |-------------|------------------|------------------|
 | DATE_FORMAT | Fecha 2026-10-18 | Texto 18/10/2026 |
 | STR_TO_DATE | Texto 18/10/2026 | Fecha 2026-10-18 |
 
-
 ## Funciones de Calendario y Componentes Temporales (LAST_DAY, DAYOFWEEK, QUARTER, etc.)
+
 Estas funciones permiten extraer información avanzada sobre el calendario (como fin de mes, día de la semana o trimestre) sin necesidad de hacer cálculos manuales complejos. Como ocurre con la mayoría de las herramientas de fecha y hora, su soporte varía notablemente entre motores.
 
 ### LAST_DAY (Último día del mes)
+
 Qué hace: Devuelve la fecha correspondiente al último día del mes de la fecha indicada. Es sumamente útil para cierres contables, reportes mensuales o validaciones de periodos.
 
-Compatibilidad y Sintaxis: 
-MySQL / MariaDB: Directo y nativo.
-```sql
+Compatibilidad y Sintaxis: MySQL / MariaDB: Directo y nativo.
+
+``` sql
 SELECT LAST_DAY('2026-10-15') AS ultimo_dia;
 ```
+
 SQL Server (T-SQL): No existe LAST_DAY, pero cuenta con una función específica llamada EOMONTH() (End Of Month): `SELECT EOMONTH('2026-10-15');`
 
 PostgreSQL: No tiene una función nativa directa, pero se resuelve fácilmente sumando un mes al inicio del mes truncado y restando un día:
-```sql
+
+``` sql
 SELECT (DATE_TRUNC('month', TIMESTAMP '2026-10-15') + INTERVAL '1 month - 1 day')::date;
 ```
 
 ### QUARTER (Trimestre del año)
-Devuelve un número entero del 1 al 4 indicando a qué trimestre pertenece la fecha.
-MySQL: SELECT QUARTER('2026-10-26'); 
-SQL Server: SELECT DATEPART(quarter, '2026-10-26');
-PostgreSQL: SELECT EXTRACT(QUARTER FROM DATE '2026-10-26');
+
+Devuelve un número entero del 1 al 4 indicando a qué trimestre pertenece la fecha. MySQL: SELECT QUARTER('2026-10-26'); SQL Server: SELECT DATEPART(quarter, '2026-10-26'); PostgreSQL: SELECT EXTRACT(QUARTER FROM DATE '2026-10-26');
 
 ### DAYOFWEEK / WEEKDAY (Día de la semana)
-Permiten identificar qué día de la semana es, aunque cuidado con la numeración, ya que cambia según el motor y la función:
--  En MySQL:
-    -  DAYOFWEEK(fecha): Devuelve del 1 (Domingo) al 7 (Sábado).
-    -  WEEKDAY(fecha): Devuelve del 0 (Lunes) al 6 (Domingo).
--  En SQL Server y PostgreSQL: Se suele preferir el uso de DATEPART(weekday, ...) o EXTRACT(ISODOW FROM ...) (donde el lunes suele ser el día 1).
+
+Permiten identificar qué día de la semana es, aunque cuidado con la numeración, ya que cambia según el motor y la función: - En MySQL: - DAYOFWEEK(fecha): Devuelve del 1 (Domingo) al 7 (Sábado). - WEEKDAY(fecha): Devuelve del 0 (Lunes) al 6 (Domingo). - En SQL Server y PostgreSQL: Se suele preferir el uso de DATEPART(weekday, ...) o EXTRACT(ISODOW FROM ...) (donde el lunes suele ser el día 1).
 
 ### Nombres de Días y Meses (DAYNAME y MONTHNAME)
+
 En MySQL, estas funciones devuelven directamente el nombre textual del día o del mes (por defecto en inglés, según la configuración del servidor):
-```sql
+
+``` sql
 SELECT DAYNAME('2026-10-26');   -- Resultado: 'Monday'
 SELECT MONTHNAME('2026-10-26'); -- Resultado: 'October'
 ```
+
 En otros motores (como PostgreSQL o SQL Server): No suelen existir como funciones independientes; se logra formateando la fecha mediante funciones de cadenas (como TO_CHAR en Postgres).
 
+### Ejemplo
 
-### Ejemplo 
 ``` sql
 SELECT LAST_DAY(DATE '2026-02-10') AS fin_de_mes,
        DAYOFWEEK(DATE '2026-10-18') AS dia_domingo_uno,
@@ -929,11 +1094,16 @@ SELECT LAST_DAY(DATE '2026-02-10') AS fin_de_mes,
        WEEK(DATE '2026-10-18', 3) AS semana,
        YEARWEEK(DATE '2026-10-18', 3) AS semana_iso;
 ```
-+------------+-----------------+----------------+--------+------------+
-| fin_de_mes | dia_domingo_uno | dia_lunes_cero | semana | semana_iso |
-+------------+-----------------+----------------+--------+------------+
-| 2026-02-28 |               1 |              6 |     42 |     202642 |
-+------------+-----------------+----------------+--------+------------+
+
++------------+-----------------+----------------+--------------+--------------+
+|            |                 |                |              |              |
++============+=================+================+==============+==============+
+| fin_de_mes | dia_domingo_uno | dia_lunes_cero | semana       | semana_iso   |
++------------+-----------------+----------------+--------------+--------------+
+| 2026-02-28 | ```             | ```            | ```          | ```          |
+|            |           1     |          6     | 42           | 202642       |
+|            | ```             | ```            | ```          | ```          |
++------------+-----------------+----------------+--------------+--------------+
 
 La fecha 18 de octubre de 2026 es domingo. DAYOFWEEK cuenta domingo como uno; WEEKDAY cuenta lunes como cero y domingo como seis. YEARWEEK con modo 3 devuelve el año y la semana ISO; WEEK obtiene solo la semana y conviene indicar su modo.
 
@@ -980,3 +1150,554 @@ SELECT UNIX_TIMESTAMP() AS segundos_actuales,
 
 UNIX_TIMESTAMP expresa un instante como segundos desde el comienzo de 1970 UTC. FROM_UNIXTIME lo representa como fecha y hora en la zona de la sesión. Por ello la segunda columna no debe memorizarse como una fecha local universal: depende de esa zona.
 
+------------------------------------------------------------------------
+
+Las funciones que veremos a continuación son menos comunes, pero conviene conocer su existencia.
+
+# `ROLLUP` y `GROUPING` para Totales y Subtotales
+
+Cuando agrupamos datos utilizando `GROUP BY`, normalmente obtenemos una fila por cada grupo específico. Sin embargo, en informes de negocio o análisis de datos, a menudo necesitamos **filas adicionales con subtotales y un gran total general**.
+
+- **`ROLLUP`**: Es una extensión de la cláusula `GROUP BY` que genera automáticamente filas de subtotales jerárquicos y una fila con el total general (*grand total*).
+
+- **`GROUPING`**: Es una función auxiliar que se utiliza junto con `ROLLUP` para identificar si un valor `NULL` en los resultados proviene de los datos originales o si ha sido generado automáticamente por el motor para representar una fila de total o subtotal.
+
+**Motores Compatibles**
+
+Las funciones `ROLLUP` y `GROUPING` forman parte del estándar **SQL (SQL:1999 y posteriores)**, por lo que cuentan con un soporte muy amplio en la industria:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+- **SQLite** (soporta `ROLLUP` desde versiones recientes, aunque con ciertas limitaciones en `GROUPING`).
+
+Ejemplo
+
+|        |            |              |              |
+|--------|------------|--------------|--------------|
+| **id** | **region** | **producto** | **cantidad** |
+| 1      | Norte      | Laptop       | 10           |
+| 2      | Norte      | Ratón        | 50           |
+| 3      | Sur        | Laptop       | 15           |
+| 4      | Sur        | Ratón        | 30           |
+
+``` sql
+SELECT 
+    region,
+    producto,
+    SUM(cantidad) AS total_vendido
+FROM ventas
+GROUP BY region, producto WITH ROLLUP;
+```
+
+Resultado:
+
++-----------+------------------------------+----------------+----------------------------------------------+
+| region    | producto                     | total_vendido  | Interpretación                               |
++===========+==============================+================+==============================================+
+| Norte     | Laptop                       | 10             | Venta específica de Norte - Laptop           |
++-----------+------------------------------+----------------+----------------------------------------------+
+| Norte     | Ratón                        | 50             | Venta específica de Norte - Ratón            |
++-----------+------------------------------+----------------+----------------------------------------------+
+| **Norte** | **NULL**                     | **60**         | **Subtotal** para la región Norte            |
++-----------+------------------------------+----------------+----------------------------------------------+
+| Sur       | Laptop                       | 15             | Venta específica de Sur - Laptop             |
++-----------+------------------------------+----------------+----------------------------------------------+
+| Sur       | Ratón                        | 30             | Venta específica de Sur - Ratón              |
++-----------+------------------------------+----------------+----------------------------------------------+
+| **Sur**   | **NULL**                     | **45**         | **Subtotal** para la región Sur              |
++-----------+------------------------------+----------------+----------------------------------------------+
+| **NULL**  | **NULL**                     | **105**        | **Gran Total** general de todas las regiones |
++-----------+------------------------------+----------------+----------------------------------------------+
+
+## El problema de los `NULL` y el uso de `GROUPING`
+
+Como se observa en la tabla anterior, `ROLLUP` rellena con `NULL` las columnas de agrupación en las filas de subtotales y totales.
+
+Surge un problema: **¿Qué pasa si en nuestra tabla original tuviéramos una región o un producto que literalmente se llama `NULL`?** No podríamos distinguir si ese `NULL` es un dato real de la tabla o una fila de total calculada por `ROLLUP`.
+
+### Solución con `GROUPING`
+
+La función `GROUPING(columna)` devuelve:
+
+- **`0`**: Si la fila contiene un valor normal procedente de los datos agrupados.
+
+- **`1`**: Si el `NULL` de esa columna fue generado por `ROLLUP` para representar un subtotal o total general.
+
+``` sql
+SELECT 
+    IF(GROUPING(region) = 1, 'TODAS LAS REGIONES', region) AS region,
+    IF(GROUPING(producto) = 1, 'TODOS LOS PRODUCTOS', producto) AS producto,
+    SUM(cantidad) AS total_vendido,
+    GROUPING(region) AS g_region,
+    GROUPING(producto) AS g_producto
+FROM ventas
+GROUP BY region, producto WITH ROLLUP;
+```
+
+Resultado:
+
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+|                    |                      |                   |              |                |                  |
++====================+======================+===================+==============+================+==================+
+| **region**         | **producto**         | **total_vendido** | **g_region** | **g_producto** | **Tipo de fila** |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Norte              | Laptop               | 10                | 0            | 0              | Detalle          |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Norte              | Ratón                | 50                | 0            | 0              | Detalle          |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Norte              | TODOS LOS PRODUCTOS  | 60                | 0            | 1              | Subtotal Norte   |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Sur                | Laptop               | 15                | 0            | 0              | Detalle          |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Sur                | Ratón                | 30                | 0            | 0              | Detalle          |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| Sur                | TODOS LOS PRODUCTOS  | 45                | 0            | 1              | Subtotal Sur     |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+| TODAS LAS REGIONES | TODOS LOS PRODUCTOS  | 105               | 1            | 1              | Gran Total       |
++--------------------+----------------------+-------------------+--------------+----------------+------------------+
+
+# Total acumulado (Running Totals con Funciones de Ventana)
+
+Por lo general, cuando utilizamos funciones de agregación como `SUM()` combinadas con `GROUP BY`, el motor de la base de datos "colapsa" las filas individuales y devuelve un único resultado resumen por grupo.
+
+Sin embargo, a veces necesitamos calcular una **suma acumulada (o *running total*)**, es decir, ir acumulando el valor de cada fila a medida que avanzamos en una secuencia ordenada (por fecha, por identificador, etc.), **sin eliminar ni agrupar las filas originales**. Esto se logra utilizando funciones de ventana (*window functions*) mediante la cláusula `OVER`.
+
+**Motores Compatibles y Sintaxis Estándar**
+
+Las funciones de ventana con la cláusula `OVER` forman parte del estándar **SQL:2003** y cuentan con un soporte robusto en los principales motores modernos:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+**Ejemplo**
+
+Imagina que tenemos una tabla llamada `calificaciones` donde se van registrando las notas de los alumnos de forma secuencial por su identificador (`id`):
+
+### Tabla de Origen (`calificaciones`)
+
+|        |            |          |
+|--------|------------|----------|
+| **id** | **alumno** | **nota** |
+| 1      | Ana        | 5        |
+| 2      | Carlos     | 7        |
+| 3      | Beatriz    | NULL     |
+| 4      | David      | 8        |
+| 5      | Elena      | 10       |
+
+### Consulta SQL con la Función de Ventana
+
+Para calcular la suma acumulada de las notas ordenadas por `id`, ignorando los valores nulos (`WHERE nota IS NOT NULL`), utilizamos la siguiente estructura:
+
+``` sql
+SELECT 
+    alumno, 
+    nota,
+    SUM(nota) OVER (
+        ORDER BY id
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS suma_acumulada
+FROM calificaciones
+WHERE nota IS NOT NULL
+ORDER BY id;
+```
+
+1.  **`OVER (...)`**: Convierte a `SUM` en una función de ventana, permitiéndole operar sobre un subconjunto de filas sin colapsar el resultado.
+
+2.  **`ORDER BY id`**: Determina el orden estricto en el que se van sumando los valores (en este caso, secuencialmente por el identificador).
+
+3.  **`ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`**: Define explícitamente el "marco de ventana" (*frame*):
+
+    - `UNBOUNDED PRECEDING`: Empieza desde la primera fila del resultado ordenado.
+
+    - `CURRENT ROW`: Termina en la fila actual que el motor está procesando. Por lo tanto, en cada paso suma desde el inicio hasta la fila en curso.
+
+### Tabla de Resultado
+
++------------+----------+--------------------+---------------------------------------------------------------+
+|            |          |                    |                                                               |
++============+==========+====================+===============================================================+
+| **alumno** | **nota** | **suma_acumulada** | **Explicación del cálculo**                                   |
++------------+----------+--------------------+---------------------------------------------------------------+
+| Ana        | 5        | **5**              | 5 (primera fila)                                              |
++------------+----------+--------------------+---------------------------------------------------------------+
+| Carlos     | 7        | **12**             | 5 + 7                                                         |
++------------+----------+--------------------+---------------------------------------------------------------+
+| David      | 8        | **20**             | 5 + 7 + 8 *(el registro 3 de Beatriz se ignoró por el WHERE)* |
++------------+----------+--------------------+---------------------------------------------------------------+
+| Elena      | 10       | **30**             | 5 + 7 + 8 + 10                                                |
++------------+----------+--------------------+---------------------------------------------------------------+
+
+# La función de ventana `LAST_VALUE` y el marco por defecto
+
+`LAST_VALUE()` es una función de ventana (*window function*) diseñada para **obtener el último valor de un conjunto de datos** (una ventana o partición) dentro de un orden específico.
+
+Sin embargo, tiene un comportamiento predeterminado que suele desconcertar a los desarrolladores y que requiere definir explícitamente el marco (*frame*) para funcionar como se espera.
+
+## La "Trampa" del Marco por Defecto (`RANGE` vs `ROWS`)
+
+Por defecto, cuando escribes una función de ventana con un `ORDER BY` pero **sin especificar un marco**, SQL aplica un marco implícito:`RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`
+
+Esto significa que, a medida que la consulta avanza fila por fila:
+
+- Para la primera fila, el "último" valor dentro de ese rango es la primera fila.
+
+- Para la segunda fila, el último valor dentro del rango acumulado es la segunda fila.
+
+- En consecuencia, `LAST_VALUE` **devuelve el valor de la propia fila actual** si no se amplía el marco.
+
+Para obligar a la función a mirar **todo** el conjunto ordenado (desde el principio hasta el final), debemos definir explícitamente el marco con:`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`
+
+**Motores Compatibles**
+
+Las funciones de ventana y el control de marcos (`ROWS / RANGE BETWEEN ...`) forman parte del estándar **SQL:2003** y son totalmente compatibles en:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+Imagina que tenemos una tabla llamada `cursos` ordenada por fecha de inicio e identificador:
+
+### Tabla de Origen (`cursos`)
+
+|        |                  |                 |
+|--------|------------------|-----------------|
+| **id** | **fecha_inicio** | **nombre**      |
+| 1      | 2026-01-10       | SQL Básico      |
+| 2      | 2026-02-15       | Python Avanzado |
+| 3      | 2026-03-01       | R para Datos    |
+
+### Consulta SQL analizando las dos formas de usar `LAST_VALUE`
+
+``` sql
+SELECT 
+    nombre,
+    -- 1. Marco por defecto (devuelve el nombre de la fila actual)
+    LAST_VALUE(nombre) OVER (
+        ORDER BY fecha_inicio, id
+    ) AS ultimo_hasta_aqui,
+    -- 2. Marco completo (devuelve el último curso absoluto de toda la tabla)
+    LAST_VALUE(nombre) OVER (
+        ORDER BY fecha_inicio, id
+        ROWS BETWEEN UNBOUNDED PRECEDING 
+                 AND UNBOUNDED FOLLOWING
+    ) AS ultimo_de_todos
+FROM cursos
+ORDER BY fecha_inicio, id;
+```
+
++------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| nombre                                                                                                                                               | ultimo_hasta_aqui                                                                                                                                                       | ultimo_de_todos                                                                                                                                 | Explicación                                                                                                         |
++======================================================================================================================================================+=========================================================================================================================================================================+=================================================================================================================================================+=====================================================================================================================+
+| SQL Básico                                                                                                                                           | SQL Básico                                                                                                                                                              | R para Datos                                                                                                                                    | `ultimo_hasta_aqui` solo ve hasta la fila 1; `ultimo_de_todos` ve toda la tabla y extrae el final ('R para Datos'). |
++------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| Python Avanzado                                                                                                                                      | Python Avanzado                                                                                                                                                         | R para Datos                                                                                                                                    | `ultimo_hasta_aqui` ve hasta la fila 2 ('Python Avanzado'); `ultimo_de_todos` mantiene el final absoluto.           |
++------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+| R para Datos                                                                                                                                         | R para Datos                                                                                                                                                            | R para Datos                                                                                                                                    | Ambas columnas coinciden porque estamos en la última fila de la tabla.                                              |
++------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------+
+
+# Funciones de Posicionamiento (`FIRST_VALUE`, `NTH_VALUE`, `LAST_VALUE`) y Ventanas Nombradas (`WINDOW`)
+
+Estas funciones de ventana (*window functions*) permiten extraer valores específicos de una partición o conjunto ordenado de filas sin necesidad de colapsar ni agrupar el resultado:
+
+- **`FIRST_VALUE(columna)`**: Devuelve el valor de la **primera fila** del marco de ventana definido.
+
+- **`NTH_VALUE(columna, N)`**: Devuelve el valor de la **fila número** $N$ dentro del marco de ventana. *(Ojo: si el marco actual no llega hasta la posición* $N$*, devolverá `NULL`).*
+
+- **`LAST_VALUE(columna)`**: Devuelve el valor de la **última fila** del marco de ventana.
+
+- **La cláusula `WINDOW`**: Permite definir una "ventana nombrada" de forma centralizada (por ejemplo, `WINDOW calendario AS (...)`) para reutilizarla en varias funciones dentro de la misma consulta, evitando repetir código y facilitando el mantenimiento.
+
+Estas funciones y la cláusula `WINDOW` forman parte del estándar **SQL:2003** y son compatibles con:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+Imagina que tenemos una tabla llamada `cursos` con los siguientes datos ordenados cronológicamente:
+
+### Tabla de Origen (`cursos`)
+
+|        |                  |                  |
+|--------|------------------|------------------|
+| **id** | **fecha_inicio** | **nombre**       |
+| 1      | 2026-01-10       | SQL Básico       |
+| 2      | 2026-02-15       | Python Avanzado  |
+| 3      | 2026-03-01       | R para Datos     |
+| 4      | 2026-04-10       | Machine Learning |
+
+### Consulta SQL utilizando una Ventana Nombrada
+
+``` sql
+SELECT 
+    nombre,
+    FIRST_VALUE(nombre) OVER calendario AS primero,
+    NTH_VALUE(nombre, 2) OVER calendario AS segundo,
+    LAST_VALUE(nombre) OVER calendario AS ultimo
+FROM cursos
+WINDOW calendario AS (
+    ORDER BY fecha_inicio, id
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+ORDER BY fecha_inicio, id;
+```
+
+- **`WINDOW calendario AS (...)`**: Define el bloque reutilizable.
+
+- **`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`**: Este marco amplio es crucial tanto para `LAST_VALUE` como para `NTH_VALUE(..., 2)`. Si usáramos el marco por defecto (`CURRENT ROW`), `NTH_VALUE` evaluaría solo las filas desde el inicio hasta la actual, por lo que la segunda fila no existiría aún en las primeras iteraciones y devolvería `NULL`. Con el marco completo, ve toda la secuencia de principio a fin.
+
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+|                                                                                                                                                  |                                                                                                              |                                                                                                                                                        |                                                                                                                                                  |                                                                                     |
++==================================================================================================================================================+==============================================================================================================+========================================================================================================================================================+==================================================================================================================================================+=====================================================================================+
+| **nombre**                                                                                                                                       | **primero**                                                                                                  | **segundo**                                                                                                                                            | **ultimo**                                                                                                                                       | **Explicación**                                                                     |
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| SQL Básico                                                                                                                                       | SQL Básico                                                                                                   | Python Avanzado                                                                                                                                        | Machine Learning                                                                                                                                 | Extrae el primero absoluto, el segundo de la lista y el último de todo el conjunto. |
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| Python Avanzado                                                                                                                                  | SQL Básico                                                                                                   | Python Avanzado                                                                                                                                        | Machine Learning                                                                                                                                 | El marco de ventana completo permite consultar posiciones fijas globales.           |
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| R para Datos                                                                                                                                     | SQL Básico                                                                                                   | Python Avanzado                                                                                                                                        | Machine Learning                                                                                                                                 | Se mantiene fijo el acceso a los extremos y posiciones relativas definidas.         |
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| Machine Learning                                                                                                                                 | SQL Básico                                                                                                   | Python Avanzado                                                                                                                                        | Machine Learning                                                                                                                                 | Fila final; todas las funciones apuntan correctamente a sus respectivos objetivos.  |
++--------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+
+## Combinar `PARTITION BY` con `FIRST_VALUE` y `LAST_VALUE`
+
+Hasta ahora hemos aplicado funciones de ventana sobre todo el conjunto de resultados. Sin embargo, en la práctica real casi siempre necesitamos segmentar los datos en grupos independientes.
+
+- **`PARTITION BY`**: Divide el conjunto de resultados en particiones (o grupos lógicos) según los valores de una columna. La función de ventana (como `FIRST_VALUE` o `LAST_VALUE`) se calcula **de forma independiente dentro de cada partición**, reiniciándose para cada grupo.
+
+- **Combinación clave**: Al unir `PARTITION BY` con un marco amplio (`ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`), conseguimos identificar el primer y el último elemento **de cada categoría específica** sin colapsar ni agrupar las filas originales de la tabla.
+
+|        |               |                  |                   |
+|--------|---------------|------------------|-------------------|
+| **id** | **categoria** | **fecha_inicio** | **nombre**        |
+| 1      | Programación  | 2026-01-10       | SQL Básico        |
+| 2      | Programación  | 2026-02-15       | Python Avanzado   |
+| 3      | Datos         | 2026-01-20       | R para Datos      |
+| 4      | Datos         | 2026-03-01       | Power BI Avanzado |
+
+``` sql
+SELECT 
+    categoria,
+    nombre,
+    fecha_inicio,
+    FIRST_VALUE(nombre) OVER w AS primer_curso_categoria,
+    LAST_VALUE(nombre) OVER w AS ultimo_curso_categoria
+FROM cursos
+WINDOW w AS (
+    PARTITION BY categoria 
+    ORDER BY fecha_inicio, id
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+ORDER BY categoria, fecha_inicio, id;
+```
+
+1.  **`PARTITION BY categoria`**: Separa los cálculos. La categoría *Programación* y la categoría *Datos* calculan sus propios extremos de forma aislada.
+
+2.  **`ORDER BY fecha_inicio, id`**: Ordena los elementos dentro de cada categoría del más antiguo al más reciente.
+
+3.  **`ROWS BETWEEN ... UNBOUNDED FOLLOWING`**: Garantiza que `LAST_VALUE` mire hasta el final de la partición actual (su respectiva categoría), y no se detenga en la fila actual.
+
+### Tabla de Resultado
+
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+|                                                                                                                       |                                                                                                                                                         |                  |                            |                            |                                                                   |
++=======================================================================================================================+=========================================================================================================================================================+==================+============================+============================+===================================================================+
+| **categoria**                                                                                                         | **nombre**                                                                                                                                              | **fecha_inicio** | **primer_curso_categoria** | **ultimo_curso_categoria** | **Explicación**                                                   |
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+| Datos                                                                                                                 | R para Datos                                                                                                                                            | 2026-01-20       | R para Datos               | Power BI Avanzado          | Partición "Datos": el primero es R y el último Power BI.          |
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+| Datos                                                                                                                 | Power BI Avanzado                                                                                                                                       | 2026-03-01       | R para Datos               | Power BI Avanzado          | Partición "Datos": mantiene los extremos de su grupo.             |
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+| Programación                                                                                                          | SQL Básico                                                                                                                                              | 2026-01-10       | SQL Básico                 | Python Avanzado            | Partición "Programación": se reinicia el cálculo para este grupo. |
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+| Programación                                                                                                          | Python Avanzado                                                                                                                                         | 2026-02-15       | SQL Básico                 | Python                     |                                                                   |
++-----------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+----------------------------+----------------------------+-------------------------------------------------------------------+
+
+# La función de ventana `NTILE` (División en Grupos o Cubos)
+
+`NTILE(n)` es una función de ventana (*window function*) diseñada para **distribuir las filas de un conjunto ordenado en un número exacto de grupos (o cubos) de tamaño aproximadamente igual**.
+
+A cada fila se le asigna un número entero que indica el grupo (o bloque) al que pertenece, empezando desde `1` hasta `n`. Es la herramienta perfecta para calcular cuartiles, deciles, percentiles, o simplemente para dividir un listado en mitades (por ejemplo, `NTILE(2)` para separar "nota alta" y "nota baja").
+
+## ¿Cómo maneja las divisiones inexactas?
+
+Si el número total de filas no es divisible de forma exacta entre `n` (por ejemplo, 5 filas divididas en 2 bloques), **`NTILE` reparte los elementos sobrantes en los primeros grupos**, haciendo que los bloques iniciales tengan una fila más que los siguientes.
+
+Esta función forma parte del estándar **SQL:2003** y cuenta con un soporte total en los principales sistemas gestores:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+Imagina que tenemos una tabla llamada `calificaciones` con los resultados de los alumnos:
+
+### Tabla de Origen (`calificaciones`)
+
+|        |            |          |
+|--------|------------|----------|
+| **id** | **alumno** | **nota** |
+| 1      | Ana        | 5        |
+| 2      | Carlos     | 7        |
+| 3      | Beatriz    | NULL     |
+| 4      | David      | 8        |
+| 5      | Elena      | 10       |
+
+### Consulta SQL utilizando `NTILE(2)`
+
+Queremos ordenar las notas de mayor a menor y dividirlas en 2 bloques equilibrados (`bloque 1` y `bloque 2`), filtrando previamente los valores nulos (`WHERE nota IS NOT NULL`):
+
+``` sql
+SELECT alumno, nota,
+       NTILE(2) OVER (ORDER BY nota DESC, id) AS bloque
+FROM calificaciones
+WHERE nota IS NOT NULL
+ORDER BY nota DESC, id;
+```
+
+- **`WHERE nota IS NOT NULL`**: Elimina a Beatriz (`NULL`) antes de realizar el cálculo para que no interfiera en la distribución de los bloques.
+
+- **`ORDER BY nota DESC, id`**: Ordena el conjunto de forma descendente por la nota (y por `id` como criterio de desempate). Los mejores resultados irán primero.
+
+- **`NTILE(2)`**: Divide las 4 filas válidas restantes en 2 bloques exactos (2 filas por bloque).
+
++-----------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
+| alumno                                                                                                    | nota                                                                                           | bloque                                                                                                                                                                       | Explicación del bloque                 |
++===========================================================================================================+================================================================================================+==============================================================================================================================================================================+========================================+
+| Elena                                                                                                     | 10                                                                                             | **1**                                                                                                                                                                        | Primera mitad superior (nota más alta) |
++-----------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
+| David                                                                                                     | 8                                                                                              | **1**                                                                                                                                                                        | Primera mitad superior                 |
++-----------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
+| Carlos                                                                                                    | 7                                                                                              | **2**                                                                                                                                                                        | Segunda mitad inferior                 |
++-----------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
+| Ana                                                                                                       | 5                                                                                              | **2**                                                                                                                                                                        | Segunda mitad inferior (nota más baja) |
++-----------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------------------------+
+
+# Distribución Acumulada y Rango Percentil `CUME_DIST` y `PERCENT_RANK`
+
+Estas funciones analíticas de ventana (*window functions*) calculan la **posición relativa** de los valores dentro de un conjunto ordenado. Son extremadamente útiles en estadística, análisis de rendimiento y segmentación de datos:
+
+- **`CUME_DIST()` (Distribución Acumulada)**: Calcula el porcentaje de filas que tienen un valor menor o igual al de la fila actual.
+
+  - *Fórmula intuitiva:* $\frac{\text{Número de filas con un valor } \le \text{ al actual}}{\text{Total de filas válidas}}$
+
+  - Su valor siempre oscila entre mayor a 0 y `1.0` (el último valor siempre es exactamente `1.0`). Si hay valores duplicados (empates), comparten el mismo resultado acumulado.
+
+- **`PERCENT_RANK()` (Rango Percentil)**: Calcula el rango relativo de una fila expresado en una escala de `0.0` a `1.0`.
+
+  - *Fórmula:* $\frac{\text{Rango actual} - 1}{\text{Total de filas válidas} - 1}$
+
+  - La primera fila de todas tiene siempre un valor de `0.0` y la última un valor de `1.0`.
+
+Ambas funciones forman parte del estándar **SQL:2003** y están disponibles en:
+
+- **MySQL** (a partir de la versión 8.0)
+
+- **MariaDB** (a partir de la versión 10.2+)
+
+- **PostgreSQL**
+
+- **Microsoft SQL Server**
+
+- **Oracle Database**
+
+Imagina que añadimos un alumno más a nuestra tabla `calificaciones` para simular un empate en las notas y ver cómo se comportan ambas funciones:
+
+### Tabla de Origen (`calificaciones`)
+
+|        |            |          |
+|--------|------------|----------|
+| **id** | **alumno** | **nota** |
+| 1      | Ana        | 5        |
+| 2      | Carlos     | 7        |
+| 3      | Beatriz    | NULL     |
+| 4      | David      | 8        |
+| 5      | Elena      | 10       |
+| 6      | Mario      | 7        |
+
+### Consulta SQL con `CUME_DIST` y `PERCENT_RANK`
+
+``` sql
+SELECT alumno, nota,
+       CUME_DIST() OVER (ORDER BY nota) AS distribucion_acumulada,
+       PERCENT_RANK() OVER (ORDER BY nota) AS rango_percentil
+FROM calificaciones
+WHERE nota IS NOT NULL
+ORDER BY nota, id;
+```
+
+### Explicación del Cálculo (Total de filas válidas $N = 5$):
+
+1.  **Ana (nota 5):** Es el valor más bajo.
+
+    - `CUME_DIST`: 1 fila $\le 5$ de 5 totales $\rightarrow 1 / 5 = 0.20$.
+
+    - `PERCENT_RANK`: Rango inicial $(1 - 1) / (5 - 1) \rightarrow 0 / 4 = 0.00$.
+
+2.  **Carlos y Mario (nota 7 - Empate):** Hay 3 filas con valor $\le 7$ (Ana, Carlos y Mario).
+
+    - `CUME_DIST`: 3 filas $\le 7$ de 5 totales $\rightarrow 3 / 5 = 0.60$ (ambos comparten el mismo valor).
+
+    - `PERCENT_RANK`: Su rango conjunto es 2 $(2 - 1) / (5 - 1) \rightarrow 1 / 4 = 0.25$.
+
+3.  **David (nota 8):** Hay 4 filas con valor $\le 8$.
+
+    - `CUME_DIST`: $4 / 5 = 0.80$.
+
+    - `PERCENT_RANK`: Rango 4 $\rightarrow (4 - 1) / (5 - 1) = 3 / 4 = 0.75$.
+
+4.  **Elena (nota 10):** Valor máximo absoluto.
+
+    - `CUME_DIST`: $5 / 5 = 1.00$.
+
+    - `PERCENT_RANK`: $(5 - 1) / (5 - 1) = 4 / 4 = 1.00$.
+
+### Tabla de Resultado
+
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+|            |          |                            |                     |                                                                          |
++============+==========+============================+=====================+==========================================================================+
+| **alumno** | **nota** | **distribucion_acumulada** | **rango_percentil** | **Explicación**                                                          |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+| Ana        | 5        | 0.20                       | 0.00                | El 20% de los alumnos tiene nota $\le 5$. Percentil inicial (0).         |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+| Carlos     | 7        | 0.60                       | 0.25                | El 60% de los alumnos tiene nota $\le 7$ (empate con Mario).             |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+| Mario      | 7        | 0.60                       | 0.25                | Comparte exactamente el mismo valor acumulado y percentil por el empate. |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+| David      | 8        | 0.80                       | 0.75                | El 80% tiene nota $\le 8$.                                               |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+| Elena      | 10       | 1.00                       | 1.00                | Nota máxima absoluta del grupo (cubre el 100%).                          |
++------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+

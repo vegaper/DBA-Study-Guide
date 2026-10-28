@@ -1,7 +1,62 @@
 ---
-title: "Análisis de Consultas"
+title: "Funciones de análisis de la base de datos"
 format: html
 ---
+
+# Información del servidor y de la sesión
+
+``` sql
+SELECT VERSION() AS version_servidor,
+       DATABASE() AS base_actual,
+       USER() AS identidad_conexion,
+       CURRENT_USER() AS cuenta_efectiva,
+       CONNECTION_ID() AS conexion;
+```
++-------------------------+-----------------+--------------------+-----------------+----------+
+| version_servidor        | base_actual     | identidad_conexion | cuenta_efectiva | conexion |
++-------------------------+-----------------+--------------------+-----------------+----------+
+| 8.4.11-0ubuntu0.26.04.1 | funciones_mysql | root@localhost     | root@localhost  |        8 |
++-------------------------+-----------------+--------------------+-----------------+----------+
+
+| Columna | Interpretación |
+|------------------------------------|------------------------------------|
+| version_servidor | La versión que realmente ejecuta el servidor. |
+| base_actual | funciones_mysql, si se ha ejecutado su USE. |
+| identidad_conexion | Usuario y origen de la conexión. |
+| cuenta_efectiva | Cuenta utilizada para comprobar privilegios en ese contexto. |
+| conexion | Identificador de esta conexión. |
+
+USER y CURRENT_USER pueden coincidir, pero representan conceptos diferentes. Los contextos de ejecución con definidor pueden cambiar la cuenta efectiva. DATABASE devuelve NULL si no se ha seleccionado ninguna base.
+
+# `FORMAT_BYTES` y `FORMAT_PICO_TIME`
+* **`FORMAT_BYTES(bytes)`**: Convierte una cantidad de bytes en un texto legible con unidades (KiB, MiB, etc.), ideal para informes de memoria sin perder el valor numérico original para comparaciones.
+* **`FORMAT_PICO_TIME(picosegundos)`**: Convierte picosegundos (la unidad base de tiempo en Performance Schema) a formatos legibles como segundos (`s`), milisegundos (`ms`), etc.
+
+```sql
+SELECT FORMAT_BYTES(512) AS pequeno,
+       FORMAT_BYTES(1048576) AS grande;
+
+SELECT FORMAT_PICO_TIME(1000000000000) AS tiempo;
+```
+# Identificación de Conexiones e Hilos
+Permite relacionar la sesión del usuario con el hilo interno instrumentado por el motor:
+
+```sql
+SELECT CONNECTION_ID() AS conexion,
+       PS_CURRENT_THREAD_ID() AS hilo_actual,
+       PS_THREAD_ID(CONNECTION_ID()) AS hilo_de_la_conexion;
+```
++----------+-------------+---------------------+
+| conexion | hilo_actual | hilo_de_la_conexion |
++----------+-------------+---------------------+
+|        8 |          43 |                  43 |
++----------+-------------+---------------------+
+
+| Columna | Qué representa |
+| :--- | :--- |
+| **`conexion`** | Identificador de la conexión actual. |
+| **`hilo_actual`** | Identificador que utiliza Performance Schema. |
+| **`hilo_de_la_conexion`** | El mismo identificador de hilo que la columna anterior. |
 
 # Normalización y Análisis de Consultas con `STATEMENT_DIGEST`
 
@@ -36,5 +91,242 @@ SELECT STATEMENT_DIGEST_TEXT(
 
 -   **Ejemplo práctico:** Quieres agrupar y unificar consultas que hacen exactamente lo mismo estructuralmente (por ejemplo, `SELECT nota FROM calificaciones WHERE id = 1` y `SELECT nota FROM calificaciones WHERE id = 2`). Con el digest, el motor entiende que ambas responden al mismo patrón y te ayuda a diagnosticar problemas de rendimiento de forma agrupada.
 
+## Informe de Consultas con Mayor Tiempo Total
+Permite localizar las estructuras de consulta que acumulan más carga combinando conteo y tiempos de espera en el esquema de rendimiento:
+
+```sql
+SELECT LEFT(DIGEST_TEXT,100), COUNT_STAR,
+       FORMAT_PICO_TIME(SUM_TIMER_WAIT) AS tiempo_total
+FROM performance_schema.events_statements_summary_by_digest
+WHERE DIGEST_TEXT IS NOT NULL
+ORDER BY SUM_TIMER_WAIT DESC
+LIMIT 5;
+```
+Nota, hemos cortado el campo DIGEST_TEXT por legibilidad de la tabla
++------------------------------------------------------------------------------------------------------+------------+--------------+
+| LEFT(DIGEST_TEXT,100)                                                                                | COUNT_STAR | tiempo_total |
++------------------------------------------------------------------------------------------------------+------------+--------------+
+| FLUSH LOGS                                                                                           |          1 | 44.85 ms     |
+| SELECT `DIGEST_TEXT` , `COUNT_STAR` , `FORMAT_PICO_TIME` ( `SUM_TIMER_WAIT` ) AS `tiempo_total` FROM |          2 | 8.04 ms      |
+| SELECT `alumno` , `nota` , CAST ( `nota` AS CHARACTER ) AS `nota_convertida` FROM `calificaciones` W |          1 | 7.29 ms      |
+| SHOW SCHEMAS                                                                                         |          1 | 6.05 ms      |
+| SELECT `nombre` , `fecha_inicio` , LAG ( `nombre` ) OVER ( ORDER BY `fecha_inicio` , `id` ) AS `ante |          1 | 5.27 ms      |
++------------------------------------------------------------------------------------------------------+------------+--------------+
+
+# Control de Escrituras: `LAST_INSERT_ID` y `ROW_COUNT`
+
+Se crea una tabla temporal solo para esta demostración. Se ejecuta la consulta de comprobación inmediatamente después del INSERT.
+
+``` sql
+DROP TEMPORARY TABLE IF EXISTS registro_funciones_demo;
+CREATE TEMPORARY TABLE registro_funciones_demo (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    mensaje VARCHAR(40) NOT NULL
+);
+
+INSERT INTO registro_funciones_demo (mensaje) VALUES ('Prueba');
+SELECT ROW_COUNT() AS filas_insertadas,
+       LAST_INSERT_ID() AS identificador_generado;
+```
++------------------+------------------------+
+| filas_insertadas | identificador_generado |
++------------------+------------------------+
+|                1 |                      1 |
++------------------+------------------------+
+
+ROW_COUNT informa de que la sentencia anterior insertó una fila. LAST_INSERT_ID recupera el identificador AUTO_INCREMENT generado por esa inserción en esta sesión. 
+No obtiene el último identificador insertado por cualquier otra conexión.
+
+``` sql
+SELECT ROW_COUNT() AS resultado_despues_del_select;
+```
+| resultado_despues_del_select |
+|------------------------------|
+| -1                           |
+
+La sentencia inmediatamente anterior era otro SELECT que devolvía filas. ROW_COUNT no cuenta las filas de ese resultado y devuelve -1. Por eso no debe intercalarse otra consulta antes de consultar las filas afectadas por una escritura.
+
+# PERFORMANCE SCHEMA
+El **Performance Schema** es la instrumentación interna de MySQL para observar la actividad del servidor, hilos, consultas y tiempos de espera. Está disponible desde MySQL 8.0.16 y versiones posteriores.
+## Funciones Internas y Acceso por Interfaces Públicas
+Las funciones internas del servidor (como `CAN_ACCESS_TABLE`, `INTERNAL_TABLE_ROWS`, etc.) son utilizadas por el propio motor y **no deben ser invocadas directamente** por los usuarios (intentarlo genera un error). 
+
+## Nombres internos que pueden aparecer en documentación
+
+| Nombre | Papel general |
+|------------------------------------|------------------------------------|
+| CAN_ACCESS_TABLE | Comprobaciones internas de acceso a metadatos. |
+| INTERNAL_TABLE_ROWS | Obtención interna de información de filas. |
+| INTERNAL_INDEX_COLUMN_CARDINALITY | Obtención interna de cardinalidad de índices. |
+
+## information_schema
+No se necesita llamar a una función INTERNAL para conocer el motor de una tabla. Para consultar metadatos de forma segura, se utilizan las interfaces públicas documentadas, como `INFORMATION_SCHEMA`:
+INFORMATION_SCHEMA expone información documentada que puede consultar el usuario según sus privilegios. 
+
+A continuación se listan sólo algunas de las opciones que nos ofrece INFORMATION_SCHEMA
+
+### Listar tablas de una base de datos
+
+```sql
+SELECT TABLE_NAME, ENGINE
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = 'funciones_mysql'
+ORDER BY TABLE_NAME;
+```
++----------------+--------+
+| TABLE_NAME     | ENGINE |
++----------------+--------+
+| calificaciones | InnoDB |
+| cursos         | InnoDB |
+| documentos     | InnoDB |
+| pedidos        | InnoDB |
+| personas       | InnoDB |
++----------------+--------+
+
+### Consultar columnas, tipos de datos y nulidad (INFORMATION_SCHEMA.COLUMNS)
+Si necesitas conocer la estructura detallada de una tabla (qué tipos de datos tienen sus columnas, si permiten valores NULL o si tienen valores por defecto) sin necesidad de ejecutar un comando interactivo como DESCRIBE, puedes consultar la tabla COLUMNS:
+```sql
+SELECT 
+    COLUMN_NAME, 
+    COLUMN_TYPE, 
+    IS_NULLABLE, 
+    COLUMN_DEFAULT, 
+    COLUMN_KEY
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'funciones_mysql' 
+  AND TABLE_NAME = 'calificaciones'
+ORDER BY ORDINAL_POSITION;
+```
++-------------+--------------+-------------+----------------+------------+
+| COLUMN_NAME | COLUMN_TYPE  | IS_NULLABLE | COLUMN_DEFAULT | COLUMN_KEY |
++-------------+--------------+-------------+----------------+------------+
+| id          | int          | NO          | NULL           | PRI        |
+| alumno      | varchar(30)  | NO          | NULL           |            |
+| grupo       | char(1)      | NO          | NULL           |            |
+| nota        | decimal(4,2) | YES         | NULL           |            |
++-------------+--------------+-------------+----------------+------------+
+
+### Consultar el tamaño y número estimado de filas (INFORMATION_SCHEMA.TABLES extendido)
+Aunque SHOW TABLE STATUS muestra información similar, puedes filtrar y ordenar métricas de tamaño de almacenamiento (datos e índices) directamente desde TABLES:
+```sql
+SELECT 
+    TABLE_NAME,
+    TABLE_ROWS AS filas_estimadas,
+    ROUND(DATA_LENGTH / 1024, 2) AS tamano_datos_kib,
+    ROUND(INDEX_LENGTH / 1024, 2) AS tamano_index_kib,
+    ENGINE
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = 'funciones_mysql'
+ORDER BY DATA_LENGTH DESC;
+```
++----------------+-----------------+------------------+------------------+--------+
+| TABLE_NAME     | filas_estimadas | tamano_datos_kib | tamano_index_kib | ENGINE |
++----------------+-----------------+------------------+------------------+--------+
+| calificaciones |               8 |            16.00 |             0.00 | InnoDB |
+| cursos         |               3 |            16.00 |             0.00 | InnoDB |
+| documentos     |               5 |            16.00 |            16.00 | InnoDB |
+| pedidos        |               3 |            16.00 |             0.00 | InnoDB |
+| personas       |               6 |            16.00 |             0.00 | InnoDB |
++----------------+-----------------+------------------+------------------+--------+
+
+Consultar claves primarias y restricciones (INFORMATION_SCHEMA.KEY_COLUMN_USAGE)
+Para auditar rápidamente qué columnas están actuando como claves primarias (PRIMARY KEY) o foráneas en tu esquema:
+
+```sql
+SELECT 
+    TABLE_NAME,
+    COLUMN_NAME,
+    CONSTRAINT_NAME,
+    REFERENCED_TABLE_NAME,
+    REFERENCED_COLUMN_NAME
+FROM information_schema.KEY_COLUMN_USAGE
+WHERE TABLE_SCHEMA = 'funciones_mysql'
+  AND TABLE_NAME = 'calificaciones';
+```
++----------------+-------------+-----------------+-----------------------+------------------------+
+| TABLE_NAME     | COLUMN_NAME | CONSTRAINT_NAME | REFERENCED_TABLE_NAME | REFERENCED_COLUMN_NAME |
++----------------+-------------+-----------------+-----------------------+------------------------+
+| calificaciones | id          | PRIMARY         | NULL                  | NULL                   |
++----------------+-------------+-----------------+-----------------------+------------------------+
+
+# Operadores de Bits, Sesión y Utilidades
+
+## Operadores de Bits
+Ideales para gestionar máscaras de opciones o permisos compactos mediante enteros:
+
+```sql
+SELECT (5 & 1) <> 0 AS avisos,
+       5 | 2 AS activar_exportacion,
+       5 ^ 1 AS cambiar_avisos,
+       BIT_COUNT(5) AS opciones_activadas;
+```
++--------+---------------------+----------------+--------------------+
+| avisos | activar_exportacion | cambiar_avisos | opciones_activadas |
++--------+---------------------+----------------+--------------------+
+|      1 |                   7 |              4 |                  2 |
++--------+---------------------+----------------+--------------------+
+* **`&` (AND)**: Comprueba posiciones compartidas.
+* **`|` (OR)**: Activa posiciones presentes en cualquiera de los valores.
+* **`^` (XOR)**: Cambia posiciones donde los valores difieren.
+* **`~`**: Invierte los bits (NOT).
+* **`<<` / `>>`**: Desplazamientos de bits a izquierda o derecha.
+
+## Manejo de Datos JSON
+Permite estructurar y consultar documentos semi-estructurados sin alterar esquemas relacionales fijos:
+
+```sql
+SET @documento = JSON_OBJECT('alumno', 'Ana', 'nota', 8);
+
+SELECT JSON_EXTRACT(@documento, '$.alumno') AS dato_json,
+       JSON_UNQUOTE(JSON_EXTRACT(@documento, '$.alumno')) AS texto,
+       JSON_SET(@documento, '$.nota', 9) AS documento_modificado;
+```
++-----------+-------+------------------------------+
+| dato_json | texto | documento_modificado         |
++-----------+-------+------------------------------+
+| "Ana"     | Ana   | {"nota": 9, "alumno": "Ana"} |
++-----------+-------+------------------------------+
+
+Diferencia entre una lista de valores y una asociación de claves con valores.
+
+``` sql
+SELECT JSON_ARRAYAGG(alumno) AS lista
+FROM calificaciones
+WHERE id IN (1, 2);
+```
++-----------------+
+| lista           |
++-----------------+
+| ["Ana", "Luis"] |
++-----------------+
+``` sql
+SELECT JSON_OBJECTAGG(alumno, nota) AS notas_por_nombre
+FROM calificaciones
+WHERE id IN (1, 2);
+```
++-----------------------------+
+| notas_por_nombre            |
++-----------------------------+
+| {"Ana": 8.00, "Luis": 6.00} |
++-----------------------------+
+
+El orden de JSON_ARRAYAGG no está garantizado por esta consulta. Un objeto JSON es una asociación de claves y valores, por lo que su presentación tampoco debe interpretarse como un orden de filas. Las claves de JSON_OBJECTAGG no pueden ser NULL; si se repiten, puede conservarse un valor según el orden efectivo de procesamiento. En estos datos los dos nombres son diferentes.
+
+
+---
+
+# Funciones Almacenadas (Panorama General)
+Las funciones integradas vienen nativas en MySQL. Una **función almacenada** (`CREATE FUNCTION`) encapsula una regla de negocio propia para devolver un valor dentro de expresiones, diferenciándose de los **procedimientos almacenados** (que ejecutan procesos complejos y se invocan con `CALL`). 
+Se definen con CREATE FUNCTION, declara el tipo mediante RETURNS y utiliza RETURN para devolverlo.
+
+## Diferencia de finalidad
+
+| Herramienta | Cómo se utiliza | Ejemplo de finalidad |
+|------------------------|------------------------|------------------------|
+| Función incorporada | Dentro de expresiones SQL. | ROUND para redondear. |
+| Función almacenada | Dentro de expresiones, después de definirla. | Reutilizar una regla de cálculo propia. |
+| Procedimiento almacenado | Se invoca mediante CALL. | Ejecutar un proceso con varias operaciones. |
+
+La creación, los privilegios, el determinismo y las restricciones de las funciones almacenadas se estudiarán aparte. Esta unidad se centra en comprender las funciones disponibles y los datos que reciben.
 
 

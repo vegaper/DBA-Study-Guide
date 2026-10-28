@@ -21,7 +21,7 @@ En las tablas de esta guía, NULL sin comillas significa ausencia de un valor co
 
 # Tablas de ejemplo del laboratorio
 
-Se utilizará una base independiente llamada laboratorio_funciones. Sus datos se han elegido para que cada diferencia sea visible. No representa los datos reales de academia_it ni modifica sus tablas. Las tablas corresponden a casos autónomos; no es necesario combinarlas mediante JOIN para estudiar las funciones.
+Se utilizará una base independiente llamada funciones_mysql. Sus datos se han elegido para que cada diferencia sea visible. No representa los datos reales de academia_it ni modifica sus tablas. Las tablas corresponden a casos autónomos; no es necesario combinarlas mediante JOIN para estudiar las funciones.
 
 Las consultas de la unidad se ejecutan después de cargar [el script del anexo](../funciones_mysql.sql).
 
@@ -663,10 +663,6 @@ SELECT AVG(nota) AS media_notas_conocidas,
        AVG(COALESCE(nota, 0)) AS media_pendientes_como_cero
 FROM calificaciones;
 ```
-
-mysql>SELECT AVG(nota) AS media_notas_conocidas,
-    AVG(COALESCE(nota, 0)) AS media_pendientes_como_cero
-    FROM calificaciones;
 +-----------------------+----------------------------+
 | media_notas_conocidas | media_pendientes_como_cero |
 +-----------------------+----------------------------+
@@ -694,12 +690,6 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
-mysql>SELECT grupo,
-    COUNT(nota) AS evaluados,
-    SUM(CASE WHEN nota >= 5 THEN 1 ELSE 0 END) AS aprobados
-    FROM calificaciones
-    GROUP BY grupo
-    ORDER BY grupo;
 +-------+-----------+-----------+
 | grupo | evaluados | aprobados |
 +-------+-----------+-----------+
@@ -744,13 +734,7 @@ ORDER BY grupo;
 
 En A, NULLIF(3, 0) devuelve tres porque son distintos. En B devuelve dos. En C, NULLIF(0, 0) devuelve NULL. La división con ese denominador devuelve NULL: expresa que no existe un porcentaje calculable. No significa que el porcentaje sea cero.
 
-mysql>SELECT grupo,
-    100.0 * SUM(
-    CASE WHEN nota >= 5 THEN 1 ELSE 0 END
-    ) / NULLIF(COUNT(nota), 0) AS porcentaje
-    FROM calificaciones
-    GROUP BY grupo
-    ORDER BY grupo;
+
 +-------+------------+
 | grupo | porcentaje |
 +-------+------------+
@@ -793,10 +777,7 @@ SELECT producto, unidades, precio,
 FROM pedidos
 ORDER BY id;
 ```
-mysql>SELECT producto, unidades, precio,
-    unidades * precio AS importe_bruto
-    FROM pedidos
-    ORDER BY id;
+
 +-------------+----------+--------+---------------+
 | producto    | unidades | precio | importe_bruto |
 +-------------+----------+--------+---------------+
@@ -833,7 +814,7 @@ Cuando mezclas varias operaciones aritméticas en una misma consulta, SQL sigue 
 ```sql
 SELECT 10 + 2 * 3 AS resultado;
 ``` 
-mysql>SELECT 10 + 2 * 3 AS resultado;
+
 +-----------+
 | resultado |
 +-----------+
@@ -845,7 +826,7 @@ Como la multiplicación tiene mayor prioridad que la suma, primero calcula 2 * 3
 ```sql
 SELECT (10 + 2) * 3 AS resultado;
 ```
-mysql>SELECT (10 + 2) * 3 AS resultado;
+
 +-----------+
 | resultado |
 +-----------+
@@ -859,7 +840,6 @@ SELECT 20 / 4 * 2 + 5 AS resultado;
 ```
 Se evalúan la división y la multiplicación de izquierda a derecha: 20 / 4 = 5. Luego la multiplicación restante: 5 * 2 = 10. Finalmente se aplica la suma: 10 + 5 = 15.
 
-SELECT 20 / 4 * 2 + 5 AS resultado;
 +-----------+
 | resultado |
 +-----------+
@@ -877,12 +857,7 @@ SELECT producto,
 FROM pedidos
 ORDER BY id;
 ```
-mysql>SELECT producto,
-       unidades * precio AS importe_bruto,
-       descuento_pct,
-       unidades * precio * (1 - descuento_pct / 100.0) AS importe_tras_descuento
-FROM pedidos
-ORDER BY id;;
+
 +-------------+---------------+---------------+------------------------+
 | producto    | importe_bruto | descuento_pct | importe_tras_descuento |
 +-------------+---------------+---------------+------------------------+
@@ -903,8 +878,6 @@ SELECT ROUND(7.856, 2) AS redondeado,
        TRUNCATE(7.856, 2) AS cortado;
 ```
 
-SELECT ROUND(7.856, 2) AS redondeado,
-    TRUNCATE(7.856, 2) AS cortado;
 +------------+---------+
 | redondeado | cortado |
 +------------+---------+
@@ -920,10 +893,6 @@ FROM pedidos
 ORDER BY id;
 ```
 
-mysql>SELECT producto,
-    ROUND(unidades * precio * (1 - descuento_pct / 100.0),2) AS importe_final
-    FROM pedidos
-    ORDER BY id;
 +-------------+---------------+
 | producto    | importe_final |
 +-------------+---------------+
@@ -962,82 +931,12 @@ SELECT
        MOD(14, 4) AS personas_restantes,
        CEIL(14 / 4) AS mesas_necesarias;
 ```
-mysql>SELECT
-    ->        14/4 AS division_normal,
-    ->        14 DIV 4 AS grupos_completos,
-    ->        MOD(14, 4) AS personas_restantes,
-    ->        CEIL(14 / 4) AS mesas_necesarias;
+
 +-----------------+------------------+--------------------+------------------+
 | division_normal | grupos_completos | personas_restantes | mesas_necesarias |
 +-----------------+------------------+--------------------+------------------+
 |          3.5000 |                3 |                  2 |                4 |
 +-----------------+------------------+--------------------+------------------+
-
-## ABS y SIGN para interpretar una diferencia
-
-Estas dos funciones matemáticas permiten trabajar con el signo y la magnitud de los valores numéricos, siendo especialmente útiles en análisis de variaciones, diferencias o control de datos.
-
-1. ABS (Valor Absoluto)
-Qué hace: Devuelve el valor absoluto de un número, es decir, su valor sin tener en cuenta el signo (transforma cualquier número negativo en positivo y deja los positivos o ceros tal cual).
-
-Para qué sirve: Muy útil para calcular diferencias absolutas o desviaciones donde el sentido de la variación (si sube o baja) no importa, solo la magnitud de la distancia.
-
-Ejemplo:
-
-ABS(-15.5) -> Devuelve 15.5
-
-ABS(15.5) -> Devuelve 15.5
-
-2. SIGN (Función Signo)
-Qué hace: Analiza un número y devuelve -1 si es negativo, 0 si es cero, o 1 si es positivo.
-
-Para qué sirve: Ideal para identificar la dirección de un cambio o tendencia (crecimiento frente a decrecimiento) o para aplicar lógica condicional simplificada basada en si un valor está por encima o por debajo de cero.
-
-Ejemplo:
-
-SIGN(-45) -> Devuelve -1
-
-SIGN(0) -> Devuelve 0
-
-SIGN(120) -> Devuelve 1
-
-### Ejemplo práctico
-
-Una puntuación obtenida es ocho y el objetivo era diez. La diferencia es negativa porque no se ha alcanzado el objetivo.
-
-``` sql
-SELECT 8 - 10 AS diferencia,
-       ABS(8 - 10) AS distancia_al_objetivo,
-       SIGN(8 - 10) AS signo;
-```
-SELECT 8 - 10 AS diferencia,
-    ->        ABS(8 - 10) AS distancia_al_objetivo,
-    ->        SIGN(8 - 10) AS signo;
-+------------+-----------------------+-------+
-| diferencia | distancia_al_objetivo | signo |
-+------------+-----------------------+-------+
-|         -2 |                     2 |    -1 |
-+------------+-----------------------+-------+
-
-
-## POWER, SQRT, LN y LOG10
-
-Estas funciones avanzadas permiten realizar operaciones exponenciales y logarítmicas, fundamentales para cálculos estadísticos, modelado de datos y transformaciones de escala.
-1.   POWER (Potencia): Eleva un número base a una potencia determinada ($base^{exponente}$). También se puede encontrar como POW en algunos motores como MySQL.
- Para qué sirve: Útil para fórmulas de crecimiento, cálculos de interés compuesto o modelos matemáticos y geométricos.Ejemplo:POWER(2, 3) $\rightarrow$ Devuelve 8 (porque $2^3 = 2 \times 2 \times 2$).
-2.   SQRT (Raíz Cuadrada): Calcula la raíz cuadrada positiva de un número dado.Precaución: Si le pasas un número negativo, la mayoría de los motores devolverán un error o un valor NULL, ya que no opera con números complejos en este nivel.Ejemplo:SQRT(9) $\rightarrow$ Devuelve 3.
-3.   LN (Logaritmo Natural / Neperiano): Calcula el logaritmo natural de un número (en base $e$, donde $e \approx 2.718$). El número de entrada debe ser estrictamente mayor que cero.
- Para qué sirve: Muy empleado en análisis estadístico y ciencia de datos para normalizar distribuciones sesgadas o trabajar con tasas de crecimiento exponencial.Ejemplo:LN(2.71828) $\rightarrow$ Devuelve aproximadamente 1.
-4.  LOG10 (Logaritmo en Base 10): Calcula el logaritmo en base 10 de un número. Al igual que el logaritmo natural, el valor de entrada debe ser mayor que cero.
- Para qué sirve: Ideal para trabajar con escalas logarítmicas (como magnitudes de datos o rangos muy amplios de valores donde comprimir la escala facilita la visualización).Ejemplo:LOG10(100) $\rightarrow$ Devuelve 2 (porque $10^2 = 100$).
-
-
-| Necesidad | Sentencia SQL | Resultado |
-|------------------------|------------------------|------------------------|
-| Calcular dos elevado a diez. | SELECT POWER(2, 10); | 1024 |
-| Encontrar el lado de una cuadrícula de 81 puestos. | SELECT SQRT(81); | 9 |
-| Calcular el logaritmo natural de uno. | SELECT LN(1); | 0 |
-| Determinar el exponente de diez que produce mil. | SELECT LOG10(1000); | 3 |
 
 
 # Funciones de fecha y hora
@@ -1060,12 +959,7 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY id;
 ```
-mysql>SELECT nombre, fecha_inicio,
-    ->        YEAR(fecha_inicio) AS anio,
-    ->        MONTH(fecha_inicio) AS mes,
-    ->        DAY(fecha_inicio) AS dia
-    -> FROM cursos
-    -> ORDER BY id;
+
 +--------+--------------+------+------+------+
 | nombre | fecha_inicio | anio | mes  | dia  |
 +--------+--------------+------+------+------+
@@ -1086,11 +980,7 @@ SELECT nombre,
 FROM cursos
 ORDER BY id;
 ```
-mysql>SELECT nombre,
-    ->        DATEDIFF(fecha_fin, fecha_inicio) AS diferencia,
-    ->        DATEDIFF(fecha_fin, fecha_inicio) + 1 AS dias_incluidos
-    -> FROM cursos
-    -> ORDER BY id;
+
 +--------+------------+----------------+
 | nombre | diferencia | dias_incluidos |
 +--------+------------+----------------+
@@ -1115,13 +1005,7 @@ SELECT nombre,
 FROM cursos
 ORDER BY id;
 ```
-mysql>SELECT nombre,
-    ->        fecha_inicio,
-    ->        DATE_SUB(fecha_inicio, INTERVAL 7 DAY) AS aviso,
-    ->        fecha_fin,
-    ->        DATE_ADD(fecha_fin, INTERVAL 7 DAY) AS seguimiento
-    -> FROM cursos
-    -> ORDER BY id;
+
 +--------+--------------+------------+------------+-------------+
 | nombre | fecha_inicio | aviso      | fecha_fin  | seguimiento |
 +--------+--------------+------------+------------+-------------+
@@ -1406,26 +1290,6 @@ Si un ejemplo no devuelve lo esperado, se comprueba primero que exista el índic
 
 # Conversiones de tipos
 
-Convertir un tipo significa pedir que un valor se interprete de otra forma. No es lo mismo obtener un número, guardar una fecha o preparar un texto para mostrar. CAST y CONVERT permiten hacer explícita la conversión.
-
-## CAST de un texto numérico a un número
-
-Un formulario o un archivo puede proporcionar el texto '12.50'. Para tratarlo como un decimal con dos posiciones se utiliza CAST.
-
-``` sql
-SELECT CAST('12.50' AS DECIMAL(6,2)) AS precio;
-```
-
-### Resultado conceptual
-
-| precio | Tipo solicitado                                           |
-|--------|-----------------------------------------------------------|
-| 12.50  | Número decimal con seis dígitos en total y dos decimales. |
-
-El seis de DECIMAL(6,2) no significa seis dígitos antes de la coma. Es el total: cuatro antes y dos después. Convertir el resultado de SELECT no modifica el tipo de ninguna columna guardada.
-
-## De una nota a un texto de presentación
-
 Necesidad: mostrar una nota cuando existe y la palabra Pendiente cuando falta. Se prepara una única columna de texto.
 
 ``` sql
@@ -1438,11 +1302,13 @@ ORDER BY id;
 
 ### Primero se convierte la nota
 
-| alumno | nota original | nota_convertida |
-|--------|---------------|-----------------|
-| Ana    | 8.00          | '8.00'          |
-| Marta  | NULL          | NULL            |
-| Pablo  | 0.00          | '0.00'          |
++--------+------+-----------------+
+| alumno | nota | nota_convertida |
++--------+------+-----------------+
+| Ana    | 8.00 | 8.00            |
+| Marta  | NULL | NULL            |
+| Pablo  | 0.00 | 0.00            |
++--------+------+-----------------+
 
 La conversión mantiene NULL como NULL. El siguiente paso puede aprovechar esa ausencia para elegir la etiqueta:
 
@@ -1453,14 +1319,13 @@ FROM calificaciones
 WHERE id IN (1, 3, 4)
 ORDER BY id;
 ```
-
-### Resultado final
-
++--------+---------------+
 | alumno | nota_mostrada |
-|--------|---------------|
++--------+---------------+
 | Ana    | 8.00          |
 | Marta  | Pendiente     |
 | Pablo  | 0.00          |
++--------+---------------+
 
 Para Ana y Pablo se elige el texto de la nota. Para Marta, la conversión devuelve NULL y COALESCE elige Pendiente. Esta operación prepara la presentación, mientras la columna nota original sigue siendo numérica.
 
@@ -1492,23 +1357,22 @@ AES_ENCRYPT recibe el texto, la clave y el vector. Devuelve bytes cifrados, no u
 
 ``` sql
 SELECT @texto_demo AS original,
+       @cifrado_demo AS dato_cifrado,
        CAST(AES_DECRYPT(
            @cifrado_demo, @clave_demo, @iv_demo
        ) AS CHAR) AS recuperado;
 
 SET SESSION block_encryption_mode = @modo_anterior;
 ```
-| original      | recuperado    |
-|---------------|---------------|
-| Nota de Ana 8 | Nota de Ana 8 |
++---------------+------------------------------------+---------------+
+| original      | dato_cifrado                       | recuperado    |
++---------------+------------------------------------+---------------+
+| Nota de Ana 8 | 0xED9A1E748A60205FC9484BC23314797B | Nota de Ana 8 |
++---------------+------------------------------------+---------------+
 
 La recuperación funciona porque se conserva la clave, el vector y el modo que se utilizaron al cifrar. Repetir RANDOM_BYTES para generar una nueva clave antes de descifrar no recuperaría esa misma clave. El modo previo se restaura al finalizar.
 
 Este ejemplo enseña la operación. Un sistema real también necesita custodia de claves, transporte protegido e integridad de los mensajes. CBC por sí solo no autentica el contenido. El modo predeterminado del servidor no debe suponerse adecuado para cualquier uso.
-
-
-  
-1. ¿Qué es la Replicación y por qué existen estas Funciones?En un entorno de producción profesional, una sola base de datos suele quedarse corta para gestionar todo el tráfico. Para solucionar esto se utiliza la replicación: los cambios (transacciones) ejecutados en un servidor principal (Origen / Primario) se copian y aplican en uno o varios servidores secundarios (Réplicas).El problema fundamental: El "Desfase" (Replication Lag)Las réplicas funcionan de forma asíncrona o semisíncrona. Esto significa que cuando el servidor principal guarda un dato, la réplica tarda unos milisegundos (o segundos) en recibirlo y aplicarlo.Las Funciones de Replicación en SQL no crean ni configuran la red de servidores. Son herramientas de control y comparación que nos permiten responder a tres preguntas clave:Comparación: ¿Qué transacciones tiene el servidor A que aún no han llegado al servidor B?Sincronización: ¿Cómo puedo hacer que una consulta espere exactamente a que la réplica se ponga al día antes de leer datos?Coordinación: ¿Cómo inspecciono el estado de salud de un clúster de servidores interconectados?2. Identificación por GTID (GTID_SUBSET y GTID_SUBTRACT)¿Qué es un GTID?Un GTID (Global Transaction Identifier) es un identificador único asignado a cada transacción que se ejecuta en el origen. Tiene el formato:$$\text{UUID\_del\_Servidor}:\text{Número\_Transacción}$$(Por ejemplo: 11111111-2222-3333-4444-555555555555:1-5 indica de la transacción 1 a la 5 de ese servidor).Casos Reales en el Mundo RealEscenario A: Auditoría de Réplicas AtrasadasUn administrador de sistemas tiene 5 réplicas de lectura. Quiere un script automático que alerte si alguna réplica se está quedando muy atrás respecto al origen sin tener que conectarse manualmente a cada máquina.Escenario B: Reenganche tras una CaídaEl servidor origen se cae. Hay dos réplicas candidates a ser el nuevo origen. Usando GTID_SUBTRACT, el sistema calcula automáticamente cuál de las dos réplicas tiene la lista de transacciones más completa para promocionarla a servidora principal sin perder datos.Laboratorio Práctico: Comparación de ListasAmbas funciones son puramente analíticas (comparan cadenas de texto con formato GTID); no necesitan una topología de replicación real para probarse en SQL.
 
 # Funciones de agregación
 
@@ -1535,12 +1399,11 @@ SELECT COUNT(*) AS personas,
        COUNT(DISTINCT nota) AS valores_distintos
 FROM calificaciones;
 ```
-
-### Resultado
-
++----------+-----------------+-------------------+
 | personas | notas_conocidas | valores_distintos |
-|----------|-----------------|-------------------|
-| 8        | 5               | 4                 |
++----------+-----------------+-------------------+
+|        8 |               5 |                 4 |
++----------+-----------------+-------------------+
 
 COUNT(\*) cuenta las ocho filas. COUNT(nota) solo cuenta cinco valores conocidos. COUNT(DISTINCT nota) cuenta cuatro valores distintos: 0, 6, 8 y 9. El nueve aparece dos veces, pero solo cuenta una en la última columna.
 
@@ -1553,13 +1416,11 @@ SELECT SUM(nota) AS suma,
        MAX(nota) AS mayor
 FROM calificaciones;
 ```
-
-### Resultado numérico
-
-| suma | media | menor | mayor |
-|------|-------|-------|-------|
-| 32   | 6.4   | 0     | 9     |
-
++-------+----------+-------+-------+
+| suma  | media    | menor | mayor |
++-------+----------+-------+-------+
+| 32.00 | 6.400000 |  0.00 |  9.00 |
++-------+----------+-------+-------+
 Las notas conocidas son 8, 6, 0, 9 y 9. Suman 32 y se dividen entre cinco para obtener una media de 6.4. MIN devuelve cero y MAX nueve. Los NULL no se convierten automáticamente en ceros.
 
 ## Una fila por grupo con GROUP BY
@@ -1573,14 +1434,13 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
-
-### Resultado
-
-| grupo | personas | evaluadas | media   |
-|-------|----------|-----------|---------|
-| A     | 4        | 3         | 4.6667… |
-| B     | 2        | 2         | 9       |
-| C     | 2        | 0         | NULL    |
++-------+----------+-----------+----------+
+| grupo | personas | evaluadas | media    |
++-------+----------+-----------+----------+
+| A     |        4 |         3 | 4.666667 |
+| B     |        2 |         2 | 9.000000 |
+| C     |        2 |         0 |     NULL |
++-------+----------+-----------+----------+
 
 A contiene cuatro personas, pero solo tres notas conocidas: ocho, seis y cero. Su media es 14 / 3. B tiene dos nueves y su media es nueve. C contiene dos personas sin nota conocida, por lo que todavía no tiene media.
 
@@ -1595,12 +1455,11 @@ GROUP BY grupo
 HAVING AVG(nota) >= 7
 ORDER BY grupo;
 ```
-
-### Resultado
-
-| grupo | media |
-|-------|-------|
-| B     | 9     |
++-------+----------+
+| grupo | media    |
++-------+----------+
+| B     | 9.000000 |
++-------+----------+
 
 HAVING comprueba el resultado del grupo ya resumido. WHERE se utiliza para decidir qué filas llegan al grupo. Si se filtrase primero WHERE nota \>= 7, se eliminarían las notas bajas antes de calcular la media y se respondería a otra pregunta.
 
@@ -1615,14 +1474,13 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
-
-### Resultado
-
++-------+-----------+-----------+------------+
 | grupo | aprobados | suspensos | pendientes |
-|-------|-----------|-----------|------------|
-| A     | 2         | 1         | 1          |
-| B     | 2         | 0         | 0          |
-| C     | 0         | 0         | 2          |
++-------+-----------+-----------+------------+
+| A     |         2 |         1 |          1 |
+| B     |         2 |         0 |          0 |
+| C     |         0 |         0 |          2 |
++-------+-----------+-----------+------------+
 
 Cada CASE convierte la pregunta en una aportación de uno o cero. SUM añade esas aportaciones. En A, Ana y Luis aportan uno a aprobados; Pablo aporta uno a suspensos; y Marta aporta uno a pendientes.
 
@@ -1635,12 +1493,11 @@ SELECT COUNT(*) AS filas,
 FROM calificaciones
 WHERE grupo = 'Z';
 ```
-
-### Resultado
-
++-------+------+-------+
 | filas | suma | media |
-|-------|------|-------|
-| 0     | NULL | NULL  |
++-------+------+-------+
+|     0 | NULL |  NULL |
++-------+------+-------+
 
 No existe el grupo Z. COUNT puede afirmar que hay cero filas. SUM y AVG no disponen de valores que resumir y devuelven NULL. COALESCE(SUM(nota), 0) sería una decisión explícita de presentar cero como suma de un conjunto vacío; no debe confundirse con sustituir cada nota pendiente por cero.
 
@@ -1655,14 +1512,13 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
-
-### Resultado
-
++-------+-------------------------+
 | grupo | alumnado                |
-|-------|-------------------------|
++-------+-------------------------+
 | A     | Ana, Luis, Marta, Pablo |
 | B     | Bruno, Elena            |
 | C     | Diego, Sara             |
++-------+-------------------------+
 
 GROUP_CONCAT reúne textos de varias filas en una cadena. ORDER BY dentro de sus paréntesis ordena los nombres de la lista. SEPARATOR fija cómo se separan. DISTINCT permitiría eliminar textos repetidos.
 
@@ -1684,14 +1540,13 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
-
-### Resultado
-
++-------+------------+----------+
 | grupo | desviacion | varianza |
-|-------|------------|----------|
-| A     | 3.40       | 11.56    |
-| B     | 0.00       | 0.00     |
-| C     | NULL       | NULL     |
++-------+------------+----------+
+| A     |        3.4 |    11.56 |
+| B     |          0 |        0 |
+| C     |       NULL |     NULL |
++-------+------------+----------+
 
 STDDEV_POP calcula la desviación típica considerando los valores como población. VAR_POP calcula su varianza. La varianza es el cuadrado de la desviación, antes del redondeo. C no tiene valores conocidos para obtener ninguna de las dos medidas.
 
@@ -1702,45 +1557,13 @@ SELECT ROUND(STDDEV_POP(nota), 2) AS desviacion_poblacion,
        ROUND(VAR_SAMP(nota), 2) AS varianza_muestra
 FROM calificaciones;
 ```
-
-### Resultado sobre las cinco notas conocidas
-
-| desv. población | desv. muestra | var. población | var. muestra |
-|-----------------|---------------|----------------|--------------|
-| 3.38            | 3.78          | 11.44          | 14.30        |
++----------------------+--------------------+--------------------+------------------+
+| desviacion_poblacion | desviacion_muestra | varianza_poblacion | varianza_muestra |
++----------------------+--------------------+--------------------+------------------+
+|                 3.38 |               3.78 |              11.44 |             14.3 |
++----------------------+--------------------+--------------------+------------------+
 
 Las variantes SAMP se utilizan al tratar los datos como una muestra para estimar la dispersión de una población y ajustan el denominador. Necesitan al menos dos valores. La elección entre POP y SAMP depende del análisis estadístico, no del número de decimales que se desee mostrar.
-
-## JSON_ARRAYAGG y JSON_OBJECTAGG
-
-Se utilizan dos filas para ver la diferencia entre una lista de valores y una asociación de claves con valores.
-
-### Datos utilizados
-
-| alumno | nota |
-|--------|------|
-| Ana    | 8.00 |
-| Luis   | 6.00 |
-
-``` sql
-SELECT JSON_ARRAYAGG(alumno) AS lista
-FROM calificaciones
-WHERE id IN (1, 2);
-
-SELECT JSON_OBJECTAGG(alumno, nota) AS notas_por_nombre
-FROM calificaciones
-WHERE id IN (1, 2);
-```
-
-### Lectura de los resultados
-
-| Función | Contenido del resultado |
-|------------------------------------|------------------------------------|
-| JSON_ARRAYAGG | Un array con Ana y Luis; por ejemplo, \["Ana", "Luis"\]. |
-| JSON_OBJECTAGG | Un objeto que asocia Ana con 8 y Luis con 6; por ejemplo, {"Ana": 8, "Luis": 6}. |
-
-El orden de JSON_ARRAYAGG no está garantizado por esta consulta. Un objeto JSON es una asociación de claves y valores, por lo que su presentación tampoco debe interpretarse como un orden de filas. Las claves de JSON_OBJECTAGG no pueden ser NULL; si se repiten, puede conservarse un valor según el orden efectivo de procesamiento. En estos datos los dos nombres son diferentes.
-
 ## ROLLUP y GROUPING para incluir un total
 
 ``` sql
@@ -1751,15 +1574,14 @@ SELECT
 FROM calificaciones
 GROUP BY grupo WITH ROLLUP;
 ```
-
-### Resultado
-
++-----------+----------+
 | categoria | personas |
-|-----------|----------|
-| A         | 4        |
-| B         | 2        |
-| C         | 2        |
-| TOTAL     | 8        |
++-----------+----------+
+| A         |        4 |
+| B         |        2 |
+| C         |        2 |
+| TOTAL     |        8 |
++-----------+----------+
 
 ROLLUP añade la fila de total. GROUPING(grupo) devuelve uno para esa fila especial y permite etiquetarla como TOTAL. De esta forma no se confunde el NULL utilizado por el total con un posible NULL procedente de los datos.
 
@@ -1777,19 +1599,18 @@ SELECT grupo, alumno, nota,
 FROM calificaciones
 ORDER BY grupo, id;
 ```
-
-### Resultado
-
++-------+--------+------+-------------+
 | grupo | alumno | nota | media_grupo |
-|-------|--------|------|-------------|
-| A     | Ana    | 8.00 | 4.6667…     |
-| A     | Luis   | 6.00 | 4.6667…     |
-| A     | Marta  | NULL | 4.6667…     |
-| A     | Pablo  | 0.00 | 4.6667…     |
-| B     | Elena  | 9.00 | 9           |
-| B     | Bruno  | 9.00 | 9           |
-| C     | Sara   | NULL | NULL        |
-| C     | Diego  | NULL | NULL        |
++-------+--------+------+-------------+
+| A     | Ana    | 8.00 |    4.666667 |
+| A     | Luis   | 6.00 |    4.666667 |
+| A     | Marta  | NULL |    4.666667 |
+| A     | Pablo  | 0.00 |    4.666667 |
+| B     | Elena  | 9.00 |    9.000000 |
+| B     | Bruno  | 9.00 |    9.000000 |
+| C     | Sara   | NULL |        NULL |
+| C     | Diego  | NULL |        NULL |
++-------+--------+------+-------------+
 
 La media de A se repite en sus cuatro filas, incluso en la de Marta, cuya nota está pendiente. La agregación AVG sigue ignorando NULL, pero la consulta conserva a Marta. En C todas las notas son NULL y su media continúa siendo desconocida.
 
@@ -1806,16 +1627,15 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
-
-### Resultado
-
++--------+------+--------+--------+------------+
 | alumno | nota | numero | puesto | sin_saltos |
-|--------|------|--------|--------|------------|
-| Elena  | 9    | 1      | 1      | 1          |
-| Bruno  | 9    | 2      | 1      | 1          |
-| Ana    | 8    | 3      | 3      | 2          |
-| Luis   | 6    | 4      | 4      | 3          |
-| Pablo  | 0    | 5      | 5      | 4          |
++--------+------+--------+--------+------------+
+| Elena  | 9.00 |      1 |      1 |          1 |
+| Bruno  | 9.00 |      2 |      1 |          1 |
+| Ana    | 8.00 |      3 |      3 |          2 |
+| Luis   | 6.00 |      4 |      4 |          3 |
+| Pablo  | 0.00 |      5 |      5 |          4 |
++--------+------+--------+--------+------------+
 
 ROW_NUMBER asigna un número diferente a cada fila. RANK da el primer puesto a los dos nueves y continúa en el tercero, porque hay dos personas por delante de Ana. DENSE_RANK también comparte el primer puesto, pero continúa en el segundo valor de nota distinto.
 
@@ -1837,15 +1657,15 @@ FROM clasificadas
 WHERE posicion <= 2
 ORDER BY grupo, posicion;
 ```
-
-### Resultado
-
++-------+--------+------+----------+
 | grupo | alumno | nota | posicion |
-|-------|--------|------|----------|
-| A     | Ana    | 8    | 1        |
-| A     | Luis   | 6    | 2        |
-| B     | Elena  | 9    | 1        |
-| B     | Bruno  | 9    | 2        |
++-------+--------+------+----------+
+| A     | Ana    | 8.00 |        1 |
+| A     | Luis   | 6.00 |        2 |
+| B     | Elena  | 9.00 |        1 |
+| B     | Bruno  | 9.00 |        2 |
++-------+--------+------+----------+
+
 
 PARTITION BY reinicia la numeración para cada grupo. La CTE calcula primero las posiciones y el SELECT exterior filtra después. Las ventanas no se filtran mediante WHERE en el mismo bloque en el que se calculan. Para incluir a todos los empatados en determinados valores de nota se elige RANK o DENSE_RANK según la pregunta.
 
@@ -1864,14 +1684,13 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY fecha_inicio, id;
 ```
-
-### Resultado
-
++--------+--------------+----------+-----------+
 | nombre | fecha_inicio | anterior | siguiente |
-|--------|--------------|----------|-----------|
++--------+--------------+----------+-----------+
 | Redes  | 2026-10-01   | NULL     | SQL       |
 | SQL    | 2026-10-15   | Redes    | Linux     |
 | Linux  | 2026-11-01   | SQL      | NULL      |
++--------+--------------+----------+-----------+
 
 LAG accede a la fila anterior y LEAD a la posterior según ese orden. Redes no tiene un curso anterior y Linux no tiene uno posterior, de modo que aparecen NULL. Si varias fechas coinciden, id proporciona un desempate estable. El desplazamiento predeterminado es una fila; las funciones admiten indicar otro.
 
@@ -1889,16 +1708,15 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY id;
 ```
-
-### Resultado
-
++--------+------+----------------+
 | alumno | nota | suma_acumulada |
-|--------|------|----------------|
-| Ana    | 8    | 8              |
-| Luis   | 6    | 14             |
-| Pablo  | 0    | 14             |
-| Elena  | 9    | 23             |
-| Bruno  | 9    | 32             |
++--------+------+----------------+
+| Ana    | 8.00 |           8.00 |
+| Luis   | 6.00 |          14.00 |
+| Pablo  | 0.00 |          14.00 |
+| Elena  | 9.00 |          23.00 |
+| Bruno  | 9.00 |          32.00 |
++--------+------+----------------+
 
 La primera suma contiene solo el ocho de Ana. La segunda suma ocho y seis. El cero de Pablo no aumenta la suma. El marco ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW significa «desde la primera fila del orden hasta esta fila». El orden por id es el recorrido de este informe; no se afirma que sea una fecha de evaluación.
 
@@ -1919,14 +1737,13 @@ SELECT nombre,
 FROM cursos
 ORDER BY fecha_inicio, id;
 ```
-
-### Resultado
-
++--------+-------------------+-----------------+
 | nombre | ultimo_hasta_aqui | ultimo_de_todos |
-|--------|-------------------|-----------------|
++--------+-------------------+-----------------+
 | Redes  | Redes             | Linux           |
 | SQL    | SQL               | Linux           |
 | Linux  | Linux             | Linux           |
++--------+-------------------+-----------------+
 
 Con este orden único, el marco predeterminado termina en la fila actual y la primera expresión obtiene el último valor alcanzado hasta ella. UNBOUNDED FOLLOWING amplía el marco hasta el final de toda la partición. Por eso la segunda expresión devuelve Linux en las tres filas.
 
@@ -1944,14 +1761,13 @@ WINDOW calendario AS (
 )
 ORDER BY fecha_inicio, id;
 ```
-
-### Resultado
-
++--------+---------+---------+--------+
 | nombre | primero | segundo | ultimo |
-|--------|---------|---------|--------|
++--------+---------+---------+--------+
 | Redes  | Redes   | SQL     | Linux  |
 | SQL    | Redes   | SQL     | Linux  |
 | Linux  | Redes   | SQL     | Linux  |
++--------+---------+---------+--------+
 
 FIRST_VALUE toma la primera fila del marco y NTH_VALUE la posición indicada, aquí la segunda. WINDOW calendario asigna un nombre a la ventana para reutilizarla sin repetir toda su definición. Si el marco no tiene una segunda fila, NTH_VALUE devuelve NULL.
 
@@ -1964,16 +1780,15 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
-
-### Resultado
-
++--------+------+--------+
 | alumno | nota | bloque |
-|--------|------|--------|
-| Elena  | 9    | 1      |
-| Bruno  | 9    | 1      |
-| Ana    | 8    | 1      |
-| Luis   | 6    | 2      |
-| Pablo  | 0    | 2      |
++--------+------+--------+
+| Elena  | 9.00 |      1 |
+| Bruno  | 9.00 |      1 |
+| Ana    | 8.00 |      1 |
+| Luis   | 6.00 |      2 |
+| Pablo  | 0.00 |      2 |
++--------+------+--------+
 
 Hay cinco filas y se piden dos bloques de tamaños tan parecidos como sea posible: tres y dos. NTILE reparte personas, no divide el intervalo de notas de cero a diez. En otros datos puede separar valores empatados, porque lo que distribuye son filas.
 
@@ -1987,330 +1802,18 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
-
-### Resultado numérico
-
++--------+------+----------------+------------+
 | alumno | nota | rango_relativo | proporcion |
-|--------|------|----------------|------------|
-| Elena  | 9    | 0              | 0.4        |
-| Bruno  | 9    | 0              | 0.4        |
-| Ana    | 8    | 0.5            | 0.6        |
-| Luis   | 6    | 0.75           | 0.8        |
-| Pablo  | 0    | 1              | 1          |
++--------+------+----------------+------------+
+| Elena  | 9.00 |              0 |        0.4 |
+| Bruno  | 9.00 |              0 |        0.4 |
+| Ana    | 8.00 |            0.5 |        0.6 |
+| Luis   | 6.00 |           0.75 |        0.8 |
+| Pablo  | 0.00 |              1 |          1 |
++--------+------+----------------+------------+
 
 PERCENT_RANK utiliza (RANK - 1) / (número de filas - 1). Para Ana es (3 - 1) / (5 - 1) = 0.5. CUME_DIST cuenta la proporción de filas alcanzadas incluyendo todos los empates: los dos nueves son dos de cinco, por eso ambos obtienen 0.4.
 
 Estos valores describen una posición relativa dentro de las filas ordenadas. No significan que la nota de Elena sea cero ni que haya aprobado el cuarenta por ciento del examen. El ORDER BY interior controla el cálculo; el exterior controla cómo se presentan las filas.
 
-# Funciones de Performance Schema
 
-Performance Schema es la instrumentación de MySQL para observar actividad, consultas, hilos y esperas. Las funciones siguientes ayudan a interpretar sus magnitudes. Están disponibles desde MySQL 8.0.16 y en MySQL 8.4.
-
-## FORMAT_BYTES para leer una cantidad de memoria
-
-``` sql
-SELECT FORMAT_BYTES(512) AS pequeno,
-       FORMAT_BYTES(1048576) AS grande;
-```
-
-### Resultado
-
-| pequeno   | grande   |
-|-----------|----------|
-| 512 bytes | 1.00 MiB |
-
-Un mebibyte contiene 1024 × 1024 bytes: 1048576. FORMAT_BYTES devuelve texto con una unidad legible. Para comparar u ordenar cantidades se mantiene el número original.
-
-## FORMAT_PICO_TIME para leer tiempos
-
-Muchas tablas de Performance Schema expresan tiempos en picosegundos. Un segundo equivale a un millón de millones de picosegundos.
-
-``` sql
-SELECT FORMAT_PICO_TIME(1000000000000) AS tiempo;
-```
-
-### Resultado
-
-| tiempo |
-|--------|
-| 1.00 s |
-
-La función no mide una consulta: convierte una magnitud que ya se ha medido. Cambiar el formato no cambia la duración real.
-
-## Identificar conexión e hilo
-
-``` sql
-SELECT CONNECTION_ID() AS conexion,
-       PS_CURRENT_THREAD_ID() AS hilo_actual,
-       PS_THREAD_ID(CONNECTION_ID()) AS hilo_de_la_conexion;
-```
-
-### Relación que se observa cuando existe el hilo instrumentado
-
-| Columna | Qué representa |
-|------------------------------------|------------------------------------|
-| conexion | Identificador de la conexión actual. |
-| hilo_actual | Identificador que utiliza Performance Schema. |
-| hilo_de_la_conexion | El mismo identificador de hilo que la columna anterior. |
-
-El identificador de conexión y el de hilo no tienen por qué ser el mismo número. Los números concretos cambian. Si no existe la instrumentación o el hilo correspondiente, puede obtenerse NULL. La lectura debe centrarse en la relación entre ambas identificaciones.
-
-## Un informe de consultas con mayor tiempo total
-
-Necesidad administrativa: localizar las estructuras de consulta que acumulan más tiempo en el servidor. Se requieren permisos de lectura e instrumentación adecuada. Esta consulta utiliza datos del servidor, no las filas ficticias del laboratorio.
-
-``` sql
-SELECT DIGEST_TEXT, COUNT_STAR,
-       FORMAT_PICO_TIME(SUM_TIMER_WAIT) AS tiempo_total
-FROM performance_schema.events_statements_summary_by_digest
-WHERE DIGEST_TEXT IS NOT NULL
-ORDER BY SUM_TIMER_WAIT DESC
-LIMIT 5;
-```
-
-### Ejemplo ilustrativo para interpretar una salida
-
-| Consulta resumida               | COUNT_STAR | tiempo_total |
-|---------------------------------|------------|--------------|
-| Consulta repetida muchas veces. | 120        | 3.00 s       |
-| Consulta ejecutada una vez.     | 1          | 2.00 s       |
-
-La primera acumula más tiempo total, aunque una ejecución individual pueda ser más rápida. COUNT_STAR cuenta ejecuciones y SUM_TIMER_WAIT suma sus tiempos. La consulta ordena por el número original y muestra su versión formateada. Los textos y contadores reales dependen de la actividad; un resultado vacío puede deberse a falta de actividad o de instrumentación.
-
-# Funciones internas
-
-Las funciones internas son herramientas utilizadas por el propio servidor. No son funciones públicas para que un usuario las invoque en un SELECT. MySQL indica que intentar llamarlas directamente produce un error. La forma didáctica de estudiarlas es reconocer su finalidad y utilizar las interfaces públicas equivalentes.
-
-## Nombres internos que pueden aparecer en documentación
-
-| Nombre | Papel general |
-|------------------------------------|------------------------------------|
-| CAN_ACCESS_TABLE | Comprobaciones internas de acceso a metadatos. |
-| INTERNAL_TABLE_ROWS | Obtención interna de información de filas. |
-| INTERNAL_INDEX_COLUMN_CARDINALITY | Obtención interna de cardinalidad de índices. |
-
-## Consultar información por una interfaz pública
-
-``` sql
-SELECT TABLE_NAME, ENGINE
-FROM information_schema.TABLES
-WHERE TABLE_SCHEMA = 'laboratorio_funciones'
-ORDER BY TABLE_NAME;
-```
-
-### Resultado tras cargar las cinco tablas del anexo
-
-| TABLE_NAME     | ENGINE |
-|----------------|--------|
-| calificaciones | InnoDB |
-| cursos         | InnoDB |
-| documentos     | InnoDB |
-| pedidos        | InnoDB |
-| personas       | InnoDB |
-
-INFORMATION_SCHEMA expone información documentada que puede consultar el usuario según sus privilegios. No se necesita llamar a una función INTERNAL\_ para conocer el motor de una tabla.
-
-``` sql
-SELECT COUNT(*) AS filas_personas FROM personas;
-SHOW CREATE TABLE personas;
-SHOW INDEX FROM personas;
-```
-
-La primera sentencia devuelve una sola fila con filas_personas = 6, porque la tabla personas contiene seis registros. SHOW CREATE TABLE muestra su definición y SHOW INDEX sus índices. TABLE_ROWS en los metadatos de InnoDB suele ser una estimación; COUNT(\*) cuenta exactamente las filas visibles para la consulta.
-
-# Complementos de operadores e información
-
-## Operadores de bits con opciones activadas
-
-Para entender una máscara de bits se utiliza un pequeño ejemplo técnico: cada opción ocupa una posición. No se trata de los privilegios SQL reales de MySQL.
-
-### Tres opciones del ejemplo
-
-| Opción         | Valor decimal | Representación en tres bits |
-|----------------|---------------|-----------------------------|
-| Recibir avisos | 1             | 001                         |
-| Exportar       | 2             | 010                         |
-| Imprimir       | 4             | 100                         |
-
-La máscara cinco es 101: tiene avisos e impresión activados. El operador & comprueba las posiciones compartidas.
-
-``` sql
-SELECT (5 & 1) <> 0 AS avisos,
-       (5 & 2) <> 0 AS exportar,
-       (5 & 4) <> 0 AS imprimir,
-       BIT_COUNT(5) AS opciones_activadas;
-```
-
-### Resultado
-
-| avisos | exportar | imprimir | opciones_activadas |
-|--------|----------|----------|--------------------|
-| 1      | 0        | 1        | 2                  |
-
-Las comparaciones \<\> 0 convierten la presencia de cada bit en uno o cero. BIT_COUNT cuenta los bits activados. \| activa las posiciones presentes en cualquiera de los dos valores; \^ cambia las posiciones en las que son distintos.
-
-``` sql
-SELECT 5 | 2 AS activar_exportacion,
-       5 ^ 1 AS cambiar_avisos,
-       (~5) & 7 AS opciones_complementarias;
-```
-
-### Resultado
-
-| activar_exportacion | cambiar_avisos | opciones_complementarias |
-|---------------------|----------------|--------------------------|
-| 7                   | 4              | 2                        |
-
-Cinco OR dos produce siete, 111: las tres opciones quedan activadas. Cinco XOR uno produce cuatro, 100: se cambia el bit de avisos. \~ invierte bits; & 7 limita la observación a las tres posiciones del ejemplo y deja 010, que equivale a dos.
-
-``` sql
-SELECT 5 << 1 AS desplazar_izquierda,
-       5 >> 1 AS desplazar_derecha;
-```
-
-### Resultado
-
-| desplazar_izquierda | desplazar_derecha |
-|---------------------|-------------------|
-| 10                  | 2                 |
-
-Los desplazamientos mueven posiciones binarias. En estos enteros positivos, desplazar una posición a la izquierda multiplica por dos y a la derecha descarta el bit inferior. \^ es XOR de bits; para potencias se utiliza POWER.
-
-## Información del servidor y de la sesión
-
-``` sql
-SELECT VERSION() AS version_servidor,
-       DATABASE() AS base_actual,
-       USER() AS identidad_conexion,
-       CURRENT_USER() AS cuenta_efectiva,
-       CONNECTION_ID() AS conexion;
-```
-
-### Cómo leer el resultado
-
-| Columna | Interpretación |
-|------------------------------------|------------------------------------|
-| version_servidor | La versión que realmente ejecuta el servidor. |
-| base_actual | laboratorio_funciones, si se ha ejecutado su USE. |
-| identidad_conexion | Usuario y origen de la conexión. |
-| cuenta_efectiva | Cuenta utilizada para comprobar privilegios en ese contexto. |
-| conexion | Identificador de esta conexión. |
-
-USER y CURRENT_USER pueden coincidir, pero representan conceptos diferentes. Los contextos de ejecución con definidor pueden cambiar la cuenta efectiva. DATABASE devuelve NULL si no se ha seleccionado ninguna base.
-
-## LAST_INSERT_ID y ROW_COUNT con una inserción real de ejemplo
-
-Se crea una tabla temporal solo para esta demostración, de forma que no se alteren las cinco tablas principales. Se conserva la misma conexión y se ejecuta la consulta de comprobación inmediatamente después del INSERT.
-
-``` sql
-DROP TEMPORARY TABLE IF EXISTS registro_funciones_demo;
-CREATE TEMPORARY TABLE registro_funciones_demo (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    mensaje VARCHAR(40) NOT NULL
-);
-
-INSERT INTO registro_funciones_demo (mensaje) VALUES ('Prueba');
-SELECT ROW_COUNT() AS filas_insertadas,
-       LAST_INSERT_ID() AS identificador_generado;
-```
-
-### Resultado en esta tabla temporal recién creada
-
-| filas_insertadas | identificador_generado |
-|------------------|------------------------|
-| 1                | 1                      |
-
-ROW_COUNT informa de que la sentencia anterior insertó una fila. LAST_INSERT_ID recupera el identificador AUTO_INCREMENT generado por esa inserción en esta sesión. No obtiene el último identificador insertado por cualquier otra conexión.
-
-``` sql
-SELECT ROW_COUNT() AS resultado_despues_del_select;
-DROP TEMPORARY TABLE registro_funciones_demo;
-```
-
-### Resultado del SELECT
-
-| resultado_despues_del_select |
-|------------------------------|
-| -1                           |
-
-La sentencia inmediatamente anterior era otro SELECT que devolvía filas. ROW_COUNT no cuenta las filas de ese resultado y devuelve -1. Por eso no debe intercalarse otra consulta antes de consultar las filas afectadas por una escritura.
-
-## JSON con un documento pequeño
-
-JSON permite representar datos estructurados. Se construye un documento con un alumno y su nota, sin añadir columnas a las tablas del laboratorio.
-
-``` sql
-SET @documento = JSON_OBJECT('alumno', 'Ana', 'nota', 8);
-SELECT @documento AS documento;
-```
-
-### Contenido del objeto construido
-
-| Clave  | Valor |
-|--------|-------|
-| alumno | Ana   |
-| nota   | 8     |
-
-JSON_OBJECT recibe parejas de clave y valor. La clave alumno identifica un texto; la clave nota identifica el número ocho.
-
-``` sql
-SELECT JSON_EXTRACT(@documento, '$.alumno') AS dato_json,
-       JSON_UNQUOTE(JSON_EXTRACT(
-           @documento, '$.alumno'
-       )) AS texto;
-```
-
-### Resultado
-
-| dato_json | texto |
-|-----------|-------|
-| "Ana"     | Ana   |
-
-La ruta \$.alumno señala la propiedad alumno en el nivel principal. JSON_EXTRACT devuelve un valor JSON; si es una cadena, su representación incluye comillas. JSON_UNQUOTE devuelve el texto sin esas comillas JSON.
-
-``` sql
-SELECT JSON_SET(@documento, '$.nota', 9) AS documento_modificado;
-SELECT JSON_EXTRACT(@documento, '$.nota') AS nota_original;
-```
-
-### Qué se obtiene
-
-| Consulta | Resultado que interesa |
-|------------------------------------|------------------------------------|
-| JSON_SET | Un nuevo documento con nota igual a nueve. |
-| Consulta de la variable original | La nota original sigue siendo ocho. |
-
-JSON_SET devuelve otro documento. No sobrescribe automáticamente la variable @documento: sería necesario asignar el resultado si se desea conservar el cambio.
-
-# Funciones almacenadas como tema posterior
-
-Las funciones utilizadas hasta ahora vienen incorporadas en MySQL. Una función almacenada es una rutina que se crea para encapsular una regla propia y devolver un valor. Se define con CREATE FUNCTION, declara el tipo mediante RETURNS y utiliza RETURN para devolverlo.
-
-## Diferencia de finalidad
-
-| Herramienta | Cómo se utiliza | Ejemplo de finalidad |
-|------------------------|------------------------|------------------------|
-| Función incorporada | Dentro de expresiones SQL. | ROUND para redondear. |
-| Función almacenada | Dentro de expresiones, después de definirla. | Reutilizar una regla de cálculo propia. |
-| Procedimiento almacenado | Se invoca mediante CALL. | Ejecutar un proceso con varias operaciones. |
-
-La creación, los privilegios, el determinismo y las restricciones de las funciones almacenadas se estudiarán aparte. Esta unidad se centra en comprender las funciones disponibles y los datos que reciben.
-
-# Errores comunes y criterios de uso
-
-## Preguntas que evitan confusiones
-
-| Antes de utilizar una expresión | Comprobación |
-|------------------------------------|------------------------------------|
-| ¿Qué representa NULL? | Ausencia de un valor conocido; no implica cero. |
-| ¿La función devuelve un número o texto? | FORMAT presenta texto; ROUND conserva un cálculo numérico. |
-| ¿Se están comparando argumentos o filas? | GREATEST compara argumentos; MAX resume filas. |
-| ¿La función conserva las filas? | OVER conserva detalle; GROUP BY resume grupos. |
-| ¿Se conoce el conjunto que participa? | Revisar WHERE y los NULL antes de interpretar una media. |
-| ¿El ejemplo depende del servidor? | Comprobar requisitos y valores reales en los apartados administrativos. |
-
-## Confusiones y correcciones
-
-| Confusión    | Qué ocurre                        | Criterio correcto           |
-|------------------------|------------------------|------------------------|
-| Usar = NULL. | La comparación queda desconocida. | Usar IS NULL o IS NOT NULL. |
