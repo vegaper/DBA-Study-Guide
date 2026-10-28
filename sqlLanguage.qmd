@@ -443,6 +443,35 @@ FROM world_health_org;
 
 > **Consejo de diseño para tus consultas:** Si estás preparando material o consultas que necesitan ejecutarse en diferentes entornos sin romperse, lo más seguro es usar siempre `CASE WHEN`. Si sabes que vas a trabajar exclusivamente dentro de SQLite o SQL Server, usar `IIF()` te ahorrará mucho espacio y hará que el código se lea de forma mucho más directa.
 
+::: nota
+No confundir esto con IF, ELSE IF: 
+
+Bloques procedimentales: La estructura IF ... THEN ... ELSE ... END IF
+Mientras que las funciones IF() y IIF() vistas antes funcionan como expresiones de una sola línea (ideales dentro de un SELECT), los lenguajes procedimentales de las bases de datos (como MySQL Stored Procedures, PL/SQL en Oracle o T-SQL en SQL Server) permiten utilizar bloques de control de flujo completos con múltiples líneas de código y ramificaciones ELSE y ELSEIF.
+
+1. Motores donde funciona
+MySQL y MariaDB (dentro de procedimientos almacenados, funciones y déclencheurs/triggers).
+
+SQL Server (T-SQL) (con una sintaxis ligeramente distinta, usando bloques BEGIN ... END).
+
+Oracle (PL/SQL) y PostgreSQL (PL/pgSQL).
+
+2. Sintaxis (Ejemplo en MySQL/MariaDB)
+```sql
+IF condicion THEN
+    -- Sentencias si se cumple la condición
+ELSE
+    -- Sentencias si no se cumple
+END IF;
+```
+No se pueden mezclar las palabras clave de los bloques procedimentales (else, end if) dentro de las expresiones de una consulta SELECT.
+Cuándo usar cada opción:
+
+-  Utiliza CASE WHEN dentro de tus consultas SELECT normales cuando estés transformando filas de una tabla.
+
+-  Utiliza la estructura IF ... ELSE ... END IF cuando estés escribiendo bloques lógicos de control más extensos o scripts de automatización donde las expresiones de una sola línea se queden cortas.
+::: 
+
 # Agrupación y Funciones de Agregación (`GROUP BY`, `HAVING`)
 
 Las funciones de agregación (`MAX`, `MIN`, `COUNT`, `SUM`, `AVG`) reducen múltiples filas a un solo valor.

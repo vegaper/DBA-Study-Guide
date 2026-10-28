@@ -1701,3 +1701,46 @@ ORDER BY nota, id;
 +------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
 | Elena      | 10       | 1.00                       | 1.00                | Nota máxima absoluta del grupo (cubre el 100%).                          |
 +------------+----------+----------------------------+---------------------+--------------------------------------------------------------------------+
+
+---
+
+# Funciones Almacenadas (Panorama General)
+Las funciones integradas vienen nativas en MySQL. Una **función almacenada** (`CREATE FUNCTION`) encapsula una regla de negocio propia para devolver un valor dentro de expresiones, diferenciándose de los **procedimientos almacenados** (que ejecutan procesos complejos y se invocan con `CALL`). 
+Se definen con CREATE FUNCTION, declara el tipo mediante RETURNS y utiliza RETURN para devolverlo.
+
+## Diferencia de finalidad
+
+| Herramienta | Cómo se utiliza | Ejemplo de finalidad |
+|------------------------|------------------------|------------------------|
+| Función incorporada | Dentro de expresiones SQL. | ROUND para redondear. |
+| Función almacenada | Dentro de expresiones, después de definirla. | Reutilizar una regla de cálculo propia. |
+| Procedimiento almacenado | Se invoca mediante CALL. | Ejecutar un proceso con varias operaciones. |
+
+La creación, los privilegios, el determinismo y las restricciones de las funciones almacenadas se estudiarán aparte. Esta unidad se centra en comprender las funciones disponibles y los datos que reciben.
+
+Ejemplo
+```sql
+DELIMITER //
+
+CREATE FUNCTION clasificar_nota(p_nota DECIMAL(5,2)) 
+RETURNS VARCHAR(20)
+DETERMINISTIC
+BEGIN
+    DECLARE v_resultado VARCHAR(20);
+
+    IF p_nota >= 9 THEN
+        SET v_resultado = 'Sobresaliente';
+    ELSEIF p_nota >= 7 THEN
+        SET v_resultado = 'Notable';
+    ELSEIF p_nota >= 5 THEN
+        SET v_resultado = 'Aprobado';
+    ELSE
+        SET v_resultado = 'Suspenso';
+    END IF;
+
+    RETURN v_resultado;
+END //
+
+DELIMITER ;
+```
+Prueba de uso del procedimiento/función: `SELECT clasificar_nota(8.5) AS calificacion;`

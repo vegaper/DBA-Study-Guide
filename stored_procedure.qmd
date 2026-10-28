@@ -2,6 +2,9 @@
 title: "Procedimientos almacenados"
 format: html
 ---
+variables. 
+tipos local, session... 
+sintaxis declare set 
 
 Stored procedures
 En cada apartado, diferencias principales entre motores.
@@ -16,3 +19,33 @@ llamar a un procedimiento
 modificar un procedimiento
 borrar un procedimiento.
 permisos invoker vs definer
+
+
+Bloques condicionales procedimentales: La estructura IF ... ELSE
+Si necesitamos evaluar una regla compleja de varias líneas dentro de un bloque de código (y no en una simple línea como IF() o CASE), MySQL permite utilizar la estructura condicional clásica de bloques.
+```sql
+IF condicion THEN
+    -- Sentencias si se cumple la condición
+ELSE
+    -- Sentencias si no se cumple
+END IF;
+```
+Ejemplo Sencillo (Evaluando una variable de sesión)
+Imagina que queremos evaluar una variable de usuario que ya tenemos cargada, mostrando un mensaje u otro sin necesidad de crear todavía una función o procedimiento almacenado completo:
+
+```sql
+-- Simulamos una variable con una nota de prueba
+SET @nota_alumno = 6.5;
+
+-- Bloque condicional procedural
+IF @nota_alumno >= 5 THEN
+    SELECT 'El alumno ha aprobado el curso' AS resultado;
+else
+    SELECT 'El alumno debe recuperar la materia' AS resultado;
+END IF;
+```
+Cuándo usar cada opción:
+
+Utiliza CASE WHEN dentro de tus consultas SELECT normales cuando estés transformando filas de una tabla.
+
+Utiliza la estructura IF ... ELSE ... END IF cuando estés escribiendo bloques lógicos de control más extensos o scripts de automatización donde las expresiones de una sola línea se queden cortas.

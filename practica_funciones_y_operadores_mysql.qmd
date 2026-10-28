@@ -37,8 +37,7 @@ La base de datos se llama funciones_mysql.
 | cursos | Tres cursos con fechas de inicio y fin. | Funciones de calendario. |
 | documentos | Cinco documentos breves. | Búsquedas FULLTEXT. |
 
-## ![](images/paste-4.png)
-
+ 
 | id  | nombre | telefono      | email                |
 |-----|--------|---------------|----------------------|
 | 1   | Ana    | '600111222'   | 'ana\@centro.es'     |
@@ -105,9 +104,9 @@ precio es el precio unitario antes del descuento. descuento_pct expresa un porce
 | 2   | SQL    | 2026-10-15   | 2026-10-20 |
 | 3   | Linux  | 2026-11-01   | 2026-11-05 |
 
+![](images/paste-4.png)
+
 ----------------------------------------------
-
-
 ## Operaciones y comprobaciones sobre valores NULL
 
 ``` sql
@@ -116,10 +115,6 @@ FROM calificaciones
 WHERE nota IS NULL
 ORDER BY id;
 ```    
-mysql>SELECT alumno, nota
-    FROM calificaciones
-    WHERE nota IS NULL
-    ORDER BY id;
 +--------+------+
 | alumno | nota |
 +--------+------+
@@ -130,13 +125,6 @@ mysql>SELECT alumno, nota
 
 IS NULL pregunta expresamente si falta el valor. Escribir nota = NULL no realiza esta comprobación: una igualdad ordinaria con NULL produce un resultado desconocido.
        
-mysql>SELECT alumno, nota
-    FROM calificaciones
-    WHERE nota = NULL
-    ORDER BY id;
-Empty set (0,00 sec)
-
-
 ### La lógica cuando aparece un valor desconocido
 
 | Expresión | Resultado | Lectura |
@@ -156,10 +144,6 @@ ISNULL(nota) (Función): Se escribe como una función tradicional donde el valor
 
 nota IS NULL (Operador): Se escribe como una expresión lógica donde el operador va después del campo.
  
-mysql>SELECT alumno,
-    ISNULL(nota) AS usando_funcion,
-    (nota IS NULL) AS usando_operador
-    FROM calificaciones;
 +--------+----------------+-----------------+
 | alumno | usando_funcion | usando_operador |
 +--------+----------------+-----------------+
@@ -186,11 +170,7 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
-SELECT nombre,
-    ->        IFNULL(telefono, 'No facilitado') AS telefono_mostrado
-    -> FROM personas
-    -> WHERE id IN (1, 2)
-    -> ORDER BY id;
+
 +--------+-------------------+
 | nombre | telefono_mostrado |
 +--------+-------------------+
@@ -251,9 +231,6 @@ SELECT id, alumno, nota, nota >= 5 AS alcanza_el_cinco
 FROM calificaciones
 ORDER BY id;
 ```
-mysql>SELECT id, alumno, nota, nota >= 5 AS alcanza_el_cinco
-    FROM calificaciones
-    ORDER BY id;
 +----+--------+------+------------------+
 | id | alumno | nota | alcanza_el_cinco |
 +----+--------+------+------------------+
@@ -276,11 +253,6 @@ FROM calificaciones
 WHERE nota >= 5
 ORDER BY id;
 ```
-
-mysql>SELECT alumno, nota
-    FROM calificaciones
-    WHERE nota >= 5
-    ORDER BY id;
 +--------+------+
 | alumno | nota |
 +--------+------+
@@ -303,10 +275,6 @@ FROM calificaciones
 WHERE nota BETWEEN 5 AND 8
 ORDER BY id;
 ```
-mysql>SELECT alumno, nota
-    FROM calificaciones
-    WHERE nota BETWEEN 5 AND 8
-    ORDER BY id;
 +--------+------+
 | alumno | nota |
 +--------+------+
@@ -324,11 +292,6 @@ FROM calificaciones
 WHERE grupo IN ('A', 'C')
 ORDER BY id;
 ```
-      
-mysql>SELECT alumno, grupo
-    FROM calificaciones
-    WHERE grupo IN ('A', 'C')
-    ORDER BY id;
 +--------+-------+
 | alumno | grupo |
 +--------+-------+
@@ -365,12 +328,7 @@ ORDER BY id;
 ```
 
 Los paréntesis agrupan los dos apellidos como una sola alternativa. Después AND exige, además, que la persona esté activa.
-   
-mysql>SELECT id, nombre, apellido1, activo
-    FROM personas
-    WHERE activo = 1
-    AND (apellido1 = 'García' OR apellido1 = 'López')
-    ORDER BY id;
+
 +----+--------+-----------+--------+
 | id | nombre | apellido1 | activo |
 +----+--------+-----------+--------+
@@ -388,11 +346,6 @@ WHERE activo = 1 AND apellido1 = 'García'
    OR apellido1 = 'López'
 ORDER BY id;
 ``` 
-mysql>SELECT id, nombre, apellido1, activo
-    FROM personas
-    WHERE activo = 1 AND apellido1 = 'García'
-    OR apellido1 = 'López'
-    ORDER BY id;
 +----+--------+-----------+--------+
 | id | nombre | apellido1 | activo |
 +----+--------+-----------+--------+
@@ -417,14 +370,6 @@ WHERE EXISTS (
     WHERE c.alumno = p.nombre
 );
 ```
-      
-mysql>SELECT p.nombre, p.apellido1
-    FROM personas AS p
-    WHERE EXISTS (
-    SELECT 1
-    FROM calificaciones AS c
-    WHERE c.alumno = p.nombre
-    );
 +--------+-----------+
 | nombre | apellido1 |
 +--------+-----------+
@@ -447,10 +392,6 @@ SELECT p.nombre, p.apellido1, c.nota
     FROM personas AS p 
     INNER JOIN calificaciones c ON c.alumno =p.nombre;
 ```
-
-mysql>SELECT p.nombre, p.apellido1, c.nota
-    FROM personas AS p
-    INNER JOIN calificaciones c ON c.alumno =p.nombre;
 +--------+-----------+------+
 | nombre | apellido1 | nota |
 +--------+-----------+------+
@@ -474,15 +415,6 @@ WHERE EXISTS (
     AND c.nota IS NOT NULL
 );
 ```
-
-mysql>SELECT p.nombre, p.apellido1
-    FROM personas AS p
-    WHERE EXISTS (
-    SELECT 1
-    FROM calificaciones AS c
-    WHERE c.alumno = p.nombre
-    AND c.nota IS NOT NULL
-    );
 +--------+-----------+
 | nombre | apellido1 |
 +--------+-----------+
@@ -508,15 +440,6 @@ SELECT alumno, nota,
 FROM calificaciones
 ORDER BY id;
 ```
-
-mysql>SELECT alumno, nota,
-    CASE
-    WHEN nota IS NULL THEN 'Pendiente'
-    WHEN nota >= 5 THEN 'Aprobado'
-    ELSE 'Suspenso'
-    END AS situacion
-    FROM calificaciones
-    ORDER BY id;
 +--------+------+-----------+
 | alumno | nota | situacion |
 +--------+------+-----------+
