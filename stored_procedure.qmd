@@ -3,7 +3,7 @@ title: "Procedimientos almacenados"
 format: html
 ---
 
-# Variables 
+# Variables
 
 Antes de trabajar con procedimientos almacenados, es fundamental entender cómo se gestionan y almacenan los datos de forma temporal mediante variables.
 
@@ -21,28 +21,28 @@ El contenido que puede albergar una variable depende de si almacena un **valor �
 
 Todos los motores de bases de datos permiten guardar un dato escalar individual que corresponda a cualquier tipo de dato nativo del motor:
 
--   **Números:** Enteros (`INT`, `BIGINT`), decimales (`DECIMAL`, `FLOAT`).
+- **Números:** Enteros (`INT`, `BIGINT`), decimales (`DECIMAL`, `FLOAT`).
 
--   **Cadenas de texto:** `VARCHAR`, `TEXT`, `CHAR`.
+- **Cadenas de texto:** `VARCHAR`, `TEXT`, `CHAR`.
 
--   **Fechas y horas:** `DATE`, `TIMESTAMP`, `DATETIME`.
+- **Fechas y horas:** `DATE`, `TIMESTAMP`, `DATETIME`.
 
--   **Valores booleanos / Lógicos:** `BOOLEAN` (o `BIT` en T-SQL).
+- **Valores booleanos / Lógicos:** `BOOLEAN` (o `BIT` en T-SQL).
 
--   **Identificadores y BLOBs:** Guids (`UUID`), archivos binarios o fragmentos `JSON`.
+- **Identificadores y BLOBs:** Guids (`UUID`), archivos binarios o fragmentos `JSON`.
 
 ### Conjuntos de Datos y Tablas (Variables Complejas)
 
 No todos los motores permiten almacenar tablas completas directamente en una variable. La capacidad de guardar conjuntos de filas y columnas varía según el motor:
 
--   **SQL Server (T-SQL) - `TABLE` type:** Permite definir explícitamente variables de tipo tabla (`DECLARE @mi_tabla TABLE (...)`). Se comportan como tablas temporales residentes en memoria y se pueden consultar con un `SELECT` normal.
+- **SQL Server (T-SQL) - `TABLE` type:** Permite definir explícitamente variables de tipo tabla (`DECLARE @mi_tabla TABLE (...)`). Se comportan como tablas temporales residentes en memoria y se pueden consultar con un `SELECT` normal.
 
--   **PostgreSQL (PL/pgSQL) - `RECORD` y Cursores:** No tiene un tipo "variable tabla" explícito como T-SQL, pero permite asignar la fila entera de un resultado a una variable de tipo `RECORD`, o iterar sobre conjuntos de datos complejos mediante **cursores**.
+- **PostgreSQL (PL/pgSQL) - `RECORD` y Cursores:** No tiene un tipo "variable tabla" explícito como T-SQL, pero permite asignar la fila entera de un resultado a una variable de tipo `RECORD`, o iterar sobre conjuntos de datos complejos mediante **cursores**.
 
--   **MySQL / MariaDB:** **No permite almacenar tablas completas en variables.** Una variable solo puede almacenar un valor escalar único. Si un `SELECT ... INTO` devuelve más de una fila en MySQL, el motor lanzará un error (`Result consisted of more than one row`). Para manejar conjuntos de filas en MySQL dentro de un procedimiento, se deben utilizar **Tablas Temporales** (`CREATE TEMPORARY TABLE`) o **Cursores**.
+- **MySQL / MariaDB:** **No permite almacenar tablas completas en variables.** Una variable solo puede almacenar un valor escalar único. Si un `SELECT ... INTO` devuelve más de una fila en MySQL, el motor lanzará un error (`Result consisted of more than one row`). Para manejar conjuntos de filas en MySQL dentro de un procedimiento, se deben utilizar **Tablas Temporales** (`CREATE TEMPORARY TABLE`) o **Cursores**.
 
 | Motor | Valores Escalares | Almacenar Filas/Registros (`RECORD`) | Variable Tipo Tabla (`TABLE`) |
-|----------------|-----------|---------------------|-------------------------|
+|----------------|----------------|-------------------|----------------------|
 | **MySQL / MariaDB** | Sí | No | No (requiere `TEMPORARY TABLE`) |
 | **SQL Server (T-SQL)** | Sí | Sí | **Sí** (`DECLARE @t TABLE (...)`) |
 | **PostgreSQL (PL/pgSQL)** | Sí | **Sí** (`RECORD` / %ROWTYPE) | Mediante funciones que devuelven `SETOF` / `TABLE` |
@@ -51,9 +51,9 @@ No todos los motores permiten almacenar tablas completas directamente en una var
 
 ### Variables Locales
 
--   **Ámbito (Scope):** Solo existen dentro del bloque `BEGIN ... END` donde han sido declaradas (por ejemplo, dentro de un procedimiento almacenado o función).
--   **Vida útil:** Se crean al ejecutar el bloque y se destruyen al finalizar.
--   **Declaración:** Se deben declarar al inicio del bloque mediante la palabra clave `DECLARE`.
+- **Ámbito (Scope):** Solo existen dentro del bloque `BEGIN ... END` donde han sido declaradas (por ejemplo, dentro de un procedimiento almacenado o función).
+- **Vida útil:** Se crean al ejecutar el bloque y se destruyen al finalizar.
+- **Declaración:** Se deben declarar al inicio del bloque mediante la palabra clave `DECLARE`.
 
 ``` sql
 DECLARE v_total_mascotas INT DEFAULT 0; --DECLARACION
@@ -91,22 +91,22 @@ WHERE estado = 'En adopción';
 
 En T-SQL ocurre algo que confunde mucho a quienes vienen de MySQL: **el símbolo `@` se utiliza para las variables locales**, no para las de sesión.
 
--   **Variables Locales / de Procedimiento (`@var`):** En T-SQL, cualquier variable declarada con `DECLARE @mi_var INT` dentro de un procedimiento o lote (*batch*) tiene ámbito local a ese bloque o lote de ejecución, y **desaparece al terminar**.
+- **Variables Locales / de Procedimiento (`@var`):** En T-SQL, cualquier variable declarada con `DECLARE @mi_var INT` dentro de un procedimiento o lote (*batch*) tiene ámbito local a ese bloque o lote de ejecución, y **desaparece al terminar**.
 
--   **Variables de Sesión personalizadas:** T-SQL **no tiene** un equivalente directo a las variables de usuario `@` de MySQL que persistan de forma independiente durante toda la sesión sin declararse previamente. Si necesitas persistencia a nivel de sesión, se suelen usar tablas temporales (`#tabla`) o parámetros de configuración.
+- **Variables de Sesión personalizadas:** T-SQL **no tiene** un equivalente directo a las variables de usuario `@` de MySQL que persistan de forma independiente durante toda la sesión sin declararse previamente. Si necesitas persistencia a nivel de sesión, se suelen usar tablas temporales (`#tabla`) o parámetros de configuración.
 
--   **Variables del Sistema (`@@`):** A diferencia de MySQL (donde `@` es usuario y `@@` es sistema), en T-SQL las variables del sistema globales (como `@@ROWCOUNT` o `@@ERROR`) también usan el doble `@@`, pero son de solo lectura y controladas por el motor.
+- **Variables del Sistema (`@@`):** A diferencia de MySQL (donde `@` es usuario y `@@` es sistema), en T-SQL las variables del sistema globales (como `@@ROWCOUNT` o `@@ERROR`) también usan el doble `@@`, pero son de solo lectura y controladas por el motor.
 
-## Tipos de variables por ambito (scope) en PostgreSQL / PL/pgSQL 
+## Tipos de variables por ambito (scope) en PostgreSQL / PL/pgSQL
 
 PostgreSQL es mucho más estricto con el tipado y los ámbitos:
 
--   **Variables Locales:** Se declaran exclusivamente en la sección `DECLARE` de una función o procedimiento y su ámbito se limita a ese bloque de código.
+- **Variables Locales:** Se declaran exclusivamente en la sección `DECLARE` de una función o procedimiento y su ámbito se limita a ese bloque de código.
 
--   **Variables de Sesión:** PostgreSQL **no soporta** el uso de variables de usuario con prefijo `@`. Para almacenar valores a nivel de sesión o pasar configuraciones personalizadas, se utilizan los **parámetros de configuración de sesión** mediante los comandos `SET` y se recuperan con la función `current_setting('mi.variable')`.
+- **Variables de Sesión:** PostgreSQL **no soporta** el uso de variables de usuario con prefijo `@`. Para almacenar valores a nivel de sesión o pasar configuraciones personalizadas, se utilizan los **parámetros de configuración de sesión** mediante los comandos `SET` y se recuperan con la función `current_setting('mi.variable')`.
 
 |  |  |  |  |
-|----|----|----|----|
+|------------------|------------------|------------------|------------------|
 | **Concepto de Ámbito** | **MySQL / MariaDB** | **SQL Server (T-SQL)** | **PostgreSQL** |
 | **Variable Local (en bloque/stored procedure)** | `DECLARE var INT;` | `DECLARE @var INT;` | En sección `DECLARE` |
 | **Variable de Sesión / Usuario** | `@var` (Persiste toda la conexión) | ❌ No existe de forma nativa con `@` | Mediante parámetros de sesión (`set` / `current_setting`) |
@@ -121,7 +121,7 @@ Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y
 ### Diferencias principales con respecto a las Vistas (`VIEWS`)
 
 |  |  |  |
-|------------|------------------------------|------------------------------|
+|-----------------|----------------------------|----------------------------|
 | **Característica** | **Vista (VIEW)** | **Procedimiento Almacenado (STORED PROCEDURE)** |
 | **Naturaleza** | Consulta `SELECT` guardada que actúa como una tabla virtual. | Un conjunto de instrucciones procedurales (algoritmo). |
 | **Parámetros** | No acepta parámetros de entrada/salida. | Acepta parámetros de entrada (`IN`), salida (`OUT`) y mixtos (`INOUT`). |
@@ -132,13 +132,13 @@ Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y
 
 Aunque el estándar ANSI SQL define la sintaxis general, cada motor implementa sus propias particularidades en el lenguaje procedural:
 
--   **MySQL / MariaDB:** Utiliza la sintaxis estándar `BEGIN ... END`, requiere cambiar el delimitador (`DELIMITER`), soporta tipos `IN`, `OUT` e `INOUT`.
+- **MySQL / MariaDB:** Utiliza la sintaxis estándar `BEGIN ... END`, requiere cambiar el delimitador (`DELIMITER`), soporta tipos `IN`, `OUT` e `INOUT`.
 
--   **PostgreSQL:** Utiliza `PL/pgSQL`. Soporta procedimientos (`CREATE PROCEDURE`) y funciones avanzadas. Las variables se declaran en una sección explícita `DECLARE` previa al bloque `BEGIN ... END`, y el código del procedimiento se escribe entre comillas de dólar (`$$ ... $$`).
+- **PostgreSQL:** Utiliza `PL/pgSQL`. Soporta procedimientos (`CREATE PROCEDURE`) y funciones avanzadas. Las variables se declaran en una sección explícita `DECLARE` previa al bloque `BEGIN ... END`, y el código del procedimiento se escribe entre comillas de dólar (`$$ ... $$`).
 
--   **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
+- **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
 
--   **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
+- **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
 
 ## Tipos de Parámetros: `IN`, `OUT`, `INOUT`
 
@@ -203,7 +203,7 @@ SHOW CREATE PROCEDURE sp_registrar_adopcion;
 
 **Consejo CLI (Línea de comandos):** En el cliente de consola de MySQL/MariaDB, añade `\G` al final de la sentencia en lugar de `;` para formatear el resultado verticalmente y facilitar su lectura: `SHOW CREATE PROCEDURE sp_registrar_adopcion\G`
 
-### Llamar a un procedimiento 
+### Llamar a un procedimiento
 
 MySQL: `CALL`
 
@@ -217,49 +217,49 @@ SELECT @mensaje;
 
 ## Diferencias en la Creación y Ejecución por Motores
 
-### 1. SQL Server (T-SQL)
+### SQL Server (T-SQL)
 
--   **Bloque procedural:** No utiliza las palabras clave `BEGIN ... END` de la misma manera que MySQL para delimitar todo el cuerpo principal del script; en su lugar, se emplea frecuentemente `AS` seguido opcionalmente de bloques `BEGIN ... END` internos si hay múltiples sentencias. Tampoco se utiliza el comando `DELIMITER`.
+- **Bloque procedural:** No utiliza las palabras clave `BEGIN ... END` de la misma manera que MySQL para delimitar todo el cuerpo principal del script; en su lugar, se emplea frecuentemente `AS` seguido opcionalmente de bloques `BEGIN ... END` internos si hay múltiples sentencias. Tampoco se utiliza el comando `DELIMITER`.
 
--   **Declaración de variables:** Las variables locales llevan obligatoriamente el prefijo `@` y deben declararse con `DECLARE` al principio del bloque.
+- **Declaración de variables:** Las variables locales llevan obligatoriamente el prefijo `@` y deben declararse con `DECLARE` al principio del bloque.
 
--   **Llamada (Ejecución):** Para ejecutar un procedimiento almacenado en T-SQL, se utiliza obligatoriamente la palabra clave `EXEC` o `EXECUTE`.
+- **Llamada (Ejecución):** Para ejecutar un procedimiento almacenado en T-SQL, se utiliza obligatoriamente la palabra clave `EXEC` o `EXECUTE`.
 
-    ``` sql
-    -- Creación en SQL Server (T-SQL)
-    CREATE PROCEDURE sp_consultar_mascota
-        @p_id INT
-    AS
-    BEGIN
-        SELECT * FROM mascotas WHERE id = @p_id;
-    END;
-    GO
+  ``` sql
+  -- Creación en SQL Server (T-SQL)
+  CREATE PROCEDURE sp_consultar_mascota
+      @p_id INT
+  AS
+  BEGIN
+      SELECT * FROM mascotas WHERE id = @p_id;
+  END;
+  GO
 
-    -- Llamada en SQL Server
-    EXEC sp_consultar_mascota @p_id = 1;
-    ```
+  -- Llamada en SQL Server
+  EXEC sp_consultar_mascota @p_id = 1;
+  ```
 
-### 2. PostgreSQL (PL/pgSQL)
+### PostgreSQL (PL/pgSQL)
 
--   **Bloque procedural:** Utiliza delimitadores de texto (comillas de dólar `$$ ... $$`) para envolver el código del procedimiento.
+- **Bloque procedural:** Utiliza delimitadores de texto (comillas de dólar `$$ ... $$`) para envolver el código del procedimiento.
 
--   **Declaración de variables:** Las variables locales se definen estrictamente dentro de una sección `DECLARE` situada antes del bloque `BEGIN`.
+- **Declaración de variables:** Las variables locales se definen estrictamente dentro de una sección `DECLARE` situada antes del bloque `BEGIN`.
 
--   **Llamada (Ejecución):** Se invoca mediante la instrucción estándar `CALL` (para procedimientos) o `SELECT` (para funciones).
+- **Llamada (Ejecución):** Se invoca mediante la instrucción estándar `CALL` (para procedimientos) o `SELECT` (para funciones).
 
-    ``` sql
-    -- Creación en PostgreSQL (PL/pgSQL)
-    CREATE OR REPLACE PROCEDURE sp_actualizar_estado(p_id INT, p_nuevo_estado VARCHAR)
-    LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        UPDATE mascotas SET estado = p_nuevo_estado WHERE id = p_id;
-    END;
-    $$;
+  ``` sql
+  -- Creación en PostgreSQL (PL/pgSQL)
+  CREATE OR REPLACE PROCEDURE sp_actualizar_estado(p_id INT, p_nuevo_estado VARCHAR)
+  LANGUAGE plpgsql
+  AS $$
+  BEGIN
+      UPDATE mascotas SET estado = p_nuevo_estado WHERE id = p_id;
+  END;
+  $$;
 
-    -- Llamada en PostgreSQL
-    CALL sp_actualizar_estado(1, 'Adoptado');
-    ```
+  -- Llamada en PostgreSQL
+  CALL sp_actualizar_estado(1, 'Adoptado');
+  ```
 
 ### Modificar un procedimiento
 
@@ -285,9 +285,80 @@ BEGIN
 END;
 ```
 
--   **`DEFINER` (Por defecto):** El procedimiento se ejecuta con los permisos del **usuario que creó** el procedimiento. Permite dar acceso controlado a operaciones sensibles a usuarios que no tienen permisos directos sobre las tablas subyacentes.
+- **`DEFINER` (Por defecto):** El procedimiento se ejecuta con los permisos del **usuario que creó** el procedimiento. Permite dar acceso controlado a operaciones sensibles a usuarios que no tienen permisos directos sobre las tablas subyacentes.
 
--   **`INVOKER`:** El procedimiento se ejecuta con los permisos del **usuario que lo está llamando** en ese momento. Si el usuario que llama no tiene permisos sobre las tablas consultadas dentro del procedimiento, la ejecución fallará.
+- **`INVOKER`:** El procedimiento se ejecuta con los permisos del **usuario que lo está llamando** en ese momento. Si el usuario que llama no tiene permisos sobre las tablas consultadas dentro del procedimiento, la ejecución fallará.
+
+### Establecer un DEFINER distinto del que crea el procedimiento
+
+**Es posible** definir una cuenta `DEFINER` distinta a la del usuario que está ejecutando la sentencia de creación, pero para poder hacerlo necesitas contar con **privilegios administrativos especiales**.
+
+Debes anteponer la cláusula `DEFINER` antes de `PROCEDURE` especificando el usuario y el host entre comillas:
+
+``` sql
+CREATE DEFINER = 'otro_usuario'@'localhost' 
+PROCEDURE nombre_my_procedimiento() 
+SQL SECURITY DEFINER 
+BEGIN
+    ---clausulas a ejecutar;
+END;
+```
+
+::: nota
+Por razones de seguridad, los sistemas como MySQL y MariaDB controlan estrictamente quién puede hacerse pasar por otro usuario al definir rutinas:
+
+- **Privilegio `SET_USER_ID` (o `SUPER` en versiones anteriores):** El usuario que ejecuta el comando `CREATE PROCEDURE` debe tener este privilegio asignado. Si no lo tiene, la base de datos rechazará la orden y dará un error, permitiéndote únicamente asignarte a ti mismo (o asignando tu usuario por defecto).
+
+- **Privilegio `SYSTEM_USER`:** Si la cuenta que pretendes colocar como `DEFINER` tiene un nivel de seguridad alto con el privilegio `SYSTEM_USER`, el usuario que crea el procedimiento también debe poseer dicho privilegio.
+:::
+
+::: extra
+### Se pueden asignar los permisos a través de un rol en lugar de una cuenta de usuario?
+
+En MySQL / MariaDB (No de forma directa)
+
+La cláusula `DEFINER` **exige estrictamente una cuenta de usuario** (con su respectivo host, por ejemplo, `'usuario'@'localhost'`). No puedes escribir directamente el nombre de un rol (como `DEFINER = 'mi_rol'`), ya que los roles nativos están concebidos como colecciones de privilegios y no como entidades independientes de sesión para este propósito.
+
+- **La alternativa práctica:** Dado que en MySQL 8.0 y versiones posteriores los usuarios y los roles comparten la misma base de arquitectura, puedes crear una **cuenta de usuario dedicada** (por ejemplo, `proc_ejecutor@localhost`), asignarle el rol que contiene los permisos necesarios como **rol predeterminado (`DEFAULT ROLE`)**, y luego configurar esa cuenta en la cláusula `DEFINER`. Cuando la rutina se ejecute, heredará los privilegios del usuario junto con los de su rol asignado.
+:::
+
+Para comprobar el tipo de seguridad (`DEFINER` o `INVOKER`) y quién es el creador de un procedimiento almacenado en bases de datos como MySQL o MariaDB, tienes dos métodos principales:
+
+### Método 1: Consultar la tabla `INFORMATION_SCHEMA.ROUTINES`
+
+Es la forma más eficiente si necesitas auditar o filtrar múltiples procedimientos a la vez. Puedes consultar la tabla del sistema `ROUTINES` para ver tanto el definidor como el tipo de seguridad:
+
+``` sql
+SELECT 
+    ROUTINE_NAME AS Procedimiento,
+    DEFINER AS Creador_Definidor,
+    SECURITY_TYPE AS Tipo_Seguridad
+FROM 
+    INFORMATION_SCHEMA.ROUTINES
+WHERE 
+    ROUTINE_SCHEMA = 'nombre_de_tu_base_de_datos'
+    AND ROUTINE_TYPE = 'PROCEDURE';
+```
+
+- **`DEFINER`**: Te muestra exactamente la cuenta de usuario (ej. `'usuario'@'localhost'`) que actúa como creadora/propietaria del procedimiento.
+
+- **`SECURITY_TYPE`**: Te indicará si es `DEFINER` (se ejecuta con los permisos del creador) o `INVOKER` (se ejecuta con los permisos del usuario que lo llama).
+
+### Método 2: Usar el comando `SHOW CREATE PROCEDURE`
+
+Si solo quieres inspeccionar un procedimiento específico de forma rápida, puedes ejecutar este comando directamente en tu cliente de SQL:
+
+``` sql
+SHOW CREATE PROCEDURE nombre_procedimiento;
+```
+
+Esto te devolverá una tabla con el código SQL original con el que se creó. En la cabecera o en las líneas de configuración verás algo como esto:
+
+``` sql
+CREATE DEFINER=`admin`@`localhost` PROCEDURE `nombre_procedimiento`() 
+SQL SECURITY DEFINER 
+...
+```
 
 # Bloques Condicionales Procedimentales: La Estructura `IF ... ELSE`
 
@@ -315,6 +386,6 @@ else
 END IF;
 ```
 
--   **Utiliza `CASE WHEN`** dentro de tus consultas `SELECT` normales cuando estés transformando filas de una tabla individualmente.
+- **Utiliza `CASE WHEN`** dentro de tus consultas `SELECT` normales cuando estés transformando filas de una tabla individualmente.
 
--   **Utiliza la estructura `IF ... ELSE ... END IF`** cuando estés escribiendo bloques lógicos de control más extensos dentro de un procedimiento almacenado, función o script de automatización donde las expresiones de una sola línea se queden cortas.
+- **Utiliza la estructura `IF ... ELSE ... END IF`** cuando estés escribiendo bloques lógicos de control más extensos dentro de un procedimiento almacenado, función o script de automatización donde las expresiones de una sola línea se queden cortas.
