@@ -42,12 +42,26 @@ No todos los motores permiten almacenar tablas completas directamente en una var
 - **MySQL / MariaDB:** **No permite almacenar tablas completas en variables.** Una variable solo puede almacenar un valor escalar único. Si un `SELECT ... INTO` devuelve más de una fila en MySQL, el motor lanzará un error (`Result consisted of more than one row`). Para manejar conjuntos de filas en MySQL dentro de un procedimiento, se deben utilizar **Tablas Temporales** (`CREATE TEMPORARY TABLE`) o **Cursores**.
 
 | Motor | Valores Escalares | Almacenar Filas/Registros (`RECORD`) | Variable Tipo Tabla (`TABLE`) |
-|----------------|----------------|-------------------|----------------------|
+|------------------|------------------|------------------|--------------------|
 | **MySQL / MariaDB** | Sí | No | No (requiere `TEMPORARY TABLE`) |
 | **SQL Server (T-SQL)** | Sí | Sí | **Sí** (`DECLARE @t TABLE (...)`) |
 | **PostgreSQL (PL/pgSQL)** | Sí | **Sí** (`RECORD` / %ROWTYPE) | Mediante funciones que devuelven `SETOF` / `TABLE` |
 
 ## Tipos de variables por ambito (scope) en MySQL / MariaDB
+
+### ¿Qué es el "Scope" (Ámbito o Alcance)?
+
+Antes de ver los tipos de variables, necesitamos entender un concepto clave en programación: el scope (que en español traducimos como ámbito o alcance).
+
+Para entenderlo de forma sencilla, imagina que las variables son información escrita en notas de papel:
+
+¿Dónde se puede leer esa nota? (¿Está en tu bolsillo privado, en un tablón de anuncios de la oficina o en la fachada del ayuntamiento?). Eso es el ámbito.
+
+¿Cuánto tiempo dura esa nota antes de tirarla a la basura? (¿Dura 5 minutos mientras dura una reunión o se queda ahí para siempre?). Eso es la vida útil.
+
+En programación, el scope define dónde es visible una variable y quién puede usarla. Si intentas usar una variable fuera de su área permitida (su scope), el sistema te dirá que no existe.
+
+¿Cómo se aplica esto en bases de datos? Dependiendo de dónde necesites guardar la información (si es para un cálculo rápido dentro de un procedimiento, para toda la sesión de tu usuario o para configurar todo el servidor), MySQL nos ofrece tres niveles o alcances de variables:
 
 ### Variables Locales
 
@@ -121,7 +135,7 @@ Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y
 ### Diferencias principales con respecto a las Vistas (`VIEWS`)
 
 |  |  |  |
-|-----------------|----------------------------|----------------------------|
+|------------------|---------------------------|---------------------------|
 | **Característica** | **Vista (VIEW)** | **Procedimiento Almacenado (STORED PROCEDURE)** |
 | **Naturaleza** | Consulta `SELECT` guardada que actúa como una tabla virtual. | Un conjunto de instrucciones procedurales (algoritmo). |
 | **Parámetros** | No acepta parámetros de entrada/salida. | Acepta parámetros de entrada (`IN`), salida (`OUT`) y mixtos (`INOUT`). |
@@ -139,14 +153,6 @@ Aunque el estándar ANSI SQL define la sintaxis general, cada motor implementa s
 - **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
 
 - **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
-
-## Tipos de Parámetros: `IN`, `OUT`, `INOUT`
-
-1.  **`IN` (Entrada):** Parámetro por defecto. Pasa un valor desde el exterior hacia el procedimiento. El procedimiento puede leerlo pero no devolver modificaciones al exterior.
-
-2.  **`OUT` (Salida):** Se utiliza para devolver valores desde el procedimiento al entorno que lo llamó. Inicialmente es `NULL` dentro del procedimiento.
-
-3.  **`INOUT` (Entrada/Salida):** Se pasa un valor de entrada al procedimiento, este puede modificarlo y devolver el nuevo valor a la variable original de sesión.
 
 ## Sintaxis en MySQL: `DELIMITER`, `BEGIN` y `END`
 
@@ -357,9 +363,360 @@ Esto te devolverá una tabla con el código SQL original con el que se creó. En
 ``` sql
 CREATE DEFINER=`admin`@`localhost` PROCEDURE `nombre_procedimiento`() 
 SQL SECURITY DEFINER 
-...
 ```
 
+## Parámetros en Stored Procedures
+
+### ¿Qué es un Parámetro y por qué lo usamos?
+
+Imagina un procedimiento almacenado como una **receta interactiva**. Si haces una receta de "calcular impuestos", no quieres escribir un procedimiento distinto para cada precio posible. En su lugar, dejas un **hueco reservado** para meter el precio cuando vayas a ejecutar la receta.
+
+Ese hueco reservado es un **parámetro**: una variable especial que permite introducir datos dentro del procedimiento o extraer resultados de él hacia el exterior.
+
+### Reglas clave al definir Parámetros
+
+Cuando creamos un procedimiento almacenado, definimos sus parámetros dentro de los paréntesis:
+
+``` sql
+CREATE PROCEDURE nombre_procedimiento(IN tipo_modo nombre_parametro TIPO_DE_DATO)
+```
+
+#### A. Compatibilidad de Tipos de Datos
+
+Si el parámetro de entrada va a filtrar o insertarse en una columna concreta de una tabla, **debe tener el mismo tipo de dato (o uno compatible)** que esa columna.
+
+- *Ejemplo:* Si la columna `edad` es de tipo `INT`, el parámetro que reciba la edad debe ser `INT`. Si la columna `email` es `VARCHAR(100)`, el parámetro debe ser `VARCHAR(100)`.
+
+#### B. Evitar la ambigüedad (Nombres de parámetros vs. Columnas)
+
+Dentro del cuerpo del procedimiento, la consulta SQL utilizará el nombre del parámetro para filtrar o actualizar datos. Para evitar que MySQL se confunda entre el **nombre de la columna de la tabla** y el **nombre del parámetro**, es una buena práctica usar un prefijo (como `p_` o `v_`).
+
+- Incorrecto (ambiguo):
+
+``` sql
+CREATE PROCEDURE buscar_mascota(IN id_mascota INT)
+-- MySQL no sabrá si "id_mascota" es la columna o el parámetro
+SELECT * FROM mascotas WHERE id_mascota = id_mascota;
+```
+
+- Correcto (claro):
+
+  ``` sql
+  CREATE PROCEDURE buscar_mascota(IN p_id_mascota INT)
+  SELECT * FROM mascotas WHERE id_mascota = p_id_mascota;
+  ```
+
+### Las llamadas a procedimientos funcionan POR POSICIÓN
+
+Al ejecutar un procedimiento con `CALL`, los valores o variables se asignan a los parámetros en **estricto orden posicional** (de izquierda a derecha).
+
+No importa cómo se llamen las variables de sesión que pases desde fuera; lo único que importa es la **posición** en la que las envíes.
+
+Imagina que queremos buscar mascotas en nuestra base de datos filtrando por **dos criterios a la vez**: La **especie** (ej. `'Perro'`, `'Gato'`). Y el **peso máximo** permitido (ej. `15.0` kg).
+
+Definimos el Stored Procedure
+
+Fíjate en los nombres que les damos a los parámetros **dentro** del procedimiento (`p_tipo_especie` y `p_peso_limite`):
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE sp_buscar_mascotas_por_criterios(
+    IN p_tipo_especie VARCHAR(50),  -- Parámetro 1 (Posición 1)
+    IN p_peso_limite DECIMAL(5,2)   -- Parámetro 2 (Posición 2)
+)
+BEGIN
+    -- Usamos los parámetros en la consulta SELECT
+    SELECT id_mascota, nombre, especie, peso 
+    FROM mascotas 
+    WHERE especie = p_tipo_especie 
+      AND peso <= p_peso_limite;
+END //
+
+DELIMITER ;
+```
+
+Ahora, desde fuera del procedimiento, creamos **dos variables de sesión**. Fíjate en que sus nombres **no se parecen en nada** a los nombres de los parámetros de dentro:
+
+``` sql
+-- Definimos la variable externa para el primer filtro (perros)
+SET @mi_filtro_especie = 'Perro';
+
+-- Definimos la variable externa para el segundo filtro (peso menor o igual a 20kg)
+SET @mi_tope_peso = 20.00;
+```
+
+Cuando ejecutamos la llamada (`CALL`), vamos a pasarle las variables de sesión **respetando estrictamente el orden** en el que fueron declarados los parámetros:
+
+``` sql
+CALL sp_buscar_mascotas_por_criterios(@mi_filtro_especie, @mi_tope_peso);
+```
+
+A MySQL no le importan los nombres de las variables que le pones por fuera (`@mi_filtro_especie` o `@mi_tope_peso`), ni tampoco le importa cómo se llaman los parámetros por dentro (`p_tipo_especie` o `p_peso_limite`). **MySQL atiende únicamente a la posición (izquierda a derecha):**
+
+1.  **La 1ª variable que enviamos** (`@mi_filtro_especie`, que vale `'Perro'`) viaja directamente a la **1ª posición** del paréntesis del procedure (`p_tipo_especie`).
+
+2.  **La 2ª variable que enviamos** (`@mi_tope_peso`, que vale `20.00`) viaja directamente a la **2ª posición** del paréntesis del procedure (`p_peso_limite`).
+
+> ⚠️ **¡Cuidado con el orden al llamar!** Si por error invirtiéramos el orden al llamar al procedimiento (`CALL sp_buscar_mascotas_por_criterios(@mi_tope_peso, @mi_filtro_especie);`), MySQL intentaría buscar perros que pesen menos de `'Perro'` kg, lo que provocaría un error de tipos o un resultado vacío, porque le estaríamos pasando el número a la especie y el texto al peso. ¡El orden de los factores sí altera el producto!
+
+### Tipos de Parámetros: `IN`, `OUT` e `INOUT`
+
+1.  **`IN` (Entrada):** Parámetro por defecto. Pasa un valor desde el exterior hacia el procedimiento. El procedimiento puede leerlo pero no devolver modificaciones al exterior.
+
+2.  **`OUT` (Salida):** Se utiliza para devolver valores desde el procedimiento al entorno que lo llamó. Inicialmente es `NULL` dentro del procedimiento.
+
+3.  **`INOUT` (Entrada/Salida):** Se pasa un valor de entrada al procedimiento, este puede modificarlo y devolver el nuevo valor a la variable original de sesión.
+
+    ``` txt
+    Entorno de llamada (Sesión)              Stored Procedure
+    ┌─────────────────────────────┐          ┌────────────────────────┐
+    │                             │ ──IN─►   │ Recibe dato (solo lee) │
+    │  Variables / Valores        │ ◄─OUT──  │ Devuelve resultado     │
+    │                             │ ⇆INOUT⇆ │ Lee, modifica y altera │
+    └─────────────────────────────┘          └────────────────────────┘
+    ```
+
+#### Parámetro `IN` (Entrada)
+
+- **¿Qué hace?** Pasa un valor **desde el exterior hacia el interior** del procedimiento.
+
+- **Comportamiento:** Es el modo por defecto. El procedimiento puede leer este valor y usarlo (por ejemplo, en un `WHERE`), pero **no puede devolver cambios** a la variable original del exterior.
+
+- **Ejemplo práctico:** Consultar las mascotas de una especie determinada.
+
+``` sql
+DELIMITER //
+CREATE PROCEDURE sp_obtener_mascotas_por_especie(
+    IN p_especie VARCHAR(50) -- Parámetro IN
+)
+BEGIN
+    SELECT id_mascota, nombre, especie 
+    FROM mascotas 
+    WHERE especie = p_especie;
+END //
+DELIMITER ;
+
+-- Llamada al procedimiento (pasamos directamente un valor literal)
+CALL sp_obtener_mascotas_por_especie('Perro');
+```
+
+#### Parámetro OUT (Salida)
+
+¿Qué hace? Se usa para devolver un valor desde el procedimiento hacia el exterior.
+
+Comportamiento: Al entrar al procedimiento, su valor inicial siempre es NULL (ignora cualquier valor que tuviera previamente la variable externa). El procedimiento asigna un valor a esta variable mediante INTO o SET.
+
+Obligación: Al llamar al procedimiento, debemos pasarle una variable de sesión (@variable) para almacenar el resultado.
+
+Ejemplo práctico: Contar cuántos alumnos aprueban y guardar la cifra en una variable externa.
+
+``` sql
+DELIMITER //
+CREATE PROCEDURE sp_contar_aprobados(
+    OUT p_total_aprobados INT -- Parámetro OUT
+)
+BEGIN
+    SELECT COUNT(*) 
+    INTO p_total_aprobados 
+    FROM alumnos 
+    WHERE nota >= 5.0;
+END //
+DELIMITER ;
+
+-- Llamada: Pasamos una variable de sesión para guardar la respuesta
+CALL sp_contar_aprobados(@total);
+
+-- Consultamos el resultado guardado en la variable de sesión
+SELECT @total AS alumnos_aprobados;
+```
+
+::: extra
+A diferencia de otros motores como SQL Server o PostgreSQL, en MySQL no puedes hacer que un Stored Procedure te devuelva directamente más de un valor.
+
+Entonces, ¿cómo se soluciona esto cuando necesitas pasar múltiples filas para un posterior procesado? Hay dos grandes estrategias profesionales en MySQL/MariaDB:
+
+**Solución 1: Tablas Temporales (`TEMPORARY TABLES`)**
+
+*Es la técnica estándar y más potente para mover grandes volúmenes de datos entre procedimientos o prepararlos para exportarlos a CSV.*
+
+Una tabla temporal solo existe durante la sesión actual del usuario. Se crea en memoria/disco temporal y desaparece al desconectar.
+
+1.  El procedimiento crea y rellena una tabla temporal con el resultado complejo.
+
+2.  Al terminar la ejecución del procedimiento, **la tabla temporal sigue viva en tu sesión**.
+
+3.  Inmediatamente después, puedes hacerle un `SELECT` normal, usarla en una subconsulta, o volcarla a un archivo.
+
+``` sql
+-- 1. Creamos el procedimiento que genera la tabla temporal
+DELIMITER //
+CREATE PROCEDURE sp_obtener_alumnos_destacados()
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+    -- Borramos la tabla temporal por si acaso ya existía en la sesión
+    DROP TEMPORARY TABLE IF EXISTS tmp_destacados;
+    
+    -- Creamos y rellenamos la tabla temporal en un solo paso con el SELECT múltiple
+    CREATE TEMPORARY TABLE tmp_destacados AS
+    SELECT id_alumno, nombre, nota 
+    FROM alumnos 
+    WHERE nota >= 8.5;
+END //
+DELIMITER ;
+
+-- 2. Ejecutamos el procedimiento
+CALL sp_obtener_alumnos_destacados();
+
+-- 3. ¡El resultado ya está guardado! Ahora puedes hacer lo que quieras con él:
+-- Usarlo como subconsulta, cruzarlo con otra tabla, o exportarlo a CSV.
+SELECT * FROM tmp_destacados WHERE nota > 9.0;
+```
+
+**Solución 2: Agregación a JSON (Parámetro `OUT`)**
+
+*Ideal si lo que quieres es empaquetar varias filas en una sola variable para devolvérsela a otro procedimiento o a un lenguaje de programación (como Python/R).*
+
+MariaDB y MySQL moderno tienen funciones brutales para empaquetar conjuntos de filas en formato **JSON** usando `JSON_ARRAYAGG()` y `JSON_OBJECT()`.
+
+Agrupamos todas las filas dentro de un único array JSON y lo devolvemos por un parámetro de salida `OUT`.
+
+``` sql
+DELIMITER //
+CREATE PROCEDURE sp_obtener_alumnos_json(
+    OUT p_json_resultado JSON -- Parámetro OUT que devolverá un array de objetos
+)
+SQL SECURITY INVOKER
+READS SQL DATA
+BEGIN
+    -- Agrupamos todas las filas en una sola cadena JSON estructurada
+    SELECT JSON_ARRAYAGG(
+               JSON_OBJECT('id', id_alumno, 'nombre', nombre, 'nota', nota)
+           )
+    INTO p_json_resultado
+    FROM alumnos 
+    WHERE nota >= 8.5;
+END //
+DELIMITER ;
+
+-- Llamada:
+CALL sp_obtener_alumnos_json(@mi_variable_json);
+
+-- Consultamos la variable de sesión que ahora contiene todo el lote estructurado
+SELECT @mi_variable_json;
+```
+
+**Ventaja:** La variable `@mi_variable_json` contiene todo el set de datos en formato texto plano estructurado. Puedes pasárselo a otro procedimiento que sepa parsear JSON, o leerlo directamente desde tu script de Python/R para procesarlo sin necesidad de mantener conexiones abiertas a tablas temporales.
+
+-------
+A diferencia de MySQL y MariaDB —donde los procedimientos almacenados no pueden utilizarse directamente como si fueran tablas o subconsultas—, otros motores de bases de datos ofrecen mecanismos nativos mucho más potentes y flexibles para que un procedimiento devuelva conjuntos de resultados (`Result Sets`) listos para ser consumidos.
+
+Aquí tienes un resumen técnico de cómo lo resuelven los principales motores del mercado:
+
+##### PostgreSQL: Funciones que actúan como tablas (`RETURNS TABLE`)
+
+En PostgreSQL, la línea entre una función y un procedimiento almacenado es muy flexible. Para devolver una tabla completa que pueda ser reutilizada directamente en una consulta (como si fuera una vista o una tabla normal), se utilizan **funciones que devuelven conjuntos (`SETOF` o `RETURNS TABLE`)**.
+
+Defines la estructura de columnas que va a devolver la función en su cabecera y luego haces un `RETURN QUERY`.
+
+``` sql
+-- PostgreSQL
+-- Creamos una función que devuelve una tabla de alumnos filtrados
+CREATE OR REPLACE FUNCTION obtener_alumnos_destacados(p_nota_minima DECIMAL)
+RETURNS TABLE (
+    id INT,
+    nombre_alumno VARCHAR,
+    nota_final DECIMAL
+) AS $$
+BEGIN
+    -- Devolvemos directamente el resultado de la consulta
+    RETURN QUERY 
+    SELECT id_alumno, nombre, nota 
+    FROM alumnos 
+    WHERE nota >= p_nota_minima;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Puedes **consultar la función directamente** en cualquier parte de tu código SQL, exactamente igual que harías con una tabla o una subconsulta:
+
+``` sql
+-- ¡Esto SÍ se puede hacer en PostgreSQL!
+SELECT * FROM obtener_alumnos_destacados(8.5) WHERE nombre_alumno LIKE 'A%';
+```
+
+##### SQL Server (T-SQL): Múltiples Result Sets nativos
+
+En SQL Server, los procedimientos almacenados (`Stored Procedures`) están diseñados de forma nativa para **devolver múltiples conjuntos de resultados** de la manera más sencilla posible: simplemente ejecutando sentencias `SELECT` normales dentro del código del procedimiento.
+
+No necesitas tablas temporales ni parámetros de salida especiales (`OUT`). Cualquier `SELECT` que no tenga un `INTO` enviará sus filas directamente al cliente que realizó la llamada.
+
+``` sql
+--sqlServer
+CREATE PROCEDURE sp_obtener_datos_completos
+AS
+BEGIN
+    -- Primer conjunto de resultados devuelto al cliente
+    SELECT * FROM alumnos WHERE activo = 1;
+
+    -- Segundo conjunto de resultados devuelto al cliente en la misma ejecución
+    SELECT * FROM profesores WHERE departamento = 'Informatica';
+END;
+```
+
+**Consumo desde aplicaciones:** Los drivers de conexión (como ODBC, JDBC o librerías de Python/R) reciben una "pila" de resultados. La aplicación puede leer el primer `SELECT`, cerrar ese flujo y pasar automáticamente a leer el segundo `SELECT` sin necesidad de estructuras intermedias.
+
+**Consumo desde la consola SQL:** igual que en mySQL, en SQLServer tampoco puedes devolver una tabla como resultado de un procedimiento para seguir usándolo en otras sentencias, habrá que capturarlo dentro del procedimiento en una tabla temporal o en una variable de tabla.
+
+``` sql
+-- sqlServer
+-- 1. Declaramos una variable de tipo tabla (o una tabla temporal #temporal)
+-- ¡Ojo! Las columnas deben coincidir exactamente en orden y tipo con lo que devuelve el procedimiento
+DECLARE @AlumnosFiltrados TABLE (
+    id_alumno INT,
+    nombre VARCHAR(100),
+    nota DECIMAL(4,2)
+);
+
+-- 2. Volcamos el resultado del Stored Procedure dentro de nuestra tabla
+INSERT INTO @AlumnosFiltrados
+EXEC sp_obtener_alumnos;
+
+-- 3. ¡Listo! Ahora ya puedes trabajar con esos datos en tu script de SQL Server
+SELECT * 
+FROM @AlumnosFiltrados 
+WHERE nota > 9.0;
+```
+::: 
+### Parámetro INOUT (Entrada/Salida)
+
+¿Qué hace? Funciona como un canal de doble vía. Entra con un valor inicial, el procedimiento lo lee, lo modifica y devuelve el nuevo valor a la misma variable.
+
+Comportamiento: La variable externa debe existir y tener un valor asignado antes de llamar al procedimiento.
+
+Ejemplo práctico: Aplicar un incremento o comisión a un saldo actual.
+
+``` sql
+DELIMITER //
+CREATE PROCEDURE sp_aplicar_bonificacion(
+    INOUT p_puntos INT -- Parámetro INOUT (entra con un valor y sale actualizado)
+)
+BEGIN
+    -- Le sumamos 50 puntos al valor que traía
+    SET p_puntos = p_puntos + 50;
+END //
+DELIMITER ;
+
+-- 1. Preparamos la variable con un valor inicial de 100
+SET @puntos_usuario = 100;
+
+-- 2. Llamamos al procedimiento pasando la variable
+CALL sp_aplicar_bonificacion(@puntos_usuario);
+
+-- 3. Verificamos el valor actualizado (ahora valdrá 150)
+SELECT @puntos_usuario AS puntos_actualizados;
+```
 # Bloques Condicionales Procedimentales: La Estructura `IF ... ELSE`
 
 Si necesitamos evaluar una regla compleja de varias líneas dentro de un bloque procedural (`BEGIN ... END`), MySQL permite utilizar la estructura condicional clásica de bloques.
