@@ -1,0 +1,447 @@
+---
+title: " Manejo de Excepciones y Control de Errores en SQL"
+format: html
+---
+
+En programación y desarrollo de bases de datos, una **excepción** es una situación anómala o un error inesperado que interrumpe el flujo normal de ejecución de un programa (por ejemplo, intentar insertar una clave duplicada, dividir por cero o buscar un registro que no existe).
+
+El **manejo de excepciones** es el mecanismo que nos permite **anticipar, capturar y gestionar** esos errores de forma controlada para evitar que la aplicación se rompa abruptamente o deje la base de datos en un estado incoherente.
+
+# Conceptos Fundamentales
+
+Antes de ver la sintaxis específica de cada gestor, es necesario entender tres pilares universales del control de errores:
+
+## Tipos de Errores
+
+1.  **Errores del Sistema (Predefinidos):** Son lanzados automáticamente por la base de datos cuando se viola una regla (ej. violar una restricción `FOREIGN KEY` o `UNIQUE`, desbordamiento de tipo de datos).
+2.  **Errores de Negocio (Personalizados):** Son condiciones definidas por el desarrollador mediante reglas del dominio (ej. *"No se puede realizar una venta si la nota del cliente es menor a 5"*). Para estos casos lanzamos manualmente una excepción.
+
+## Modos de Reacción al Error
+
+- **Continuar (Continue):** Se detecta el fallo, se ejecuta una acción correctiva o de registro (*logging*), y el programa **continúa** ejecutando la siguiente línea.
+- **Salir/Abortar (Exit / Rollback):** Se captura el error, se cancela la transacción en curso para no dejar datos a medias, y se interrumpe la ejecución del bloque actual.
+
+## Identificadores de Error (SQLSTATE y Códigos)
+
+La mayoría de motores relacionales utilizan el estándar ISO de códigos de error de 5 caracteres alfanuméricos llamado **`SQLSTATE`**. \* Por ejemplo, la clase `45000` está reservada globalmente para **excepciones personalizadas definidas por el usuario**.
+
+# El comando `SIGNAL` en MySQL y MariaDB
+
+El comando **`SIGNAL`** es la instrucción estándar SQL utilizada para **generar, lanzar o simular un error de forma artificial** dentro de un procedimiento almacenado, función o trigger.
+
+Mientras que los errores normales ocurren de forma automática (como intentar dividir por cero o violar una clave única), `SIGNAL` te permite a ti, como desarrollador, decidir **cuándo** se rompe la ejecución del código en función de tus propias reglas de negocio.
+
+La estructura básica de un `SIGNAL` requiere obligatoriamente un código **`SQLSTATE`** y opcionalmente puede acompañarse de un mensaje de texto descriptivo:
+
+``` sql
+SIGNAL SQLSTATE 'sqlstate_value'
+    [SET MESSAGE_TEXT = 'Descripción detallada del error'];
+```
+
+- **`SQLSTATE`**: Es un código de 5 caracteres estandarizado a nivel internacional.
+
+  - Por convenio universal, para **errores personalizados creados por el usuario** (reglas de negocio propias), siempre se utiliza el código genérico **`'45000'`**.
+
+- **`MESSAGE_TEXT`**: Es el mensaje de texto legible que recibirá la aplicación cliente o que atrapará tu manejador de excepciones (`DECLARE HANDLER`).
+
+## Casos de Uso Principales
+
+¿Cuándo debes usar `SIGNAL` en la vida real?
+
+1.  **Validación temprana de parámetros (*Guard Clauses*):** Comprobar al inicio de un procedimiento si los datos de entrada son lógicos antes de ejecutar ninguna consulta pesada (ej: asegurar que una cantidad no sea negativa o que una fecha de fin sea posterior a la de inicio).
+
+2.  **Validación de reglas de negocio complejas:** Restricciones que las restricciones clásicas de base de datos (`CHECK` o `FOREIGN KEY`) no pueden cubrir fácilmente (ej: comprobar si el saldo de una cuenta es suficiente antes de autorizar una transferencia).
+
+3.  **Control de flujo por errores lógicos:** Forzar la interrupción de un proceso cuando una consulta crítica no devuelve el resultado esperado (ej: verificar que `ROW_COUNT() > 0` tras un `UPDATE`).
+
+**Ejemplo Práctico Ilustrativo**
+
+Imagina un procedimiento para actualizar el stock de un almacén. Queremos usar `SIGNAL` para frenar la ejecución si intentamos restar más cantidad de la que realmente hay disponible en stock:
+
+``` sql
+DROP PROCEDURE IF EXISTS sp_actualizar_stock;
+DELIMITER //
+
+CREATE PROCEDURE sp_actualizar_stock(
+    IN p_id_producto INT,
+    IN p_cantidad_a_restar INT
+)
+SQL SECURITY INVOKER
+CONTAINS SQL
+BEGIN
+    DECLARE v_stock_actual INT;
+
+    -- 1. Validación previa de parámetros de entrada
+    IF p_cantidad_a_restar <= 0 THEN
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'La cantidad a restar debe ser mayor que cero.';
+    END IF;
+
+    -- Consultamos el stock actual del producto
+    SELECT stock INTO v_stock_actual 
+    FROM productos 
+    WHERE id_producto = p_id_producto;
+
+    -- 2. Validación de regla de negocio: ¿Existe el producto?
+    IF v_stock_actual IS NULL THEN
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'El producto especificado no existe en el catálogo.';
+    END IF;
+
+    -- 3. Validación de regla de negocio: ¿Hay stock suficiente?
+    IF v_stock_actual < p_cantidad_a_restar THEN
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Stock insuficiente para completar la operación.';
+    END IF;
+
+    -- Si todas las validaciones pasan, procedemos con la actualización normal
+    UPDATE productos 
+    SET stock = stock - p_cantidad_a_restar 
+    WHERE id_producto = p_id_producto;
+
+END//
+DELIMITER ;
+```
+
+### ¿Qué ocurre cuando salta un `SIGNAL`?
+
+En cuanto la ejecución del procedimiento lee la línea de `SIGNAL`:
+
+1.  **Detiene el flujo normal** de manera inmediata.
+
+2.  Si **no hay** un manejador de errores (`DECLARE HANDLER`) activo, el error escala directamente hacia afuera, aborta el procedimiento por completo y devuelve el mensaje a la consola o aplicación cliente.
+
+3.  Si **sí hay** un manejador configurado (como vimos con `CONTINUE` o `EXIT`), este interceptará el error para ejecutar tareas de limpieza o auditoría
+
+## Equivalencias en otros motores de bases de datos
+
+Al igual que MySQL utiliza `SIGNAL SQLSTATE '45000'` para lanzar errores personalizados, los demás motores de bases de datos principales disponen de sus propias instrucciones nativas para interrumpir la ejecución y enviar un mensaje de error controlado al exterior.
+
+Aquí tienes las equivalencias exactas en **PostgreSQL**, **SQL Server** y **Oracle**:
+
+### PostgreSQL (PL/pgSQL): `RAISE EXCEPTION`
+
+En PostgreSQL se utiliza la instrucción `RAISE` combinada con la opción `EXCEPTION`. Puedes especificar opcionalmente un código de error personalizado (`ERRCODE`).
+
+``` sql
+CREATE OR REPLACE FUNCTION sp_verificar_stock(p_stock INT) 
+RETURNS VOID AS $$
+BEGIN
+    IF p_stock < 0 THEN
+        -- Lanzamos la excepción con un mensaje claro
+        RAISE EXCEPTION 'Stock insuficiente para procesar la operación' 
+            USING ERRCODE = 'P0001'; -- 'P' indica código personalizado definido por el usuario
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### SQL Server (T-SQL): `THROW` (o el clásico `RAISERROR`)
+
+En SQL Server, el estándar moderno (a partir de SQL Server 2012) es utilizar **`THROW`**, que permite definir un número de error personalizado (entre 50000 y 2147483647), un mensaje de texto y un estado.
+
+``` sql
+CREATE PROCEDURE sp_verificar_stock 
+    @stock INT
+AS
+BEGIN
+    IF @stock < 0
+    BEGIN
+        -- Número de error personalizado (debe estar entre 50000 y 2147483647), mensaje y estado
+        THROW 50000, 'Stock insuficiente para procesar la operación', 1;
+    END
+END;
+```
+
+*(Nota histórica: Antiguamente se usaba `RAISERROR('Mensaje', Nivel_Severidad, Estado)`, pero Microsoft recomienda `THROW` en versiones modernas).*
+
+### Oracle (PL/SQL): `RAISE_APPLICATION_ERROR`
+
+En Oracle, la forma estándar de lanzar un error controlado desde un bloque PL/SQL es mediante el procedimiento integrado **`RAISE_APPLICATION_ERROR`**.
+
+⚠️ **Particularidad importante:** Los códigos de error en Oracle **deben ser obligatoriamente números negativos** comprendidos en el rango reservado de **`-20000` a `-20999`**.
+
+``` sql
+CREATE OR REPLACE PROCEDURE sp_verificar_stock (
+    p_stock IN NUMBER
+) AS
+BEGIN
+    IF p_stock < 0 THEN
+        -- El código debe estar entre -20000 y -20999
+        RAISE_APPLICATION_ERROR(-20001, 'Stock insuficiente para procesar la operación');
+    END IF;
+END;
+/
+```
+
+### Tabla Resumen de Equivalencias
+
+|  |  |  |
+|-------------|------------------------------|------------------------------|
+| **Motor** | **Instrucción para lanzar el error** | **Rango / Formato del Código** |
+| **MySQL / MariaDB** | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '...';` | Cadena de 5 caracteres (ej. `'45000'`) |
+| **PostgreSQL** | `RAISE EXCEPTION '...' USING ERRCODE = 'P0001';` | Códigos SQLSTATE estándar (ej. `'P0001'`) |
+| **SQL Server** | `THROW 50000, '...', 1;` | Entero entre `50000` y `2147483647` |
+| **Oracle** | `RAISE_APPLICATION_ERROR(-20001, '...');` | Número negativo entre `-20000` y `-20999` |
+
+------------------------------------------------------------------------
+
+# Manejo de Excepciones en MySQL y MariaDB
+
+MySQL/MariaDB utiliza la sintaxis **`DECLARE ... HANDLER`** dentro de procedimientos almacenados y funciones. Debe ser declarado obligatoriamente **después** de la declaración de variables y cursores, pero **antes** del código principal del bloque.
+
+## Sintaxis General
+
+``` sql
+DECLARE { CONTINUE | EXIT } HANDLER FOR condicion
+BEGIN
+    -- Código para responder al error
+END;
+```
+
+## Tipos de Condición en MySQL
+
+- `SQLEXCEPTION`: Captura cualquier error grave de SQL.
+- `SQLWARNING`: Captura advertencias.
+- `NOT FOUND`: Captura casos donde un `SELECT INTO` o un `FETCH` de cursor no encuentra filas.
+- `SQLSTATE 'codigo'`: Captura un código específico de error.
+
+## Ejemplo Práctico en MySQL: Transacción Segura con `EXIT HANDLER`
+
+En este ejemplo, insertamos una nueva transacción. Si ocurre un fallo (como una clave duplicada), el manejador captura el error, hace un `ROLLBACK` para dejar la base de datos intacta y devuelve un parámetro de error controlado.
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE sp_registrar_transferencia(
+    IN p_cuenta_origen INT,
+    IN p_cuenta_destino INT,
+    IN p_monto DECIMAL(10,2),
+    OUT p_codigo_respuesta INT -- 0: Éxito, 1: Error
+)
+SQL SECURITY INVOKER
+BEGIN
+    -- Declaramos el Handler para cualquier excepción de SQL
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Si ocurre un error, deshacemos los cambios
+        ROLLBACK;
+        SET p_codigo_respuesta = 1; -- Marcamos que hubo error
+    END;
+
+    -- Inicializamos como exitoso
+    SET p_codigo_respuesta = 0;
+
+    -- Iniciamos la transacción
+    START TRANSACTION;
+
+        -- Comprobación de regla de negocio manual (Lanzamos excepción si monto <= 0)
+        IF p_monto <= 0 THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'El monto a transferir debe ser mayor a cero.';
+        END IF;
+
+        -- Operaciones bancarias
+        UPDATE cuentas SET saldo = saldo - p_monto WHERE id_cuenta = p_cuenta_origen;
+        UPDATE cuentas SET saldo = saldo + p_monto WHERE id_cuenta = p_cuenta_destino;
+
+    -- Si todo fue bien, confirmamos los cambios
+    COMMIT;
+END //
+
+DELIMITER ;
+```
+
+# Manejo de Excepciones en otros Motores Principales
+
+Aunque la lógica es idéntica, la sintaxis varía significativamente entre los distintos Sistemas Gestores de Bases de Datos (RDBMS).
+
+## PostgreSQL (PL/pgSQL)
+
+PostgreSQL utiliza un bloque estructurado **`BEGIN ... EXCEPTION ... END`**, muy similar al estándar de lenguajes como Python o Java.
+
+### Ejemplo Ilustrativo:
+
+``` sql
+CREATE OR REPLACE FUNCTION fn_insertar_usuario(p_email VARCHAR, p_nombre VARCHAR)
+RETURNS VOID AS $$
+BEGIN
+    -- Intento de inserción
+    INSERT INTO usuarios (email, nombre) VALUES (p_email, p_nombre);
+
+EXCEPTION
+    -- Captura específica de violación de restricción UNIQUE (clave duplicada)
+    WHEN unique_violation THEN
+        RAISE NOTICE 'El email % ya se encuentra registrado.', p_email;
+    
+    -- Captura genérica de cualquier otro error
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error inesperado al registrar el usuario: %', SQLERRM;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## Microsoft SQL Server (T-SQL)
+
+SQL Server adopta la sintaxis nativa **`BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH`**, idéntica al manejo de errores en lenguajes como C# o Java.
+
+### Ejemplo Ilustrativo:
+
+``` sql
+CREATE PROCEDURE sp_insertar_cliente
+    @p_id_cliente INT,
+    @p_nombre VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        -- Código susceptible de fallo
+        INSERT INTO clientes (id_cliente, nombre) 
+        VALUES (@p_id_cliente, @p_nombre);
+
+        PRINT 'Cliente registrado correctamente.';
+    END TRY
+    BEGIN CATCH
+        -- Bloque de captura de errores
+        PRINT 'Ocurrió un error en la ejecución.';
+        PRINT 'Código de error: ' + CAST(ERROR_NUMBER() AS VARCHAR);
+        PRINT 'Mensaje de error: ' + ERROR_MESSAGE();
+        
+        -- Si hay una transacción activa, la deshacemos
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+    END CATCH
+END;
+```
+
+## Oracle (PL/SQL)
+
+Oracle maneja las excepciones al final del bloque mediante una sección explícita `EXCEPTION`. Permite usar nombres de excepciones predefinidas por Oracle (`DUP_VAL_ON_INDEX`, `NO_DATA_FOUND`, `ZERO_DIVIDE`) o definir excepciones propias.
+
+### Ejemplo Ilustrativo:
+
+``` sql
+CREATE OR REPLACE PROCEDURE sp_actualizar_salario (
+    p_emp_id IN NUMBER,
+    p_incremento IN NUMBER
+) AS
+    -- Excepción personalizada de negocio
+    e_incremento_invalido EXCEPTION;
+BEGIN
+    -- Validamos regla de negocio
+    IF p_incremento <= 0 THEN
+        RAISE e_incremento_invalido;
+    END IF;
+
+    UPDATE empleados 
+    SET salario = salario + p_incremento 
+    WHERE id_empleado = p_emp_id;
+
+    IF SQL%NOTFOUND THEN
+        RAISE NO_DATA_FOUND;
+    END IF;
+
+EXCEPTION
+    WHEN e_incremento_invalido THEN
+        DBMS_OUTPUT.PUT_LINE('Error: El incremento debe ser mayor que cero.');
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: El empleado no existe en la base de datos.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error no controlado: ' || SQLERRM);
+END;
+/
+```
+
+------------------------------------------------------------------------
+
+# Cuadro Comparativo Resumen
+
+| Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
+| **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
+| **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
+| **Oracle** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE_APPLICATION_ERROR(-20001, 'mensaje')` | `WHEN OTHERS THEN` |
+
+------------------------------------------------------------------------
+
+# Buenas Prácticas Generales
+
+1.  **Garantizar la Integridad de la Información:** Siempre que un procedimiento ejecute modificaciones (`INSERT`, `UPDATE`, `DELETE`) en múltiples tablas, usa transacciones combinadas con manejadores que ejecuten `ROLLBACK` ante cualquier fallo.
+2.  **Mensajes Claros:** Evita mostrar códigos de error técnicos crudos al usuario final. Captura la excepción e informa con mensajes comprensibles de negocio.
+3.  **No abusar del manejador genérico (`OTHERS` / `SQLEXCEPTION`):** Siempre que sea posible, intercepta errores específicos (como duplicados o ausencia de datos) para dar la respuesta adecuada a cada caso.
+
+# Resignal y Propagación de Errores
+
+El comando **`RESIGNAL`** es una herramienta clave dentro del manejo de excepciones en MySQL y MariaDB. Sirve para **propagar (o relanzar) un error** que acaba de ser interceptado por un manejador (`HANDLER`).
+
+Para entenderlo de forma sencilla: Cuando un error ocurre y un manejador lo atrapa (por ejemplo, para hacer un `ROLLBACK` de una transacción, registrar un log o modificar una variable como hemos estado haciendo), el motor asume que el problema ya ha sido "gestionado" y, si tienes un manejador de tipo `CONTINUE`, el procedimiento continuaría su marcha como si nada.
+
+Sin embargo, a veces necesitas hacer una tarea de limpieza local ante el error, **pero aun así quieres que el error original siga subiendo hacia arriba** (hacia la aplicación cliente o hacia el procedimiento que llamó a este) para abortar toda la operación. Ahí es donde entra `RESIGNAL`
+
+## El patrón de auditoría y traducción de errores.
+
+Imagina que estás construyendo un sistema crítico (como una pasarela de pagos o el registro de un pedido). Cuando algo falla a mitad del proceso, necesitas hacer dos cosas obligatorias:
+
+1.  **Acción interna:** Registrar un log del fallo en una tabla de auditoría para los desarrolladores.
+
+2.  **Acción externa:** Asegurarte de que el error **no se quede callado**, sino que suba hacia la aplicación que llamó al procedimiento (un backend en Python, una interfaz web o un script) para que el usuario reciba un mensaje claro de que la operación falló.
+
+Aquí es donde `RESIGNAL` brilla: interceptas el error para registrar el problema en la sombra, y luego lo relanzas (incluso personalizando el mensaje) hacia afuera.
+
+### Ejemplo: Registro de Pedidos con Auditoría de Errores
+
+Imagina este procedimiento almacenado que intenta descontar stock de un producto:
+
+``` sql
+DROP PROCEDURE IF EXISTS sp_registrar_pedido;
+DELIMITER //
+
+CREATE PROCEDURE sp_registrar_pedido(
+    IN p_id_producto INT,
+    IN p_cantidad INT
+)
+SQL SECURITY INVOKER
+CONTAINS SQL
+BEGIN
+    -- Declaramos un EXIT HANDLER para capturar cualquier error grave (SQLEXCEPTION)
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- 1. TAREA INTERNA: Registramos el fallo en una tabla de logs o auditoría
+        -- (Esto se ejecuta de forma silenciosa para el usuario final)
+        INSERT INTO log_errores_sistema (fecha_hora, detalle_error) 
+        VALUES (NOW(), CONCAT('Fallo procesando producto ID: ', p_id_producto));
+        
+        -- 2. ACCIÓN DE RESIGNAL: Relanzamos el error hacia el exterior, 
+        -- pero esta vez lo "maquillamos" con un mensaje más descriptivo y limpio para el cliente
+        RESIGNAL SET MESSAGE_TEXT = 'No se pudo procesar el pedido. El sistema de stock no está disponible o el producto no existe.';
+    END;
+
+    -- Validamos una regla de negocio inicial
+    IF p_cantidad <= 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La cantidad debe ser mayor a cero.';
+    END IF;
+
+    -- Intentamos actualizar el stock (si el id_producto no existe o hay un fallo de BD, saltará el error)
+    UPDATE stock_productos 
+    SET stock_actual = stock_actual - p_cantidad 
+    WHERE id_producto = p_id_producto;
+
+    -- Si la actualización no afectó a ninguna fila, forzamos un error manualmente
+    IF ROW_COUNT() = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El producto especificado no existe en el catálogo.';
+    END IF;
+
+END//
+
+DELIMITER ;
+```
+
+1.  **Captura el problema:** Si ocurre un error (por ejemplo, el producto no existe o la tabla de stock sufre un bloqueo), la ejecución normal se corta y salta directo al `DECLARE HANDLER`.
+
+2.  **Realiza una operación si hay un error:** Gracias a que lo atrapamos con el `HANDLER`, pudimos insertar una línea en la tabla `log_errores_sistema`. Si no hubiéramos usado un handler, el procedimiento habría muerto antes de poder guardar ese registro de auditoría.
+
+3.  **Avisa al exterior con `RESIGNAL`:** Una vez hecho el registro interno, el procedimiento **no se traga el error**. Utiliza `RESIGNAL` para lanzarlo hacia arriba. Además, fíjate en la magia: puedes cambiar el texto original del error técnico de MySQL por un mensaje de negocio comprensible (`SET MESSAGE_TEXT = 'No se pudo procesar el pedido...'`).
+
+De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.

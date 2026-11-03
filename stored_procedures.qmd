@@ -532,6 +532,27 @@ SELECT @total AS alumnos_aprobados;
 ```
 
 ::: extra
+Si creamos una variable de sesion dentro de un procedimiento y no la pasamos como parámetro OUT, en mySQL y MariaDB podremos acceder a ellas desde fuera del procedimiento, pero no es buena práctica. Es mejor usar parámetros OUT para devolver valores.
+**¿Por qué NO es recomendable usar variables de sesión para devolver resultados?**
+-   Ruptura de la Encapsulación (Efectos secundarios ocultos):
+ Un buen procedimiento almacenado debe funcionar como una "caja negra": le entran datos (IN), hace su trabajo de forma limpia y te devuelve los resultados explícitamente (OUT). Si un procedimiento modifica variables de sesión "a escondidas", quien lo llame tiene que adivinar o saber de memoria qué nombres de variables internas está alterando, lo que ensucia el código.
+
+-   Contaminación del estado de la conexión:
+ Como las variables de sesión persisten durante toda la vida de la conexión, si ejecutas varios procedimientos distintos y todos usan o modifican variables globales como @resultado o @estado, es facilísimo que un procedimiento sobrescriba sin querer el valor que dejó otro anterior, provocando errores difíciles de rastrear.
+
+-  Mantenibilidad y Legibilidad:
+ Si lees una llamada como CALL mi_procedure();, no tienes ni idea de qué datos está sacando al exterior. En cambio, si ves CALL mi_procedure(@mi_salida);, el parámetro OUT deja claro de un vistazo qué variable está recogiendo el resultado.
+
+::: nota
+Usa parámetros OUT o INOUT siempre que quieras devolver resultados desde un procedimiento. Es el estándar profesional que define claramente la "firma" o contrato de entrada y salida del procedimiento.
+
+Evita las variables de sesión para retornar datos, reservándolas únicamente para configuraciones globales de la sesión o para pequeños estados auxiliares dentro de scripts muy controlados.
+::: 
+
+:::
+
+
+::: extra
 A diferencia de otros motores como SQL Server o PostgreSQL, en MySQL no puedes hacer que un Stored Procedure te devuelva directamente más de un valor.
 
 Entonces, ¿cómo se soluciona esto cuando necesitas pasar múltiples filas para un posterior procesado? Hay dos grandes estrategias profesionales en MySQL/MariaDB:
@@ -746,3 +767,4 @@ END IF;
 - **Utiliza `CASE WHEN`** dentro de tus consultas `SELECT` normales cuando estés transformando filas de una tabla individualmente.
 
 - **Utiliza la estructura `IF ... ELSE ... END IF`** cuando estés escribiendo bloques lógicos de control más extensos dentro de un procedimiento almacenado, función o script de automatización donde las expresiones de una sola línea se queden cortas.
+

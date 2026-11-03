@@ -1,0 +1,880 @@
+---
+title: "Introducción a procedimientos almacenados en MySQL paso a paso"
+format: html
+---
+
+Esta guía introduce los procedimientos almacenados de MySQL de forma progresiva. Explica qué son, cómo se crean y ejecutan, cómo intercambian datos mediante parámetros y cómo utilizan variables y condiciones. Los ejemplos se corresponden con los once pasos desarrollados y utilizan la tabla alumnos.
+
+# Objetivos de aprendizaje
+
+- Distinguir entre crear un procedimiento y ejecutarlo.
+- Comprender BEGIN, END y el uso de DELIMITER en el cliente.
+- Utilizar parámetros IN, OUT e INOUT.
+- Diferenciar parámetros, variables locales y variables de usuario de la sesión.
+- Tomar decisiones con IF, ELSE y ELSEIF.
+- Distinguir SQL SECURITY INVOKER de SQL SECURITY DEFINER.
+
+# Entorno de trabajo y datos de referencia
+
+Los ejemplos utilizan sintaxis de MySQL 8.4. Se parte de una base de datos existente que contiene alumnos. Antes de ejecutar los ejemplos, debe seleccionarse esa base de datos. No es necesario volver a crear las tablas ni cargar de nuevo los datos.
+
+La tabla de referencia corresponde a los 12 registros de alumnos.csv del proyecto academia_it. Todos los nombres de las tablas se escriben en minúsculas. En sistemas que distinguen mayúsculas y minúsculas, debe utilizarse el nombre exacto de la tabla instalada.
+
+Las situaciones con 20 o 21 alumnos y las cantidades 0, 6 y 15 son supuestos para explicar el comportamiento. Con los datos de referencia, COUNT(*) devuelve 12. Los ejemplos de consulta no modifican las filas de alumnos.
+
+# Tabla alumnos con todos los datos
+
+Referencia completa de alumnos.csv. Se conservan las 10 columnas y los 12 registros. NULL representa la ausencia de un dato; en el CSV se utiliza la marca de importación \\N.
+
+| id_alumno | nombre | apellido1 | apellido2 | dni | email | telefono | fecha_nacimiento | fecha_alta | activo |
+|----|-------|-------|-------|------|--------------|--------|---------|--------|--------|
+| 1 | Alberto | Sanz | López | NULL | alumno1\@example.com | NULL | 1990-06-15 | 2026-01-02 | 1 |
+| 2 | Lucía | Martín | García | NULL | alumno2\@example.com | NULL | 1991-06-15 | 2026-01-02 | 1 |
+| 3 | Diego | Ruiz | NULL | NULL | alumno3\@example.com | NULL | 1992-06-15 | 2026-01-02 | 1 |
+| 4 | Marta | Navarro | Pérez | NULL | alumno4\@example.com | NULL | 1993-06-15 | 2026-01-02 | 1 |
+| 5 | Elena | Torres | Gil | NULL | alumno5\@example.com | NULL | 1994-06-15 | 2026-01-02 | 1 |
+| 6 | Pablo | Serrano | NULL | NULL | alumno6\@example.com | NULL | 1995-06-15 | 2026-01-02 | 1 |
+| 7 | Sara | Romero | Vidal | NULL | alumno7\@example.com | NULL | 1996-06-15 | 2026-01-02 | 1 |
+| 8 | Javier | Molina | Díaz | NULL | alumno8\@example.com | NULL | 1997-06-15 | 2026-01-02 | 1 |
+| 9 | Clara | Ortega | NULL | NULL | alumno9\@example.com | NULL | 1998-06-15 | 2026-01-02 | 1 |
+| 10 | Daniel | Castro | Santos | NULL | alumno10\@example.com | NULL | 1999-06-15 | 2026-01-02 | 1 |
+| 11 | Irene | Moreno | Vega | NULL | alumno11\@example.com | NULL | 2000-06-15 | 2026-01-02 | 1 |
+| 12 | Hugo | Ramos | Flores | NULL | alumno12\@example.com | NULL | 2001-06-15 | 2026-01-02 | 1 |
+
+Total de alumnos: 12. Los identificadores 3 y 7 utilizados en los ejemplos corresponden a Diego Ruiz y Sara Romero Vidal. El valor 1 de activo identifica un registro activo.
+
+# Qué es un procedimiento almacenado
+
+Un *stored procedure*, o procedimiento almacenado, es un conjunto de instrucciones SQL que se guarda en el servidor MySQL con un nombre para ejecutarlo cuando sea necesario. Puede contener una sola instrucción o varias.
+
+La analogía es una receta: las instrucciones se escriben una vez y después pueden seguirse tantas veces como sea necesario. De forma parecida, se define qué debe hacer MySQL y se asigna un nombre a esa operación.
+
+**Una consulta que se utiliza habitualmente**
+
+Para consultar todos los alumnos se utiliza:
+
+SELECT * FROM alumnos;
+
+Cada vez que se ejecuta esta sentencia, MySQL consulta la tabla y devuelve sus datos. Esta instrucción podría guardarse en un procedimiento llamado listar_alumnos. Una vez creado, se ejecutaría así:
+
+`CALL listar_alumnos();`
+
+CALL solicita la ejecución de un procedimiento almacenado. MySQL busca listar_alumnos, ejecuta el SELECT que contiene y devuelve los alumnos. En este punto el nombre es ilustrativo; el procedimiento se crea en el paso 2.
+
+**Se guardan las instrucciones y no los resultados**
+
+Si un procedimiento contiene un SELECT, los resultados no quedan congelados al crearlo. La consulta se ejecuta de nuevo en cada llamada.
+
+Por ejemplo, si inicialmente hay 20 alumnos, una ejecución muestra 20. Si después se añade un alumno a la tabla, la siguiente ejecución muestra 21. Es un supuesto de funcionamiento; la tabla de referencia de esta guía contiene 12 alumnos.
+
+**Utilidad del procedimiento**
+
+En una consulta sencilla, la ventaja es pequeña. Su utilidad se aprecia cuando una tarea necesita varias operaciones: pueden agruparse bajo un nombre y reutilizarse sin escribirlas todas cada vez.
+
++----------------------------------+------------------------------------------------------------+
+| Acción                           | Significado                                                |
++:=================================+:===========================================================+
+| Crear el procedimiento           | Guardar su nombre y sus instrucciones en MySQL.            |
++----------------------------------+------------------------------------------------------------+
+| Ejecutar el procedimiento        | Solicitar que se realicen sus instrucciones mediante CALL. |
++----------------------------------+------------------------------------------------------------+
+
+Crear un procedimiento y ejecutarlo son dos acciones diferentes.
+
+# Crear y ejecutar el primer procedimiento
+
+El primer procedimiento guarda la consulta que muestra todos los alumnos. Con la base de datos que contiene alumnos seleccionada, se ejecuta:
+
+``` sql
+CREATE PROCEDURE listar_alumnos()  
+SELECT * FROM alumnos;
+```
+
+Al ser un procedimiento tan sencillo de una sola linea no hace falta usar la sintaxis completa con begin/end
+
+Esta definición omite SQL SECURITY. MySQL utiliza SQL SECURITY DEFINER por defecto; el siguiente paso explica qué permisos se aplican y cómo elegir otro modo.
+
+**Significado de la definición**
+
+`CREATE PROCEDURE` indica que se crea un procedimiento almacenado. listar_alumnos es el nombre elegido para identificarlo.
+
+Los paréntesis sirven para definir los parámetros, que permiten intercambiar datos con el procedimiento. En este caso están vacíos porque el procedimiento no tiene parámetros. Aunque estén vacíos, se incluyen en la definición.
+
+`SELECT * FROM alumnos;` es la instrucción que se ejecutará cuando se llame al procedimiento.
+
+Al ejecutar `CREATE PROCEDURE`, MySQL guarda la definición, pero todavía no ejecuta el SELECT que contiene. Por tanto, en ese momento no se muestra el listado de alumnos.
+
+**verificamos que se ha creado el procedimiento**
+
+``` sql
+SELECT routine_name, routine_type 
+FROM information_schema.routines 
+WHERE routine_schema = DATABASE() AND routine_type = 'PROCEDURE';
+```
+
++----------------+--------------+
+|                |              |
++================+==============+
+| ROUTINE_NAME   | ROUTINE_TYPE |
++----------------+--------------+
+| listar_alumnos | PROCEDURE    |
++----------------+--------------+
+
+**Ejecutar el procedimiento**
+
+``` sql
+CALL listar_alumnos();
+```
+
+Al ejecutar la llamada:
+
+1.  MySQL busca el procedimiento listar_alumnos.
+2.  Ejecuta su instrucción `SELECT * FROM alumnos;`.
+3.  Devuelve el resultado de la consulta.
+
+El resultado es el mismo que se obtiene ejecutando directamente ese SELECT. Con los datos de referencia se devuelven las 12 filas de alumnos. Sin ORDER BY, el orden de presentación no está garantizado.
+
+El procedimiento permanece guardado aunque se cierre la conexión o se reinicie el servidor.
+
+Si se ejecuta de nuevo el mismo CREATE PROCEDURE, MySQL devuelve un error porque ya existe un procedimiento con ese nombre en la base de datos. Para utilizarlo se ejecuta CALL.
+
+# **Elegir los permisos con SQL SECURITY**
+
+SQL SECURITY determina con qué permisos se ejecutan las instrucciones del procedimiento. No cambia lo que hace el código; cambia la cuenta cuyos privilegios se comprueban al ejecutarlo.
+
+La analogía es una puerta con control de acceso. Tener autorización para pedir una operación no siempre significa tener autorización para consultar directamente todos los datos que utiliza esa operación.
+
+# Separar el permiso de llamada de los permisos de las instrucciones
+
+En un procedimiento que contiene SELECT * FROM alumnos hay dos cuestiones diferentes:
+
+- Tener permiso EXECUTE para llamar al procedimiento.
+
+- Disponer de los permisos necesarios para ejecutar las instrucciones de su interior, como SELECT sobre alumnos.
+
+SQL SECURITY determina a qué cuenta corresponde la segunda comprobación.
+
+# SQL SECURITY INVOKER
+
+INVOKER significa que las instrucciones se ejecutan con los permisos de quien invoca el procedimiento. En estas llamadas directas, es la cuenta que ejecuta CALL.
+
+``` sql
+CREATE PROCEDURE listar_alumnos_invoker()  
+SQL SECURITY INVOKER  
+SELECT * FROM alumnos;
+```
+
+La característica se coloca después de los paréntesis de los parámetros y antes de la instrucción que forma el cuerpo del procedimiento. En este ejemplo, antes del SELECT.
+
+Lo ejecutamos: `CALL listar_alumnos_invoker();`
+
+Si la cuenta que ejecuta CALL tiene EXECUTE sobre el procedimiento y SELECT sobre alumnos, la consulta funciona. Si tiene EXECUTE pero carece de SELECT sobre alumnos, la consulta falla por falta de permisos.
+
+Esto sucede aunque el procedimiento lo haya creado una cuenta administradora. Con INVOKER, no se utilizan los permisos de esa cuenta para ejecutar el SELECT.
+
+# SQL SECURITY DEFINER
+
+DEFINER significa que las instrucciones se ejecutan con los permisos de la cuenta registrada como definidora del procedimiento.
+
+``` sql
+CREATE PROCEDURE listar_alumnos_definer()  
+SQL SECURITY DEFINER  
+SELECT * FROM alumnos;
+```
+
+La llamada es: `CALL listar_alumnos_definer();`
+
+En este caso, quien llama necesita EXECUTE sobre el procedimiento. El SELECT interior se comprueba con los permisos de la cuenta definidora, que debe disponer de SELECT sobre alumnos y del permiso de ejecución correspondiente.
+
+Por tanto, una cuenta sin SELECT directo sobre alumnos puede obtener el listado a través de este procedimiento si tiene EXECUTE y la cuenta definidora dispone de los permisos necesarios.
+
+Esto no concede SELECT permanente a quien llama ni permite ejecutar cualquier consulta. Permite realizar las operaciones que el procedimiento haya definido. En este ejemplo, esa operación muestra todas las columnas y filas de alumnos.
+
+# Identificar la cuenta definidora
+
+Si no se escribe una cláusula DEFINER explícita, MySQL registra como definidora la cuenta que crea el procedimiento.
+
+La cláusula DEFINER identifica una cuenta. SQL SECURITY decide si sus privilegios se utilizan durante la ejecución o si se utilizan los del invocador. Son dos elementos relacionados, pero distintos.
+
+Un procedimiento INVOKER también tiene una cuenta definidora registrada. Esa cuenta no determina los permisos de sus instrucciones cuando se ejecuta con seguridad INVOKER.
+
+# Comparar ambos modos con el mismo supuesto
+
+Se supone que una cuenta docente define ambos procedimientos y dispone de SELECT sobre alumnos y de los permisos de ejecución necesarios. Otra cuenta, utilizada para consultar, dispone de EXECUTE sobre ambos procedimientos, pero no tiene SELECT sobre alumnos.
+
++------------------------------------+-------------------------------------------------------------------+
+| Operación de la cuenta de consulta | Resultado                                                         |
++:===================================+:==================================================================+
+| SELECT * FROM alumnos;            | Falla por falta de SELECT.                                        |
++------------------------------------+-------------------------------------------------------------------+
+| CALL listar_alumnos_invoker();     | Falla: el SELECT utiliza los permisos de quien llama.             |
++------------------------------------+-------------------------------------------------------------------+
+| CALL listar_alumnos_definer();     | Funciona: el SELECT utiliza los permisos de la cuenta definidora. |
++------------------------------------+-------------------------------------------------------------------+
+
+Si se retirara también EXECUTE a la cuenta de consulta, no podría llamar a ninguno de los dos procedimientos.
+
+Vamos a empezar por probar con una cuenta que no tiene permisos de ejecución. Usaremos la cuenta Secretaria_Red que creamos en la práctica de la academia_it.
+
+Desde otro ordenador de la misma red, con el mysql CLI instalado: `mysqlsh -h 10.0.20.101 -u secretaria_red -p` e introducimos la contraseña, que para esta cuenta era Secretaria_Red_2026!
+
+Nos dará un error: `ERROR: 1370: execute command denied to user 'secretaria_red'@'10.0.20.0/255.255.255.0' for routine 'academia_it.listar_alumnos_invoker'`
+
+Si intentamos llamar al procedimiento que creamos con permisos DEFINER (son los permisos asignados por defecto) nos pasará lo mismo, ya que el problema es que esta cuenta no tiene permisos de ejecución: `ERROR: 1370: execute command denied to user 'secretaria_red'@'10.0.20.0/255.255.255.0' for routine 'academia_it.listar_alumnos'`
+
+Desde una cuenta con permisos para otorgar permisos vamos a otorgar a ese usuario permisos de ejecución. `GRANT EXECUTE ON academia_it.* TO 'secretaria_red'@'10.0.20.0/255.255.255.0';` y para demostrar la diferencia entre INVOKER y DEFINER vamos a quitarle los permisos de SELECT sobre la tabla alumnos. Como los privilegios de esa cuenta estaban concedidos mediante un rol, tendremos que quitárselos al rol: `REVOKE SELECT ON academia_it.alumnos FROM 'rol_secretaria';`
+
+Y ahora intentamos de nuevo desde la cuenta de la secretaria llamar a los procedimientos. Antes tendremos que salir y entrar en su cuenta para que se apliquen los nuevos permisos.
+
+`CALL listar_alumnos();` Funciona porque usa los permisos de la persona que creo el procedimiento.
+
+`CALL listar_alumnos_invoker();` nos dará un error de permisos: `ERROR: 1142: SELECT command denied to user 'secretaria_red'@'10.0.20.10' for table 'alumnos'`
+
+# Qué sucede si se omite SQL SECURITY
+
+El valor predeterminado es `SQL SECURITY DEFINER`. Por tanto, el procedimiento listar_alumnos del paso 2 utiliza ese modo, igual que cualquier otro procedimiento de esta guía que omita la característica.
+
+Si además no se escribe `DEFINER`, su cuenta definidora es la cuenta que los creó. No debe suponerse que omitir SQL SECURITY equivale a `INVOKER`.
+
+# Cuándo interesa cada opción
+
+- `INVOKER` resulta adecuado cuando el procedimiento debe respetar los permisos de quien lo llama y servir para organizar o reutilizar operaciones que esa cuenta ya puede realizar.
+
+- `DEFINER` resulta adecuado cuando se desea ofrecer una operación controlada a una cuenta que no debe disponer de acceso directo a las tablas. La cuenta definidora debe tener solo los privilegios necesarios y el código debe limitar con precisión la operación que se ofrece.
+
+Si ambos procedimientos se prueban desde una cuenta administradora con todos los permisos necesarios, probablemente devuelvan el mismo listado. Para apreciar la diferencia es necesario comparar cuentas con permisos diferentes.
+
+# **Incluir varias instrucciones**
+
+El siguiente procedimiento debe realizar dos operaciones: mostrar todos los alumnos y mostrar cuántos hay. Las consultas por separado son:
+
+- SELECT * FROM alumnos;
+
+- SELECT COUNT(*) AS total_alumnos FROM alumnos;
+
+Para incluir ambas instrucciones en el cuerpo de un mismo procedimiento se agrupan entre BEGIN y END. Estas palabras abren y cierran el bloque de instrucciones.
+
+# Por qué se utiliza DELIMITER
+
+En la consola mysql, el punto y coma indica normalmente que una sentencia está completa y puede enviarse al servidor. La definición de un procedimiento con varias instrucciones contiene puntos y coma interiores.
+
+Si el cliente interpreta el primero como el final del CREATE PROCEDURE, envía una definición incompleta. Para evitarlo, se cambia temporalmente la señal de finalización: `DELIMITER //`
+
+Esto indica al cliente que debe esperar a encontrar `//` antes de enviar la definición completa. Los puntos y coma siguen separando las instrucciones del interior.
+
+DELIMITER es una orden del cliente, no una instrucción SQL que forme parte del procedimiento. El siguiente bloque puede ejecutarse en la consola mysql o como script en MySQL Workbench.
+
+# Crear el procedimiento completo
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE listar_y_contar_alumnos()  
+BEGIN  
+    SELECT * FROM alumnos;
+
+    SELECT COUNT(*) AS total_alumnos FROM alumnos;  
+END//
+
+DELIMITER ;
+```
+
+La primera línea cambia el delimitador a //. CREATE PROCEDURE define el procedimiento sin parámetros. BEGIN abre su bloque y cada SELECT termina con un punto y coma.
+
+En END//, END cierra el bloque y // indica al cliente que la definición está completa. La última línea, DELIMITER ;, restaura el delimitador habitual.
+
+Volvemos a comprobar:
+
+``` sql
+SELECT routine_name, routine_type  FROM information_schema.routines  WHERE routine_schema = DATABASE() AND routine_type = 'PROCEDURE';
+```
+
++--------------------------------------------------------------------------------------+-----------------------------------------+
+|                                                                                      |                                         |
++======================================================================================+=========================================+
+| ROUTINE_NAME                                                                         | ROUTINE_TYPE                            |
++--------------------------------------------------------------------------------------+-----------------------------------------+
+| listar_alumnos listar_alumnos_definer listar_alumnos_invoker listar_y_contar_alumnos | PROCEDURE PROCEDURE PROCEDURE PROCEDURE |
++--------------------------------------------------------------------------------------+-----------------------------------------+
+
+# Ejecutar y observar los dos resultados
+
+`CALL listar_y_contar_alumnos();` La llamada devuelve dos resultados en orden: - El listado de alumnos.
+- Una fila con la columna total_alumnos.
+
+Si hubiera 20 alumnos, la segunda consulta mostraría 20. Con los datos de referencia muestra 12. La llamada vuelve a terminar con punto y coma porque ya se ha restaurado el delimitador habitual.
+
+El `BEGIN` de este procedimiento abre un bloque de código. No inicia una transacción ni hace que las consultas formen automáticamente una transacción.
+
+# Pasar un dato mediante un parámetro IN
+
+Un parámetro de entrada permite entregar un dato al procedimiento para que lo utilice durante la ejecución. Se declara mediante IN.
+
+Por ejemplo, esta consulta busca siempre al alumno con identificador 3:
+
+``` sql
+SELECT *  
+FROM alumnos  
+WHERE id_alumno = 3;
+```
+
+Para elegir el identificador en cada ejecución, el valor fijo se sustituye por un parámetro.
+
+## Crear el procedimiento
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE buscar_alumno(IN p_id_alumno INT)  
+BEGIN  
+    SELECT *  
+    FROM alumnos  
+    WHERE id_alumno = p_id_alumno;  
+END//
+
+DELIMITER ;
+```
+
+La declaración IN p_id_alumno INT tiene tres elementos:
+
++-------------+---------------------------------------------------------+
+| Elemento    | Significado                                             |
++=============+:========================================================+
+| IN          | El procedimiento recibe un dato desde fuera.            |
++-------------+---------------------------------------------------------+
+| p_id_alumno | Nombre asignado al parámetro.                           |
++-------------+---------------------------------------------------------+
+| INT         | Tipo de dato del parámetro, un número entero.           |
++-------------+---------------------------------------------------------+
+
+El prefijo p\_ es una convención para reconocer los parámetros. No es obligatorio.
+
+**Diferenciar la columna del parámetro**
+
+`WHERE id_alumno = p_id_alumno;`
+
+id_alumno es la columna de la tabla. p_id_alumno contiene el dato entregado al procedimiento. La condición selecciona las filas donde ambos valores coinciden.
+
+## Verificar la sintaxis del procedimiento
+
+``` sql
+SHOW CREATE PROCEDURE buscar_alumno\G;
+```
+```
+Procedure: buscar_alumno
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+    Create Procedure: CREATE DEFINER=`root`@`localhost` PROCEDURE `buscar_alumno`(IN p_id_alumno INT)
+BEGIN
+    SELECT *
+    FROM alumnos
+    WHERE id_alumno = p_id_alumno;
+END
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+``` 
+## Ejecutar con distintos valores
+
+`CALL buscar_alumno(3);`
+
+El valor 3 entra en p_id_alumno. La consulta busca las filas cuyo id_alumno sea 3. En la tabla de referencia corresponde a Diego Ruiz, cuyo segundo apellido es NULL.
+
+Para consultar otro alumno se cambia el argumento de la llamada:
+
+`CALL buscar_alumno(7);`
+
+Esta llamada busca al alumno 7, Sara Romero Vidal. El procedimiento es el mismo; cambia el dato que recibe. No hay que borrarlo ni crearlo de nuevo.
+
+Si se indica un identificador que no existe, la consulta devuelve cero filas. No es un error: ninguna fila cumple la condición.
+
+Entregar un identificador no modifica los datos de la tabla. El procedimiento solo ejecuta un SELECT.
+
+## Llamar sin el argumento requerido
+
+`CALL buscar_alumno();` `ERROR 1318 (42000): Incorrect number of arguments for PROCEDURE academia_it.buscar_alumno; expected 1, got 0` Esta llamada produce un error de número incorrecto de argumentos, porque el procedimiento espera un argumento y no recibe ninguno.
+
+# Obtener un dato mediante un parámetro OUT
+
+Con IN se entrega un dato al procedimiento. Con OUT, el procedimiento entrega un dato al exterior y lo guarda en una variable que puede consultarse o utilizarse después.
+
+## Crear el procedimiento que cuenta alumnos
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE contar_alumnos(OUT p_total INT)  
+BEGIN  
+    SELECT COUNT(*) INTO p_total  
+    FROM alumnos;  
+END//
+
+DELIMITER ;
+```
+
+OUT indica que `p_total` es un parámetro de salida. `INT` establece que contendrá un número entero.
+
+La instrucción siguiente `SELECT COUNT(*) INTO p_total FROM alumnos;` cuenta las filas y guarda el resultado en `p_total`:
+
+`INTO p_total` especifica dónde guardar el resultado. 
+
+## Recibir el valor en una variable de la sesión
+
+``` sql
+CALL contar_alumnos(@total);
+```
+
+En esta llamada se proporciona una variable donde recibir el resultado: @total. 
+::: nota 
+Las variables que empiezan por \@ son variables de usuario de la sesión. Pueden utilizarse entre distintas sentencias mientras se mantiene esa conexión. No es necesario crear ni inicializar @total antes de esta llamada de salida. 
+::: 
+
+Después se consulta su contenido:
+
+``` sql
+SELECT @total AS total_alumnos;
+```
++---------------+
+| total_alumnos |
++---------------+
+|            12 |
++---------------+
+
+El recorrido del dato es el siguiente:
+
+- `COUNT(*)` calcula el número de alumnos.
+
+- `INTO p_total` guarda ese número en el parámetro de salida.
+
+- Al terminar el procedimiento, el valor se entrega a `@total`.
+
+- SELECT `@total` muestra el valor recibido.
+
+**Los nombres interiores y exteriores pueden ser distintos**
+
+`p_total` es el parámetro del procedimiento. `@total` es la variable de la sesión que recibe su valor. No tienen por qué llamarse igual.
+
+También puede utilizarse otra variable:
+```sql
+CALL contar_alumnos(@cantidad);
+SELECT @cantidad;
+```
+**Mostrar directamente o guardar el resultado**
+
++---------------------------------------------+--------------------------------------------------------------------------------+
+| Instrucción dentro del procedimiento        | Comportamiento                                                                 |
++:============================================+:===============================================================================+
+| SELECT COUNT(*) FROM alumnos;              | Devuelve directamente un resultado para mostrarlo.                             |
++---------------------------------------------+--------------------------------------------------------------------------------+
+| SELECT COUNT(*) INTO p_total FROM alumnos; | Guarda el recuento en el parámetro y no devuelve esa consulta como un listado. |
++---------------------------------------------+--------------------------------------------------------------------------------+
+
+`CALL contar_alumnos(@total);` deja el número en la variable. El valor se muestra después mediante `SELECT @total`;.
+
+**Recibir y devolver un dato mediante INOUT**
+
+`INOUT` combina entrada y salida: recibe un valor inicial y permite devolver un valor actualizado a través del mismo parámetro.
+
+El siguiente procedimiento recibe un número y lo aumenta en una unidad:
+```sql
+DELIMITER //
+
+CREATE PROCEDURE incrementar_valor(INOUT p_valor INT)
+BEGIN
+SET p_valor = p_valor + 1;
+END//
+
+DELIMITER ;
+``` 
+Un procedimiento también puede realizar cálculos sin consultar ninguna tabla.
+
+`INOUT p_valor INT` declara un parámetro que recibe un entero y sirve para entregar el resultado.
+
+**Asignar un valor con SET**
+
+`SET p_valor = p_valor + 1;`
+
+SET asigna un valor. Primero se calcula la expresión de la derecha y después se guarda el resultado en la variable de la izquierda.
+
+Si `p_valor` contiene 10, se calcula 10 + 1 y se guarda 11 en el mismo parámetro.
+
+**Preparar y utilizar la variable**
+
+Primero se establece el valor inicial y después se ejecuta el procedimiento:
+```sql
+SET @numero = 10;
+CALL incrementar_valor(@numero);
+```
+
+
+Durante la llamada:
+
+-  El valor de @numero, que es 10, entra en p_valor.
+-  El procedimiento aumenta p_valor a 11.
+-  Al terminar, el valor 11 se devuelve a @numero.
+
+Se consulta el resultado:
+
+```sql
+SELECT @numero AS resultado;
+``` 
++-----------+
+| resultado |
++-----------+
+|        11 |
++-----------+
+
+Al repetir la llamada sin volver a inicializar la variable:
+
+```sql
+CALL incrementar_valor(@numero);
+SELECT @numero AS resultado;
+```
++-----------+
+| resultado |
++-----------+
+|        12 |
++-----------+
+ Esta vez el procedimiento recibe 11, porque ese es el valor de @numero, y devuelve 12.
+
+# **Comparación de los modos de parámetro**
+
++----------------------+-------------------------------------------------+-------------------------------------+
+| Modo                 | Recibe un valor inicial del exterior            | Devuelve el valor final al exterior |
++======================+:================================================+:====================================+
+| IN                   | Sí                                              | No                                  |
++----------------------+-------------------------------------------------+-------------------------------------+
+| OUT                  | No; comienza como NULL dentro del procedimiento | Sí                                  |
++----------------------+-------------------------------------------------+-------------------------------------+
+| INOUT                | Sí                                              | Sí                                  |
++----------------------+-------------------------------------------------+-------------------------------------+
+
+En este ejemplo es importante inicializar @numero. Si contiene NULL, la operación NULL + 1 produce NULL y ese será el valor devuelto.
+
+# Combinar parámetros de entrada y salida
+
+Un procedimiento puede tener varios parámetros, cada uno con su modo IN, OUT o INOUT. No es necesario que todos tengan el mismo modo.
+
+El siguiente procedimiento comprueba si existe un alumno con un identificador determinado. Recibe el identificador mediante IN y entrega el número de coincidencias mediante OUT.
+
+ **Crear el procedimiento**
+```sql
+DELIMITER //
+
+CREATE PROCEDURE comprobar_alumno(IN p_id_alumno INT,OUT p_coincidencias INT)
+BEGIN
+SELECT COUNT(*) INTO p_coincidencias
+FROM alumnos
+WHERE id_alumno = p_id_alumno;
+END//
+
+DELIMITER ;
+```
+Los parámetros se escriben dentro de los mismos paréntesis y se separan mediante comas.
+
+La consulta filtra las filas por el identificador recibido y cuenta las que cumplen la condición.
+
+**Relación entre los argumentos y los parámetros**
+```sql
+CALL comprobar_alumno(3, @coincidencias);
+```
++----------------------------------+-------------------------------------------------------+
+| Argumento de la llamada          | Parámetro correspondiente                             |
++==================================+:======================================================+
+| 3                                | p_id_alumno recibe el identificador.                  |
++----------------------------------+-------------------------------------------------------+
+| @coincidencias                   | p_coincidencias entrega el resultado a esta variable. |
++----------------------------------+-------------------------------------------------------+
+
+La correspondencia se establece por posición. El orden de los argumentos debe coincidir con el orden de los parámetros.
+
+Después se consulta el resultado:
+```sql
+SELECT @coincidencias AS alumno_encontrado;
+```
++-------------------+
+| alumno_encontrado |
++-------------------+
+|                 1 |
++-------------------+
+
+`COUNT(*)` sin `GROUP BY `cuenta las filas que cumplen el filtro. Si ninguna lo cumple, devuelve un recuento de 0.
+
+**Utilizar una variable también como entrada**
+```sql
+SET @id_buscado = 3;
+CALL comprobar_alumno(@id_buscado, @coincidencias);
+SELECT @coincidencias AS alumno_encontrado;
+```
+Un argumento de entrada puede ser un valor como 3 o una variable que lo contenga. Para recibir la salida desde estas llamadas se utiliza una variable. La siguiente llamada es incorrecta: `CALL comprobar_alumno(3, 0);`
+
+El segundo argumento debe permitir guardar el resultado. El número literal 0 no es una variable donde MySQL pueda escribirlo.
+
+# Utilizar variables locales con DECLARE
+
+Además de intercambiar datos mediante parámetros, un procedimiento puede necesitar guardar resultados intermedios mientras trabaja.
+
+Una variable local funciona como una hoja de borrador: permite guardar un dato y utilizarlo en las instrucciones siguientes. Se declara dentro de un bloque BEGIN ... END mediante DECLARE.
+
+**Crear el procedimiento**
+```sql
+DELIMITER //
+
+CREATE PROCEDURE mostrar_total_alumnos()\
+BEGIN\
+DECLARE v_total INT DEFAULT 0;
+
+SELECT COUNT(*) INTO v_total  
+FROM alumnos;
+
+SELECT v_total AS total_alumnos;  
+
+END//
+
+DELIMITER ;
+```
+**Interpretar la declaración**
+
+DECLARE v_total INT DEFAULT 0;
+
+| Elemento  | Significado                                     |
+|-----------|:------------------------------------------------|
+| DECLARE   | Declara una variable local.                     |
+| v_total   | Nombre elegido para la variable.                |
+| INT       | Tipo de dato, un número entero.                 |
+| DEFAULT 0 | Valor inicial de la variable en cada ejecución. |
+
+El prefijo v_ es una convención para identificar las variables locales. No es una obligación de MySQL. Si se omite DEFAULT, la variable comienza como NULL.
+
+**Seguir el valor durante la ejecución**
+```sql
+CALL mostrar_total_alumnos();
+```
+En el supuesto de que hubiera 20 alumnos:
+
+-  Se crea `v_total` con el valor inicial 0.
+-  `COUNT(*)` calcula 20.
+-  `INTO v_total` sustituye el valor inicial por 20.
+-  El último `SELECT` muestra 20 bajo la columna total_alumnos.
+
+Con los datos de referencia, el mismo recorrido termina mostrando 12.
+
+**Diferenciar una variable local de una variable de sesión**
+
++----------------------+-----------------------------------------------+-------------------------------------+
+| Variable             | Dónde puede utilizarse                        | Duración                            |
++======================+:==============================================+:====================================+
+| v_total              | Dentro del bloque donde se declara.           | Durante la ejecución de ese bloque. |
++----------------------+-----------------------------------------------+-------------------------------------+
+| @total               | En distintas sentencias de la misma conexión. | Durante la sesión.                  |
++----------------------+-----------------------------------------------+-------------------------------------+
+
+Cuando termina el procedimiento, `v_total` deja de estar disponible. Su valor no se conserva para la siguiente llamada: se crea y se inicializa de nuevo en cada ejecución.
+
+Por eso, fuera del procedimiento no puede recuperarse con: `SELECT v_total;`. MySQL intenta interpretarlo como una referencia a una columna y devuelve un error.
+
+`v_total` y `@v_total` tampoco son la misma variable. Añadir @ no permite acceder a la variable local: identifica una variable de usuario diferente.
+
+**Colocar las declaraciones al principio**
+
+Los `DECLARE` deben situarse al principio del bloque, antes de instrucciones como `SELECT`, `SET` o `CALL`. En el ejemplo aparecen justo después de `BEGIN`.
+
+Las variables locales permiten guardar datos para realizar cálculos o decidir qué instrucciones ejecutar, como se verá en el siguiente paso.
+
+# Tomar decisiones con IF THEN ELSE
+
+Hasta este punto, las instrucciones se ejecutaban una detrás de otra. `IF` permite elegir qué instrucciones ejecutar según una condición.
+
+El siguiente procedimiento utiliza el recuento de coincidencias para mostrar un mensaje si el alumno existe y otro si no existe.
+
+**Crear el procedimiento**
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE informar_alumno(IN p_id_alumno INT)
+BEGIN
+DECLARE v_coincidencias INT DEFAULT 0;
+         
+SELECT COUNT(*) INTO v_coincidencias  
+FROM alumnos  
+WHERE id_alumno = p_id_alumno;
+
+IF v_coincidencias > 0 THEN  
+    SELECT 'El alumno existe' AS mensaje;  
+ELSE  
+    SELECT 'El alumno no existe' AS mensaje;  
+END IF;  
+
+END//
+
+DELIMITER ;
+``` 
+La primera parte recibe un identificador, busca coincidencias y guarda su número en una variable local.
+
+**Interpretar la decisión**
+
+`IF v_coincidencias > 0 THEN` La condición pregunta si se ha encontrado alguna fila. Si el recuento es mayor que cero, se ejecutan las instrucciones de esa rama.
+
+`ELSE` introduce las instrucciones que deben ejecutarse en caso contrario. `END IF;` cierra la estructura de decisión.
+
+En cada ejecución se ejecuta una de las dos ramas. Si la condición es verdadera, se ejecuta la parte de THEN; si no lo es, se ejecuta la parte de ELSE.
+
+**Ejecutar el procedimiento**
+
+`CALL informar_alumno(3);`
+
+| Situación                             | Mensaje             |
+|---------------------------------------|:--------------------|
+| Existe el alumno con identificador 3. | El alumno existe    |
+| No existe ese alumno.                 | El alumno no existe |
+
+Con la tabla de referencia se muestra "El alumno existe", porque existe la fila con id_alumno igual a 3.
+
+**Mostrar un texto sin consultar una tabla**
+
+SELECT 'El alumno existe' AS mensaje;
+
+SELECT puede devolver directamente un valor, sin utilizar FROM. En este caso devuelve una fila con el texto indicado bajo la columna mensaje.
+
+**Diferenciar los cierres**
+
+| Cierre  | Qué termina                                            |
+|---------|:-------------------------------------------------------|
+| END IF; | La estructura de decisión.                             |
+| END//   | El bloque principal del procedimiento y su definición. |
+
+Cada cierre corresponde a su propia estructura. Dentro de cada rama pueden incluirse varias instrucciones, cada una terminada en punto y coma.
+
+**Diferencia respecto a la función IF**
+
+La estructura IF ... THEN ... ELSE ... END IF decide qué instrucciones ejecutar.
+
+La función IF(condición, valor_si_verdadero, valor_si_falso) elige un valor dentro de una expresión. Aunque compartan nombre, tienen funciones y sintaxis diferentes.
+
+# Comprobar varias condiciones con ELSEIF
+
+IF ... ELSE permite elegir entre dos caminos. ELSEIF añade condiciones intermedias que MySQL comprueba en orden.
+
+El siguiente procedimiento cuenta los alumnos y muestra un mensaje según la cantidad:
+
+| Número de alumnos | Mensaje                 |
+|-------------------|:------------------------|
+| 0                 | No hay alumnos          |
+| Entre 1 y 9       | Hay menos de 10 alumnos |
+| 10 o más          | Hay 10 alumnos o más    |
+
+El límite de 10 se elige para este ejemplo.
+
+**Crear y ejecutar el procedimiento**
+```sql
+DELIMITER //
+
+CREATE PROCEDURE describir_cantidad_alumnos()\
+BEGIN\
+DECLARE v_total INT DEFAULT 0;
+       
+SELECT COUNT(*) INTO v_total  
+FROM alumnos;
+
+IF v_total = 0 THEN  
+    SELECT 'No hay alumnos' AS mensaje;
+
+ELSEIF v_total \< 10 THEN  
+    SELECT 'Hay menos de 10 alumnos' AS mensaje;
+
+ELSE  
+    SELECT 'Hay 10 alumnos o más' AS mensaje;  
+END IF;  
+
+
+END//
+
+DELIMITER ;
+``` 
+`CALL describir_cantidad_alumnos();`
+
+Con los 12 alumnos de la tabla de referencia, la llamada muestra Hay 10 alumnos o más.
+
+**Recorrer las condiciones con distintas cantidades**
+
+Si hay 0 alumnos, la condición `v_total = 0` es verdadera. Se muestra No hay alumnos y no se comprueban las demás condiciones de esta estructura.
+
+Si hay 6 alumnos, la primera condición es falsa. Se comprueba `v_total < 10;` como es verdadera, se muestra Hay menos de 10 alumnos y no se ejecuta el ELSE.
+
+Si hay 15 alumnos, las dos condiciones anteriores son falsas. Se ejecuta el `ELSE` y se muestra Hay 10 alumnos o más.
+
+Estas situaciones son supuestos para recorrer el código. No es necesario eliminar o añadir registros a la tabla de referencia para comprenderlos.
+
+**El orden de las condiciones importa**
+
+Cero también es menor que diez. Sin embargo, cuando hay cero alumnos solo se muestra el primer mensaje, porque se ejecuta la primera rama cuya condición sea verdadera.
+
+Si se comprobara primero `v_total < 10`, el cero entraría en esa rama y no se distinguiría el caso No hay alumnos.
+
+## Reglas de escritura
+
+- ELSEIF se escribe junto.
+- Cada ELSEIF lleva una condición y un THEN.
+- ELSE no lleva condición y recoge los casos restantes.
+- Toda la estructura se cierra con un único END IF;.
+- Pueden añadirse varios ELSEIF si es necesario distinguir más situaciones.
+
+## Errores comunes y buenas prácticas
+
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Situación                                         | Qué ocurre y cómo evitarlo                                                                                |
++:==================================================+:==========================================================================================================+
+| Confundir CREATE PROCEDURE con CALL               | CREATE guarda la definición. CALL ejecuta las instrucciones.                                              |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Repetir CREATE con el mismo nombre                | Se produce un error porque el procedimiento ya existe. Para utilizarlo se ejecuta CALL.                   |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Enviar una definición incompleta                  | En el cliente mysql se utiliza DELIMITER para enviar el bloque completo con sus puntos y coma interiores. |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Omitir un argumento obligatorio                   | La llamada falla por número incorrecto de argumentos.                                                     |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Pasar un literal como salida                      | OUT necesita un destino donde guardar el valor; en estas llamadas se utiliza una variable de usuario.     |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| No inicializar la entrada de INOUT                | Si la variable contiene NULL, operaciones como NULL + 1 devuelven NULL.                                   |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Utilizar una variable local fuera de su bloque    | La variable no está disponible. Una variable con \@ es diferente.                                         |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Colocar DECLARE después de un SELECT              | La declaración debe estar al principio del bloque.                                                        |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Confundir END IF con END                          | Cada cierre corresponde a una estructura diferente.                                                       |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Ordenar mal IF y ELSEIF                           | Solo se ejecuta la primera rama verdadera. Deben colocarse las condiciones en el orden previsto.          |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Suponer que omitir SQL SECURITY significa INVOKER | El modo predeterminado es DEFINER. Debe elegirse conscientemente el contexto de seguridad.                |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Confundir EXECUTE con SELECT                      | El permiso para llamar no sustituye automáticamente a los permisos de las instrucciones interiores.       |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+| Confundir BEGIN con una transacción               | BEGIN ... END agrupa instrucciones del procedimiento y no garantiza una transacción.                      |
++---------------------------------------------------+-----------------------------------------------------------------------------------------------------------+
+
+# Resumen
+
+Un procedimiento guarda instrucciones con un nombre. CREATE PROCEDURE lo define y CALL lo ejecuta. Las instrucciones vuelven a ejecutarse en cada llamada, por lo que las consultas utilizan los datos que correspondan en ese momento.
+
+BEGIN y END agrupan las instrucciones. DELIMITER ayuda al cliente a reconocer el final de la definición cuando hay puntos y coma interiores.
+
+Los parámetros IN reciben datos; los OUT entregan datos; los INOUT reciben un valor inicial y permiten devolverlo actualizado.
+
+Las variables locales se declaran con DECLARE y pertenecen al bloque donde se declaran. Las variables de usuario se identifican con \@ y pertenecen a la sesión.
+
+IF, ELSE y ELSEIF permiten elegir instrucciones según condiciones. En una misma estructura se ejecuta la primera rama verdadera o, si ninguna lo es, el ELSE cuando existe.
+
+SQL SECURITY INVOKER utiliza los permisos del invocador para las instrucciones interiores. SQL SECURITY DEFINER utiliza los de la cuenta definidora y es el modo predeterminado. Quien llama necesita permiso EXECUTE en ambos casos.
+
+# Fuentes de referencia
+
+Documentación oficial de MySQL 8.4 utilizada para comprobar la sintaxis y el comportamiento de los ejemplos.
+
+- Procedimientos y funciones almacenados: https://dev.mysql.com/doc/refman/8.4/en/create-procedure.html\
+- Definición de programas almacenados y delimitadores: https://dev.mysql.com/doc/refman/8.4/en/stored-programs-defining.html\
+- Instrucción CALL: https://dev.mysql.com/doc/refman/8.4/en/call.html\
+- Variables locales y DECLARE: https://dev.mysql.com/doc/refman/8.4/en/declare-local-variable.html\
+- Ámbito de las variables locales: https://dev.mysql.com/doc/refman/8.4/en/local-variable-scope.html\
+- Contexto de seguridad de los objetos almacenados: https://dev.mysql.com/doc/refman/8.4/en/stored-objects-security.html\
+- Instrucción IF: https://dev.mysql.com/doc/refman/8.4/en/if.html
+
+Datos de la tabla de referencia: alumnos.csv del proyecto academia_it, con 12 registros y 10 columnas. La marca de importación \\N se representa como NULL.
