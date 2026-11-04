@@ -274,6 +274,165 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
 | **Uso de Cláusula `LIMIT`** | En MySQL puedes añadir `LIMIT n` al final del `UPDATE` para asegurarte de no modificar más de $n$ filas por accidente. |
 
+# ON DUPLICATE KEY UPDATE
+
+Es una extensión de la instrucción INSERT (específica de MySQL y MariaDB) que permite realizar una operación del tipo "Upsert" (Insertar o Actualizar).
+
+Cuando intentas insertar una fila en una tabla y se produce un conflicto debido a una clave duplicada (es decir, el valor choca con una llave primaria PRIMARY KEY o un índice único UNIQUE), en lugar de que la base de datos devuelva un error, ejecuta una actualización (UPDATE) sobre la fila existente.
+
+``` sql
+INSERT INTO nombre_tabla (columna1, columna2, columna3)
+VALUES (valor1, valor2, valor3)
+ON DUPLICATE KEY UPDATE 
+    columna2 = expresion_actualizacion,
+    columna3 = nuevo_valor;
+```
+
+VALUES(columna): Puedes usar la función especial VALUES() dentro de la sección UPDATE para hacer referencia al valor que intentabas insertar originalmente.
+
+## Motores Compatibles y Equivalencias
+
+|  |  |
+|------------------|------------------------------------------------------|
+| **Motor de Base de Datos** | **Comando / Equivalente** |
+| **MySQL / MariaDB** | `INSERT INTO ... ON DUPLICATE KEY UPDATE ...` |
+| **PostgreSQL** (v9.5+) | `INSERT INTO ... ON CONFLICT (columna) DO UPDATE SET ...` |
+| **SQLite** (v3.24+) | `INSERT INTO ... ON CONFLICT (columna) DO UPDATE SET ...` o `INSERT OR REPLACE INTO ...` |
+| **SQL Server (T-SQL)** | Se utiliza la instrucción `MERGE INTO ... USING ...` |
+
+## Casos de Uso Principales
+
+1.  **Contadores y Estadísticas:** Incrementar un contador de visitas, clics o descargas sin necesidad de consultar primero si el registro ya existe.
+
+2.  **Sincronización de Datos (ETL):** Actualizar registros masivos de usuarios o productos externos donde algunos ya existan en la base de datos local y otros sean nuevos.
+
+3.  **Caché o Tablas Temporales:** Guardar estados de sesión o configuraciones de usuario donde la clave es única por usuario.
+
+## Ejemplo Práctico MySQL
+
+Imagina que tenemos una tabla llamada `visitas_usuarios` que lleva el registro de cuántas veces ha iniciado sesión un usuario. El campo `usuario_id` es la llave primaria.
+
+### Estructura de la tabla:
+
+``` sql
+CREATE TABLE visitas_usuarios (
+    usuario_id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    total_visitas INT DEFAULT 1,
+    ultima_vez TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+Si el usuario con ID `42` entra por primera vez, se inserta. Si ya existe, incrementamos su contador de visitas en `1`:
+
+``` sql
+INSERT INTO visitas_usuarios (usuario_id, nombre, total_visitas)
+VALUES (42, 'Carlos', 1)
+ON DUPLICATE KEY UPDATE 
+    total_visitas = total_visitas + 1,
+    nombre = VALUES(nombre);
+```
+
+- **¿Qué ocurre si el ID 42 no existe?** Inserta una nueva fila con `usuario_id = 42`, `nombre = 'Carlos'` y `total_visitas = 1`.
+
+- **¿Qué ocurre si el ID 42 ya existe?** No inserta nada; en su lugar, toma la fila existente y le suma `1` a `total_visitas` y actualiza el `nombre` por si acaso cambió.
+
+## PostgreSQL: `ON CONFLICT DO UPDATE`
+
+PostgreSQL introdujo soporte nativo para operaciones upsert a partir de la versión 9.5 mediante la cláusula `ON CONFLICT`. En lugar de buscar llaves duplicadas implícitamente, le indicas explícitamente cuál es la columna o restricción que genera el conflicto (`usuario_id`).
+
+``` sql
+-- 1. Creación de la tabla en PostgreSQL
+CREATE TABLE visitas_usuarios (
+    usuario_id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    total_visitas INT DEFAULT 1
+);
+
+-- 2. Inserción con Upsert
+INSERT INTO visitas_usuarios (usuario_id, nombre, total_visitas)
+VALUES (42, 'Carlos', 1)
+ON CONFLICT (usuario_id) 
+DO UPDATE SET 
+    total_visitas = visitas_usuarios.total_visitas + 1,
+    nombre = EXCLUDED.nombre;
+```
+
+- **`ON CONFLICT (usuario_id)`**: Especifica la columna que tiene el índice único o llave primaria a vigilar.
+
+- **`EXCLUDED`**: Es una tabla virtual que contiene temporalmente los valores que intentaste insertar originalmente (similar a `VALUES()` en MySQL).
+
+## SQL Server (T-SQL): Instrucción `MERGE`
+
+SQL Server no cuenta con una cláusula directa del tipo `INSERT ... ON DUPLICATE`, por lo que el estándar recomendado y más eficiente para hacer un *Upsert* es utilizar la instrucción **`MERGE`**. Esta sentencia compara una tabla de origen (o un conjunto de datos en línea) con una tabla de destino y decide si debe actualizar o insertar.
+
+``` sql
+-- 1. Creación de la tabla en SQL Server
+CREATE TABLE visitas_usuarios (
+    usuario_id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    total_visitas INT DEFAULT 1
+);
+
+-- 2. Inserción con Upsert usando MERGE
+MERGE INTO visitas_usuarios AS target
+USING (VALUES (42, 'Carlos')) AS source (usuario_id, nombre)
+ON (target.usuario_id = source.usuario_id)
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.total_visitas = target.total_visitas + 1,
+        target.nombre = source.nombre
+WHEN NOT MATCHED THEN
+    INSERT (usuario_id, nombre, total_visitas)
+    VALUES (source.usuario_id, source.nombre, 1);
+```
+
+- **`USING (VALUES (...))`**: Define los datos que deseas ingresar como si fueran una tabla temporal de origen (`source`).
+
+- **`WHEN MATCHED THEN UPDATE`**: Se ejecuta si la llave primaria ya existe en la tabla.
+
+- **`WHEN NOT MATCHED THEN INSERT`**: Se ejecuta si el registro es nuevo.
+
+::: extra
+El uso de la instrucción `MERGE` en SQL Server es sumamente útil para unificar operaciones de inserción, actualización y borrado en una sola pasada. Sin embargo, cuando se ejecuta en tablas con **millones de registros**, puede convertirse en un desafío crítico de rendimiento si no se implementa correctamente.
+
+### Problemas de Rendimiento Comunes con `MERGE`
+
+- **Bloqueos y Concurrencia (`Lock Escalation`):** `MERGE` tiende a adquirir bloqueos más agresivos (como bloqueos exclusivos `X` o de actualización `U`) en la tabla de destino de forma más rápida que las operaciones separadas (`UPDATE` o `INSERT`), lo que puede provocar bloqueos prolongados (*blocking*) o *deadlocks* en entornos de alta concurrencia.
+
+- **Planes de Ejecución Subóptimos:** El optimizador de consultas de SQL Server a veces genera planes de ejecución complejos y menos eficientes para `MERGE` en comparación con sentencias `UPDATE` e `INSERT` independientes. Esto puede derivar en cruces de datos costosos (*Hash Match*) y uso masivo de CPU y memoria.
+
+- **Crecimiento de la `tempdb`:** Si el conjunto de datos de origen (`USING`) es muy grande o requiere ordenamientos complejos antes de evaluar la coincidencia, SQL Server descargará operaciones intermedias a la base de datos temporal (`tempdb`), ralentizando la ejecución.
+
+- **Bloqueo del Log de Transacciones:** Ejecutar un `MERGE` masivo en una tabla con 10 o 50 millones de registros en una sola transacción generará un archivo de registro de transacciones gigantesco, pudiendo saturar el disco o causar problemas con el respaldo y la recuperación.
+
+### Buenas Prácticas para Optimizar `MERGE`
+
+#### Indexación Adecuada en las Columnas de Unión
+
+La condición de cruce (`ON target.columna = source.columna`) es vital.
+
+- Asegúrate de que la columna de la tabla de destino tenga un **índice agrupado (`Clustered Index`) o no agrupado óptimo**.
+
+- La tabla o consulta de origen (`USING`) también debe estar indexada adecuadamente si proviene de otra tabla física. Evita realizar `MERGE` contra vistas complejas sin índices.
+
+#### Procesamiento por Lotes (`Batching`)
+
+Nunca ejecutes un `MERGE` sobre decenas de millones de registros de una sola vez si puedes evitarlo. Divide la carga en lotes más pequeños (por ejemplo, de 5,000 a 50,000 registros por iteración) utilizando bucles controlados (`WHILE`) o filtros por rangos de fecha/ID. Esto minimiza la contención de bloqueos y libera espacio en el registro de transacciones progresivamente.
+
+#### Limitar el Conjunto de Datos de Origen (`USING`)
+
+Filtra los datos del origen antes de pasarlos al `MERGE`. No envíes toda una tabla histórica si solo necesitas sincronizar los cambios de las últimas 24 horas. Utiliza una expresión de tabla común (`CTE`) o una tabla temporal con los registros estrictamente necesarios.
+
+#### Evaluar la Alternativa de `UPDATE` + `INSERT` Separados
+
+En muchos escenarios de alta volumetría, los DBA experimentados prefieren separar la lógica en lugar de usar `MERGE`:
+
+1.  Ejecutar un `UPDATE` masivo solo para los registros que cambiaron (filtrando con un `EXISTS`).
+
+2.  Ejecutar un `INSERT` masivo para los registros nuevos (filtrando con un `NOT EXISTS`). Esta separación suele permitir que el optimizador de consultas elija planes de ejecución mucho más eficientes y reduce drásticamente los problemas de bloqueos prolongados.
+:::
+
 # La Sentencia `DELETE`
 
 ### Descripción General
@@ -318,7 +477,7 @@ WHERE ubicacion_actual IS NOT NULL;
 
 ## Comprativa de Errores Comunes con `NULL`
 
-|-------------------|---------------------------|---------------------------| | **Consulta SQL** | **Resultado en MySQL** | **Causa Técnica** | | `DELETE FROM objetos WHERE ubicacion_actual = NULL;` | **0 filas afectadas** (Incorrecto) | `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. | | `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. | | `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` | **Elimina las filas de forma correcta** | `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. |
+\|-------------------\|---------------------------\|---------------------------\| \| **Consulta SQL** \| **Resultado en MySQL** \| **Causa Técnica** \| \| `DELETE FROM objetos WHERE ubicacion_actual = NULL;` \| **0 filas afectadas** (Incorrecto) \| `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. \| \| `DELETE FROM objetos WHERE ubicacion_actual != NULL;` \| **0 filas afectadas** (Incorrecto) \| `!=` o `<>` tampoco funcionan con `NULL`. \| \| `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` \| **Elimina las filas de forma correcta** \| `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. \|
 
 ### El Riesgo de `DELETE` sin `WHERE`
 
@@ -404,8 +563,7 @@ Cuando hay filas asociadas en la tabla secundaria, la regla `ON DELETE` determin
 
 #### Tabla Resumen de Comportamiento
 
-|-------------------|-------------------|----------------------------------| | Regla ON DELETE | **¿Tiene registros relacionados?** | **Acción al hacer DELETE FROM padre WHERE id = X** | | RESTRICT / NO ACTION | **No** | Se elimina el registro del padre sin problemas. | | RESTRICT / NO ACTION | **Sí** | **Error (Bloqueado).** No se elimina nada. | | CASCADE | **No** | Se elimina el registro del padre. | | CASCADE | **Sí** | Se elimina el padre **y todas sus filas asociadas en la tabla hija**. | | SET NULL | **No** | Se elimina el registro del padre. | | SET NULL | **Sí** | Se elimina el padre y la clave foránea en la tabla hija **pasa a ser `NULL`**. |
-
+\|-------------------\|-------------------\|----------------------------------\| \| Regla ON DELETE \| **¿Tiene registros relacionados?** \| **Acción al hacer DELETE FROM padre WHERE id = X** \| \| RESTRICT / NO ACTION \| **No** \| Se elimina el registro del padre sin problemas. \| \| RESTRICT / NO ACTION \| **Sí** \| **Error (Bloqueado).** No se elimina nada. \| \| CASCADE \| **No** \| Se elimina el registro del padre. \| \| CASCADE \| **Sí** \| Se elimina el padre **y todas sus filas asociadas en la tabla hija**. \| \| SET NULL \| **No** \| Se elimina el registro del padre. \| \| SET NULL \| **Sí** \| Se elimina el padre y la clave foránea en la tabla hija **pasa a ser `NULL`**. \|
 
 ------------------------------------------------------------------------
 

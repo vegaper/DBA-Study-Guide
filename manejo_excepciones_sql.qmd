@@ -177,7 +177,7 @@ END;
 ### Tabla Resumen de Equivalencias
 
 |  |  |  |
-|-------------|------------------------------|------------------------------|
+|-----------------|----------------------------|----------------------------|
 | **Motor** | **Instrucción para lanzar el error** | **Rango / Formato del Código** |
 | **MySQL / MariaDB** | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '...';` | Cadena de 5 caracteres (ej. `'45000'`) |
 | **PostgreSQL** | `RAISE EXCEPTION '...' USING ERRCODE = 'P0001';` | Códigos SQLSTATE estándar (ej. `'P0001'`) |
@@ -445,3 +445,101 @@ DELIMITER ;
 3.  **Avisa al exterior con `RESIGNAL`:** Una vez hecho el registro interno, el procedimiento **no se traga el error**. Utiliza `RESIGNAL` para lanzarlo hacia arriba. Además, fíjate en la magia: puedes cambiar el texto original del error técnico de MySQL por un mensaje de negocio comprensible (`SET MESSAGE_TEXT = 'No se pudo procesar el pedido...'`).
 
 De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.
+
+------------------------------------------------------------------------
+
+# ¿Qué es `GET DIAGNOSTICS`?
+
+Es una instrucción estándar de SQL (soportada en MySQL, MariaDB y PostgreSQL) que permite **extraer información detallada sobre la ejecución de la sentencia SQL más reciente**.
+
+Mientras que las variables globales tradicionales solo te dicen de forma muy general si algo falló, `GET DIAGNOSTICS` actúa como una "caja negra" a la que puedes consultar justo después de un error o advertencia para obtener datos precisos: códigos de error específicos del motor, mensajes descriptivos del sistema, estados SQL (`SQLSTATE`) o la cantidad de filas afectadas.
+
+## Sintaxis y Tipos de Diagnóstico
+
+La sintaxis básica se divide en dos vertientes principales:
+
+### Información de la instrucción (Statement Information)
+
+Sirve para consultar métricas generales de la última operación ejecutada (como el conteo de filas):
+
+``` sql
+GET DIAGNOSTICS variable_destino = ROW_COUNT;
+```
+
+### Información de una condición o error específico (`CONDITION`)
+
+Es la más utilizada dentro de los manejadores de errores (`DECLARE HANDLER`) para inspeccionar la causa exacta de una excepción:
+
+``` sql
+GET DIAGNOSTICS CONDITION 1 
+    variable_sqlstate = RETURNED_SQLSTATE, 
+    variable_errno = MYSQL_ERRNO, 
+    variable_mensaje = MESSAGE_TEXT;
+```
+
+- **`CONDITION 1`**: Indica que quieres revisar el primer error o advertencia registrado en la pila de diagnósticos.
+
+- **Atributos comunes que puedes extraer**:
+
+  - `RETURNED_SQLSTATE`: El código estándar de 5 caracteres del estándar SQL.
+
+  - `MYSQL_ERRNO`: El código numérico interno del error (específico de MySQL/MariaDB).
+
+  - `MESSAGE_TEXT`: El mensaje de texto explicativo que generó el motor de base de datos.
+
+## Casos de Uso Principales
+
+1.  **Depuración y Logs Personalizados:** Capturar el mensaje exacto de un error en un bloque de control de errores para guardarlo en una tabla de auditoría sin interrumpir drásticamente la ejecución del sistema (usando un `CONTINUE HANDLER`).
+
+2.  **Manejo Inteligente de Restricciones:** Identificar si una violación de llave única ocurrió por un campo específico mediante el número de error (`MYSQL_ERRNO`) para tomar decisiones lógicas en el procedimiento.
+
+3.  **Control de Advertencias (`WARNINGS`):** Analizar si una sentencia generó advertencias silenciosas que el usuario o el script deban conocer.
+
+## Tabla de Compatibilidad entre Motores SQL
+
+|  |  |  |
+|---------------|-------------------|--------------------------------------|
+| **Motor de Base de Datos** | **Soporte para GET DIAGNOSTICS** | **Alternativa o Forma de Uso** |
+| **MySQL / MariaDB** | **Sí** (Desde la versión 5.6) | Soporte completo tanto para `ROW_COUNT` como para `CONDITION n` con atributos como `MYSQL_ERRNO` y `MESSAGE_TEXT`. |
+| **PostgreSQL** | **Sí** (Estándar nativo) | Altamente compatible con el estándar SQL ANSI, permitiendo capturar múltiples métricas de diagnóstico en bloques PL/pgSQL. |
+| **Oracle Database** | **No directo** | Utiliza bloques PL/SQL mediante el bloque de excepciones genérico y funciones como `SQLCODE` y `SQLERRM`. |
+| **SQL Server (T-SQL)** | **No** | Utiliza bloques estructurados de control de errores `TRY...CATCH` combinados con funciones como `ERROR_NUMBER()`, `ERROR_MESSAGE()` y `@@ROWCOUNT`. |
+
+## Ejemplo Práctico en un Procedimiento Almacenado
+
+El siguiente ejemplo muestra cómo utilizar `GET DIAGNOSTICS CONDITION` dentro de un manejador de excepciones para interceptar un error (por ejemplo, duplicidad de datos) y extraer sus propiedades:
+
+``` sql
+DELIMITER //
+
+CREATE PROCEDURE sp_registrar_correo(IN p_email VARCHAR(100))
+BEGIN
+    -- Variables para almacenar los datos del diagnóstico
+    DECLARE v_error_code INT;
+    DECLARE v_sql_state VARCHAR(5);
+    DECLARE v_mensaje_error VARCHAR(255);
+
+    -- Manejador de excepciones que captura cualquier error SQL
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+    BEGIN
+        -- Extraemos la información del primer error registrado
+        GET DIAGNOSTICS CONDITION 1 
+            v_error_code = MYSQL_ERRNO,
+            v_sql_state = RETURNED_SQLSTATE,
+            v_mensaje_error = MESSAGE_TEXT;
+            
+        -- Mostramos los detalles capturados de forma controlada
+        SELECT 
+            v_error_code AS codigo_interno, 
+            v_sql_state AS estado_sql, 
+            v_mensaje_error AS descripcion;
+    END;
+
+    -- Intento de inserción (si el correo ya existe por un índice UNIQUE, saltará el error)
+    INSERT INTO usuarios (email) VALUES (p_email);
+    
+    SELECT '¡Registro insertado correctamente!' AS resultado;
+END//
+
+DELIMITER ;
+```

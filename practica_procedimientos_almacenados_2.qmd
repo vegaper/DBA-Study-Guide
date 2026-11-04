@@ -14,7 +14,7 @@ Una práctica guiada para crear operaciones reutilizables, comprender sus permis
 # Cómo utilizar la práctica
 
 | Recorrido | Actividades |
-|-----------------|------------------------------------------------------|
+|---------------------|---------------------------------------------------|
 | Esencial | Apartados 1 a 21 y 27 a 29. Construcción paso a paso y reto de dos partes. |
 | Avanzado | Apartados 22 a 26. Bucles, cursores, SQL dinámico, bloqueos y COMMIT implícito. |
 
@@ -31,7 +31,7 @@ Conocimientos de partida. SELECT, JOIN, agregaciones y operaciones INSERT, UPDAT
 ## Paso 1 Identificar dónde se ejecuta cada instrucción
 
 | Entorno | Qué se ejecuta |
-|--------------------|---------------------------------------------------|
+|-----------------------|------------------------------------------------|
 | Cliente mysql o editor SQL | USE, SELECT, CREATE PROCEDURE, CALL y las demás instrucciones SQL. |
 | Terminal de Ubuntu | cd, mysql, mysqldump y la redirección de archivos. |
 | Otra conexión | Las pruebas de permisos y de bloqueo. Sus variables \@ son independientes. |
@@ -129,7 +129,7 @@ Notas para la práctica
 
 Pregunta. ¿Por qué una matrícula sin fila de notas no es lo mismo que una fila de notas con nota NULL?
 
-# Crear y ejecutar el primer procedimiento
+# Crear y ejecutar un procedimiento
 
 Objetivo. Separar la definición de una operación de su ejecución. Como una receta, el procedimiento conserva instrucciones y un nombre, no una fotografía permanente del resultado.
 
@@ -183,7 +183,7 @@ Cerrar y abrir la conexión no elimina la definición. La rutina permanece en el
 
 Pregunta. Si el número de alumnos cambia, ¿hay que recrear *sp00_listado* para ver los nuevos registros?
 
-# Inspeccionar modificar y eliminar las definiciones
+# Inspeccionar, modificar y eliminar las definiciones
 
 Objetivo. Poder comprobar desde el principio qué procedimientos existen y qué código contienen. Estas operaciones se hacen fuera de una transacción de prueba.
 
@@ -277,7 +277,7 @@ Pregunta. ¿Por qué una modificación del cuerpo exige revisar también los per
 
 Objetivo. Distinguir el permiso para llamar a una rutina de los permisos utilizados por sus instrucciones. `EXECUTE` autoriza `CALL`. `SQL SECURITY` decide con qué cuenta se comprueban las operaciones interiores.
 
-## Paso 1 Comparar dos consultas equivalentes
+## Paso 1 Crear consulta INVOKER y DEFINER
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp00_contar_invoker;
@@ -301,12 +301,12 @@ CALL sp00_contar_definer();
 Como administrador con los permisos necesarios, ambos ejemplos devuelven 12. Esa coincidencia no demuestra que los modos sean iguales: se necesita una cuenta con permisos diferentes para apreciar la diferencia.
 
 | Modo | Permisos para la consulta interior |
-|------------------|-----------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | INVOKER | El invocador necesita EXECUTE y SELECT sobre alumnos. |
 | DEFINER | El invocador necesita EXECUTE. El definidor necesita los permisos de ejecución y SELECT necesarios. |
 | Sin SQL SECURITY explícito | Se utiliza DEFINER por defecto. |
 
-# Paso 2 Razonar con una cuenta limitada
+## Paso 2 Entender las limitaciones de cada procedimiento
 
 Si una cuenta tiene `EXECUTE` sobre ambos objetos, pero no `SELECT` sobre alumnos, la llamada *INVOKER* falla. La llamada *DEFINER* puede funcionar si su definidor dispone de los permisos necesarios. Esto no concede SELECT directo a quien llama ni le permite realizar operaciones diferentes de las definidas en la rutina.
 
@@ -502,7 +502,7 @@ CALL sp00_contar(0);
 El literal 0 no es un lugar donde guardar el resultado. Desde estas llamadas directas se utiliza una variable de usuario. Dentro de otro procedimiento también pueden utilizarse variables locales o parámetros como destinos.
 
 | Instrucción | Qué hace |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------------------------|--------------------------------------------|
 | SELECT COUNT(\*) FROM alumnos; | Entrega una fila como resultado de la consulta. |
 | SELECT COUNT(\*) INTO p_total FROM alumnos; | Asigna el número al parámetro, sin mostrar esa consulta como listado. |
 
@@ -580,7 +580,7 @@ SELECT @numero;
 La expresión NULL+1 produce NULL. No es una excepción automática: para rechazarla debe programarse una validación, como se hará en el acumulador académico.
 
 | Modo | Entrada exterior | Salida al terminar correctamente |
-|-------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------------------|--------------------------|----------------------------|
 | IN | Recibe el argumento. | No devuelve las modificaciones del parámetro. |
 | OUT | Empieza como NULL dentro de la rutina. | Entrega el valor asignado. |
 | INOUT | Recibe el valor de la variable. | Entrega el valor actualizado. |
@@ -870,7 +870,7 @@ La rama ELSE es importante: una sentencia CASE sin coincidencia y sin ELSE gener
 
 Pregunta. ¿Por qué una nota cero participa en la clasificación y no se trata como pendiente?
 
-# Construir un expediente con siete tablas
+# Construir un procedimiento más complejo
 
 Objetivo. Ampliar la búsqueda IN del apartado 6, utilizando decisiones ya explicadas y recorriendo el modelo relacional completo.
 
@@ -1210,7 +1210,7 @@ SELECT @sp_rev_antes,@sp_rev_capturado,@sp_rev_despues;
 +---------------+-------------------+-----------------+
 ```
 
-El manejador reconoce SQLSTATE 45000, pone la marca de captura a verdadero y después la ejecución sigue tras SIGNAL. No vuelve a ejecutar ni corrige la instrucción fallida.
+El manejador reconoce `SQLSTATE 45000`, pone la marca de captura a verdadero y después la ejecución sigue tras `SIGNAL`. No vuelve a ejecutar ni corrige la instrucción fallida.
 
 ## Paso 3 Capturar y abandonar el bloque
 
@@ -1246,7 +1246,9 @@ SELECT @sp_rev_antes,@sp_rev_capturado,@sp_rev_despues;
 +---------------+-------------------+-----------------+
 ```
 
-EXIT ejecuta el manejador y sale del bloque donde se declaró. En este ejemplo, ese bloque es todo el cuerpo del procedimiento. Como la condición se atiende y no se propaga, CALL puede terminar sin devolver un error, aunque la última instrucción no se haya alcanzado.
+`EXIT` ejecuta el manejador y sale del bloque donde se declaró. En este ejemplo, ese bloque es todo el cuerpo del procedimiento.
+
+Como la condición se atiende y no se propaga, `CALL` puede terminar sin devolver un error, aunque la última instrucción no se haya alcanzado.
 
 | Variante      | Se captura | Se alcanza la instrucción posterior |
 |---------------|------------|-------------------------------------|
@@ -1256,9 +1258,9 @@ EXIT ejecuta el manejador y sale del bloque donde se declaró. En este ejemplo, 
 
 Sin un manejador aplicable,
 
-- SQLEXCEPTION interrumpe la rutina;
+- `SQLEXCEPTION` interrumpe la rutina;
 
-- las advertencias SQLWARNING permiten continuar;
+- las advertencias `SQLWARNING` permiten continuar;
 
 - NOT FOUND generado normalmente también permite continuar.
 
@@ -1315,7 +1317,7 @@ SELECT @salida,@acumulado;
 
 Dentro del procedimiento se asignaron 9 y 25, pero la llamada falló antes de devolver las salidas.
 
-## Paso 2 Fallo manejado y uso de resignal
+## Paso 2 Fallo manejado y uso de `RESIGNAL`
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp00_salidas_resignal;
@@ -1351,7 +1353,7 @@ SELECT @salida,@acumulado;
 +---------+------------+
 ```
 
-RESIGNAL se utiliza dentro de un manejador para propagar la condición que se estaba atendiendo. Capturarla para realizar una acción y después propagar el error no convierte la llamada en una finalización correcta. El resultado será igual que un error sin manejar, el procedimiento no devuelve nada.
+`RESIGNAL` se utiliza dentro de un manejador para propagar la condición que se estaba atendiendo. Capturarla para realizar una acción y después propagar el error no convierte la llamada en una finalización correcta. El resultado será igual que un error sin manejar, el procedimiento no devuelve nada.
 
 ## Paso 3 Atender la condición y finalizar normalmente
 
@@ -1394,13 +1396,14 @@ El error previsto se atiende con CONTINUE y no se propaga. La llamada puede fina
 
 Pregunta. Después de una llamada fallida, @insertada conserva 1 de una llamada anterior. ¿Puede utilizarse como prueba de que la nueva inserción funcionó?
 
-# Uso de signal para validación de operaciones.
+# Uso de `SIGNAL` para validación de operaciones.
 
 Objetivo. Aplicar validaciones, una condición nombrada y un manejador a una operación real. Solo puede matricularse alumnado activo. La pareja alumno y asignatura del curso ya está protegida por una restricción UNIQUE.
 
 ## Paso 1 Producir fallos sin validaciones
 
-Vamos primero a ver qué ocurre sin ningún tipo de condiciones especiales si producimos errores en la ejecución del procedimiento:
+Vamos primero a ver qué ocurre sin ningún tipo de condiciones especiales si producimos errores en la ejecución del procedimiento.\
+Trabajaremos sobre un procedmiento que inserta una registro nuevo en la tabla matriculas, recordemos que existe una condicion UNIQUE sobre la combinación de campos *id_alumno* y *id_curso_asignatura* de forma que intentar crear un duplicado lanzará un error.
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp06_matricular;
@@ -1424,11 +1427,15 @@ END//
 DELIMITER ;
 ```
 
+Intentamos
+
 ``` sql
 CALL sp06_matricular(1,1,@id);
 ```
 
 `ERROR 1062 (23000): Duplicate entry '1-1' for key 'matriculas.uq_matriculas_alumno_asignatura'`
+
+También se generará un error si intentamos incluir una matrícula de un alumno que no existe o una asignatura que no existe, ya que se rompería la integridad referencial creada mediante las claves foraneas.
 
 ``` sql
 CALL sp06_matricular(999,1,@id);
@@ -1442,9 +1449,9 @@ CALL sp06_matricular(1,999,@id);
 
 `ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (academia_it.matriculas, CONSTRAINT fk_matriculas_curso_asignatura FOREIGN KEY (id_curso_asignatura) REFERENCES curso_asignatura (id_curso_asignatura) ON DELETE RESTRICT ON UPDATE`
 
-## Paso 2 Crear validaciones 
+## Paso 2 Crear validaciones
 
-Para evitar estos mensajes de error difíciles de leer decidimos manejar los errores. En primer lugar vamos con el problema de matrículas duplicadas. Para poder capturar ese error específico y devolver un mesaje adecuado usamos DECLARE nombre CONDITION FOR error;
+Para evitar estos mensajes de error difíciles de leer por el usuario final, decidimos manejar los errores. En primer lugar vamos con el problema de matrículas duplicadas. Para poder capturar ese error específico y devolver un mesaje adecuado usamos DECLARE nombre CONDITION FOR error;
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp06_matricular;
@@ -1572,7 +1579,7 @@ Las búsquedas comprueban alumno activo y fila de curso_asignatura.
 
 Esta rutina no inicia ni confirma transacciones. El llamador decide si confirma o deshace la operación. La comprobación previa de activo no elimina por sí sola una carrera con otra sesión que cambie ese estado; una política que necesite protegerla debe añadir los bloqueos y el control transaccional adecuados.
 
-## Paso 3 Ejecutar errores previstos 
+## Paso 3 Ejecutar errores previstos
 
 ``` sql
 CALL sp06_matricular(1,1,@id); CALL sp06_matricular(999,1,@id); CALL sp06_matricular(1,999,@id);
@@ -1615,11 +1622,11 @@ La llamada debe rechazarse y el SELECT final devuelve 1. No crear ni recrear pro
 
 Pregunta. ¿Por qué no basta con buscar primero si existe la matrícula para evitar duplicados concurrentes?
 
-# Insertar o actualizar una calificación
+# Insertar o actualizar una calificación con `ON DUPLICATE KEY UPDATE`
 
 Objetivo. Guardar una nota tanto si ya existe una fila como si todavía no existe. Esta operación exige una nota numérica de 0 a 10. La tabla continúa admitiendo NULL para representar otras situaciones.
 
-# Paso 1 Crear la operación reutilizable
+## Paso 1 Crear el procedimiento
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp07_guardar_nota;
@@ -1634,12 +1641,12 @@ BEGIN
   IF p_nota IS NULL OR p_nota<0 OR p_nota>10 THEN 
      SIGNAL SQLSTATE '45000' 
         SET MESSAGE_TEXT='La nota debe estar entre 0 y 10';
-  END IF;
+  END IF; --- rechaza NULL y valores fuera de rango. 
   IF NOT EXISTS (SELECT 1 FROM matriculas 
      WHERE id_matricula=p_id_matricula) THEN 
      SIGNAL SQLSTATE '45000' 
         SET MESSAGE_TEXT='La matricula no existe';
-  END IF;
+  END IF; ---Rechaza matriculas inexistentes
   INSERT INTO notas 
      (id_matricula,nota,fecha_evaluacion,observaciones)
   VALUES (p_id_matricula,p_nota,CURRENT_DATE(),p_observaciones)
@@ -1650,28 +1657,92 @@ END//
 DELIMITER ;
 ```
 
-La primera decisión rechaza NULL y valores fuera de rango. La segunda distingue una matrícula inexistente. INSERT ... ON DUPLICATE KEY UPDATE inserta una fila nueva o actualiza la que entra en conflicto con UNIQUE(id_matricula). id_nota se genera automáticamente; no se utiliza la función VALUES desaconsejada para las asignaciones de actualización.
+`INSERT ... ON DUPLICATE KEY UPDATE` inserta una fila nueva o actualiza la que entra en conflicto con `UNIQUE(id_matricula)`. *id_nota* se genera automáticamente; no se utiliza la función VALUES desaconsejada para las asignaciones de actualización.
 
-CURRENT_DATE obtiene la fecha del servidor. p_observaciones es un texto opcional de hasta 255 caracteres, compatible con la columna existente. Las validaciones del procedimiento complementan las claves foráneas y CHECK; no las sustituyen.
+`CURRENT_DATE` obtiene la fecha del servidor. *p_observaciones* es un texto opcional de hasta 255 caracteres, compatible con la columna existente.
 
-# Paso 2 Probar inserción y actualización
+Las validaciones del procedimiento complementan las claves foráneas y CHECK; no las sustituyen.
+
+## Paso 2 Probar inserción y actualización
 
 ``` sql
 START TRANSACTION;
 CALL sp07_guardar_nota(26,6.50,'Primera calificacion');
+
+SELECT id_matricula,nota,observaciones
+FROM notas WHERE id_matricula=26;
+```
+
+``` txt
++--------------+------+----------------------+
+| id_matricula | nota | observaciones        |
++--------------+------+----------------------+
+|           26 | 6.50 | Primera calificacion |
++--------------+------+----------------------+
+```
+
+``` sql
 CALL sp07_guardar_nota(26,7.00,'Revision');
 SELECT id_matricula,nota,observaciones
 FROM notas WHERE id_matricula=26;
+```
+
+``` txt
++--------------+------+---------------+
+| id_matricula | nota | observaciones |
++--------------+------+---------------+
+|           26 | 7.00 | Revision      |
++--------------+------+---------------+
+```
+
+``` sql
 SELECT COUNT(*) FROM notas WHERE id_matricula=26;
+```
+
+``` txt
++----------+
+| COUNT(*) |
++----------+
+|        1 |
++----------+
+```
+
+``` sql
 ROLLBACK;
 SELECT COUNT(*) FROM notas WHERE id_matricula=26;
 ```
 
+``` txt
++----------+
+| COUNT(*) |
++----------+
+|        0 |
++----------+
+```
+
 Dentro de la transacción se espera una sola fila con 7,00 y Revision. Tras ROLLBACK vuelve a haber cero filas para la matrícula 26. La rutina no realiza COMMIT, por lo que puede integrarse en una operación mayor.
 
-# Paso 3 Probar validaciones
+## Paso 3 Probar validaciones
 
-Ejecutar por separado una llamada con nota 11, otra con NULL y otra con matrícula 999. Deben devolver SQLSTATE 45000 sin modificar datos. Para comprobar que cero es válido, actualizar provisionalmente la matrícula 6 con 0,00 y deshacer la operación; debe recuperar su NULL inicial.
+Ejecutar por separado una llamada con nota 11, otra con NULL y otra con matrícula 999.
+
+``` sql
+CALL sp07_guardar_nota(6,11,'11');
+```
+
+`ERROR 1644 (45000): La nota debe estar entre 0 y 10`
+
+``` sql
+CALL sp07_guardar_nota(999,1,'999');
+```
+
+`ERROR 1644 (45000): La matricula no existe`
+
+``` sql
+CALL sp07_guardar_nota(6,NULL,'11');
+```
+
+`ERROR 1644 (45000): La nota debe estar entre 0 y 10`
 
 ``` sql
 START TRANSACTION;
@@ -1687,67 +1758,48 @@ Pregunta. Si guardar una nota ya existente con el mismo valor no cambia filas, �
 
 Objetivo. Observar que detener una llamada no deshace por sí solo los cambios ya confirmados. Después se programa una operación atómica: cambiar el estado de la matrícula y guardar su nota como una unidad.
 
-BEGIN ... END agrupa instrucciones. START TRANSACTION inicia la transacción, COMMIT confirma y ROLLBACK deshace sus cambios pendientes. MySQL no ofrece transacciones anidadas: START TRANSACTION confirma una transacción previa. Los procedimientos que gestionan su propia transacción se invocan desde una conexión sin transacción abierta.
+`BEGIN ... END` agrupa instrucciones. `START TRANSACTION` inicia la transacción, `COMMIT` confirma y `ROLLBACK` deshace sus cambios pendientes.
 
-# Paso 1 Crear las tres rutinas antes de iniciar las pruebas
+::: nota-importante
+MySQL no ofrece transacciones anidadas: `START TRANSACTION` confirma una transacción previa. Los procedimientos que gestionan su propia transacción se invocan desde una conexión sin transacción abierta.
+:::
 
-``` sql
-DROP PROCEDURE IF EXISTS sp00_cierre_sin_transaccion;
-DELIMITER //
-CREATE PROCEDURE sp00_cierre_sin_transaccion(IN p_id_matricula INT UNSIGNED, IN p_nota DECIMAL(6,2))
-SQL SECURITY INVOKER
-MODIFIES SQL DATA
-BEGIN
-  SET @sp_rev_limpieza=FALSE;
-  UPDATE matriculas SET estado='finalizado'
-  WHERE id_matricula=p_id_matricula;
-  CALL sp07_guardar_nota(p_id_matricula,p_nota,
-  'Comparacion didactica');
-  SET @sp_rev_limpieza=TRUE;
-END//
-DELIMITER ;
-```
+## Paso 1 Guardar el estado en una conexión nueva
+
+Seleccionar *academia_it* y mantener esta misma conexión hasta terminar la recuperación. No abrir una transacción antes de la captura. Si existen cambios de actividades anteriores, resolverlos antes de seguir.
 
 ``` sql
-DROP PROCEDURE IF EXISTS sp08_cerrar_evaluacion;
-DELIMITER //
-CREATE PROCEDURE sp08_cerrar_evaluacion(
-  IN p_id_matricula INT UNSIGNED,
-  IN p_nota DECIMAL(6,2),
-  IN p_observaciones VARCHAR(255))
-SQL SECURITY INVOKER
-MODIFIES SQL DATA
-BEGIN
-  DECLARE v_id INT UNSIGNED DEFAULT NULL;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_id=NULL;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-     ROLLBACK;
-     RESIGNAL;
-  END;
-  -- Gestiona su transaccion: se invoca sin transaccion previa.
-  START TRANSACTION;
-  SELECT id_matricula INTO v_id
-  FROM matriculas WHERE id_matricula=p_id_matricula
-  FOR UPDATE;
-  IF v_id IS NULL THEN 
-     SIGNAL SQLSTATE '45000' 
-       SET MESSAGE_TEXT='La matricula no existe';
-  END IF;
-  -- Cambio provisional que se deshara si falla la nota.
-  UPDATE matriculas SET estado='finalizado'
-  WHERE id_matricula=p_id_matricula;
-  CALL sp07_guardar_nota(
-     p_id_matricula,p_nota,p_observaciones);
-  COMMIT;
-END//
-DELIMITER ;
+USE academia_it; 
+SET SESSION autocommit=1; 
+SET @m_prueba=27; 
+
+SELECT estado INTO @estado_antes 
+FROM matriculas 
+WHERE id_matricula=@m_prueba; 
+
+SELECT COUNT(*),MAX(nota),MAX(fecha_evaluacion),MAX(observaciones) INTO @nota_existia,@nota_antes,@fecha_antes,@obs_antes 
+FROM notas 
+WHERE id_matricula=@m_prueba; 
+
+SELECT @m_prueba,@estado_antes,@nota_existia;
 ```
+
+Con los CSV originales se espera matrícula 27, estado matriculado y nota_existia=0.
+
+MAX recoge los valores de la única nota posible; la agregación devuelve una fila incluso si no hay nota. No sobrescribir estas variables antes de recuperar los datos.
+
+## Paso 2 Crear un procedimiento que restaurará los valores iniciales
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp00_restaurar_evaluacion;
 DELIMITER //
-CREATE PROCEDURE sp00_restaurar_evaluacion(IN p_id INT UNSIGNED, IN p_estado VARCHAR(20), IN p_existia BOOLEAN, IN p_nota DECIMAL(6,2), IN p_fecha DATE, IN p_observaciones VARCHAR(255))
+CREATE PROCEDURE sp00_restaurar_evaluacion(
+    IN p_id INT UNSIGNED
+    , IN p_estado VARCHAR(20)
+    , IN p_existia BOOLEAN
+    , IN p_nota DECIMAL(6,2)
+    , IN p_fecha DATE
+    , IN p_observaciones VARCHAR(255))
 SQL SECURITY INVOKER
 MODIFIES SQL DATA
 BEGIN
@@ -1776,66 +1828,137 @@ END//
 DELIMITER ;
 ```
 
-La primera variante no abre una transacción ni captura el error. La segunda utiliza SELECT ... FOR UPDATE para bloquear la matrícula hasta COMMIT o ROLLBACK. Su manejador NOT FOUND detecta que SELECT INTO no obtuvo una fila y el manejador EXIT para SQLEXCEPTION ejecuta ROLLBACK y RESIGNAL.
+![](images/paste-13.png)La primera variante no abre una transacción ni captura el error.
 
-El UPDATE se sitúa antes de validar la nota a través de sp07_guardar_nota de forma intencionada: permitirá comprobar que un fallo posterior también deshace ese cambio. La rutina de recuperación exige la captura previa y rechaza valores esenciales sin inicializar; después recupera la nota y el estado en su propia transacción.
-
-# Paso 2 Guardar el estado en una conexión nueva
-
-Seleccionar academia_it y mantener esta misma conexión hasta terminar la recuperación. No abrir una transacción antes de la captura. Si existen cambios de actividades anteriores, resolverlos antes de seguir.
+## Paso 3 Crear un procedimiento sin transacción
 
 ``` sql
-USE academia_it;
-SET SESSION autocommit=1;
-SET @m_prueba=27;
-SELECT estado INTO @estado_antes
-FROM matriculas WHERE id_matricula=@m_prueba;
-SELECT COUNT(*),MAX(nota),MAX(fecha_evaluacion),MAX(observaciones)
-INTO @nota_existia,@nota_antes,@fecha_antes,@obs_antes
-FROM notas WHERE id_matricula=@m_prueba;
-SELECT @m_prueba,@estado_antes,@nota_existia;
+DROP PROCEDURE IF EXISTS sp00_cierre_sin_transaccion;
+DELIMITER //
+CREATE PROCEDURE sp00_cierre_sin_transaccion(IN p_id_matricula INT UNSIGNED, IN p_nota DECIMAL(6,2))
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+  SET @sp_rev_limpieza=FALSE;
+  UPDATE matriculas SET estado='finalizado'
+  WHERE id_matricula=p_id_matricula;
+  CALL sp07_guardar_nota(p_id_matricula,p_nota,'Comparacion didactica');
+  SET @sp_rev_limpieza=TRUE;
+END//
+DELIMITER ;
 ```
 
-Con los CSV originales se espera matrícula 27, estado matriculado y nota_existia=0. MAX recoge los valores de la única nota posible; la agregación devuelve una fila incluso si no hay nota. No sobrescribir estas variables antes de recuperar los datos.
+Actualiza el estado de la matrícula a finalizado y luego hace una llamada al procedimiento *sp07_guardar_nota* para actualizar los valores de la nota.
 
-# Paso 3 Observar el fallo sin transacción
+Una variables de sesion @sp_rev_limpieza nos servirá para visualizar hasta dónde se ejecutan las líneas del procedimiento si hay un error.
+
+![](images/paste-12.png)
+
+## Paso 4 Observar el fallo sin transacción
 
 ``` sql
-CALL sp00_cierre_sin_transaccion(27,11);
--- Ejecutar individualmente despues del error:
-SELECT m.estado,n.nota,@sp_rev_limpieza
-FROM matriculas m LEFT JOIN notas n USING(id_matricula)
-WHERE m.id_matricula=27;
+CALL sp00_cierre_sin_transaccion(27,11); -- Ejecutar individualmente despues del error: 
+
+SELECT m.estado,n.nota,@sp_rev_limpieza 
+    FROM matriculas m 
+    LEFT JOIN notas n 
+    USING(id_matricula) 
+    WHERE m.id_matricula=27;
 ```
 
-Resultado esperado. Error de nota fuera de rango; estado finalizado, nota NULL por ausencia de fila y limpieza=0. Con autocommit activo y sin una transacción explícita, el UPDATE anterior ya quedó confirmado. El error interrumpió la llamada y no se alcanzó la marca posterior. Un ROLLBACK después no recupera ese UPDATE confirmado.
+``` txt
+ERROR 1644 (45000): La nota debe estar entre 0 y 10 
++------------+------+------------------+ 
+| estado     | nota | @sp_rev_limpieza | 
++------------+------+------------------+ 
+| finalizado | NULL |                0 | 
++------------+------+------------------+
+```
 
-# Paso 4 Recuperar los datos antes de comparar
+Con autocommit activo y sin una transacción explícita, el `UPDATE` anterior ya quedó confirmado.
+
+El error interrumpió la llamada y no se alcanzó la marca posterior.
+
+Un `ROLLBACK` después no recupera ese `UPDATE` confirmado.
+
+## Paso 4 Recuperar los datos antes de continuar
 
 ``` sql
-CALL sp00_restaurar_evaluacion(
-  @m_prueba,@estado_antes,@nota_existia,
-  @nota_antes,@fecha_antes,@obs_antes);
-SELECT m.estado,n.nota
-FROM matriculas m LEFT JOIN notas n USING(id_matricula)
-WHERE m.id_matricula=@m_prueba;
+CALL sp00_restaurar_evaluacion(@m_prueba,@estado_antes,@nota_existia,@nota_antes,@fecha_antes,@obs_antes);
+SELECT m.estado,n.nota 
+    FROM matriculas m LEFT JOIN notas n USING(id_matricula) 
+    WHERE m.id_matricula=@m_prueba;
 ```
 
-Se espera matriculado y ausencia de fila de notas. Esta recuperación expresa es necesaria porque hubo un cambio confirmado; no se sustituye por un ROLLBACK tardío.
+## Paso 5 Crear un procedimiento con control transaccional
 
-# Paso 5 Repetir el fallo con control transaccional
+Si una evaluación no devuelve nada, se permite continuar sin hacer nada, pero podemos establecer un comportamiento alternativo declarando un manejador para la condicion `NOT FOUND`
+
+``` sql
+DROP PROCEDURE IF EXISTS sp08_cerrar_evaluacion;
+DELIMITER //
+CREATE PROCEDURE sp08_cerrar_evaluacion(
+  IN p_id_matricula INT UNSIGNED,
+  IN p_nota DECIMAL(6,2),
+  IN p_observaciones VARCHAR(255))
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+  DECLARE v_id INT UNSIGNED DEFAULT NULL;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND 
+      SET v_id=NULL;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+      BEGIN
+         ROLLBACK;
+         RESIGNAL;
+      END;
+  -- Gestiona su transaccion: se invoca sin transaccion previa.
+  START TRANSACTION;
+  SELECT id_matricula INTO v_id
+  FROM matriculas WHERE id_matricula=p_id_matricula
+  FOR UPDATE;
+  IF v_id IS NULL THEN 
+     SIGNAL SQLSTATE '45000' 
+       SET MESSAGE_TEXT='La matricula no existe';
+  END IF;
+  -- Cambio provisional que se deshara si falla la nota.
+  UPDATE matriculas SET estado='finalizado'
+  WHERE id_matricula=p_id_matricula;
+  CALL sp07_guardar_nota(p_id_matricula,p_nota,p_observaciones);
+  COMMIT;
+END//
+DELIMITER ;
+```
+
+![](images/paste-11.png)Hace lo mismo que el procedimiento anterior, actualizar el estado de una matrícula y cambiar la nota, pero esta vez las operaciones se realizan dentro de una transacción y hay dos manejadores:
+
+## Paso 6 Repetir el fallo con control transaccional
 
 ``` sql
 CALL sp08_cerrar_evaluacion(27,11,'Prueba de error');
--- Ejecutar despues del error previsto:
+```
+
+``` txt
+ERROR 1644 (45000): La nota debe estar entre 0 y 10
+```
+
+``` sql
 SELECT m.estado,n.nota
 FROM matriculas m LEFT JOIN notas n USING(id_matricula)
 WHERE m.id_matricula=27;
 ```
 
-Se espera el error y se conserva matriculado sin fila de notas. El manejador deshace el UPDATE provisional y propaga el error al llamador. EXIT por sí solo no lo habría deshecho: la acción decisiva sobre los datos es ROLLBACK.
+``` txt
++-------------+------+
+| estado      | nota |
++-------------+------+
+| matriculado | NULL |
++-------------+------+
+```
 
-# Paso 6 Ejecutar el caso válido y recuperarlo
+El manejador deshace el UPDATE provisional y propaga el error al llamador. EXIT por sí solo no lo habría deshecho: la acción decisiva sobre los datos es `ROLLBACK.`
+
+## Paso 7 Ejecutar el caso válido y recuperarlo
 
 ``` sql
 CALL sp08_cerrar_evaluacion(27,7.50,'Evaluacion completa');
@@ -1844,7 +1967,15 @@ FROM matriculas m JOIN notas n USING(id_matricula)
 WHERE m.id_matricula=27;
 ```
 
-Se esperan finalizado y 7,50. Ambos cambios quedaron confirmados por COMMIT. Después recuperar mediante las variables guardadas en el paso 2.
+```         
++------------+------+
+| estado     | nota |
++------------+------+
+| finalizado | 7.50 |
++------------+------+
+```
+
+Se esperan finalizado y 7,50. Ambos cambios quedaron confirmados por `COMMIT`. Después recuperar mediante las variables guardadas en el paso 2.
 
 ``` sql
 CALL sp00_restaurar_evaluacion(
@@ -1859,13 +1990,13 @@ SELECT COUNT(*) FROM notas;
 
 Se esperan 27 matrículas y 25 notas. Si la captura se perdió al cerrar la conexión, no inventar sus valores: utilizar la copia previa o una captura válida del estado anterior. sp00_restaurar_evaluacion no es una restauración universal; es una herramienta de laboratorio para la matrícula cuya captura se ha conservado.
 
-Pregunta. ¿Por qué sp07_guardar_nota puede llamarse dentro de sp08, pero sería problemático que ambas iniciaran y confirmaran transacciones propias?
+Pregunta. ¿Por qué ***sp07_guardar_nota*** puede llamarse dentro de sp08, pero sería problemático que ambas iniciaran y confirmaran transacciones propias?
 
-# Diagnosticar una duplicidad y demostrar CONTINUE
+# Diagnosticar con `GET DIAGNOSTICS CONDITION 1`
 
 Objetivo. Gestionar un error específico, comunicar qué sucedió y observar una instrucción posterior a la que falló. Esta versión didáctica no aplica la política de alumno activo de sp06; se utiliza para estudiar diagnósticos y conserva las restricciones de las tablas.
 
-# Paso 1 Crear el procedimiento
+## Paso 1 Crear el procedimiento que generará información sobre las excepciones.
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp09_intentar_matricula;
@@ -1881,7 +2012,8 @@ BEGIN
   DECLARE CONTINUE HANDLER FOR 1062
   BEGIN
     GET DIAGNOSTICS CONDITION 1 
-       p_estado=RETURNED_SQLSTATE,p_mensaje=MESSAGE_TEXT;
+       p_estado=RETURNED_SQLSTATE,
+       p_mensaje=MESSAGE_TEXT;
     SET p_insertada=FALSE;
   END;
   SET p_insertada=TRUE;
@@ -1898,20 +2030,37 @@ END//
 DELIMITER ;
 ```
 
-GET DIAGNOSTICS CONDITION 1 recoge el SQLSTATE y el mensaje de la condición de duplicidad que acaba de producirse en este ejemplo. Se ejecuta al entrar en el manejador, antes de otras operaciones que puedan afectar al diagnóstico. Los valores iniciales describen éxito; el manejador los sustituye cuando atiende el error 1062.
+`GET DIAGNOSTICS CONDITION 1` recoge el `SQLSTATE` y el mensaje de la condición de duplicidad que acaba de producirse en este ejemplo. Se ejecuta al entrar en el manejador, antes de otras operaciones que puedan afectar al diagnóstico.
+
+Los valores iniciales describen éxito; el manejador los sustituye cuando atiende el error 1062.
 
 La marca @sp_rev_despues_insert y el SELECT de seguimiento están después del INSERT. Por eso permiten comprobar que CONTINUE realmente ejecutó instrucciones posteriores. El manejador no reintenta la inserción ni convierte todos los errores en duplicidad.
 
-# Paso 2 Probar una duplicidad conocida
+## Paso 2 Generar un error por duplidad
 
 ``` sql
 CALL sp09_intentar_matricula(1,1,@insertada,@estado,@mensaje);
+```
+
+``` txt
++-----------------------------------------+
+| seguimiento                             |
++-----------------------------------------+
+| Operacion posterior al INSERT alcanzada |
++-----------------------------------------+
+```
+
+La llamada termina normalmente porque ese error específico ha sido atendido, por lo que hay salida de los parámetros OUT, que nos informarán de que la operación no se realizó correctamente.
+
+``` sql
 SELECT @insertada,@estado,@mensaje,@sp_rev_despues_insert;
 ```
 
-Se espera el mensaje de seguimiento, insertada=0, SQLSTATE 23000 y despues_insert=1. El texto de la duplicidad puede variar con la versión y el nombre de la restricción. La llamada termina normalmente porque ese error específico ha sido atendido.
+![](images/paste-14.png)
 
-# Paso 3 Probar una inserción provisional
+## Paso 3 Probar una inserción provisional
+
+Recordemos que el estado de las variables es el del ejercicio anterior.
 
 ``` sql
 START TRANSACTION;
@@ -1920,20 +2069,56 @@ SELECT @insertada,@estado,@mensaje,@sp_rev_despues_insert;
 ROLLBACK;
 ```
 
-Se esperan 1, 00000, Matricula creada y 1. ROLLBACK elimina la nueva matrícula. La marca de sesión y las variables no vuelven automáticamente a su valor anterior al deshacer datos de las tablas.
+``` txt
++------------+---------+------------------+------------------------+
+| @insertada | @estado | @mensaje         | @sp_rev_despues_insert |
++------------+---------+------------------+------------------------+
+|          1 | 00000   | Matricula creada |                      1 |
++------------+---------+------------------+------------------------+
+```
 
-# Paso 4 Probar un error que este manejador no atiende
+::: nota
+A pesar del `ROLLBACK`, las variables que recibieron la salida del procedimiento no cambian al valor anterior a su ejecución.
+:::
 
 ``` sql
-CALL sp09_intentar_matricula(999,4,@insertada,@estado,@mensaje);
--- Tras observar el error de clave foranea:
 SELECT @insertada,@estado,@mensaje,@sp_rev_despues_insert;
 ```
 
-La clave foránea inexistente se propaga; no es una duplicidad. La marca despues_insert queda en 0. Los OUT pueden conservar la información de la llamada correcta anterior, como se comprobó en el apartado 14. No utilizarlos como resultado de esta nueva ejecución fallida.
+``` txt
++------------+---------+------------------+------------------------+
+| @insertada | @estado | @mensaje         | @sp_rev_despues_insert |
++------------+---------+------------------+------------------------+
+|          1 | 00000   | Matricula creada |                      1 |
++------------+---------+------------------+------------------------+
+```
+
+## Paso 4 Probar un error que este manejador no atiende
+
+``` sql
+CALL sp09_intentar_matricula(999,4,@insertada,@estado,@mensaje);
+```
+
+`ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (academia_it.matriculas, CONSTRAINT fk_matriculas_alumno FOREIGN KEY (id_alumno) REFERENCES alumnos (id_alumno) ON DELETE RESTRICT ON UPDATE RESTRICT)`
+
+``` sql
+SELECT @insertada,@estado,@mensaje,@sp_rev_despues_insert;
+```
+
+``` txt
++------------+---------+------------------+------------------------+
+| @insertada | @estado | @mensaje         | @sp_rev_despues_insert |
++------------+---------+------------------+------------------------+
+|          1 | 00000   | Matricula creada |                      0 |
++------------+---------+------------------+------------------------+
+```
+
+El error de la clave foránea inexistente se propaga; no es una duplicidad. La marca despues_insert queda en 0.
+
+Los `OUT` conservan la información de la llamada anterior. Es importante tener esto en cuenta para no entenderlos como resultado de esta nueva ejecución fallida.
 
 | Mecanismo | Función |
-|-------------------------|-----------------------------------------------|
+|------------------|------------------------------------------------------|
 | CONTINUE HANDLER | Atiende la condición y continúa tras la instrucción que la produjo. |
 | EXIT HANDLER | Atiende la condición y abandona el bloque donde se declaró. |
 | SIGNAL | Genera una condición con su información. |
@@ -1944,30 +2129,128 @@ Pregunta. ¿Por qué no debe reemplazarse este manejador específico por uno que
 
 # Resolver el reto final con una consulta y una operación atómica
 
-Objetivo. Aplicar lo aprendido sin copiar inmediatamente la solución. El reto tiene dos partes. Desarrollar y justificar las rutinas antes de consultar el anexo A. El archivo 01_soluciones_esenciales.sql contiene las soluciones para contrastar el trabajo, no es necesario importarlo al comenzar.
+Objetivo.
 
-# Parte A Resumir un curso
+El reto tiene dos partes. Desarrollar y justificar las rutinas antes de consultar el anexo A.
 
-Crear sp14_resumen_curso: recibe un id_curso y entrega por OUT el número de matrículas, evaluaciones numéricas y media de notas. Debe distinguir un curso inexistente de uno existente sin actividad, conservar las asignaturas sin matrículas y las matrículas sin nota, e ignorar NULL en la media sin ignorar el cero.
+El *archivo 01_soluciones_esenciales.sql* contiene las soluciones para contrastar el trabajo, no es necesario importarlo al comenzar.
 
-Resolver mediante una agregación, sin cursor. Utilizar BIGINT UNSIGNED en los recuentos, DECIMAL(5,2) en la media y SQL SECURITY INVOKER. Justificar COUNT(m.id_matricula), COUNT(n.nota) y AVG(n.nota).
+## Parte A Resumir un curso
+
+Crear *sp14_resumen_curso*: recibe un *id_curso* y entrega por `OUT` el número de matrículas, evaluaciones numéricas y media de notas. Debe distinguir un curso inexistente de uno existente sin actividad, conservar las asignaturas sin matrículas y las matrículas sin nota, e ignorar `NULL` en la media sin ignorar el cero.
+
+Resolver mediante una agregación, sin cursor.
+
+Utilizar BIGINT UNSIGNED en los recuentos, DECIMAL(5,2) en la media y SQL SECURITY INVOKER.
+
+Justificar COUNT(m.id_matricula), COUNT(n.nota) y AVG(n.nota).
+
+``` sql
+DROP PROCEDURE IF EXISTS sp14_resumen_curso;
+DELIMITER //
+
+CREATE PROCEDURE sp14_resumen_curso
+(
+    IN p_id_curso INT UNSIGNED, 
+    OUT p_n_matriculas BIGINT UNSIGNED,
+    OUT p_n_eval BIGINT UNSIGNED,
+    OUT p_media DECIMAL(5,2)
+)
+SQL SECURITY INVOKER
+READS SQL DATA
+BEGIN
+    -- Manejador de excepciones genérico por seguridad ante fallos SQL
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET p_n_matriculas = NULL;
+        SET p_n_eval = NULL;
+        SET p_media = NULL;
+        RESIGNAL;
+    END;
+        
+    -- Inicialización de variables de salida
+    SET p_n_matriculas = 0;
+    SET p_n_eval = 0;
+    SET p_media = NULL;
+
+    -- 1. Validar si el curso existe
+    IF NOT EXISTS (SELECT 1 FROM cursos WHERE id_curso = p_id_curso) THEN 
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Curso inexistente';
+    END IF;
+    
+    -- 2. Contar matrículas asociadas al curso a través de curso_asignatura
+    SELECT COUNT(*) INTO p_n_matriculas 
+    FROM matriculas m
+    INNER JOIN curso_asignatura ca 
+        ON ca.id_curso_asignatura = m.id_curso_asignatura  
+        AND ca.id_curso = p_id_curso;
+
+    -- 3. Validar si el curso tiene matrículas
+    IF p_n_matriculas = 0 THEN 
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'El curso no tiene matriculas';
+    END IF;
+    
+    -- 4. Calcular número de evaluaciones y la media de notas (CORREGIDO EL INTO)
+    SELECT 
+        COUNT(n.id_matricula), 
+        AVG(n.nota) 
+    INTO 
+        p_n_eval, 
+        p_media
+    FROM notas n  
+    INNER JOIN matriculas m 
+        ON m.id_matricula = n.id_matricula
+    INNER JOIN curso_asignatura ca 
+        ON ca.id_curso_asignatura = m.id_curso_asignatura  
+        AND ca.id_curso = p_id_curso;
+
+END//
+
+DELIMITER ;
+```
+
+------------------------------------------------------------------------
 
 ``` sql
 CALL sp14_resumen_curso(1,@mat,@eval,@media);
 SELECT @mat,@eval,@media;
+```
+
+```         
++------+-------+--------+
+| @mat | @eval | @media |
++------+-------+--------+
+|    7 |     7 |   6.58 |
++------+-------+--------+
+```
+
+``` sql
 CALL sp14_resumen_curso(2,@mat,@eval,@media);
-SELECT @mat,@eval,@media;
-CALL sp14_resumen_curso(3,@mat,@eval,@media);
 SELECT @mat,@eval,@media;
 ```
 
-| Curso | Matrículas | Evaluadas | Media |
-|-------|------------|-----------|-------|
-| 1     | 7          | 6         | 6,58  |
-| 2     | 7          | 7         | 8,11  |
-| 3     | 13         | 11        | 8,27  |
+```         
++------+-------+--------+
+| @mat | @eval | @media |
++------+-------+--------+
+|    7 |     7 |   8.11 |
++------+-------+--------+
+```
 
-El curso 999 debe generar SQLSTATE 45000. Comprobar además un curso existente sin asignaturas mediante una inserción provisional:
+``` sql
+CALL sp14_resumen_curso(999,@mat,@eval,@media);
+```
+
+ERROR 1644 (45000): Curso inexistente 
++------+-------+--------+ 
+\| @mat \| @eval \| @media \| 
++------+-------+--------+ 
+| NULL \| NULL \| NULL \| 
++------+-------+--------+
+
+Comprobar además un curso existente sin asignaturas mediante una inserción provisional:
 
 ``` sql
 START TRANSACTION;
@@ -1980,13 +2263,80 @@ SELECT @mat,@eval,@media;
 ROLLBACK;
 ```
 
-Se esperan 0, 0 y NULL. La recuperación mantiene los tres cursos originales.
+ERROR 1644 (45000): El curso no tiene matriculas
 
-# Parte B Crear una matrícula y su primera calificación
+## Parte B Crear una matrícula y su primera calificación
 
-Crear sp15_matricular_con_nota con entradas id_alumno, id_curso_asignatura, nota y observaciones, y una salida id_matricula. Reutilizar sp06_matricular y sp07_guardar_nota. La nueva rutina controla su transacción; se llama sin una transacción previa. Si falla cualquier operación, no debe quedar ni la matrícula ni su nota. El error debe propagarse.
+- Crear *sp15_matricular_con_nota* con entradas `id_alumno`, *id_curso_asignatura*, *nota* y *observaciones*, y una salida *id_matricula*.
 
-La matrícula recién creada conserva el estado matriculado: registrar una primera calificación no equivale aquí a cerrar toda la evaluación. No añadir tablas, columnas ni una regla de estado diferente.
+- Reutilizar *sp06_matricular* y *sp07_guardar_nota*.
+``` sql
+DROP PROCEDURE IF EXISTS sp06_matricular;
+DELIMITER //
+    
+CREATE PROCEDURE sp06_matricular(
+  IN p_id_alumno INT UNSIGNED,
+  IN p_id_curso_asignatura INT UNSIGNED,
+  OUT p_id_matricula INT UNSIGNED)
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+    
+  DECLARE duplicada CONDITION FOR 1062;
+  DECLARE inexistente CONDITION FOR 1452;
+
+  DECLARE EXIT HANDLER FOR duplicada 
+     SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT='La matricula ya existe'; 
+
+   DECLARE EXIT HANDLER FOR inexistente 
+     SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT='el alumno o la asignatura no existen'; 
+  INSERT INTO matriculas 
+     (id_alumno,id_curso_asignatura,fecha_matricula,estado)
+  VALUES (p_id_alumno,p_id_curso_asignatura,
+     CURRENT_DATE(),'matriculado');
+  SET p_id_matricula=LAST_INSERT_ID();
+END//
+DELIMITER ;
+```
+
+``` sql
+DROP PROCEDURE IF EXISTS sp07_guardar_nota;
+DELIMITER //
+CREATE PROCEDURE sp07_guardar_nota(
+  IN p_id_matricula INT UNSIGNED,
+  IN p_nota DECIMAL(6,2),
+  IN p_observaciones VARCHAR(255))
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+  IF p_nota IS NULL OR p_nota<0 OR p_nota>10 THEN 
+     SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT='La nota debe estar entre 0 y 10';
+  END IF; --- rechaza NULL y valores fuera de rango. 
+  IF NOT EXISTS (SELECT 1 FROM matriculas 
+     WHERE id_matricula=p_id_matricula) THEN 
+     SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT='La matricula no existe';
+  END IF; ---Rechaza matriculas inexistentes
+  INSERT INTO notas 
+     (id_matricula,nota,fecha_evaluacion,observaciones)
+  VALUES (p_id_matricula,p_nota,CURRENT_DATE(),p_observaciones)
+  ON DUPLICATE KEY UPDATE 
+     nota=p_nota,fecha_evaluacion=CURRENT_DATE(),
+     observaciones=p_observaciones;
+END//
+DELIMITER ;
+```
+
+- La nueva rutina controla su transacción; se llama sin una transacción previa.
+
+- Si falla cualquier operación, no debe quedar ni la matrícula ni su nota.
+
+- El error debe propagarse.
+
+- La matrícula recién creada conserva el estado matriculado: registrar una primera calificación no equivale aquí a cerrar toda la evaluación. No añadir tablas, columnas ni una regla de estado diferente.
 
 Preparación de la recuperación. Crear primero esta herramienta fuera de cualquier transacción. Se utilizará después únicamente con el identificador recibido de una llamada correcta y con la pareja de prueba comprobada libre.
 
@@ -2024,7 +2374,7 @@ END//
 DELIMITER ;
 ```
 
-# Paso 1 Preparar una combinación libre
+## Paso 1 Preparar una combinación libre
 
 ``` sql
 SELECT COUNT(*) FROM matriculas
@@ -2033,7 +2383,7 @@ WHERE id_alumno=1 AND id_curso_asignatura=4;
 
 Se espera 0. Si la combinación ya existe, resolver el origen del cambio antes de ejecutar los resultados esperados.
 
-# Paso 2 Comprobar que una nota inválida deshace la matrícula
+## Paso 2 Comprobar que una nota inválida deshace la matrícula
 
 ``` sql
 SET @id_reto=NULL;
@@ -2163,7 +2513,7 @@ TO 'sp_academia_operador'@'localhost';
 ```
 
 | Privilegio | Finalidad |
-|--------------------------|---------------------------------------------|
+|---------------------------|---------------------------------------------|
 | CREATE ROUTINE | Crear procedimientos y funciones almacenadas. |
 | ALTER ROUTINE | Alterar las características permitidas o eliminar la rutina. |
 | EXECUTE | Autorizar su ejecución. |
@@ -2235,7 +2585,7 @@ Objetivo de ampliación. Comprender repetición y control de flujo sin modificar
 # Paso 1 Comparar las tres estructuras
 
 | Estructura | Cuándo comprueba la condición                                 |
-|------------------|-----------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
 | REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
 | LOOP       | No incorpora condición de salida: se programa explícitamente. |
@@ -2613,7 +2963,7 @@ Debe haberse importado o construido el contenido de 02_soluciones_ampliacion.sql
 # Paso 4 Añadir las evidencias manuales
 
 | Prueba | Evidencia necesaria |
-|---------------------|--------------------------------------------------|
+|------------------------|------------------------------------------------|
 | SELECT INTO | Una fila asigna, cero conserva el valor y varias filas producen 1172. |
 | Flujo de errores | Marcas distintas para ausencia de manejador, CONTINUE y EXIT. |
 | Salidas tras error | Conservación de valores exteriores al fallar y entrega al finalizar normalmente. |
@@ -2642,7 +2992,7 @@ La ampliación se valora por separado si se asigna: control de bucles, elección
 # Errores comunes y buenas prácticas
 
 | Situación | Causa o corrección |
-|---------------------------|--------------------------------------------|
+|----------------------------|--------------------------------------------|
 | Crear y esperar el listado | CREATE guarda instrucciones; CALL las ejecuta. |
 | Repetir CREATE con el mismo nombre | Consultar la definición existente y reemplazar solo la rutina prevista. |
 | Definición enviada a medias | Seleccionar el bloque completo y utilizar correctamente DELIMITER en el cliente. |
@@ -2674,7 +3024,7 @@ La continuación de la ejecución y la confirmación de cambios son cuestiones i
 Los permisos de CALL y los permisos de las instrucciones interiores se analizan por separado. Las copias deben incluir las rutinas y verificarse con sus definidores y permisos en el destino.
 
 | Necesidad | Objeto adecuado |
-|----------------------------------------------|-------------------------|
+|----------------------------------------------|--------------------------|
 | Guardar un listado que después se consulta y filtra con SELECT | Vista. |
 | Realizar varias instrucciones con parámetros mediante una llamada | Procedimiento almacenado. |
 | Calcular un valor que se utiliza dentro de una expresión SELECT | Función almacenada. |
@@ -2795,7 +3145,7 @@ Estas soluciones forman parte de 01_soluciones_esenciales.sql. La herramienta de
 # Anexo C Archivos y orden de utilización
 
 | Archivo | Uso |
-|-------------------|----------------------------------------------------|
+|-----------------------|-------------------------------------------------|
 | 00_comprobar_base.sql | Lectura de estructura recuentos y registros de referencia. |
 | 01_soluciones_esenciales.sql | Definiciones esenciales y soluciones de los retos. Reemplaza esas rutinas; no modifica filas por sí solo. |
 | 02_soluciones_ampliacion.sql | Definiciones de bucles cursor y SQL dinámico. |
