@@ -847,25 +847,24 @@ SELECT * FROM log_transacciones;
 La tabla final con los resultados nos muestra claramente qué transacciones se han confirmado y cuáles se han revertido, junto con los mensajes de error capturados y los valores de salida correspondientes. Esto permite un análisis detallado del comportamiento de los procedimientos anidados y la gestión de errores en un entorno controlado. Vemos que los errores manejados que no han sido propagados al exterior No han producido un rollback, por lo tanto tendremos que hacer verificiones manuales de los valores de salida para saber si la transacción se ha realizado correctamente o no.
 
 ```         
-12:45:01(root)mysql>SELECT * FROM log_transacciones order by operacion_realizada;
-+----+------------------------------+-------------------------------+---------------+-----------------------+----------+
-| id | operacion_realizada          | error_detectado               | valor_entrada | valor_variable_salida | detalle  |
-+----+------------------------------+-------------------------------+---------------+-----------------------+----------+
-|  5 | CALL sp_test_v1(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
-|  6 | CALL sp_test_v1(2, @salida)  | Error lanzado: Escenario 2    |             2 |                   555 | ROLLBACK |
-|  7 | CALL sp_test_v1(3, @salida)  | Error lanzado: Escenario 3    |             3 |                   555 | ROLLBACK |
-|  8 | CALL sp_test_v1(4, @salida)  | Error lanzado: Escenario 4    |             4 |                   555 | ROLLBACK |
-| 14 | CALL sp_test_v2(-1, @salida) | NULL                          |            -1 |                  NULL | COMMIT   |
-|  1 | CALL sp_test_v2(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
-|  2 | CALL sp_test_v2(2, @salida)  | NULL                          |             2 |                   999 | COMMIT   |
-|  3 | CALL sp_test_v2(3, @salida)  | NULL                          |             3 |                    -3 | COMMIT   |
-|  4 | CALL sp_test_v2(4, @salida)  | Error 4                       |             4 |                   555 | ROLLBACK |
-| 15 | CALL sp_test_v3(-1, @salida) | NULL                          |            -1 |                     0 | COMMIT   |
-|  9 | CALL sp_test_v3(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
-| 10 | CALL sp_test_v3(2, @salida)  | NULL                          |             2 |                     3 | COMMIT   |
-| 11 | CALL sp_test_v3(3, @salida)  | NULL                          |             3 |                     4 | COMMIT   |
-| 12 | CALL sp_test_v3(4, @salida)  | Error 4 propagado al exterior |             4 |                   555 | ROLLBACK |
-+----+------------------------------+-------------------------------+---------------+-----------------------+----------+
+SELECT * FROM log_transacciones order by operacion_realizada;
++----+------------------------------+----------------------------------+----------------+-----------------------+----------+
+| id | operacion_realizada          | error_detectado                  | valor_entrada  | valor_variable_salida | detalle  |
++----+------------------------------+----------------------------------+----------------+-----------------------+----------+
+|  1 | CALL sp_test_v1(1, @salida)  | NULL                             |              1 |                     2 | COMMIT   |
+|  2 | CALL sp_test_v1(2, @salida)  | Error lanzado: Escenario 2       |              2 |                   555 | ROLLBACK |
+|  3 | CALL sp_test_v1(3, @salida)  | Error lanzado: Escenario 3       |              3 |                   555 | ROLLBACK |
+|  4 | CALL sp_test_v2(-1, @salida) | NULL                             |             -1 |                  NULL | COMMIT   |
+|  5 | CALL sp_test_v2(1, @salida)  | NULL                             |              1 |                     2 | COMMIT   |
+|  6 | CALL sp_test_v2(2, @salida)  | NULL                             |              2 |                   999 | COMMIT   |
+|  7 | CALL sp_test_v2(3, @salida)  | NULL                             |              3 |                    -3 | COMMIT   |
+|  8 | CALL sp_test_v2(4, @salida)  | Error 4                          |              4 |                   555 | ROLLBACK |
+|  9 | CALL sp_test_v3(-1, @salida) | NULL                             |             -1 |                     0 | COMMIT   |
+| 10 | CALL sp_test_v3(1, @salida)  | NULL                             |              1 |                     2 | COMMIT   |
+| 11 | CALL sp_test_v3(2, @salida)  | NULL                             |              2 |                     3 | COMMIT   |
+| 12 | CALL sp_test_v3(3, @salida)  | NULL                             |              3 |                     4 | COMMIT   |
+| 13 | CALL sp_test_v3(4, @salida)  | Error 4 propagado al exterior    |              4 |                   555 | ROLLBACK |
++----+------------------------------+----------------------------------+----------------+-----------------------+----------+
 ```
 
 Ahora leemos los resultados de tabla_intermedia para ver si las transacciones que han fallado y han hecho ROLLBACK han dejado algún rastro de su ejecución. Vemos que los procedimientos que han fallado y han hecho ROLLBACK no han dejado registros en la tabla_intermedia, mientras que los que han hecho COMMIT sí, a pesar de que el rollback se haya hecho fuera del procedimiento que ha fallado. Esto es un ejemplo de cómo manejar transacciones y errores en procedimientos anidados, asegurando que los datos se mantengan consistentes y que los errores se registren adecuadamente para su análisis posterior.
