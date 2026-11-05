@@ -111,7 +111,7 @@ En cuanto la ejecución del procedimiento lee la línea de `SIGNAL`:
 
 2.  Si **no hay** un manejador de errores (`DECLARE HANDLER`) activo, el error escala directamente hacia afuera, aborta el procedimiento por completo y devuelve el mensaje a la consola o aplicación cliente.
 
-3.  Si **sí hay** un manejador configurado (como vimos con `CONTINUE` o `EXIT`), este interceptará el error para ejecutar tareas de limpieza o auditoría
+3.  Si **sí hay** un manejador configurado ( `CONTINUE` o `EXIT`), este interceptará el error para ejecutar tareas de limpieza o auditoría.
 
 ## Equivalencias en otros motores de bases de datos
 
@@ -177,7 +177,7 @@ END;
 ### Tabla Resumen de Equivalencias
 
 |  |  |  |
-|-----------------|----------------------------|----------------------------|
+|------------------|-------------------------|-----------------------------|
 | **Motor** | **Instrucción para lanzar el error** | **Rango / Formato del Código** |
 | **MySQL / MariaDB** | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '...';` | Cadena de 5 caracteres (ej. `'45000'`) |
 | **PostgreSQL** | `RAISE EXCEPTION '...' USING ERRCODE = 'P0001';` | Códigos SQLSTATE estándar (ej. `'P0001'`) |
@@ -188,7 +188,11 @@ END;
 
 # Manejo de Excepciones en MySQL y MariaDB
 
-MySQL/MariaDB utiliza la sintaxis **`DECLARE ... HANDLER`** dentro de procedimientos almacenados y funciones. Debe ser declarado obligatoriamente **después** de la declaración de variables y cursores, pero **antes** del código principal del bloque.
+MySQL/MariaDB utiliza la sintaxis **`DECLARE ... HANDLER`** dentro de procedimientos almacenados y funciones.
+
+::: nota
+Debe ser declarado obligatoriamente **después** de la declaración de variables y cursores, pero **antes** del código principal del bloque.
+:::
 
 ## Sintaxis General
 
@@ -358,7 +362,7 @@ END;
 # Cuadro Comparativo Resumen
 
 | Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
-|:-----------------|:-----------------|:-----------------|:-----------------|
+|:----------------|:----------------|:----------------|:--------------------|
 | **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
 | **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
 | **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
@@ -446,6 +450,410 @@ DELIMITER ;
 
 De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.
 
+::: practica
+# Ejemplos explicativos de manejo de errores y `RESIGNAL`.
+
+Vamos a ver en la práctica cómo responde sql a errores en distintas situaciones de manejo. Tenemos un procedimiento muy sencillo donde simplemente sumamos uno al valor introducido y lo devolvemos, pero tenemos dos situaciones que generarán un error de lógica interna: valores de 2 y 3 dan error.
+
+## Versión 1: Sin Manejadores (`SIGNAL` Puro)
+
+En esta versión no hay ningún `DECLARE HANDLER`. Si lanzamos un error, la ejecución se corta de inmediato, no se llega al final y el error salta de forma abrupta hacia el exterior.
+
+``` sql
+SET @salida =100;
+
+DROP PROCEDURE IF EXISTS sp_test_v1;
+
+DELIMITER //
+CREATE PROCEDURE sp_test_v1(IN p_in INT, OUT p_out INT)
+BEGIN
+    SELECT '1. Inicio del procedimiento' AS traza;
+    SET p_out = 999;
+    SET @salida = 555;
+    -- Evaluamos los escenarios de error
+    IF p_in = 2 THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'Error lanzado: Escenario 2';
+    ELSEIF p_in = 3 THEN
+        SIGNAL SQLSTATE '45003' SET MESSAGE_TEXT = 'Error lanzado: Escenario 3';
+    ELSEIF p_in = 4 THEN
+        SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'Error lanzado: Escenario 4';
+    END IF;
+    
+    -- Operación normal si p_in es 1 u otro valor
+    SET p_out = p_in + 1;
+    
+    SELECT '3. Fin del procedimiento' AS traza;
+END//
+
+DELIMITER ;
+```
+
+Antes de hacer cada prueba vamos a resetear el valor de la variable @salida a 100
+
+``` sql
+SET @salida =100;
+```
+
+si pasamos 1: `CALL sp_test_v1(1, @salida);`
+
+nos devuelve:
+
+```         
++-----------------------------+
+| traza                       |
++-----------------------------+
+| 1. Inicio del procedimiento |
++-----------------------------+
+
++--------------------------+
+| traza                    |
++--------------------------+
+| 3. Fin del procedimiento |
++--------------------------+
+```
+
+y la variable @salida: `SELECT @salida;`
+
+```         
++---------+
+| @salida |
++---------+
+|       2 |
++---------+
+```
+
+Resetamos salida a 100.
+
+Pasamos 2: `CALL sp_test_v1(2, @salida);` nos devuelve:
+
+```         
++-----------------------------+
+| traza                       |
++-----------------------------+
+| 1. Inicio del procedimiento |
++-----------------------------+
+
+ERROR 1644 (45002): Error lanzado: Escenario 2
+```
+
+Nota que se ha parado la ejecución después del error y no se ha imprimido "3. Fin del procedimiento"
+
+`SELECT @salida;` Conserva el valor que tuviera almacenado antes de producirse el error. El procedimiento no devuelve nada por OUT actualizándolo. Las líneas que se ejecutasen antes del error son definitivas.
+
+```         
++---------+
+| @salida |
++---------+
+|     555 |
++---------+
+```
+
+## Versión 2: Manejadores con EXIT (y RESIGNAL en el error 3)
+
+Aquí interceptamos los errores mediante bloques EXIT. El manejador frena el flujo normal del bloque principal, ejecuta su lógica interna (modifica el OUT o guarda un log) y sale limpiamente del procedimiento (sin propagar error en el caso 2, o propagándolo con RESIGNAL en el caso 3).
+
+``` sql
+SET @salida =100;
+DROP PROCEDURE IF EXISTS sp_test_v2;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_test_v2(IN p_in INT, OUT p_out INT)
+BEGIN
+    
+    -- Manejador EXIT para el Error 2: Intercepta, maneja y sale de forma controlada
+    DECLARE EXIT HANDLER FOR SQLSTATE '45011'
+    BEGIN       
+        SELECT '-> Capturado Error -1 con EXIT. Salida limpia.' AS log_interno;        
+    END;
+    
+    DECLARE EXIT HANDLER FOR SQLSTATE '45002'
+    BEGIN       
+        SELECT '-> Capturado Error 2 con EXIT. Salida limpia.' AS log_interno;        
+    END;
+
+    -- Manejador EXIT para el Error 3: Intercepta y establece un valor de salida
+    DECLARE EXIT HANDLER FOR SQLSTATE '45003'
+    BEGIN
+        SET p_out = -3;
+        SELECT '-> Capturado Error 3 con EXIT y establecimiento manual de OUT' AS log_interno;       
+    END;
+
+    -- Manejador EXIT para el Error 3: Intercepta, hace tareas y RELANZA (RESIGNAL)
+    DECLARE EXIT HANDLER FOR SQLSTATE '45004'
+    BEGIN
+        SET p_out = -4;
+        SELECT '-> Capturado Error 4 con EXIT. Relanzando al exterior...' AS log_interno;
+        RESIGNAL SET MESSAGE_TEXT = 'Error 4';
+    END;
+
+    SELECT '1. Inicio del procedimiento' AS traza;
+
+    IF p_in = -1 THEN 
+        SIGNAL SQLSTATE '45011' SET MESSAGE_TEXT = 'Error provocado tipo -1';
+    END IF;
+
+    SET p_out = 999;
+    SET @salida = 555;    
+
+    IF p_in = 2 THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'Error provocado tipo 2';
+    ELSEIF p_in = 3 THEN
+        SIGNAL SQLSTATE '45003' SET MESSAGE_TEXT = 'Error provocado tipo 3';
+    ELSEIF p_in = 4 THEN
+        SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'Error provocado tipo 4';
+    END IF;
+    
+    SET p_out = p_in + 1;
+    
+    SELECT '3. Fin del procedimiento' AS traza; -- Tampoco se alcanza si salta el signal, porque el EXIT aborta el bloque
+END//
+
+DELIMITER ;
+```
+
+Reseteamos el valor de la variable @salida a 100 entre cada prueba. `SET @salida =100;`
+
+CASO 1 `CALL sp_test_v2(-1,@salida);`:
+
+El procedimiento falla antes de ejecutar ninguna actualización de variables.
+
+![](images/paste-17.png)
+
+La variable @salida ha sido reinicializada a NULL al fallar el procedimiento. Al contrario que en los errores sin manejar, no conserva el valor que tenía antes de entrar en el procedimiento (100).
+
+Volvemos a inicializar la variable salida a 100: `SET @salida =100;`
+
+CASO 2: `CALL sp_test_v2(2,@salida);`
+
+Se han ejecutado estas dos líneas antes del error, en este orden: `SET p_out = 999;` `SET @salida = 555;`
+
+El manejador `EXIT` atrapa el error, muestra su mensaje interno y termina el procedimiento. Al llamar de nuevo a @salida vemos que el valor que habíamos puesto en la variable de salida p_out =999, lo que significa que el procedimiento ha devuelto OUT al exterior.
+
+![](images/paste-16.png)
+
+CASO 3: `CALL sp_test_v2(3,@salida);` Atrapa el error, asigna p_out = -3 antes de salir.
+
+![](images/paste-18.png)
+
+CASO 4: `CALL sp_test_v2(3,@salida);`
+
+El código es igual que el anterior pero con RESIGNAL.
+
+Vemos que ahora el output muestra el mensaje de error. En lugar de haber actualizado la variable de salida a -4 como le dijimos en el handler (y que funcionó en el caso anterior), esta vez NO actualiza la variable @salida de ninguna forma al salir, pero la línea que ejecutó el cambio a 555 sí funcionó.
+
+![](images/paste-19.png)
+
+## Versión 3: Manejadores con `CONTINUE` (y `RESIGNAL` en el error 4)
+
+Con un manejador **`CONTINUE`**, cuando ocurre el error y se captura, MySQL ejecuta el código interno del manejador **pero después el flujo NO se detiene**: la ejecución regresa al bloque principal y continúa ejecutando las líneas que vienen justo a continuación del error.
+
+``` sql
+SET @salida = 100;
+DROP PROCEDURE IF EXISTS sp_test_v3;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_test_v3(IN p_in INT, OUT p_out INT)
+BEGIN
+    -- Manejador CONTINUE para el Error -1
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '45011'
+    BEGIN       
+        SELECT '-> Capturado Error -1 con CONTINUE. El flujo sigue.' AS log_interno;        
+    END;
+    
+    -- Manejador CONTINUE para el Error 2
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '45002'
+    BEGIN       
+        SELECT '-> Capturado Error 2 con CONTINUE. El flujo sigue.' AS log_interno;
+        SET p_out = -2; -- Intentamos fijar un valor de error
+    END;
+
+    -- Manejador CONTINUE para el Error 3
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '45003'
+    BEGIN
+        SET p_out = -3;
+        SELECT '-> Capturado Error 3 con CONTINUE. El flujo sigue.' AS log_interno;       
+    END;
+
+    -- Manejador CONTINUE para el Error 4 (con RESIGNAL)
+    DECLARE CONTINUE HANDLER FOR SQLSTATE '45004'
+    BEGIN
+        SET p_out = -4;
+        SELECT '-> Capturado Error 4 con CONTINUE, pero relanzamos con RESIGNAL.' AS log_interno;
+        RESIGNAL SET MESSAGE_TEXT = 'Error 4 propagado al exterior';
+    END;
+
+    SELECT '1. Inicio del procedimiento' AS traza;
+
+    IF p_in = -1 THEN 
+        SIGNAL SQLSTATE '45011' SET MESSAGE_TEXT = 'Error provocado tipo -1';
+    END IF;
+
+    SET p_out = 999;
+    SET @salida = 555;    
+
+    IF p_in = 2 THEN
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'Error provocado tipo 2';
+    ELSEIF p_in = 3 THEN
+        SIGNAL SQLSTATE '45003' SET MESSAGE_TEXT = 'Error provocado tipo 3';
+    ELSEIF p_in = 4 THEN
+        SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'Error provocado tipo 4';
+    END IF;
+    
+    -- ¡ATENCIÓN AL FLUJO CONTINUE! Esta línea se ejecutará SIEMPRE que el error no haga RESIGNAL
+    SET p_out = p_in + 1;
+    
+    SELECT '3. Fin del procedimiento' AS traza;
+END//
+
+DELIMITER ;
+```
+
+CASO 1: `CALL sp_test_v3(-1, @salida);`
+
+El procedimiento termina hasta la última línea, el valor que habíamos definido dentro del bloque del `DECLARE CONTINUE HANDLER` se sobreescribe con la operación final `SET p_out = p_in + 1;` y el valor final de @salida después del procedimiento es 0.
+
+![](images/paste-20.png)
+
+CASO 2: `CALL sp_test_v3(2, @salida);`
+
+EL valor final de @salida después del procedimiento es 3.
+
+![](images/paste-21.png)
+
+CASO 3: `CALL sp_test_v3(3, @salida);`
+
+EL valor final de @salida después del procedimiento es 4.
+
+![](images/paste-22.png)
+
+CASO 4: CALL sp_test_v3(4, @salida);
+
+EL valor final de @salida después del procedimiento es 555.
+
+![](images/paste-23.png)
+
+
+----------------------------------------------------------------------
+# Manejando los errores en procedimientos anidados
+
+Vamos a crear una tabla que nos sirva de log de auditoría para ver cómo se ven las transacciones desde fuera.
+
+```sql
+-- 1. Creamos una tabla de prueba muy sencilla para ver el efecto del COMMIT y ROLLBACK
+DROP TABLE IF EXISTS log_transacciones;
+CREATE TABLE log_transacciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    operacion_realizada VARCHAR(255),
+    error_detectado VARCHAR(255),
+    valor_entrada INT,
+    valor_variable_salida INT,
+    detalle VARCHAR(255)
+);
+```
+
+```sql
+-- 1. Creamos el procedimiento que gestiona la transacción de forma transparente
+DROP PROCEDURE IF EXISTS sp_ejecutar_transaccion_universal;
+
+DELIMITER //
+
+CREATE PROCEDURE sp_ejecutar_transaccion_universal(
+    IN p_version INT,       -- 1 para sp_test_v1, 2 para sp_test_v2, 3 para sp_test_v3
+    IN p_valor INT          -- El valor de entrada (1, 2, 3, 4...)
+)
+BEGIN
+    DECLARE v_mensaje_error VARCHAR(255);
+    DECLARE v_nombre_proc VARCHAR(50);
+    
+    -- Manejador automático de excepciones
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET DIAGNOSTICS CONDITION 1 v_mensaje_error = MESSAGE_TEXT;
+        ROLLBACK;
+        
+        INSERT INTO log_transacciones (
+            operacion_realizada, error_detectado, valor_entrada, valor_variable_salida, detalle
+        ) 
+        VALUES (
+            CONCAT('CALL sp_test_v', p_version, '(', p_valor, ', @salida)'), 
+            v_mensaje_error, 
+            p_valor, 
+            @salida,
+            'ROLLBACK'
+        );
+    END;
+
+    -- Definimos el nombre del procedimiento según el número de versión elegido
+    SET v_nombre_proc = CASE p_version
+        WHEN 1 THEN 'sp_test_v1'
+        WHEN 2 THEN 'sp_test_v2'
+        WHEN 3 THEN 'sp_test_v3'
+        ELSE 'sp_test_v1'
+    END;
+
+    START TRANSACTION;
+        -- Llamada estática limpia según la versión seleccionada
+        IF p_version = 1 THEN
+            CALL sp_test_v1(p_valor, @salida);
+        ELSEIF p_version = 2 THEN
+            CALL sp_test_v2(p_valor, @salida);
+        ELSEIF p_version = 3 THEN
+            CALL sp_test_v3(p_valor, @salida);
+        END IF;
+
+        COMMIT;
+        
+        INSERT INTO log_transacciones (
+            operacion_realizada, error_detectado, valor_entrada, valor_variable_salida, detalle
+        ) 
+        VALUES (
+            CONCAT('CALL ', v_nombre_proc, '(', p_valor, ', @salida)'), 
+            NULL, 
+            p_valor, 
+            @salida,
+            'COMMIT'
+        );
+END//
+
+DELIMITER ;
+```
+luego realizamos todas las pruebas. Como ejemplo:
+```sql
+-- Probando la versión 2 con el valor de error 4 (genera ROLLBACK y captura el error real)
+SET @salida = 100;
+CALL sp_ejecutar_transaccion_universal(2, 4);
+SELECT * FROM log_transacciones;
+```` 
+
+La tabla final con los resultados nos muestra claramente qué transacciones se han confirmado y cuáles se han revertido, junto con los mensajes de error capturados y los valores de salida correspondientes. Esto permite un análisis detallado del comportamiento de los procedimientos anidados y la gestión de errores en un entorno controlado.
+Vemos que los errores manejados que no han sido propagados al exterior No han producido un rollback, por lo tanto tendremos que hacer verificiones manuales de los valores de salida para saber si la transacción se ha realizado correctamente o no.
+
+```
+12:45:01(root)mysql>SELECT * FROM log_transacciones order by operacion_realizada;
++----+------------------------------+-------------------------------+---------------+-----------------------+----------+
+| id | operacion_realizada          | error_detectado               | valor_entrada | valor_variable_salida | detalle  |
++----+------------------------------+-------------------------------+---------------+-----------------------+----------+
+|  5 | CALL sp_test_v1(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
+|  6 | CALL sp_test_v1(2, @salida)  | Error lanzado: Escenario 2    |             2 |                   555 | ROLLBACK |
+|  7 | CALL sp_test_v1(3, @salida)  | Error lanzado: Escenario 3    |             3 |                   555 | ROLLBACK |
+|  8 | CALL sp_test_v1(4, @salida)  | Error lanzado: Escenario 4    |             4 |                   555 | ROLLBACK |
+| 14 | CALL sp_test_v2(-1, @salida) | NULL                          |            -1 |                  NULL | COMMIT   |
+|  1 | CALL sp_test_v2(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
+|  2 | CALL sp_test_v2(2, @salida)  | NULL                          |             2 |                   999 | COMMIT   |
+|  3 | CALL sp_test_v2(3, @salida)  | NULL                          |             3 |                    -3 | COMMIT   |
+|  4 | CALL sp_test_v2(4, @salida)  | Error 4                       |             4 |                   555 | ROLLBACK |
+| 15 | CALL sp_test_v3(-1, @salida) | NULL                          |            -1 |                     0 | COMMIT   |
+|  9 | CALL sp_test_v3(1, @salida)  | NULL                          |             1 |                     2 | COMMIT   |
+| 10 | CALL sp_test_v3(2, @salida)  | NULL                          |             2 |                     3 | COMMIT   |
+| 11 | CALL sp_test_v3(3, @salida)  | NULL                          |             3 |                     4 | COMMIT   |
+| 12 | CALL sp_test_v3(4, @salida)  | Error 4 propagado al exterior |             4 |                   555 | ROLLBACK |
++----+------------------------------+-------------------------------+---------------+-----------------------+----------+
+```
+
+:::
+
 ------------------------------------------------------------------------
 
 # ¿Qué es `GET DIAGNOSTICS`?
@@ -498,7 +906,7 @@ GET DIAGNOSTICS CONDITION 1
 ## Tabla de Compatibilidad entre Motores SQL
 
 |  |  |  |
-|---------------|-------------------|--------------------------------------|
+|-------------------|-------------------|----------------------------------|
 | **Motor de Base de Datos** | **Soporte para GET DIAGNOSTICS** | **Alternativa o Forma de Uso** |
 | **MySQL / MariaDB** | **Sí** (Desde la versión 5.6) | Soporte completo tanto para `ROW_COUNT` como para `CONDITION n` con atributos como `MYSQL_ERRNO` y `MESSAGE_TEXT`. |
 | **PostgreSQL** | **Sí** (Estándar nativo) | Altamente compatible con el estándar SQL ANSI, permitiendo capturar múltiples métricas de diagnóstico en bloques PL/pgSQL. |

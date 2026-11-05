@@ -14,7 +14,7 @@ Una práctica guiada para crear operaciones reutilizables, comprender sus permis
 # Cómo utilizar la práctica
 
 | Recorrido | Actividades |
-|---------------------|---------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | Esencial | Apartados 1 a 21 y 27 a 29. Construcción paso a paso y reto de dos partes. |
 | Avanzado | Apartados 22 a 26. Bucles, cursores, SQL dinámico, bloqueos y COMMIT implícito. |
 
@@ -31,7 +31,7 @@ Conocimientos de partida. SELECT, JOIN, agregaciones y operaciones INSERT, UPDAT
 ## Paso 1 Identificar dónde se ejecuta cada instrucción
 
 | Entorno | Qué se ejecuta |
-|-----------------------|------------------------------------------------|
+|------------------------|------------------------------------------------|
 | Cliente mysql o editor SQL | USE, SELECT, CREATE PROCEDURE, CALL y las demás instrucciones SQL. |
 | Terminal de Ubuntu | cd, mysql, mysqldump y la redirección de archivos. |
 | Otra conexión | Las pruebas de permisos y de bloqueo. Sus variables \@ son independientes. |
@@ -301,7 +301,7 @@ CALL sp00_contar_definer();
 Como administrador con los permisos necesarios, ambos ejemplos devuelven 12. Esa coincidencia no demuestra que los modos sean iguales: se necesita una cuenta con permisos diferentes para apreciar la diferencia.
 
 | Modo | Permisos para la consulta interior |
-|----------------------|--------------------------------------------------|
+|-----------------------|-------------------------------------------------|
 | INVOKER | El invocador necesita EXECUTE y SELECT sobre alumnos. |
 | DEFINER | El invocador necesita EXECUTE. El definidor necesita los permisos de ejecución y SELECT necesarios. |
 | Sin SQL SECURITY explícito | Se utiliza DEFINER por defecto. |
@@ -2118,7 +2118,7 @@ El error de la clave foránea inexistente se propaga; no es una duplicidad. La m
 Los `OUT` conservan la información de la llamada anterior. Es importante tener esto en cuenta para no entenderlos como resultado de esta nueva ejecución fallida.
 
 | Mecanismo | Función |
-|------------------|------------------------------------------------------|
+|-------------------|-----------------------------------------------------|
 | CONTINUE HANDLER | Atiende la condición y continúa tras la instrucción que la produjo. |
 | EXIT HANDLER | Atiende la condición y abandona el bloque donde se declaró. |
 | SIGNAL | Genera una condición con su información. |
@@ -2243,13 +2243,14 @@ SELECT @mat,@eval,@media;
 CALL sp14_resumen_curso(999,@mat,@eval,@media);
 ```
 
-ERROR 1644 (45000): Curso inexistente 
-+------+-------+--------+ 
-\| @mat \| @eval \| @media \| 
-+------+-------+--------+ 
-| NULL \| NULL \| NULL \| 
+`ERROR 1644 (45000): Curso inexistente`
+```
 +------+-------+--------+
-
+| @mat | @eval | @media |
++------+-------+--------+
+| NULL | NULL | NULL |
++------+-------+--------+
+```
 Comprobar además un curso existente sin asignaturas mediante una inserción provisional:
 
 ``` sql
@@ -2263,13 +2264,14 @@ SELECT @mat,@eval,@media;
 ROLLBACK;
 ```
 
-ERROR 1644 (45000): El curso no tiene matriculas
+`ERROR 1644 (45000): El curso no tiene matriculas`
 
 ## Parte B Crear una matrícula y su primera calificación
 
-- Crear *sp15_matricular_con_nota* con entradas `id_alumno`, *id_curso_asignatura*, *nota* y *observaciones*, y una salida *id_matricula*.
+- Crear *sp15_matricular_con_nota* con entradas *id_alumno*, *id_curso_asignatura*, *nota* y *observaciones*, y una salida *id_matricula*.
 
 - Reutilizar *sp06_matricular* y *sp07_guardar_nota*.
+
 ``` sql
 DROP PROCEDURE IF EXISTS sp06_matricular;
 DELIMITER //
@@ -2374,7 +2376,7 @@ END//
 DELIMITER ;
 ```
 
-## Paso 1 Preparar una combinación libre
+## Paso 1 Buscar una combinación libre de curso_asignatura y alumno
 
 ``` sql
 SELECT COUNT(*) FROM matriculas
@@ -2585,7 +2587,7 @@ Objetivo de ampliación. Comprender repetición y control de flujo sin modificar
 # Paso 1 Comparar las tres estructuras
 
 | Estructura | Cuándo comprueba la condición                                 |
-|----------------------|--------------------------------------------------|
+|-----------------------|-------------------------------------------------|
 | WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
 | REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
 | LOOP       | No incorpora condición de salida: se programa explícitamente. |
@@ -2963,7 +2965,7 @@ Debe haberse importado o construido el contenido de 02_soluciones_ampliacion.sql
 # Paso 4 Añadir las evidencias manuales
 
 | Prueba | Evidencia necesaria |
-|------------------------|------------------------------------------------|
+|------------------------|-----------------------------------------------|
 | SELECT INTO | Una fila asigna, cero conserva el valor y varias filas producen 1172. |
 | Flujo de errores | Marcas distintas para ausencia de manejador, CONTINUE y EXIT. |
 | Salidas tras error | Conservación de valores exteriores al fallar y entrega al finalizar normalmente. |
@@ -3145,7 +3147,7 @@ Estas soluciones forman parte de 01_soluciones_esenciales.sql. La herramienta de
 # Anexo C Archivos y orden de utilización
 
 | Archivo | Uso |
-|-----------------------|-------------------------------------------------|
+|-----------------------|------------------------------------------------|
 | 00_comprobar_base.sql | Lectura de estructura recuentos y registros de referencia. |
 | 01_soluciones_esenciales.sql | Definiciones esenciales y soluciones de los retos. Reemplaza esas rutinas; no modifica filas por sí solo. |
 | 02_soluciones_ampliacion.sql | Definiciones de bucles cursor y SQL dinámico. |
