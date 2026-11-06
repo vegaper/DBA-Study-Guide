@@ -931,99 +931,74 @@ Las variables de sesión (`@variable`) se actualizan directamente. No dependen d
 
 Por eso podemos tener un error propagado, un `ROLLBACK` y, aun así, encontrar una variable de sesión con un valor actualizado.
 
-
 ```{mermaid}
-flowchart TD
-    A["PROCEDIMIENTO HIJO: SIGNAL"] --> B{"Existe un HANDLER?"}
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Arial",
+    "fontSize": "12px",
+    "lineColor": "#718096",
+    "primaryTextColor": "#263746",
+    "background": "#ffffff"
+  },
+  "flowchart": {
+    "useMaxWidth": true,
+    "htmlLabels": false,
+    "nodeSpacing": 22,
+    "rankSpacing": 30,
+    "diagramPadding": 8,
+    "curve": "basis"
+  }
+}}%%
 
-    B -->|"NO"| C["El error no se captura"]
-    B -->|"SI"| D["Se ejecuta el HANDLER"]
+flowchart LR
 
-    C --> E["Se interrumpe el procedimiento"]
-    E --> F["El error se propaga al exterior"]
+subgraph HIJO["1. PROCEDIMIENTO HIJO"]
+direction TB
+    A(["SIGNAL"]) --> B{"¿Hay HANDLER?"}
+    B -->|NO| X["Error sin capturar"]
+    B -->|SI| C["Ejecuta HANDLER"]
+    C --> D{"¿RESIGNAL?"}
+    D -->|SI| X
+    D -->|NO| E{"Tipo de HANDLER"}
+    E -->|EXIT| F["Sale del bloque"]
+    E -->|CONTINUE| G["Continua tras el error"]
+    F --> N["Fin normal"]
+    G --> N
+end
 
-    D --> G{"Utiliza RESIGNAL?"}
+subgraph SALIDA["2. RESULTADO EXTERIOR"]
+direction TB
+    X --> O["OUT no devuelto<br/>Error visible"]
+    N --> P["OUT devuelto<br/>Sin error exterior"]
+end
 
-    G -->|"SI"| F
-    G -->|"NO"| H{"Tipo de HANDLER?"}
+subgraph PADRE["3. PROCEDIMIENTO PADRE"]
+direction TB
+    O --> R["ROLLBACK"]
+    P --> S["COMMIT"]
+end
 
-    H -->|"EXIT"| I["Termina el procedimiento"]
-    H -->|"CONTINUE"| J["Continua despues del error"]
+classDef inicio fill:#e8eef7,stroke:#54749a,color:#263746,stroke-width:1.5px
+classDef decision fill:#fff1ce,stroke:#c49a36,color:#604a16
+classDef error fill:#f9e2e2,stroke:#bd6868,color:#702d2d
+classDef exito fill:#e1f0e5,stroke:#659477,color:#28533a
+classDef proceso fill:#e7edf1,stroke:#8799a7,color:#344957
 
-    I --> K["Finalizacion normal"]
-    J --> K
+class A inicio
+class B,D,E decision
+class X,O,R error
+class N,P,S exito
+class C,F,G proceso
 
-    F --> L["El padre recibe una excepcion"]
-    K --> M["El padre recibe una llamada normal"]
-
-    L --> N["ROLLBACK"]
-    M --> O["COMMIT"]
-```
+style HIJO fill:#f3f6fa,stroke:#a4b5c5,stroke-width:1px
+style SALIDA fill:#f0f5fa,stroke:#91aabd,stroke-width:1px
+style PADRE fill:#f1f6f1,stroke:#91ad94,stroke-width:1px
 
 
-```{mermaid}       
-flowchart TD A(\["PROCEDIMIENTO HIJO<br/>Se produce un SIGNAL"\]) --\> B{"¿Existe un<br/>HANDLER para el error?"}
-B -- "NO" --> C["El error no se captura"]
-C --> D["Se interrumpe el procedimiento"]
-D --> E["El error se propaga al exterior"]
-
-B -- "SÍ" --> F["Se ejecuta el código<br/>interno del HANDLER"]
-F --> G{"¿El HANDLER utiliza<br/>RESIGNAL?"}
-
-G -- "SÍ" --> H["Se relanza el error"]
-H --> E
-
-G -- "NO" --> I{"¿Tipo de HANDLER?"}
-
-I -- "EXIT" --> J["Sale del bloque<br/>y termina el procedimiento"]
-I -- "CONTINUE" --> K["Regresa al flujo principal<br/>y continúa tras el error"]
-
-J --> L["El procedimiento hijo<br/>finaliza normalmente"]
-K --> L
-
-E --> M["PROCEDIMIENTO PADRE<br/>recibe una excepción"]
-L --> N["PROCEDIMIENTO PADRE<br/>recibe una llamada normal"]
-
-M --> O["ROLLBACK"]
-N --> P["COMMIT"]
-
-O --> Q["No se devuelve el parámetro OUT<br/>Los cambios transaccionales<br/>se revierten"]
-P --> R["Se devuelve el parámetro OUT<br/>Los cambios transaccionales<br/>se confirman"]
-
-Q --> S(["Fin"])
-R --> S
-
-classDef error fill:#fce4e4,stroke:#c62828,color:#721c24
-classDef success fill:#e1f2e5,stroke:#388e3c,color:#1b5e20
-classDef decision fill:#fff2cc,stroke:#c49a26,color:#594300
-class C,D,E,H,M,O,Q error
-class J,K,L,N,P,R success
-class B,G,I decision
 ```
 ## La decisión del procedimiento padre
-```{mermaid}
 
-flowchart TD
-    A["El procedimiento padre inicia<br/>una transacción"] --> B["Llama al procedimiento hijo"]
-    B --> C{"¿La llamada devuelve<br/>una excepción?"}
-
-    C -- "NO" --> D["COMMIT"]
-    C -- "SÍ" --> E["El HANDLER del padre<br/>captura la excepción"]
-    E --> F["GET DIAGNOSTICS<br/>Recupera el mensaje"]
-    F --> G["ROLLBACK"]
-    G --> H["Registra el error<br/>fuera de la transacción revertida"]
-
-    D --> I["Registra el resultado<br/>de la operación"]
-    H --> J(["Fin"])
-    I --> J
-
-    classDef success fill:#e1f2e5,stroke:#388e3c,color:#1b5e20
-    classDef error fill:#fce4e4,stroke:#c62828,color:#721c24
-    classDef decision fill:#fff2cc,stroke:#c49a26,color:#594300
-    class D,I success
-    class E,F,G,H error
-    class C decision
-```
 La regla fundamental:
 - El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
 - Decide en función de si recibe o no una excepción.
