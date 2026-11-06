@@ -1,0 +1,436 @@
+---
+title: "Práctica de procedimientos almacenados y cursores"
+format: html
+---
+
+Gestión de calificaciones de una academia\
+MySQL 8.4.x · Nivel básico · Duración orientativa de 2 a 3 horas
+
+# Objetivo del ejercicio
+
+Crearéis una base de datos nueva con cuatro tablas, cargaréis los datos facilitados y desarrollaréis dos procedimientos almacenados. Uno registrará una calificación y el otro utilizará un cursor para actualizar las medias de los alumnos de un curso.
+
+- Definir claves primarias y foráneas y aplicar restricciones de integridad.
+- Introducir datos respetando las relaciones entre las tablas.
+- Utilizar parámetros, variables, condiciones y validaciones en procedimientos.
+- Recorrer registros con un cursor y comprobar los resultados obtenidos.
+
+# Situación de partida
+
+Una academia organiza a sus alumnos en cursos o grupos. Todos los cursos trabajan las mismas asignaturas. Cada alumno pertenece a un único curso y puede tener una calificación por asignatura; algunas calificaciones están pendientes.
+
+La secretaría necesita registrar nuevas notas y guardar la media de cada alumno. Ese resumen se actualizará cuando se ejecute el procedimiento de cálculo.
+
+| Tabla       | Información que almacena                              |
+|-------------|-------------------------------------------------------|
+| Cursos      | Los cursos o grupos de la academia.                   |
+| Alumnos     | Los alumnos, su curso y su última media calculada.    |
+| Asignaturas | Las asignaturas comunes a todos los cursos.           |
+| Notas       | Las calificaciones de cada alumno en cada asignatura. |
+
+## Condiciones del trabajo
+
+Trabajad en una base de datos nueva llamada `practica_procedimientos`. Utilizad InnoDB y el juego de caracteres `utf8mb4`. Conservad los nombres de tablas y campos indicados, incluidas sus mayúsculas y minúsculas.
+
+El enunciado fija los requisitos y los resultados esperados. Debéis elaborar las sentencias de creación, carga, procedimientos y comprobación utilizando lo aprendido en clase.
+
+# Estructura de las tablas
+
+PK significa clave primaria y FK, clave foránea. Todos los identificadores primarios serán enteros autoincrementales. Los textos serán de longitud variable.
+
+``` sql
+CREATE DATABASE IF NOT EXISTS practica_procedimientos
+     DEFAULT CHARACTER SET utf8mb4
+     DEFAULT COLLATE utf8mb4_0900_ai_ci;
+
+USE practica_procedimientos;
+```
+
+## Cursos
+
+| Campo | Tipo | Restricciones |
+|------------------------|------------------------|------------------------|
+| id_curso | Entero | PK. No admite valores nulos. |
+| nombre | Texto de 60 | Obligatorio y único. Longitud máxima de 60 caracteres. |
+
+``` sql
+CREATE TABLE cursos (
+id_curso INT AUTO_INCREMENT PRIMARY KEY,
+nombre VARCHAR(60) NOT NULL UNIQUE 
+);
+```
+
+## Alumnos
+
+| Campo | Tipo | Restricciones |
+|------------------------|------------------------|------------------------|
+| id_alumno | Entero | PK. No admite valores nulos. |
+| nombre | Texto de 40 | Obligatorio. Longitud máxima de 40 caracteres. |
+| apellidos | Texto de 80 | Obligatorio. Longitud máxima de 80 caracteres. |
+| id_curso | Entero | Obligatorio. FK a Cursos.id_curso. |
+| media_calculada | Decimal 4,2 | Admite NULL y su valor inicial es NULL. Si tiene valor, estará entre 0 y 10, ambos incluidos. |
+
+``` sql
+CREATE TABLE alumnos (
+    id_alumno INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(40) NOT NULL,
+    apellidos VARCHAR(80) NOT NULL,
+    id_curso INT NOT NULL,
+    media_calculada DECIMAL(4,2) DEFAULT NULL CHECK (media_calculada BETWEEN 0 AND 10),
+        
+    CONSTRAINT fk_alumnos_cursos FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
+);
+```
+
+## Asignaturas
+
+| Campo | Tipo | Restricciones |
+|------------------------|------------------------|------------------------|
+| id_asignatura | Entero | PK. No admite valores nulos. |
+| nombre | Texto de 80 | Obligatorio y único. Longitud máxima de 80 caracteres. |
+
+``` sql
+CREATE TABLE asignaturas(
+id_asignatura INT AUTO_INCREMENT PRIMARY KEY,
+nombre VARCHAR(80) NOT NULL UNIQUE
+);
+```
+
+## Notas
+
+| Campo | Tipo | Restricciones |
+|------------------------|------------------------|------------------------|
+| id_nota | Entero | PK. No admite valores nulos. |
+| id_alumno | Entero | Obligatorio. FK a Alumnos.id_alumno. |
+| id_asignatura | Entero | Obligatorio. FK a Asignaturas.id_asignatura. |
+| calificacion | Decimal 4,2 | Admite NULL para una nota pendiente. Si tiene valor, estará entre 0 y 10, ambos incluidos. |
+
+Decimal 4,2 significa cuatro cifras en total, dos de ellas decimales. La combinación `id_alumno` e `id_asignatura` debe ser única en Notas: no puede haber dos filas para el mismo alumno y asignatura.
+
+``` sql
+CREATE TABLE notas(
+    id_nota INT AUTO_INCREMENT PRIMARY KEY,
+    id_alumno INT NOT NULL,
+    id_asignatura INT NOT NULL,
+    calificacion DECIMAL(4,2) DEFAULT NULL CHECK (calificacion BETWEEN 0 AND 10),
+CONSTRAINT fk_notas_alumno 
+    FOREIGN KEY (id_alumno) REFERENCES alumnos(id_alumno),
+CONSTRAINT fk_notas_asignatura 
+    FOREIGN KEY (id_asignatura) REFERENCES asignaturas(id_asignatura),
+CONSTRAINT uq_nota_alumno_asignatura 
+    UNIQUE(id_alumno,id_asignatura)
+);
+```
+
+# Relaciones y datos iniciales
+
+Aplicad las restricciones en las propias tablas, además de las validaciones de los procedimientos. No permitáis borrar ni cambiar la clave de un registro si existen registros que lo referencian; no configuréis operaciones en cascada.
+
+| Relación | Regla |
+|-------------------|----------------------------------------------------|
+| Cursos con Alumnos | Un curso puede tener varios alumnos o ninguno. Cada alumno pertenece a un curso existente. |
+| Alumnos con Notas | Un alumno puede tener varias notas o ninguna. Cada nota pertenece a un alumno existente. |
+| Asignaturas con Notas | Una asignatura puede aparecer en varias notas o en ninguna. Cada nota corresponde a una asignatura existente. |
+
+Cargad exactamente los datos siguientes y los de la página siguiente. Conservad los identificadores para que las pruebas sean comparables. Elegid un orden de creación y carga que respete las claves foráneas.
+
+## Datos de Cursos
+
+| id_curso | nombre                 |
+|----------|------------------------|
+| 1        | Grupo de mañana        |
+| 2        | Grupo de tarde         |
+| 3        | Grupo de fin de semana |
+
+``` sql
+INSERT INTO cursos 
+(nombre) VALUES 
+("Grupo de mañana"),
+("Grupo de tarde"),
+("Grupo de fin de semana");
+```
+
+## Datos de Alumnos
+
+| id_alumno | nombre | apellidos    | id_curso |
+|-----------|--------|--------------|----------|
+| 1         | Ana    | López Martín | 1        |
+| 2         | Bruno  | Sánchez Gil  | 1        |
+| 3         | Carla  | Ruiz Pérez   | 1        |
+| 4         | Diego  | García Soto  | 2        |
+| 5         | Elena  | Díaz Torres  | 2        |
+| 6         | Farah  | Moreno León  | 2        |
+
+En los seis alumnos, `media_calculada` debe comenzar con valor NULL.
+
+``` sql
+INSERT INTO alumnos (nombre, apellidos, id_curso)
+VALUES 
+("Ana","López Martín", 1),
+("Bruno","Sánchez Gil", 1),
+("Carla","Ruiz Pérez", 1),
+("Diego","García Soto", 2),
+("Elena","Díaz Torres", 2),
+("Farah","Moreno León", 2);
+```
+
+## Datos de Asignaturas
+
+| id_asignatura | nombre                      |
+|---------------|-----------------------------|
+| 1             | SQL                         |
+| 2             | Administración de sistemas  |
+| 3             | Seguridad de bases de datos |
+
+``` sql
+INSERT INTO asignaturas (nombre)
+VALUES ("sql"),
+    ("Administración de sistemas"),
+    ("Seguridad de bases de datos");
+```
+
+## Datos de Notas
+
+| id_nota | id_alumno | id_asignatura | calificacion |
+|---------|-----------|---------------|--------------|
+| 1       | 1         | 1             | 8.00         |
+| 2       | 1         | 2             | 6.00         |
+| 3       | 1         | 3             | 7.50         |
+| 4       | 2         | 1             | 4.00         |
+| 5       | 2         | 2             | 6.00         |
+| 6       | 2         | 3             | NULL         |
+| 7       | 4         | 1             | 9.00         |
+| 8       | 4         | 2             | 8.00         |
+| 9       | 4         | 3             | 7.00         |
+| 10      | 5         | 1             | 0.00         |
+| 11      | 5         | 2             | 5.00         |
+| 12      | 5         | 3             | NULL         |
+
+NULL representa la ausencia de una calificación: no es texto, una cadena vacía ni una nota de cero. Los valores decimales se muestran con punto para facilitar su uso en MySQL.
+
+Carla y Farah no tienen ninguna fila en Notas. Bruno y Elena sí tienen una fila pendiente. El grupo de fin de semana todavía no tiene alumnos.
+
+``` sql
+INSERT INTO notas (id_alumno, id_asignatura,calificacion)
+    VALUES
+        (1,1,8.00),
+        (1,2,6.00),
+        (1,3,7.50),
+        (2,1,4.00),
+        (2,2,6.00),
+        (2,3,NULL),
+        (4,1,9.00),
+        (4,2,8.00),
+        (4,3,7.00),
+        (5,1,0.00),
+        (5,2,5.00),
+        (5,3,NULL);
+```
+
+# Comprobación de la carga
+
+Antes de desarrollar los procedimientos, comprobad estos resultados mediante consultas propias.
+
+| Tabla       | Filas esperadas |
+|-------------|-----------------|
+| Cursos      | 3               |
+| Alumnos     | 6               |
+| Asignaturas | 3               |
+| Notas       | 12              |
+
+- Hay dos filas en Notas con `calificacion` igual a NULL y una con `calificacion` igual a cero.
+
+- Ningún alumno tiene todavía una media calculada.
+
+- No existen notas que referencien alumnos o asignaturas inexistentes.
+
+  ``` sql
+  Select "cursos", count(*) from cursos
+  UNION 
+  Select "alumnos", count(*) from alumnos
+  UNION 
+  Select "asignaturas", count(*) from cursos
+  UNION 
+  SELECT "notas", count(*) from notas;
+  ```
+
+## Reglas que debe proteger la base de datos
+
+Deben rechazarse una calificación fuera del intervalo permitido, una segunda nota para el mismo alumno y asignatura, y cualquier referencia a un registro inexistente. También debe rechazarse un nombre de curso o asignatura repetido.
+
+# Procedimiento para registrar una nota
+
+Nombre obligatorio del procedimiento: `registrar_nota`.
+
+Este procedimiento añadirá una nueva calificación para un alumno y una asignatura. Su finalidad es registrar una nota nueva, por lo que una combinación que ya exista debe rechazarse, aunque su calificación esté pendiente.
+
+## Parámetros
+
+| Nombre          | Modo y tipo           | Significado                         |
+|------------------------|------------------------|------------------------|
+| p_id_alumno     | Entrada · Entero      | Alumno al que corresponde la nota.  |
+| p_id_asignatura | Entrada · Entero      | Asignatura que se está calificando. |
+| p_calificacion  | Entrada · Decimal 4,2 | Nota que se quiere registrar.       |
+
+## Comportamiento exigido
+
+- Rechazar identificadores nulos y comprobar que existen el alumno y la asignatura.
+- Rechazar una calificación nula o fuera del intervalo de 0 a 10. Aunque la tabla admite notas pendientes, este procedimiento solo registra calificaciones numéricas.
+- Comprobar que no exista ya una fila para ese alumno y esa asignatura.
+- Si una validación falla, finalizar con un error controlado y un mensaje claro. No debe añadirse ni modificarse ninguna nota.
+- Si todo es válido, añadir exactamente una fila en Notas dejando que se genere su identificador. No se requiere un parámetro de salida ni un mensaje de éxito.
+
+El procedimiento no cambia `media_calculada`. Tras registrar nuevas notas, será necesario ejecutar el segundo procedimiento para actualizar el resumen.
+
+``` sql
+DROP PROCEDURE IF EXISTS registrar_nota;
+DELIMITER //
+
+CREATE PROCEDURE registrar_nota (
+    IN p_id_alumno INT, 
+    IN p_id_asignatura INT, 
+    IN p_calificacion DECIMAL(4,2)
+)
+SQL SECURITY INVOKER
+BEGIN
+    -- Estos bloques de declare trabajan sobre las excepciones creadas por errores que ocurren automáticamente debido a las reglas que hemos puesto al crear la base de datos.
+    
+    -- Manejar registros duplicados (Clave única) 
+    DECLARE EXIT HANDLER FOR 1062
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Ya existe un registro para esa nota'; 
+
+    -- Manejar violación de CHECK constraints
+    DECLARE EXIT HANDLER FOR 3819 
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Las notas deben estar entre 0 y 10';
+        
+    -- Manejar fallo de Foreign Key (El alumno o asignatura no existen)
+    DECLARE EXIT HANDLER FOR 1452 
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El alumno y la asignatura ya deben existir en la BBDD'; 
+            
+    -- Para dar una personalización total a los mensajes creamos reglas que generarán un error manual incluso antes de intentar introducir el registro en la tabla, por lo que los manejadores anteriores no deberían llegar a saltar nunca. 
+
+    IF p_id_alumno IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El id de alumno no puede estar en blanco';
+    ELSEIF p_id_asignatura IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El id de la asignatura no puede estar en blanco';
+	ELSEIF p_calificacion IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La nota no puede estar en blanco';
+	ELSEIF p_calificacion <0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La nota mínima es 0';
+	ELSEIF p_calificacion >10.00 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La nota máxima es 10';
+	ELSEIF NOT EXISTS (SELECT 1 FROM alumnos WHERE id_alumno = p_id_alumno) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El alumno no existe';
+	ELSEIF NOT EXISTS (SELECT 1 FROM asignaturas WHERE id_asignatura = p_id_asignatura) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La asignatura no existe';   
+	END IF;
+    -- Inserción principal
+    INSERT INTO notas (id_alumno, id_asignatura, calificacion) 
+    VALUES (p_id_alumno, p_id_asignatura, p_calificacion);
+
+END//
+DELIMITER ;
+```
+
+## Pruebas mínimas sobre los datos iniciales
+
+Realizad primero las pruebas de error. Todos estos intentos deben fallar sin cambiar las 12 filas iniciales de Notas.
+
+| Alumno | Asignatura | Nota  | Motivo del rechazo        |
+|--------|------------|-------|---------------------------|
+| 999    | 1          | 7.00  | El alumno no existe.      |
+| 3      | 999        | 7.00  | La asignatura no existe.  |
+| 3      | 1          | 11.00 | La nota supera 10.        |
+| 3      | 1          | -1.00 | La nota es negativa.      |
+| 3      | 1          | NULL  | La nota no tiene valor.   |
+| 1      | 1          | 8.00  | La combinación ya existe. |
+
+``` sql
+CALL registrar_nota(999,1,7.00);
+CALL registrar_nota(1,999,7.00);
+CALL registrar_nota(3,1,11.00);
+CALL registrar_nota(3,1,-1.00);
+CALL registrar_nota(3,1,NULL);
+CALL registrar_nota(1,1,7.00);
+```
+
+Prueba válida posterior: alumno 3, asignatura 1 y nota 9.00. Debe aparecer una nueva fila y Notas tendrá 13 filas. Repetir el mismo intento debe producir un error por duplicado.
+
+``` sql
+CALL registrar_nota(3,1,9.00);
+```
+
+# Procedimiento con cursor para calcular medias
+
+Nombre obligatorio del procedimiento: `recalcular_medias_curso`.
+
+El procedimiento actualizará la media guardada de todos los alumnos de un curso. Es obligatorio utilizar un cursor que recorra sus alumnos uno a uno; una única operación conjunta no cumple este requisito del ejercicio.
+
+## Parámetros
+
+| Nombre | Modo y tipo | Significado |
+|------------------------|------------------------|------------------------|
+| p_id_curso | Entrada · Entero | Curso cuyos alumnos se procesarán. |
+| p_total_procesados | Salida · Entero | Número de alumnos recorridos en esa ejecución. |
+
+## Comportamiento exigido
+
+- Rechazar un identificador de curso nulo o inexistente mediante un error controlado y sin modificar datos.
+- Procesar todos los alumnos del curso indicado, incluidos los que no tienen ninguna fila en Notas. No modificar alumnos de otros cursos.
+- Guardar en `media_calculada` la media aritmética de las calificaciones numéricas del alumno, redondeada a dos decimales. Todas las asignaturas tienen el mismo peso.
+- Las calificaciones NULL no participan en el cálculo y una calificación de cero sí participa. Si no hay ninguna calificación numérica, guardar NULL.
+- Devolver el número de alumnos procesados, aunque alguna media ya tuviera el valor correcto o permanezca en NULL. El recuento se reinicia en cada llamada.
+- Gestionar correctamente el final del recorrido y cerrar el cursor. Un curso existente sin alumnos debe terminar sin error y devolver cero.
+
+La media se almacena para practicar la actualización mediante cursor. Representa el último cálculo realizado; no se actualiza automáticamente al introducir notas.
+
+## Resultados sobre los datos iniciales
+
+Antes de registrar la nueva nota de Carla, ejecutad el cálculo para los cursos 1 y 2. Cada ejecución devolverá 3 alumnos procesados. Debéis obtener estas medias:
+
+| Alumno  | Curso | media_calculada |
+|---------|-------|-----------------|
+| 1 Ana   | 1     | 7.17            |
+| 2 Bruno | 1     | 5.00            |
+| 3 Carla | 1     | NULL            |
+| 4 Diego | 2     | 8.00            |
+| 5 Elena | 2     | 2.50            |
+| 6 Farah | 2     | NULL            |
+
+Después de registrar la nota 9.00 de Carla con `registrar_nota`, recalculad el curso 1: su media debe pasar a 9.00. Se procesan 3 alumnos y las demás medias conservan sus valores.
+
+# Plan de comprobación final
+
+Comprobad primero las medias con los datos iniciales. A continuación, probad los errores de `registrar_nota`, añadid la nota válida de Carla y repetid el cálculo del curso 1. Este orden permite comparar todos los resultados previstos.
+
+| Comprobación | Resultado esperado |
+|------------------------------------|------------------------------------|
+| Recalcular el curso 3 | Termina sin error, devuelve 0 y no modifica ninguna media. |
+| Recalcular el curso 999 | Error controlado. No se modifica ninguna media. |
+| Enviar un identificador nulo a cualquiera de los procedimientos | Error controlado. No se añaden notas ni se modifican medias. |
+| Repetir el cálculo del curso 1 sin cambiar notas | Devuelve 3 y mantiene las mismas medias. |
+| Consultar las notas tras la prueba válida de Carla | Hay 13 filas y una sola nota para Carla en SQL. |
+| Probar una referencia inexistente o una nota duplicada directamente en las tablas | La propia base de datos rechaza la operación aunque no se use el procedimiento. |
+| Intentar borrar el curso 1 o el alumno 1 | La base de datos rechaza el borrado porque hay registros relacionados. |
+
+Probad los rechazos sin desactivar restricciones ni alterar los datos iniciales. No se exige un identificador concreto para la nueva nota; la autoincrementación puede dejar saltos.
+
+# Entrega y criterios de revisión
+
+Entregad un archivo `.sql` organizado en bloques comentados: creación de la base de datos y las tablas, carga inicial, definición de los dos procedimientos y pruebas. El bloque de preparación debe poder ejecutarse sobre una base de datos nueva sin intervención manual.
+
+Añadid evidencias de la carga, las medias antes y después de la nota de Carla, el contador de alumnos y los errores exigidos. Separad las pruebas que deben fallar para que no interrumpan las demás.
+
+Se revisará que las cuatro tablas respeten el modelo, que las restricciones protejan los datos, que ambos procedimientos cumplan sus requisitos y que el segundo utilice realmente un cursor.
+
+# Preguntas de razonamiento
+
+1.  ¿Por qué Elena tiene una media de 2.50 y no de 1.67 o de 5.00?
+2.  ¿Por qué Carla cuenta como alumna procesada aunque inicialmente su media siga siendo NULL?
+3.  ¿Qué problema puede causar consultar `media_calculada` después de registrar notas y antes de volver a calcularla?
+
+Consulta opcional en el manual oficial de MySQL 8.4:\
+Cursores · Restricciones de comprobación · Funciones de agregación

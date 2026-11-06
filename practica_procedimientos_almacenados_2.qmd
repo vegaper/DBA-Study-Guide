@@ -14,7 +14,7 @@ Una práctica guiada para crear operaciones reutilizables, comprender sus permis
 # Cómo utilizar la práctica
 
 | Recorrido | Actividades |
-|----------------------|--------------------------------------------------|
+|-----------------------|-------------------------------------------------|
 | Esencial | Apartados 1 a 21 y 27 a 29. Construcción paso a paso y reto de dos partes. |
 | Avanzado | Apartados 22 a 26. Bucles, cursores, SQL dinámico, bloqueos y COMMIT implícito. |
 
@@ -31,7 +31,7 @@ Conocimientos de partida. SELECT, JOIN, agregaciones y operaciones INSERT, UPDAT
 ## Paso 1 Identificar dónde se ejecuta cada instrucción
 
 | Entorno | Qué se ejecuta |
-|------------------------|------------------------------------------------|
+|-------------------------|------------------------------------------------|
 | Cliente mysql o editor SQL | USE, SELECT, CREATE PROCEDURE, CALL y las demás instrucciones SQL. |
 | Terminal de Ubuntu | cd, mysql, mysqldump y la redirección de archivos. |
 | Otra conexión | Las pruebas de permisos y de bloqueo. Sus variables \@ son independientes. |
@@ -301,7 +301,7 @@ CALL sp00_contar_definer();
 Como administrador con los permisos necesarios, ambos ejemplos devuelven 12. Esa coincidencia no demuestra que los modos sean iguales: se necesita una cuenta con permisos diferentes para apreciar la diferencia.
 
 | Modo | Permisos para la consulta interior |
-|-----------------------|-------------------------------------------------|
+|-----------------------|------------------------------------------------|
 | INVOKER | El invocador necesita EXECUTE y SELECT sobre alumnos. |
 | DEFINER | El invocador necesita EXECUTE. El definidor necesita los permisos de ejecución y SELECT necesarios. |
 | Sin SQL SECURITY explícito | Se utiliza DEFINER por defecto. |
@@ -580,7 +580,7 @@ SELECT @numero;
 La expresión NULL+1 produce NULL. No es una excepción automática: para rechazarla debe programarse una validación, como se hará en el acumulador académico.
 
 | Modo | Entrada exterior | Salida al terminar correctamente |
-|------------------|--------------------------|----------------------------|
+|-------------------|--------------------------|----------------------------|
 | IN | Recibe el argumento. | No devuelve las modificaciones del parámetro. |
 | OUT | Empieza como NULL dentro de la rutina. | Entrega el valor asignado. |
 | INOUT | Recibe el valor de la variable. | Entrega el valor actualizado. |
@@ -2118,7 +2118,7 @@ El error de la clave foránea inexistente se propaga; no es una duplicidad. La m
 Los `OUT` conservan la información de la llamada anterior. Es importante tener esto en cuenta para no entenderlos como resultado de esta nueva ejecución fallida.
 
 | Mecanismo | Función |
-|-------------------|-----------------------------------------------------|
+|--------------------|----------------------------------------------------|
 | CONTINUE HANDLER | Atiende la condición y continúa tras la instrucción que la produjo. |
 | EXIT HANDLER | Atiende la condición y abandona el bloque donde se declaró. |
 | SIGNAL | Genera una condición con su información. |
@@ -2191,8 +2191,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' 
             SET MESSAGE_TEXT = 'El curso no tiene matriculas';
     END IF;
-    
-    -- 4. Calcular número de evaluaciones y la media de notas (CORREGIDO EL INTO)
+        
     SELECT 
         COUNT(n.id_matricula), 
         AVG(n.nota) 
@@ -2244,13 +2243,15 @@ CALL sp14_resumen_curso(999,@mat,@eval,@media);
 ```
 
 `ERROR 1644 (45000): Curso inexistente`
-```
+
+```         
 +------+-------+--------+
 | @mat | @eval | @media |
 +------+-------+--------+
 | NULL | NULL | NULL |
 +------+-------+--------+
 ```
+
 Comprobar además un curso existente sin asignaturas mediante una inserción provisional:
 
 ``` sql
@@ -2289,7 +2290,7 @@ BEGIN
 
   DECLARE EXIT HANDLER FOR duplicada 
      SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT='La matricula ya existe'; 
+       SET MESSAGE_TEXT='La matricula ya existe'; 
 
    DECLARE EXIT HANDLER FOR inexistente 
      SIGNAL SQLSTATE '45000' 
@@ -2339,6 +2340,45 @@ DELIMITER ;
 - El error debe propagarse.
 
 - La matrícula recién creada conserva el estado matriculado: registrar una primera calificación no equivale aquí a cerrar toda la evaluación. No añadir tablas, columnas ni una regla de estado diferente.
+
+``` sql
+DROP PROCEDURE IF EXISTS sp15_matricular_con_nota;
+DELIMITER //
+
+CREATE PROCEDURE sp15_matricular_con_nota (
+    IN p_id_alumno INT,
+    IN p_id_curso_asignatura INT,
+    IN p_nota DECIMAL(4,2),
+    IN p_observaciones VARCHAR(255),
+    OUT p_id_matricula INT -- 1. ¡Aquí faltaba indicar que es INT!
+)
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+BEGIN
+    
+    DECLARE nueva_matricula INT DEFAULT NULL;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN 
+        ROLLBACK;
+        RESIGNAL; -- Propaga el error original hacia afuera manteniendo el mensaje
+    END;
+
+    
+    START TRANSACTION;
+    
+        -- Llamada a los procedimientos hijos usando la variable local
+        CALL sp06_matricular(p_id_alumno, p_id_curso_asignatura, nueva_matricula);
+        CALL sp07_guardar_nota(p_id_alumno, nueva_matricula, p_nota, p_observaciones);
+        
+        -- Asignamos el valor obtenido a la variable de salida OUT
+        SET p_id_matricula = nueva_matricula;
+        
+    COMMIT;
+
+END//
+DELIMITER ;
+```
 
 Preparación de la recuperación. Crear primero esta herramienta fuera de cualquier transacción. Se utilizará después únicamente con el identificador recibido de una llamada correcta y con la pareja de prueba comprobada libre.
 
@@ -2397,6 +2437,8 @@ WHERE id_alumno=1 AND id_curso_asignatura=4;
 ```
 
 Se esperan NULL y 0. La matrícula se insertó antes de que sp07 rechazara la nota; el ROLLBACK exterior debe deshacerla. No deducir el éxito de la llamada a partir de un identificador antiguo.
+
+![](images/paste-24.png)
 
 # Paso 3 Probar un alta correcta
 
@@ -2587,7 +2629,7 @@ Objetivo de ampliación. Comprender repetición y control de flujo sin modificar
 # Paso 1 Comparar las tres estructuras
 
 | Estructura | Cuándo comprueba la condición                                 |
-|-----------------------|-------------------------------------------------|
+|-----------------------|------------------------------------------------|
 | WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
 | REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
 | LOOP       | No incorpora condición de salida: se programa explícitamente. |
@@ -2965,7 +3007,7 @@ Debe haberse importado o construido el contenido de 02_soluciones_ampliacion.sql
 # Paso 4 Añadir las evidencias manuales
 
 | Prueba | Evidencia necesaria |
-|------------------------|-----------------------------------------------|
+|-------------------------|-----------------------------------------------|
 | SELECT INTO | Una fila asigna, cero conserva el valor y varias filas producen 1172. |
 | Flujo de errores | Marcas distintas para ausencia de manejador, CONTINUE y EXIT. |
 | Salidas tras error | Conservación de valores exteriores al fallar y entrega al finalizar normalmente. |
@@ -3026,7 +3068,7 @@ La continuación de la ejecución y la confirmación de cambios son cuestiones i
 Los permisos de CALL y los permisos de las instrucciones interiores se analizan por separado. Las copias deben incluir las rutinas y verificarse con sus definidores y permisos en el destino.
 
 | Necesidad | Objeto adecuado |
-|----------------------------------------------|--------------------------|
+|---------------------------------------------|--------------------------|
 | Guardar un listado que después se consulta y filtra con SELECT | Vista. |
 | Realizar varias instrucciones con parámetros mediante una llamada | Procedimiento almacenado. |
 | Calcular un valor que se utiliza dentro de una expresión SELECT | Función almacenada. |
@@ -3147,7 +3189,7 @@ Estas soluciones forman parte de 01_soluciones_esenciales.sql. La herramienta de
 # Anexo C Archivos y orden de utilización
 
 | Archivo | Uso |
-|-----------------------|------------------------------------------------|
+|------------------------|------------------------------------------------|
 | 00_comprobar_base.sql | Lectura de estructura recuentos y registros de referencia. |
 | 01_soluciones_esenciales.sql | Definiciones esenciales y soluciones de los retos. Reemplaza esas rutinas; no modifica filas por sí solo. |
 | 02_soluciones_ampliacion.sql | Definiciones de bucles cursor y SQL dinámico. |
