@@ -931,6 +931,36 @@ Las variables de sesión (`@variable`) se actualizan directamente. No dependen d
 
 Por eso podemos tener un error propagado, un `ROLLBACK` y, aun así, encontrar una variable de sesión con un valor actualizado.
 
+
+```{mermaid}
+flowchart TD
+    A["PROCEDIMIENTO HIJO: SIGNAL"] --> B{"Existe un HANDLER?"}
+
+    B -->|"NO"| C["El error no se captura"]
+    B -->|"SI"| D["Se ejecuta el HANDLER"]
+
+    C --> E["Se interrumpe el procedimiento"]
+    E --> F["El error se propaga al exterior"]
+
+    D --> G{"Utiliza RESIGNAL?"}
+
+    G -->|"SI"| F
+    G -->|"NO"| H{"Tipo de HANDLER?"}
+
+    H -->|"EXIT"| I["Termina el procedimiento"]
+    H -->|"CONTINUE"| J["Continua despues del error"]
+
+    I --> K["Finalizacion normal"]
+    J --> K
+
+    F --> L["El padre recibe una excepcion"]
+    K --> M["El padre recibe una llamada normal"]
+
+    L --> N["ROLLBACK"]
+    M --> O["COMMIT"]
+```
+
+
 ```{mermaid}       
 flowchart TD A(\["PROCEDIMIENTO HIJO<br/>Se produce un SIGNAL"\]) --\> B{"¿Existe un<br/>HANDLER para el error?"}
 B -- "NO" --> C["El error no se captura"]
