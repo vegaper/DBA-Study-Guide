@@ -1061,6 +1061,70 @@ style HIJO fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 style SALIDA fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 style PADRE fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 ```
+
+```{dot}
+//| label: fig-error-handling
+//| fig-cap: "Flujo de manejo de errores y transacciones"
+
+digraph procedure_flow {
+    // Configuración general del grafo para lectura vertical/horizontal limpia
+    rankdir=LR;
+    node [fontname="Arial", fontsize=11, margin="0.15,0.1"];
+    edge [fontname="Arial", fontsize=10, color="#94a3b8"];
+
+    // Subgrafo HIJO
+    subgraph cluster_hijo {
+        label="1. PROCEDIMIENTO HIJO";
+        fontname="Arial"; fontsize=12; color="#cbd5e1"; style="rounded"; bgcolor="#f8fafc";
+        
+        signal [label="SIGNAL", shape=oval, style="filled,rounded", fillcolor="#eff6ff", color="#3b82f6", fontcolor="#1e3a8a"];
+        check_handler [label="¿Hay\nHANDLER?", shape=diamond, style="filled", fillcolor="#fefce8", color="#eab308", fontcolor="#713f12"];
+        exec_handler [label="Ejecuta HANDLER", shape=box, style="filled,rounded", fillcolor="#f8fafc", color="#64748b", fontcolor="#334155"];
+        check_resignal [label="¿RESIGNAL?", shape=diamond, style="filled", fillcolor="#fefce8", color="#eab308", fontcolor="#713f12"];
+        error_unhandled [label="Error sin capturar", shape=box, style="filled,rounded", fillcolor="#fefце2", color="#ef4444", fontcolor="#7f1d1d"];
+        check_type [label="Tipo de\nHANDLER", shape=diamond, style="filled", fillcolor="#fefce8", color="#eab308", fontcolor="#713f12"];
+        exit_block [label="Sale del bloque", shape=box, style="filled,rounded", fillcolor="#f8fafc", color="#64748b", fontcolor="#334155"];
+        cont_block [label="Continua", shape=box, style="filled,rounded", fillcolor="#f8fafc", color="#64748b", fontcolor="#334155"];
+        fin_normal [label="Fin normal", shape=box, style="filled,rounded", fillcolor="#f0fdf4", color="#22c55e", fontcolor="#14532d"];
+
+        // Conexiones del hijo
+        signal -> check_handler;
+        check_handler -> error_unhandled [label="NO"];
+        check_handler -> exec_handler [label="SI"];
+        exec_handler -> check_resignal;
+        check_resignal -> error_unhandled [label="SI"];
+        check_resignal -> check_type [label="NO"];
+        check_type -> exit_block [label="EXIT"];
+        check_type -> cont_block [label="CONT"];
+        exit_block -> fin_normal;
+        cont_block -> fin_normal;
+    }
+
+    // Subgrafo SALIDA EXTERIOR
+    subgraph cluster_salida {
+        label="2. RESULTADO";
+        fontname="Arial"; fontsize=12; color="#cbd5e1"; style="rounded"; bgcolor="#f8fafc";
+        
+        out_error [label="OUT no devuelto\nError visible", shape=box, style="filled,rounded", fillcolor="#fef2f2", color="#ef4444", fontcolor="#7f1d1d"];
+        out_ok [label="OUT devuelto\nSin error", shape=box, style="filled,rounded", fillcolor="#f0fdf4", color="#22c55e", fontcolor="#14532d"];
+    }
+
+    // Subgrafo PADRE
+    subgraph cluster_padre {
+        label="3. PADRE";
+        fontname="Arial"; fontsize=12; color="#cbd5e1"; style="rounded"; bgcolor="#f8fafc";
+        
+        rollback [label="ROLLBACK", shape=box, style="filled,rounded", fillcolor="#fef2f2", color="#ef4444", fontcolor="#7f1d1d"];
+        commit [label="COMMIT", shape=box, style="filled,rounded", fillcolor="#f0fdf4", color="#22c55e", fontcolor="#14532d"];
+    }
+
+    // Puentes entre subgrafos
+    error_unhandled -> out_error;
+    fin_normal -> out_ok;
+    out_error -> rollback;
+    out_ok -> commit;
+}
+```
 ## La decisión del procedimiento padre
 
 La regla fundamental:
