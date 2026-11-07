@@ -18,8 +18,8 @@ Antes de ver la sintaxis específica de cada gestor, es necesario entender tres 
 
 ## Modos de Reacción al Error
 
--   **Continuar (Continue):** Se detecta el fallo, se ejecuta una acción correctiva o de registro (*logging*), y el programa **continúa** ejecutando la siguiente línea.
--   **Salir/Abortar (Exit / Rollback):** Se captura el error, se cancela la transacción en curso para no dejar datos a medias, y se interrumpe la ejecución del bloque actual.
+- **Continuar (Continue):** Se detecta el fallo, se ejecuta una acción correctiva o de registro (*logging*), y el programa **continúa** ejecutando la siguiente línea.
+- **Salir/Abortar (Exit / Rollback):** Se captura el error, se cancela la transacción en curso para no dejar datos a medias, y se interrumpe la ejecución del bloque actual.
 
 ## Identificadores de Error (SQLSTATE y Códigos)
 
@@ -38,11 +38,11 @@ SIGNAL SQLSTATE 'sqlstate_value'
     [SET MESSAGE_TEXT = 'Descripción detallada del error'];
 ```
 
--   **`SQLSTATE`**: Es un código de 5 caracteres estandarizado a nivel internacional.
+- **`SQLSTATE`**: Es un código de 5 caracteres estandarizado a nivel internacional.
 
-    -   Por convenio universal, para **errores personalizados creados por el usuario** (reglas de negocio propias), siempre se utiliza el código genérico **`'45000'`**.
+  - Por convenio universal, para **errores personalizados creados por el usuario** (reglas de negocio propias), siempre se utiliza el código genérico **`'45000'`**.
 
--   **`MESSAGE_TEXT`**: Es el mensaje de texto legible que recibirá la aplicación cliente o que atrapará tu manejador de excepciones (`DECLARE HANDLER`).
+- **`MESSAGE_TEXT`**: Es el mensaje de texto legible que recibirá la aplicación cliente o que atrapará tu manejador de excepciones (`DECLARE HANDLER`).
 
 ## Casos de Uso Principales
 
@@ -205,10 +205,10 @@ END;
 
 ## Tipos de Condición en MySQL
 
--   `SQLEXCEPTION`: Captura cualquier error grave de SQL.
--   `SQLWARNING`: Captura advertencias.
--   `NOT FOUND`: Captura casos donde un `SELECT INTO` o un `FETCH` de cursor no encuentra filas.
--   `SQLSTATE 'codigo'`: Captura un código específico de error.
+- `SQLEXCEPTION`: Captura cualquier error grave de SQL.
+- `SQLWARNING`: Captura advertencias.
+- `NOT FOUND`: Captura casos donde un `SELECT INTO` o un `FETCH` de cursor no encuentra filas.
+- `SQLSTATE 'codigo'`: Captura un código específico de error.
 
 ## Ejemplo Práctico en MySQL: Transacción Segura con `EXIT HANDLER`
 
@@ -362,7 +362,7 @@ END;
 # Cuadro Comparativo Resumen
 
 | Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
-|:-----------|:----------------|:----------------|:------------------------|
+|:----------------|:----------------|:----------------|:----------------------|
 | **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
 | **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
 | **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
@@ -455,7 +455,7 @@ De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediat
 
 Vamos a ver en la práctica cómo responde sql a errores en distintas situaciones de manejo. Tenemos un procedimiento muy sencillo donde simplemente sumamos uno al valor introducido y lo devolvemos, pero tenemos dos situaciones que generarán un error de lógica interna: valores de 2 y 3 dan error.
 
-## Preparación 
+## Preparación
 
 Vamos a crear una tabla que almacenará unos valores insertados mediante los procedimientos, esta tabla será útil en la última fase de la práctica.
 
@@ -469,7 +469,7 @@ CREATE TABLE tabla_intermedia (
 
 ## Versión 1: Sin Manejadores (`SIGNAL` Puro)
 
-En esta versión no hay ningún `DECLARE HANDLER`. Si lanzamos un error, la ejecución se corta de inmediato, no se llega al final y el error salta de forma abrupta hacia el exterior.
+En esta versión no hay ningún `DECLARE HANDLER`. Si lanzamos un error, la ejecución se corta de inmediato, no se llega al final y el error salta de forma abrupta hacia el exterior. Las opciones 2 y 3 simplemente muestran la opción de cambiar el el valor del error y el mensaje de salida.
 
 ``` sql
 SET @salida =100;
@@ -487,9 +487,7 @@ BEGIN
     IF p_in = 2 THEN
         SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'Error lanzado: Escenario 2';
     ELSEIF p_in = 3 THEN
-        SIGNAL SQLSTATE '45003' SET MESSAGE_TEXT = 'Error lanzado: Escenario 3';
-    ELSEIF p_in = 4 THEN
-        SIGNAL SQLSTATE '45004' SET MESSAGE_TEXT = 'Error lanzado: Escenario 4';
+        SIGNAL SQLSTATE '45003' SET MESSAGE_TEXT = 'Error lanzado: Escenario 3';    
     END IF;
     
     -- Operación normal si p_in es 1 u otro valor
@@ -501,7 +499,7 @@ END//
 DELIMITER ;
 ```
 
-Antes de hacer cada prueba vamos a resetear el valor de la variable @salida a 100
+Antes de hacer cada prueba vamos a resetear el valor de la variable @salida a 100 para asegurarnos de que no se conserva el valor de la prueba anterior.
 
 ``` sql
 SET @salida =100;
@@ -509,7 +507,7 @@ SET @salida =100;
 
 si pasamos 1: `CALL sp_test_v1(1, @salida);`
 
-nos devuelve:
+El procedimiento no creará ningún error y nos devuelve:
 
 ```         
 +-----------------------------+
@@ -563,7 +561,7 @@ Nota que se ha parado la ejecución después del error y no se ha imprimido "3. 
 
 ## Versión 2: Manejadores con EXIT (y RESIGNAL en el error 3)
 
-Aquí interceptamos los errores mediante bloques EXIT. El manejador frena el flujo normal del bloque principal, ejecuta su lógica interna (modifica el OUT o guarda un log) y sale limpiamente del procedimiento (sin propagar error en el caso 2, o propagándolo con RESIGNAL en el caso 3).
+Aquí interceptamos los errores mediante bloques EXIT. El manejador frena el flujo normal del bloque principal, ejecuta su lógica interna (lo que pongamos entre el BEGIN Y END dentro del bloque del handler) y sale limpiamente del procedimiento. La diferencia entre el caso -1 y el caso 2 es sólo a qué altura del procedimiento se lanza el error. Con -1 el error se lanza antes de ejecutar ninguna actualización de variables, mientras que con 2 ya se han ejecutado dos líneas antes del error.
 
 ``` sql
 SET @salida =100;
@@ -633,7 +631,7 @@ El procedimiento falla antes de ejecutar ninguna actualización de variables.
 
 ![](images/paste-17.png)
 
-La variable @salida ha sido reinicializada a NULL al fallar el procedimiento. Al contrario que en los errores sin manejar, no conserva el valor que tenía antes de entrar en el procedimiento (100).
+La variable @salida ha sido reinicializada a NULL al entrar en el procedimiento, y como no se ha actualizado ninguna vez, conserva ese valor de salida y se lanza al exterior. Al contrario que en los errores sin manejar,después del ejecutar el procedimiento, la variable ha recibido el valor de salida y no conserva el valor que tenía antes de entrar en el procedimiento (100).
 
 Volvemos a inicializar la variable salida a 100: `SET @salida =100;`
 
@@ -645,7 +643,7 @@ El manejador `EXIT` atrapa el error, muestra su mensaje interno y termina el pro
 
 ![](images/paste-16.png)
 
-CASO 3: `CALL sp_test_v2(3,@salida);` Atrapa el error, asigna p_out = -3 antes de salir.
+CASO 3: `CALL sp_test_v2(3,@salida);` Atrapa el error, asigna p_out = -3 antes de salir dentro del bloque del manejador, por lo que todas las actualizaciones anteriores se han sobreescrito.
 
 ![](images/paste-18.png)
 
@@ -653,7 +651,7 @@ CASO 4: `CALL sp_test_v2(3,@salida);`
 
 El código es igual que el anterior pero con RESIGNAL.
 
-Vemos que ahora el output muestra el mensaje de error. En lugar de haber actualizado la variable de salida a -4 como le dijimos en el handler (y que funcionó en el caso anterior), esta vez NO actualiza la variable @salida de ninguna forma al salir, pero la línea que ejecutó el cambio a 555 sí funcionó.
+Vemos que ahora el output muestra el mensaje de error, al contrario que en las situaciones anteriores. En lugar de haber actualizado la variable de salida a -4 como le dijimos en el handler (y que funcionó en el caso anterior), esta vez NO manda la variable @salida hacia el exterior, pero la línea que ejecutó el cambio a 555 sí funcionó, porque estaba actualizando directamente la variable de sesión @salida y no la variable de salida p_out.
 
 ![](images/paste-19.png)
 
@@ -869,20 +867,149 @@ SELECT * FROM log_transacciones order by operacion_realizada;
 Ahora leemos los resultados de tabla_intermedia para ver si las transacciones que han fallado y han hecho ROLLBACK han dejado algún rastro de su ejecución. Vemos que los procedimientos que han fallado y han hecho ROLLBACK no han dejado registros en la tabla_intermedia, mientras que los que han hecho COMMIT sí, a pesar de que el rollback se haya hecho fuera del procedimiento que ha fallado. Esto es un ejemplo de cómo manejar transacciones y errores en procedimientos anidados, asegurando que los datos se mantengan consistentes y que los errores se registren adecuadamente para su análisis posterior.
 
 `SELECT * FROM tabla_intermedia;`
+
+```         
+id  operacion_realizada
+1   sp_test_v1(1)
+4   sp_test_v2(-1)
+5   sp_test_v2(1)
+6   sp_test_v2(2)
+7   sp_test_v2(3)
+9   sp_test_v3(-1)
+10  sp_test_v3(1)
+11  sp_test_v3(2)
+12  sp_test_v3(3)
 ```
-id	operacion_realizada
-1	sp_test_v1(1)
-4	sp_test_v2(-1)
-5	sp_test_v2(1)
-6	sp_test_v2(2)
-7	sp_test_v2(3)
-9	sp_test_v3(-1)
-10	sp_test_v3(1)
-11	sp_test_v3(2)
-12	sp_test_v3(3)
+
+## Comparativa de todos los escenarios
+
+Esta es la parte más importante para estudiar. Cada fila representa un comportamiento diferente de MySQL ante un error.
+
+| Situación | ¿Continúa el código? | ¿Sale OUT al exterior? | ¿Error exterior? | Transacción padre |
+|----|----|----|----|----|
+| Sin HANDLER | No | No | Sí | ROLLBACK |
+| EXIT sin RESIGNAL | No | Sí, valor actual | No | COMMIT |
+| EXIT con RESIGNAL | No | No | Sí | ROLLBACK |
+| CONTINUE sin RESIGNAL | Sí | Sí, valor final | No | COMMIT |
+| CONTINUE con RESIGNAL | No | No | Sí | ROLLBACK |
+| Sin error | Sí | Sí, valor final | No | COMMIT |
+
+## Qué sucede con los parámetros OUT
+
+Conviene distinguir tres situaciones:
+
+A. El procedimiento termina normalmente
+
+OUT devuelto
+
+- Sin errores.
+
+- Error capturado por EXIT sin RESIGNAL.
+
+- Error capturado por CONTINUE sin RESIGNAL.
+
+MySQL devuelve al exterior el valor que tenga el parámetro `OUT` al finalizar el procedimiento.
+
+B. El procedimiento termina propagando un error
+
+OUT no devuelto
+
+- SIGNAL sin HANDLER.
+
+- EXIT con RESIGNAL.
+
+- CONTINUE con RESIGNAL.
+
+Aunque se haya asignado un valor a `OUT` antes o dentro del manejador, no se devuelve al parámetro externo.
+
+C. Variables de sesión
+
+Persisten independientemente del OUT
+
+Las variables de sesión (`@variable`) se actualizan directamente. No dependen de que el procedimiento termine normalmente y tampoco se revierten mediante `ROLLBACK`.
+
+Por eso podemos tener un error propagado, un `ROLLBACK` y, aun así, encontrar una variable de sesión con un valor actualizado.
+
+```{mermaid}
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "fontSize": "11px",
+    "lineColor": "#94a3b8",
+    "primaryTextColor": "#1e293b",
+    "background": "transparent"
+  },
+  "flowchart": {
+    "useMaxWidth": true,
+    "htmlLabels": true,
+    "nodeSpacing": 12,
+    "rankSpacing": 18,
+    "diagramPadding": 5,
+    "curve": "basis"
+  }
+}}%%
+
+flowchart LR
+
+subgraph HIJO["1. PROCEDIMIENTO HIJO"]
+    direction LR
+    A([SIGNAL]) --> B{"¿Hay HANDLER?"}
+    B -- NO --> X[Error sin capturar]
+    B -- SI --> C[Ejecuta HANDLER]
+    C --> D{"¿RESIGNAL?"}
+    D -- SI --> X
+    D -- NO --> E{"Tipo"}
+    E -- EXIT --> F[Sale del bloque]
+    E -- CONT --> G[Continua]
+    F --> N[Fin normal]
+    G --> N
+end
+
+subgraph SALIDA["2. RESULTADO"]
+    direction LR
+    X --> O["OUT no devuelto"]
+    N --> P["OUT devuelto"]
+end
+
+subgraph PADRE["3. PADRE"]
+    direction LR
+    O --> R[ROLLBACK]
+    P --> S[COMMIT]
+end
+
+classDef inicio fill:#eff6ff,stroke:#3b82f6,color:#1e3a8a,stroke-width:1.5px;
+classDef decision fill:#fefce8,stroke:#eab308,color:#713f12,stroke-width:1.5px;
+classDef error fill:#fef2f2,stroke:#ef4444,color:#7f1d1d,stroke-width:1.5px;
+classDef exito fill:#f0fdf4,stroke:#22c55e,color:#14532d,stroke-width:1.5px;
+classDef proceso fill:#f8fafc,stroke:#64748b,color:#334155,stroke-width:1.5px;
+
+class A inicio;
+class B,D,E decision;
+class X,O,R error;
+class N,P,S exito;
+class C,F,G proceso;
+
+style HIJO fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
+style SALIDA fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
+style PADRE fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 ```
 
 
+<<<<<<< HEAD
+=======
+## La decisión del procedimiento padre
+
+La regla fundamental:
+- El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
+- Decide en función de si recibe o no una excepción.
+- Un HANDLER que captura el error sin relanzarlo oculta la excepción al procedimiento padre.
+- RESIGNAL vuelve a propagar la excepción y permite que el padre active su propio manejador.
+
+ EXIT y CONTINUE determinan qué sucede con el flujo del procedimiento.
+ RESIGNAL determina si el error sigue propagándose. Y es la propagación del error, no su mera existencia, la que determina si el procedimiento padre entra en su manejador de excepciones y ejecuta el ROLLBACK.
+
+>>>>>>> 7600c8e15956907548b2de8fce08e9d804ccd4d5
 :::
 
 ------------------------------------------------------------------------
@@ -916,15 +1043,15 @@ GET DIAGNOSTICS CONDITION 1
     variable_mensaje = MESSAGE_TEXT;
 ```
 
--   **`CONDITION 1`**: Indica que quieres revisar el primer error o advertencia registrado en la pila de diagnósticos.
+- **`CONDITION 1`**: Indica que quieres revisar el primer error o advertencia registrado en la pila de diagnósticos.
 
--   **Atributos comunes que puedes extraer**:
+- **Atributos comunes que puedes extraer**:
 
-    -   `RETURNED_SQLSTATE`: El código estándar de 5 caracteres del estándar SQL.
+  - `RETURNED_SQLSTATE`: El código estándar de 5 caracteres del estándar SQL.
 
-    -   `MYSQL_ERRNO`: El código numérico interno del error (específico de MySQL/MariaDB).
+  - `MYSQL_ERRNO`: El código numérico interno del error (específico de MySQL/MariaDB).
 
-    -   `MESSAGE_TEXT`: El mensaje de texto explicativo que generó el motor de base de datos.
+  - `MESSAGE_TEXT`: El mensaje de texto explicativo que generó el motor de base de datos.
 
 ## Casos de Uso Principales
 
