@@ -3,136 +3,12 @@ title: "Procedimientos almacenados"
 format: html
 ---
 
-# Variables
 
-Antes de trabajar con procedimientos almacenados, es fundamental entender cómo se gestionan y almacenan los datos de forma temporal mediante variables.
-
-## Concepto de Variable
-
-En el contexto de las bases de datos relacionales, una **variable** es una estructura de almacenamiento temporal identificada por un nombre que reserva un espacio en la memoria RAM del motor durante el tiempo de ejecución.
-
-Se utiliza para capturar, almacenar y manipular datos de forma dinámica dentro de scripts, procedimientos almacenados, funciones o sesiones de usuario, evitando tener que reescribir o recalcular valores en consultas posteriores.
-
-## ¿Qué se puede almacenar en una variable?
-
-El contenido que puede albergar una variable depende de si almacena un **valor único** o una **estructura compleja**:
-
-### Valores Escalares (Un único dato)
-
-Todos los motores de bases de datos permiten guardar un dato escalar individual que corresponda a cualquier tipo de dato nativo del motor:
-
-- **Números:** Enteros (`INT`, `BIGINT`), decimales (`DECIMAL`, `FLOAT`).
-
-- **Cadenas de texto:** `VARCHAR`, `TEXT`, `CHAR`.
-
-- **Fechas y horas:** `DATE`, `TIMESTAMP`, `DATETIME`.
-
-- **Valores booleanos / Lógicos:** `BOOLEAN` (o `BIT` en T-SQL).
-
-- **Identificadores y BLOBs:** Guids (`UUID`), archivos binarios o fragmentos `JSON`.
-
-### Conjuntos de Datos y Tablas (Variables Complejas)
-
-No todos los motores permiten almacenar tablas completas directamente en una variable. La capacidad de guardar conjuntos de filas y columnas varía según el motor:
-
-- **SQL Server (T-SQL) - `TABLE` type:** Permite definir explícitamente variables de tipo tabla (`DECLARE @mi_tabla TABLE (...)`). Se comportan como tablas temporales residentes en memoria y se pueden consultar con un `SELECT` normal.
-
-- **PostgreSQL (PL/pgSQL) - `RECORD` y Cursores:** No tiene un tipo "variable tabla" explícito como T-SQL, pero permite asignar la fila entera de un resultado a una variable de tipo `RECORD`, o iterar sobre conjuntos de datos complejos mediante **cursores**.
-
-- **MySQL / MariaDB:** **No permite almacenar tablas completas en variables.** Una variable solo puede almacenar un valor escalar único. Si un `SELECT ... INTO` devuelve más de una fila en MySQL, el motor lanzará un error (`Result consisted of more than one row`). Para manejar conjuntos de filas en MySQL dentro de un procedimiento, se deben utilizar **Tablas Temporales** (`CREATE TEMPORARY TABLE`) o **Cursores**.
-
-| Motor | Valores Escalares | Almacenar Filas/Registros (`RECORD`) | Variable Tipo Tabla (`TABLE`) |
-|------------------|------------------|------------------|--------------------|
-| **MySQL / MariaDB** | Sí | No | No (requiere `TEMPORARY TABLE`) |
-| **SQL Server (T-SQL)** | Sí | Sí | **Sí** (`DECLARE @t TABLE (...)`) |
-| **PostgreSQL (PL/pgSQL)** | Sí | **Sí** (`RECORD` / %ROWTYPE) | Mediante funciones que devuelven `SETOF` / `TABLE` |
-
-## Tipos de variables por ambito (scope) en MySQL / MariaDB
-
-### ¿Qué es el "Scope" (Ámbito o Alcance)?
-
-Antes de ver los tipos de variables, necesitamos entender un concepto clave en programación: el scope (que en español traducimos como ámbito o alcance).
-
-Para entenderlo de forma sencilla, imagina que las variables son información escrita en notas de papel:
-
-¿Dónde se puede leer esa nota? (¿Está en tu bolsillo privado, en un tablón de anuncios de la oficina o en la fachada del ayuntamiento?). Eso es el ámbito.
-
-¿Cuánto tiempo dura esa nota antes de tirarla a la basura? (¿Dura 5 minutos mientras dura una reunión o se queda ahí para siempre?). Eso es la vida útil.
-
-En programación, el scope define dónde es visible una variable y quién puede usarla. Si intentas usar una variable fuera de su área permitida (su scope), el sistema te dirá que no existe.
-
-¿Cómo se aplica esto en bases de datos? Dependiendo de dónde necesites guardar la información (si es para un cálculo rápido dentro de un procedimiento, para toda la sesión de tu usuario o para configurar todo el servidor), MySQL nos ofrece tres niveles o alcances de variables:
-
-### Variables Locales
-
-- **Ámbito (Scope):** Solo existen dentro del bloque `BEGIN ... END` donde han sido declaradas (por ejemplo, dentro de un procedimiento almacenado o función).
-- **Vida útil:** Se crean al ejecutar el bloque y se destruyen al finalizar.
-- **Declaración:** Se deben declarar al inicio del bloque mediante la palabra clave `DECLARE`.
-
-``` sql
-DECLARE v_total_mascotas INT DEFAULT 0; --DECLARACION
-SET v_total_mascotas =1 ---ASIGNACION
-```
-
-### Variables de Sesión (Variables de Usuario)
-
-Ámbito (Scope): Disponibles globalmente durante toda la conexión/sesión actual del usuario. Sintaxis: Se identifican por llevar el prefijo \@ (@nombre_variable). Vida útil: Persisten hasta que el usuario cierra la sesión o finaliza la conexión con el servidor. No requieren declaración previa de tipo.
-
-``` sql
-SET @nota_alumno = 6.5;
-SELECT @nota_alumno;
-```
-
-### Variables de Sistema
-
-Ámbito (Scope): Configuran el comportamiento del propio servidor MySQL/MariaDB (pueden ser de ámbito GLOBAL o SESSION). Sintaxis: Llevan el prefijo \@\@ (\@@global.variable o \@@session.variable). Stored procedures
-
-``` sql
-SELECT @@version, @@sql_mode;
-```
-
-## Asignación mediante SELECT ... INTO
-
-Permite guardar directamente el resultado de una consulta escalar dentro de una variable local o de sesión:
-
-``` sql
-SELECT COUNT(*) INTO v_total_mascotas 
-FROM mascotas 
-WHERE estado = 'En adopción';
-```
-
-## Tipos de variables por ambito (scope) en SQL Server / T-SQL
-
-En T-SQL ocurre algo que confunde mucho a quienes vienen de MySQL: **el símbolo `@` se utiliza para las variables locales**, no para las de sesión.
-
-- **Variables Locales / de Procedimiento (`@var`):** En T-SQL, cualquier variable declarada con `DECLARE @mi_var INT` dentro de un procedimiento o lote (*batch*) tiene ámbito local a ese bloque o lote de ejecución, y **desaparece al terminar**.
-
-- **Variables de Sesión personalizadas:** T-SQL **no tiene** un equivalente directo a las variables de usuario `@` de MySQL que persistan de forma independiente durante toda la sesión sin declararse previamente. Si necesitas persistencia a nivel de sesión, se suelen usar tablas temporales (`#tabla`) o parámetros de configuración.
-
-- **Variables del Sistema (`@@`):** A diferencia de MySQL (donde `@` es usuario y `@@` es sistema), en T-SQL las variables del sistema globales (como `@@ROWCOUNT` o `@@ERROR`) también usan el doble `@@`, pero son de solo lectura y controladas por el motor.
-
-## Tipos de variables por ambito (scope) en PostgreSQL / PL/pgSQL
-
-PostgreSQL es mucho más estricto con el tipado y los ámbitos:
-
-- **Variables Locales:** Se declaran exclusivamente en la sección `DECLARE` de una función o procedimiento y su ámbito se limita a ese bloque de código.
-
-- **Variables de Sesión:** PostgreSQL **no soporta** el uso de variables de usuario con prefijo `@`. Para almacenar valores a nivel de sesión o pasar configuraciones personalizadas, se utilizan los **parámetros de configuración de sesión** mediante los comandos `SET` y se recuperan con la función `current_setting('mi.variable')`.
-
-|  |  |  |  |
-|------------------|------------------|------------------|------------------|
-| **Concepto de Ámbito** | **MySQL / MariaDB** | **SQL Server (T-SQL)** | **PostgreSQL** |
-| **Variable Local (en bloque/stored procedure)** | `DECLARE var INT;` | `DECLARE @var INT;` | En sección `DECLARE` |
-| **Variable de Sesión / Usuario** | `@var` (Persiste toda la conexión) | ❌ No existe de forma nativa con `@` | Mediante parámetros de sesión (`set` / `current_setting`) |
-| **Variables del Servidor / Sistema** | `@@global.` / `@@session.` | `@@VERSION`, `@@ROWCOUNT` (Solo lectura) | `SHOW` / `current_setting()` |
-
-# Procedimientos Almacenados (Stored Procedures)
-
-## ¿Qué es un Procedimiento Almacenado?
+# ¿Qué es un Procedimiento Almacenado?
 
 Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y guardadas directamente en el servidor de base de datos. Permite ejecutar rutinas complejas, automatizar tareas y encapsular la lógica de negocio directamente en el motor.
 
-### Diferencias principales con respecto a las Vistas (`VIEWS`)
+## Diferencias principales con respecto a las Vistas (`VIEWS`)
 
 |  |  |  |
 |------------------|---------------------------|---------------------------|
@@ -142,19 +18,19 @@ Un **Procedimiento Almacenado** es un conjunto de instrucciones SQL compiladas y
 | **Operaciones** | Orientada a lectura/proyección de datos (`SELECT`). | Puede ejecutar `SELECT`, `INSERT`, `UPDATE`, `DELETE`, transacciones, etc. |
 | **Control de flujo** | No permite estructuras de control (`IF`, `LOOP`, `WHILE`). | Permite lógica de programación compleja (`IF`, `CASE`, bucles). |
 
-## Diferencias Principales entre Motores
+# Diferencias Principales entre Motores
 
 Aunque el estándar ANSI SQL define la sintaxis general, cada motor implementa sus propias particularidades en el lenguaje procedural:
 
-- **MySQL / MariaDB:** Utiliza la sintaxis estándar `BEGIN ... END`, requiere cambiar el delimitador (`DELIMITER`), soporta tipos `IN`, `OUT` e `INOUT`.
+-   **MySQL / MariaDB:** Utiliza la sintaxis estándar `BEGIN ... END`, requiere cambiar el delimitador (`DELIMITER`), soporta tipos `IN`, `OUT` e `INOUT`.
 
-- **PostgreSQL:** Utiliza `PL/pgSQL`. Soporta procedimientos (`CREATE PROCEDURE`) y funciones avanzadas. Las variables se declaran en una sección explícita `DECLARE` previa al bloque `BEGIN ... END`, y el código del procedimiento se escribe entre comillas de dólar (`$$ ... $$`).
+-   **PostgreSQL:** Utiliza `PL/pgSQL`. Soporta procedimientos (`CREATE PROCEDURE`) y funciones avanzadas. Las variables se declaran en una sección explícita `DECLARE` previa al bloque `BEGIN ... END`, y el código del procedimiento se escribe entre comillas de dólar (`$$ ... $$`).
 
-- **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
+-   **SQL Server (T-SQL):** Utiliza T-SQL (`CREATE PROCEDURE`). No requiere delimitadores especiales. Las variables usan el prefijo `@` (`DECLARE @v_nombre VARCHAR(50)`).
 
-- **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
+-   **Oracle (PL/SQL):** Entorno procedural maduro con paquetes (`PACKAGES`), gestión avanzada de excepciones y tipos de datos complejos.
 
-## Sintaxis en MySQL: `DELIMITER`, `BEGIN` y `END`
+# Sintaxis en MySQL: `DELIMITER`, `BEGIN` y `END`
 
 Dado que un procedimiento contiene múltiples sentencias finalizadas en punto y coma (`;`), el cliente SQL necesita saber dónde termina la definición del procedimiento. Para ello, se cambia temporalmente el delimitador de instrucciones con la palabra clave `DELIMITER`.
 
@@ -185,9 +61,9 @@ END //
 DELIMITER ;
 ```
 
-## Mantenimiento y Administración de Procedimientos
+# Mantenimiento y Administración de Procedimientos
 
-### Listar todos los procedimientos almacenados
+## Listar todos los procedimientos almacenados
 
 ``` sql
 -- Ver procedimientos en la base de datos actual
@@ -199,7 +75,7 @@ FROM information_schema.routines
 WHERE routine_schema = DATABASE() AND routine_type = 'PROCEDURE';
 ```
 
-### Ver el contenido de un procedimiento
+## Ver el contenido de un procedimiento
 
 Para revisar el código fuente original de un procedimiento:
 
@@ -209,7 +85,7 @@ SHOW CREATE PROCEDURE sp_registrar_adopcion;
 
 **Consejo CLI (Línea de comandos):** En el cliente de consola de MySQL/MariaDB, añade `\G` al final de la sentencia en lugar de `;` para formatear el resultado verticalmente y facilitar su lectura: `SHOW CREATE PROCEDURE sp_registrar_adopcion\G`
 
-### Llamar a un procedimiento
+## Llamar a un procedimiento
 
 MySQL: `CALL`
 
@@ -221,63 +97,106 @@ CALL sp_registrar_adopcion(1, 10, @mensaje);
 SELECT @mensaje;
 ```
 
-## Diferencias en la Creación y Ejecución por Motores
+# Diferencias en la Creación y Ejecución por Motores
 
-### SQL Server (T-SQL)
+## SQL Server (T-SQL)
 
-- **Bloque procedural:** No utiliza las palabras clave `BEGIN ... END` de la misma manera que MySQL para delimitar todo el cuerpo principal del script; en su lugar, se emplea frecuentemente `AS` seguido opcionalmente de bloques `BEGIN ... END` internos si hay múltiples sentencias. Tampoco se utiliza el comando `DELIMITER`.
+-   **Bloque procedural:** No utiliza las palabras clave `BEGIN ... END` de la misma manera que MySQL para delimitar todo el cuerpo principal del script; en su lugar, se emplea frecuentemente `AS` seguido opcionalmente de bloques `BEGIN ... END` internos si hay múltiples sentencias. Tampoco se utiliza el comando `DELIMITER`.
 
-- **Declaración de variables:** Las variables locales llevan obligatoriamente el prefijo `@` y deben declararse con `DECLARE` al principio del bloque.
+-   **Declaración de variables:** Las variables locales llevan obligatoriamente el prefijo `@` y deben declararse con `DECLARE` al principio del bloque.
 
-- **Llamada (Ejecución):** Para ejecutar un procedimiento almacenado en T-SQL, se utiliza obligatoriamente la palabra clave `EXEC` o `EXECUTE`.
+-   **Llamada (Ejecución):** Para ejecutar un procedimiento almacenado en T-SQL, se utiliza obligatoriamente la palabra clave `EXEC` o `EXECUTE`.
 
-  ``` sql
-  -- Creación en SQL Server (T-SQL)
-  CREATE PROCEDURE sp_consultar_mascota
-      @p_id INT
-  AS
-  BEGIN
-      SELECT * FROM mascotas WHERE id = @p_id;
-  END;
-  GO
+    ``` sql
+    -- Creación en SQL Server (T-SQL)
+    CREATE PROCEDURE sp_consultar_mascota
+        @p_id INT
+    AS
+    BEGIN
+        SELECT * FROM mascotas WHERE id = @p_id;
+    END;
+    GO
 
-  -- Llamada en SQL Server
-  EXEC sp_consultar_mascota @p_id = 1;
-  ```
+    -- Llamada en SQL Server
+    EXEC sp_consultar_mascota @p_id = 1;
+    ```
 
-### PostgreSQL (PL/pgSQL)
+## PostgreSQL (PL/pgSQL)
 
-- **Bloque procedural:** Utiliza delimitadores de texto (comillas de dólar `$$ ... $$`) para envolver el código del procedimiento.
+-   **Bloque procedural:** Utiliza delimitadores de texto (comillas de dólar `$$ ... $$`) para envolver el código del procedimiento.
 
-- **Declaración de variables:** Las variables locales se definen estrictamente dentro de una sección `DECLARE` situada antes del bloque `BEGIN`.
+-   **Declaración de variables:** Las variables locales se definen estrictamente dentro de una sección `DECLARE` situada antes del bloque `BEGIN`.
 
-- **Llamada (Ejecución):** Se invoca mediante la instrucción estándar `CALL` (para procedimientos) o `SELECT` (para funciones).
+-   **Llamada (Ejecución):** Se invoca mediante la instrucción estándar `CALL` (para procedimientos) o `SELECT` (para funciones).
 
-  ``` sql
-  -- Creación en PostgreSQL (PL/pgSQL)
-  CREATE OR REPLACE PROCEDURE sp_actualizar_estado(p_id INT, p_nuevo_estado VARCHAR)
-  LANGUAGE plpgsql
-  AS $$
-  BEGIN
-      UPDATE mascotas SET estado = p_nuevo_estado WHERE id = p_id;
-  END;
-  $$;
+    ``` sql
+    -- Creación en PostgreSQL (PL/pgSQL)
+    CREATE OR REPLACE PROCEDURE sp_actualizar_estado(p_id INT, p_nuevo_estado VARCHAR)
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        UPDATE mascotas SET estado = p_nuevo_estado WHERE id = p_id;
+    END;
+    $$;
 
-  -- Llamada en PostgreSQL
-  CALL sp_actualizar_estado(1, 'Adoptado');
-  ```
+    -- Llamada en PostgreSQL
+    CALL sp_actualizar_estado(1, 'Adoptado');
+    ```
 
-### Modificar un procedimiento
+## Modificar un procedimiento
 
 Para cambiar la lógica interna de un procedimiento en MySQL/MariaDB, la práctica habitual es eliminarlo y volver a crearlo (`DROP PROCEDURE IF EXISTS` + `CREATE PROCEDURE`).
 
 `ALTER PROCEDURE` solo permite modificar características de metadatos (como comentarios o la cláusula de seguridad), no el cuerpo `BEGIN ... END`.
 
-### Borrar un procedimiento
+## Borrar un procedimiento
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp_registrar_adopcion;
 ```
+
+# Permisos
+
+Los privilegios principales en MySQL y MariaDB para gestionar y utilizar rutinas (procedimientos almacenados y funciones) se dividen entre la capacidad de crearlas y la capacidad de ejecutarlas.
+
+-   **`CREATE ROUTINE`**: Permite crear nuevas rutinas en el nivel indicado.
+
+    -   otorgar creación en toda la base de datos:
+
+        ``` sql
+        GRANT CREATE ROUTINE ON nombre_base_datos.* TO 'usuario'@'host';
+        ```
+
+-   **`ALTER ROUTINE`**: Permite alterar o eliminar rutinas existentes.
+
+    -   otorgar modificación en toda la base de datos
+
+        ``` sql
+        GRANT ALTER ROUTINE ON nombre_base_datos.* TO 'usuario'@'host';
+        ```
+
+-   **`EXECUTE`**: Permite ejecutar (llamar mediante `CALL` o `SELECT`) las rutinas.
+
+    El privilegio `EXECUTE` es el que se otorga a los usuarios de aplicación para que puedan correr los procedimientos. Se puede limitar desde un alcance global hasta una sola rutina específica:
+
+    -   Sobre toda la base de datos
+
+    ``` sql
+    GRANT EXECUTE ON nombre_base_datos.* TO 'usuario'@'host';
+    --- revocar
+    REVOKE CREATE ROUTINE ON nombre_base_datos.* FROM 'usuario'@'host';
+    ```
+
+    -   Sobre una rutina específica:
+
+    ``` sql
+    GRANT EXECUTE ON PROCEDURE nombre_base_datos.nombre_procedimiento TO 'usuario'@'host';
+    --- revocar
+    REVOKE EXECUTE ON PROCEDURE nombre_base_datos.nombre_procedimiento FROM 'usuario'@'host';
+
+    --- o una función:
+    GRANT EXECUTE ON FUNCTION nombre_base_datos.nombre_funcion TO 'usuario'@'host';
+    ```
 
 ## Permisos de Ejecución: `DEFINER` vs. `INVOKER`
 
@@ -291,13 +210,13 @@ BEGIN
 END;
 ```
 
-- **`DEFINER` (Por defecto):** El procedimiento se ejecuta con los permisos del **usuario que creó** el procedimiento. Permite dar acceso controlado a operaciones sensibles a usuarios que no tienen permisos directos sobre las tablas subyacentes.
+-   **`DEFINER` (Por defecto):** El procedimiento se ejecuta con los permisos del **usuario que creó** el procedimiento. Permite dar acceso controlado a operaciones sensibles a usuarios que no tienen permisos directos sobre las tablas subyacentes.
 
-- **`INVOKER`:** El procedimiento se ejecuta con los permisos del **usuario que lo está llamando** en ese momento. Si el usuario que llama no tiene permisos sobre las tablas consultadas dentro del procedimiento, la ejecución fallará.
+-   **`INVOKER`:** El procedimiento se ejecuta con los permisos del **usuario que lo está llamando** en ese momento. Si el usuario que llama no tiene permisos sobre las tablas consultadas dentro del procedimiento, la ejecución fallará.
 
-### Establecer un DEFINER distinto del que crea el procedimiento
+## Establecer un DEFINER distinto del que crea el procedimiento
 
-**Es posible** definir una cuenta `DEFINER` distinta a la del usuario que está ejecutando la sentencia de creación, pero para poder hacerlo necesitas contar con **privilegios administrativos especiales**.
+**Es posible** definir una cuenta `DEFINER` distinta a la del usuario que está ejecutando la sentencia de creación, pero para poder hacerlo necesitas contar con **privilegios administrativos especiales**. `GRANT SET_USER_ID ON *.* TO cuenta_ususario;`
 
 Debes anteponer la cláusula `DEFINER` antes de `PROCEDURE` especificando el usuario y el host entre comillas:
 
@@ -310,23 +229,7 @@ BEGIN
 END;
 ```
 
-::: nota
-Por razones de seguridad, los sistemas como MySQL y MariaDB controlan estrictamente quién puede hacerse pasar por otro usuario al definir rutinas:
-
-- **Privilegio `SET_USER_ID` (o `SUPER` en versiones anteriores):** El usuario que ejecuta el comando `CREATE PROCEDURE` debe tener este privilegio asignado. Si no lo tiene, la base de datos rechazará la orden y dará un error, permitiéndote únicamente asignarte a ti mismo (o asignando tu usuario por defecto).
-
-- **Privilegio `SYSTEM_USER`:** Si la cuenta que pretendes colocar como `DEFINER` tiene un nivel de seguridad alto con el privilegio `SYSTEM_USER`, el usuario que crea el procedimiento también debe poseer dicho privilegio.
-:::
-
-::: extra
-### Se pueden asignar los permisos a través de un rol en lugar de una cuenta de usuario?
-
-En MySQL / MariaDB (No de forma directa)
-
-La cláusula `DEFINER` **exige estrictamente una cuenta de usuario** (con su respectivo host, por ejemplo, `'usuario'@'localhost'`). No puedes escribir directamente el nombre de un rol (como `DEFINER = 'mi_rol'`), ya que los roles nativos están concebidos como colecciones de privilegios y no como entidades independientes de sesión para este propósito.
-
-- **La alternativa práctica:** Dado que en MySQL 8.0 y versiones posteriores los usuarios y los roles comparten la misma base de arquitectura, puedes crear una **cuenta de usuario dedicada** (por ejemplo, `proc_ejecutor@localhost`), asignarle el rol que contiene los permisos necesarios como **rol predeterminado (`DEFAULT ROLE`)**, y luego configurar esa cuenta en la cláusula `DEFINER`. Cuando la rutina se ejecute, heredará los privilegios del usuario junto con los de su rol asignado.
-:::
+## Comprobar el tipo de seguridad y el creador de un procedimiento almacenado
 
 Para comprobar el tipo de seguridad (`DEFINER` o `INVOKER`) y quién es el creador de un procedimiento almacenado en bases de datos como MySQL o MariaDB, tienes dos métodos principales:
 
@@ -346,9 +249,9 @@ WHERE
     AND ROUTINE_TYPE = 'PROCEDURE';
 ```
 
-- **`DEFINER`**: Te muestra exactamente la cuenta de usuario (ej. `'usuario'@'localhost'`) que actúa como creadora/propietaria del procedimiento.
+-   **`DEFINER`**: Te muestra exactamente la cuenta de usuario (ej. `'usuario'@'localhost'`) que actúa como creadora/propietaria del procedimiento.
 
-- **`SECURITY_TYPE`**: Te indicará si es `DEFINER` (se ejecuta con los permisos del creador) o `INVOKER` (se ejecuta con los permisos del usuario que lo llama).
+-   **`SECURITY_TYPE`**: Te indicará si es `DEFINER` (se ejecuta con los permisos del creador) o `INVOKER` (se ejecuta con los permisos del usuario que lo llama).
 
 ### Método 2: Usar el comando `SHOW CREATE PROCEDURE`
 
@@ -365,15 +268,166 @@ CREATE DEFINER=`admin`@`localhost` PROCEDURE `nombre_procedimiento`()
 SQL SECURITY DEFINER 
 ```
 
-## Parámetros en Stored Procedures
+## Aspectos Avanzados de Administración y Seguridad en Rutinas
 
-### ¿Qué es un Parámetro y por qué lo usamos?
+### La variable `automatic_sp_privileges` en MySQL / MariaDB
+
+-   **¿Qué es?** Es una variable del sistema de MySQL que controla la automatización de privilegios al crear una rutina.
+
+-   **Comportamiento por defecto:** Cuando un usuario crea un procedimiento o función almacenada, si esta variable está habilitada (valor `ON`, que es el predeterminado), el servidor **concede automáticamente** los privilegios `EXECUTE` y `ALTER ROUTINE` sobre esa rutina específica a su creador (*definer*).
+
+-   **Implicación DBA:** Esto evita que el creador tenga que pedir permisos explícitos para probar o modificar la rutina que acaba de programar. Sin embargo, en entornos muy restringidos, algunos administradores optan por desactivarla para forzar una asignación de permisos manual y auditada.
+
+## El peligro de eliminar cuentas definidoras
+
+-   Una cuenta configurada como `DEFINER` de una o varias rutinas **nunca debe eliminarse** mientras existan objetos de base de datos que dependan de ella.
+
+-   **¿Qué pasa si se borra?** Si un usuario definidor es eliminado (`DROP USER`), las rutinas asociadas a él pueden fallar al ejecutarse (bajo `SQL SECURITY DEFINER`) porque el motor ya no encontrará el contexto de seguridad del usuario que las originó, o intentarán ejecutarse con privilegios inválidos.
+
+-   **Buenas prácticas:** Antes de dar de baja una cuenta de usuario en el servidor, se debe comprobar qué rutinas tienen su nombre como `DEFINER`, reasignarlas a otro usuario válido (mediante un `ALTER PROCEDURE` o recreándolas) o respaldar su continuidad.
+
+## El "olvido" en los respaldos (Dumps y Privilegios)
+
+-   Al realizar una copia de seguridad o volcado tradicional de una base de datos (por ejemplo, usando `mysqldump` de una base de datos específica), **el archivo resultante incluye la estructura y los datos, pero NO incluye las cuentas de usuario ni sus respectivos `GRANT`s**.
+
+-   **Por qué ocurre:** Las cuentas de usuario y los permisos globales residen en las tablas internas del sistema (`mysql.user`, `mysql.db`, etc.), no dentro de la base de datos de la aplicación.
+
+-   **Consecuencia práctica:** Si restauras tu base de datos en un servidor nuevo, la base de datos funcionará, pero **ningún usuario tendrá permisos** para conectarse o ejecutar los procedimientos hasta que vuelvas a crear las cuentas y los `GRANT`s manualmente (o utilices un volcado global de metadatos del sistema como `mysqlpump` o copias de la base de datos `mysql`).
+
+::: extra
+## Conceptos de seguridad a la hora de administrar permisos sobre rutinas.
+
+Por razones de seguridad, los sistemas como MySQL y MariaDB controlan estrictamente quién puede hacerse pasar por otro usuario al definir rutinas:
+
+-   El privilegio habitual para crear la rutina: CREATE ROUTINE
+-   SET_USER_ID permite especificar como definidor una cuenta distinta de la que ejecuta el CREATE PROCEDURE o CREATE FUNCTION.
+
+Por ejemplo, si el usuario desarrollador debe poder crear procedimientos definidos como otro usuario:
+
+``` sql
+GRANT CREATE ROUTINE ON empresa.* TO 'desarrollador'@'%';
+
+GRANT SET_USER_ID ON *.* TO 'desarrollador'@'%';
+```
+
+El problema es que esto podría ocasionar problemas de seguridad ya que ahora el desarrollador podría crear procedimientos con permisos de cuentas más privilegiadas. No hay un privilegio nativo que permita restringir `SET_USER_ID` a una lista concreta de definidores. Si otorgas `SET_USER_ID`, debes asumir que esa cuenta puede crear objetos definidos como cualquier usuario existente para el que MySQL considere válida la operación. Por eso, en entornos seguros se evita conceder `SET_USER_ID` a desarrolladores y se centraliza la creación de rutinas mediante cuentas de despliegue o automatizaciones controladas.
+
+Para evitar vulnerabilidades críticas como el escalado de privilegios mediante `SET_USER_ID` o la ejecución no autorizada con `DEFINER`, un entorno profesional de bases de datos se apoya en tres pilares fundamentales:
+
+1.  **Separación de cuentas y roles (Principio de Menor Privilegio).**
+
+2.  **Buenas prácticas en la asignación del `DEFINER` en rutinas.**
+
+3.  **Flujo de despliegue automatizado y auditado (CI/CD).**
+
+### Pilar 1: Los Tres Roles de Cuentas Esenciales
+
+Jamás debe utilizarse una cuenta de superusuario (`root`, `admin` o cuentas con privilegios globales `*.*`) para la programación diaria o para conectar aplicaciones web. Las responsabilidades se dividen en tres perfiles independientes:
+
+**1. Cuenta de Desarrollador (Entorno Local / Pruebas)**
+
+-   **Función:** Escribir código SQL, probar consultas y diseñar las estructuras iniciales dentro de un entorno totalmente aislado (por ejemplo, un contenedor local de Docker).
+
+-   **Alcance de permisos:**
+
+    -   Permisos DDL y DML completos (`CREATE TABLE`, `ALTER`, `SELECT`, `INSERT`, `UPDATE`, `CREATE ROUTINE`) **únicamente en su base de datos local de pruebas**.
+
+    -   **Restricción de seguridad:** Nunca posee el privilegio `SET_USER_ID` ni permisos globales en servidores compartidos o de producción.
+
+**2. Cuenta de Aplicación (Runtime)**
+
+-   **Función:** Es la credencial que utiliza el código del servicio backend o página web (por ejemplo, la API de una aplicación) para interactuar con la base de datos en vivo.
+
+-   **Alcance de permisos:**
+
+    -   Exclusivamente permisos de manipulación de datos (**DML**: `SELECT`, `INSERT`, `UPDATE`, `DELETE`) sobre las tablas estrictamente necesarias.
+
+    -   **Restricción de seguridad:** No puede crear ni alterar tablas (**DDL**), no puede borrar bases de datos y no puede modificar la estructura de las rutinas.
+
+**3. Cuenta de Despliegue (CI/CD / Automatización)**
+
+-   **Función:** Usuario técnico centralizado o proceso de automatización encargado de aplicar los cambios DDL y crear los nuevos procedimientos almacenados en los entornos oficiales (Staging / Producción).
+
+-   **Alcance de permisos:**
+
+    -   Posee los permisos de estructura necesarios (`CREATE ROUTINE`, `ALTER TABLE`, etc.) en producción.
+
+    -   **Restricción de seguridad:** Es una cuenta completamente auditada a la que ningún desarrollador humano tiene acceso directo interactivo.
+
+### Pilar 2: Gestión Segura del `DEFINER`
+
+Cuando una rutina almacenada se ejecuta bajo el modo por defecto `SQL SECURITY DEFINER`, el motor aplica los permisos del usuario creador durante su ejecución. Para evitar que un procedimiento estándar herede superpoderes por error o mala intención, se aplican dos reglas de diseño:
+
+-   **Prohibición de `DEFINER = root`:** Nunca debe dejarse que el motor asigne implícita o explícitamente al superusuario del sistema como definidor de rutinas estándar de la aplicación.
+
+-   **Uso de Cuentas Técnicas Específicas:** Si una rutina requiere permisos especiales para operar sobre tablas restringidas, se define un usuario técnico con ámbito acotado (por ejemplo, `DEFINER = 'app_admin'@'localhost'`) que solo posea acceso a las tablas específicas que la rutina necesita manipular, manteniendo aislado el resto del motor.
+
+### Pilar 3: El Flujo de Trabajo Seguro (Despliegue Industrial)
+
+Para eliminar la necesidad de conceder `SET_USER_ID` a las cuentas humanas en producción, la industria elimina la intervención manual directa en los servidores reales mediante un flujo en tres fases:
+
+```         
+[ Desarrollador (Docker Local) ] 
+               │
+               ▼ (git push)
+[ Repositorio Git (GitHub / GitLab) ] ──► (Revisión de Código + Linters de CI/CD)
+               │
+               ▼ (Aprobación y Despliegue)
+[ Robot CI/CD (Cuenta de Despliegue) ] ──► [ Servidor de Producción ]
+```
+
+### Proceso de desarrollo e integración de rutinas en bases de datos en producción.
+
+**Fase 1: Desarrollo e Aislamiento Local**
+
+El desarrollador crea, prueba y depura la rutina almacenada en su contenedor de Docker local. En este punto, el código SQL existe únicamente como un archivo de texto dentro del proyecto.
+
+**Fase 2: Control de Versiones y Verificación**
+
+El archivo `.sql` se sube a un repositorio central (como GitHub) mediante una *Pull Request*. En esta fase se aplican dos filtros indispensables:
+
+1.  **Análisis Estático Automático (Linters / CI):** Herramientas automáticas (como `sqlfluff` o scripts de seguridad) escanean el archivo en busca de patrones prohibidos. Si detectan instrucciones como `DEFINER = 'root'` o `DEFINER = 'sysadmin'`, el proceso **bloquea el despliegue de inmediato**.
+
+2.  **Revisión Humana (*Code Review*):** Un administrador de bases de datos (DBA) o desarrollador senior revisa manualmente que la lógica del procedimiento sea segura y cumpla con las directrices de la empresa antes de autorizar su fusión.
+
+**Fase 3: Despliegue Automatizado**
+
+Una vez aprobado el código, la herramienta de integración continua (CI/CD) actúa como mensajero seguro:
+
+-   Toma el script SQL validado.
+
+-   Se conecta a la base de datos de producción utilizando la **Cuenta de Despliegue**.
+
+-   Ejecuta la creación del objeto en el servidor final.
+
+### Resumen de Garantías de Seguridad
+
+| Escenario | Con Acceso Directo (Inseguro) | Con Arquitectura CI/CD (Seguro) |
+|------------------|---------------------------|---------------------------|
+| **Creación de Rutinas** | El desarrollador entra por consola al servidor final. | Un robot automatizado ejecuta el código previamente auditado. |
+| **Uso de `SET_USER_ID`** | Necesario para asignar definidores en producción, abriendo brechas de seguridad. | **Innecesario.** Las cuentas humanas no tienen este privilegio en producción. |
+| **Mitigación de Errores** | Riesgo de modificar esquemas en caliente o suplantar superusuarios. | Las reglas automáticas bloquean cualquier script con `DEFINER = root`. |
+:::
+
+::: nota
+**Se pueden asignar los permisos a través de un rol en lugar de una cuenta de usuario?**
+
+En MySQL / MariaDB (No de forma directa)
+
+La cláusula `DEFINER` **exige estrictamente una cuenta de usuario** (con su respectivo host, por ejemplo, `'usuario'@'localhost'`). No puedes escribir directamente el nombre de un rol (como `DEFINER = 'mi_rol'`), ya que los roles nativos están concebidos como colecciones de privilegios y no como entidades independientes de sesión para este propósito.
+
+-   **La alternativa práctica:** Dado que en MySQL 8.0 y versiones posteriores los usuarios y los roles comparten la misma base de arquitectura, puedes crear una **cuenta de usuario dedicada** (por ejemplo, `proc_ejecutor@localhost`), asignarle el rol que contiene los permisos necesarios como **rol predeterminado (`DEFAULT ROLE`)**, y luego configurar esa cuenta en la cláusula `DEFINER`. Cuando la rutina se ejecute, heredará los privilegios del usuario junto con los de su rol asignado.
+:::
+
+# Parámetros en Stored Procedures
+
+## ¿Qué es un Parámetro y por qué lo usamos?
 
 Imagina un procedimiento almacenado como una **receta interactiva**. Si haces una receta de "calcular impuestos", no quieres escribir un procedimiento distinto para cada precio posible. En su lugar, dejas un **hueco reservado** para meter el precio cuando vayas a ejecutar la receta.
 
 Ese hueco reservado es un **parámetro**: una variable especial que permite introducir datos dentro del procedimiento o extraer resultados de él hacia el exterior.
 
-### Reglas clave al definir Parámetros
+## Reglas clave al definir Parámetros
 
 Cuando creamos un procedimiento almacenado, definimos sus parámetros dentro de los paréntesis:
 
@@ -381,17 +435,17 @@ Cuando creamos un procedimiento almacenado, definimos sus parámetros dentro de 
 CREATE PROCEDURE nombre_procedimiento(IN tipo_modo nombre_parametro TIPO_DE_DATO)
 ```
 
-#### A. Compatibilidad de Tipos de Datos
+### A. Compatibilidad de Tipos de Datos
 
 Si el parámetro de entrada va a filtrar o insertarse en una columna concreta de una tabla, **debe tener el mismo tipo de dato (o uno compatible)** que esa columna.
 
-- *Ejemplo:* Si la columna `edad` es de tipo `INT`, el parámetro que reciba la edad debe ser `INT`. Si la columna `email` es `VARCHAR(100)`, el parámetro debe ser `VARCHAR(100)`.
+-   *Ejemplo:* Si la columna `edad` es de tipo `INT`, el parámetro que reciba la edad debe ser `INT`. Si la columna `email` es `VARCHAR(100)`, el parámetro debe ser `VARCHAR(100)`.
 
-#### B. Evitar la ambigüedad (Nombres de parámetros vs. Columnas)
+### B. Evitar la ambigüedad (Nombres de parámetros vs. Columnas)
 
 Dentro del cuerpo del procedimiento, la consulta SQL utilizará el nombre del parámetro para filtrar o actualizar datos. Para evitar que MySQL se confunda entre el **nombre de la columna de la tabla** y el **nombre del parámetro**, es una buena práctica usar un prefijo (como `p_` o `v_`).
 
-- Incorrecto (ambiguo):
+-   Incorrecto (ambiguo):
 
 ``` sql
 CREATE PROCEDURE buscar_mascota(IN id_mascota INT)
@@ -399,14 +453,14 @@ CREATE PROCEDURE buscar_mascota(IN id_mascota INT)
 SELECT * FROM mascotas WHERE id_mascota = id_mascota;
 ```
 
-- Correcto (claro):
+-   Correcto (claro):
 
-  ``` sql
-  CREATE PROCEDURE buscar_mascota(IN p_id_mascota INT)
-  SELECT * FROM mascotas WHERE id_mascota = p_id_mascota;
-  ```
+    ``` sql
+    CREATE PROCEDURE buscar_mascota(IN p_id_mascota INT)
+    SELECT * FROM mascotas WHERE id_mascota = p_id_mascota;
+    ```
 
-### Las llamadas a procedimientos funcionan POR POSICIÓN
+## Las llamadas a procedimientos funcionan POR POSICIÓN
 
 Al ejecutar un procedimiento con `CALL`, los valores o variables se asignan a los parámetros en **estricto orden posicional** (de izquierda a derecha).
 
@@ -460,7 +514,7 @@ A MySQL no le importan los nombres de las variables que le pones por fuera (`@mi
 
 > ⚠️ **¡Cuidado con el orden al llamar!** Si por error invirtiéramos el orden al llamar al procedimiento (`CALL sp_buscar_mascotas_por_criterios(@mi_tope_peso, @mi_filtro_especie);`), MySQL intentaría buscar perros que pesen menos de `'Perro'` kg, lo que provocaría un error de tipos o un resultado vacío, porque le estaríamos pasando el número a la especie y el texto al peso. ¡El orden de los factores sí altera el producto!
 
-### Tipos de Parámetros: `IN`, `OUT` e `INOUT`
+## Tipos de Parámetros: `IN`, `OUT` e `INOUT`
 
 1.  **`IN` (Entrada):** Parámetro por defecto. Pasa un valor desde el exterior hacia el procedimiento. El procedimiento puede leerlo pero no devolver modificaciones al exterior.
 
@@ -477,13 +531,13 @@ A MySQL no le importan los nombres de las variables que le pones por fuera (`@mi
     └─────────────────────────────┘          └────────────────────────┘
     ```
 
-#### Parámetro `IN` (Entrada)
+### Parámetro `IN` (Entrada)
 
-- **¿Qué hace?** Pasa un valor **desde el exterior hacia el interior** del procedimiento.
+-   **¿Qué hace?** Pasa un valor **desde el exterior hacia el interior** del procedimiento.
 
-- **Comportamiento:** Es el modo por defecto. El procedimiento puede leer este valor y usarlo (por ejemplo, en un `WHERE`), pero **no puede devolver cambios** a la variable original del exterior.
+-   **Comportamiento:** Es el modo por defecto. El procedimiento puede leer este valor y usarlo (por ejemplo, en un `WHERE`), pero **no puede devolver cambios** a la variable original del exterior.
 
-- **Ejemplo práctico:** Consultar las mascotas de una especie determinada.
+-   **Ejemplo práctico:** Consultar las mascotas de una especie determinada.
 
 ``` sql
 DELIMITER //
@@ -501,7 +555,7 @@ DELIMITER ;
 CALL sp_obtener_mascotas_por_especie('Perro');
 ```
 
-#### Parámetro OUT (Salida)
+### Parámetro OUT (Salida)
 
 ¿Qué hace? Se usa para devolver un valor desde el procedimiento hacia el exterior.
 
@@ -531,26 +585,23 @@ CALL sp_contar_aprobados(@total);
 SELECT @total AS alumnos_aprobados;
 ```
 
-::: extra
+:::: extra
 Si creamos una variable de sesion dentro de un procedimiento y no la pasamos como parámetro OUT, en mySQL y MariaDB podremos acceder a ellas desde fuera del procedimiento, pero no es buena práctica. Es mejor usar parámetros OUT para devolver valores.
+
 **¿Por qué NO es recomendable usar variables de sesión para devolver resultados?**
--   Ruptura de la Encapsulación (Efectos secundarios ocultos):
- Un buen procedimiento almacenado debe funcionar como una "caja negra": le entran datos (IN), hace su trabajo de forma limpia y te devuelve los resultados explícitamente (OUT). Si un procedimiento modifica variables de sesión "a escondidas", quien lo llame tiene que adivinar o saber de memoria qué nombres de variables internas está alterando, lo que ensucia el código.
 
--   Contaminación del estado de la conexión:
- Como las variables de sesión persisten durante toda la vida de la conexión, si ejecutas varios procedimientos distintos y todos usan o modifican variables globales como @resultado o @estado, es facilísimo que un procedimiento sobrescriba sin querer el valor que dejó otro anterior, provocando errores difíciles de rastrear.
+-   Ruptura de la Encapsulación (Efectos secundarios ocultos): Un buen procedimiento almacenado debe funcionar como una "caja negra": le entran datos (IN), hace su trabajo de forma limpia y te devuelve los resultados explícitamente (OUT). Si un procedimiento modifica variables de sesión "a escondidas", quien lo llame tiene que adivinar o saber de memoria qué nombres de variables internas está alterando, lo que ensucia el código.
 
--  Mantenibilidad y Legibilidad:
- Si lees una llamada como CALL mi_procedure();, no tienes ni idea de qué datos está sacando al exterior. En cambio, si ves CALL mi_procedure(@mi_salida);, el parámetro OUT deja claro de un vistazo qué variable está recogiendo el resultado.
+-   Contaminación del estado de la conexión: Como las variables de sesión persisten durante toda la vida de la conexión, si ejecutas varios procedimientos distintos y todos usan o modifican variables globales como @resultado o @estado, es facilísimo que un procedimiento sobrescriba sin querer el valor que dejó otro anterior, provocando errores difíciles de rastrear.
+
+-   Mantenibilidad y Legibilidad: Si lees una llamada como CALL mi_procedure();, no tienes ni idea de qué datos está sacando al exterior. En cambio, si ves CALL mi_procedure(@mi_salida);, el parámetro OUT deja claro de un vistazo qué variable está recogiendo el resultado.
 
 ::: nota
 Usa parámetros OUT o INOUT siempre que quieras devolver resultados desde un procedimiento. Es el estándar profesional que define claramente la "firma" o contrato de entrada y salida del procedimiento.
 
 Evita las variables de sesión para retornar datos, reservándolas únicamente para configuraciones globales de la sesión o para pequeños estados auxiliares dentro de scripts muy controlados.
-::: 
-
 :::
-
+::::
 
 ::: extra
 A diferencia de otros motores como SQL Server o PostgreSQL, en MySQL no puedes hacer que un Stored Procedure te devuelva directamente más de un valor.
@@ -630,12 +681,13 @@ SELECT @mi_variable_json;
 
 **Ventaja:** La variable `@mi_variable_json` contiene todo el set de datos en formato texto plano estructurado. Puedes pasárselo a otro procedimiento que sepa parsear JSON, o leerlo directamente desde tu script de Python/R para procesarlo sin necesidad de mantener conexiones abiertas a tablas temporales.
 
--------
+------------------------------------------------------------------------
+
 A diferencia de MySQL y MariaDB —donde los procedimientos almacenados no pueden utilizarse directamente como si fueran tablas o subconsultas—, otros motores de bases de datos ofrecen mecanismos nativos mucho más potentes y flexibles para que un procedimiento devuelva conjuntos de resultados (`Result Sets`) listos para ser consumidos.
 
 Aquí tienes un resumen técnico de cómo lo resuelven los principales motores del mercado:
 
-##### PostgreSQL: Funciones que actúan como tablas (`RETURNS TABLE`)
+#### PostgreSQL: Funciones que actúan como tablas (`RETURNS TABLE`)
 
 En PostgreSQL, la línea entre una función y un procedimiento almacenado es muy flexible. Para devolver una tabla completa que pueda ser reutilizada directamente en una consulta (como si fuera una vista o una tabla normal), se utilizan **funciones que devuelven conjuntos (`SETOF` o `RETURNS TABLE`)**.
 
@@ -667,7 +719,7 @@ Puedes **consultar la función directamente** en cualquier parte de tu código S
 SELECT * FROM obtener_alumnos_destacados(8.5) WHERE nombre_alumno LIKE 'A%';
 ```
 
-##### SQL Server (T-SQL): Múltiples Result Sets nativos
+#### SQL Server (T-SQL): Múltiples Result Sets nativos
 
 En SQL Server, los procedimientos almacenados (`Stored Procedures`) están diseñados de forma nativa para **devolver múltiples conjuntos de resultados** de la manera más sencilla posible: simplemente ejecutando sentencias `SELECT` normales dentro del código del procedimiento.
 
@@ -709,8 +761,9 @@ SELECT *
 FROM @AlumnosFiltrados 
 WHERE nota > 9.0;
 ```
-::: 
-### Parámetro INOUT (Entrada/Salida)
+:::
+
+## Parámetro INOUT (Entrada/Salida)
 
 ¿Qué hace? Funciona como un canal de doble vía. Entra con un valor inicial, el procedimiento lo lee, lo modifica y devuelve el nuevo valor a la misma variable.
 
@@ -738,33 +791,76 @@ CALL sp_aplicar_bonificacion(@puntos_usuario);
 -- 3. Verificamos el valor actualizado (ahora valdrá 150)
 SELECT @puntos_usuario AS puntos_actualizados;
 ```
-# Bloques Condicionales Procedimentales: La Estructura `IF ... ELSE`
 
-Si necesitamos evaluar una regla compleja de varias líneas dentro de un bloque procedural (`BEGIN ... END`), MySQL permite utilizar la estructura condicional clásica de bloques.
+# Transacciones y procedimientos almacenados. 
+
+En los motores de bases de datos que soportan transacciones, la ejecución de la sentencia `CREATE PROCEDURE` (y en general cualquier instrucción de definición de datos o DDL) provoca de manera implícita una confirmación o cierre de la transacción actual que esté abierta (*commit* automático). Esto significa que si te encuentras en medio de una transacción activa realizando modificaciones con `INSERT` o `UPDATE` y ejecutas un `CREATE PROCEDURE`, el motor guardará de golpe todos esos cambios previos y cerrará la transacción antes de compilar y registrar la nueva rutina, por lo que debes tener especial cuidado para evitar confirmaciones accidentales antes de tiempo.
+
+## Transacciones Anidadas en Procedimientos Almacenados
+
+En muchos motores de bases de datos relacionales, **iniciar una nueva transacción (`START TRANSACTION` o equivalente) de manera explícita cuando ya existe una transacción activa provocará el cierre automático y la confirmación (*commit*) de la transacción padre**.
+
+Este comportamiento representa un riesgo crítico de arquitectura cuando se programan procedimientos almacenados. Si un procedimiento incluye comandos de control de transacciones (`COMMIT` o un nuevo `START TRANSACTION` ) en su interior y es llamado desde una capa superior que ya había abierto una transacción propia, el procedimiento romperá el flujo externo, confirmando los datos de forma prematura y destruyendo la atomicidad global de la operación.
+
+## Buenas Prácticas sobre Transacciones y Procedimientos Almacenados
+
+Para evitar inconsistencias de datos, bloqueos inesperados y rupturas de transacciones al trabajar con rutinas, se deben seguir estas reglas de oro:
+
+-   **Centralizar el control de transacciones en la aplicación:** De preferencia, las sentencias de control (`START TRANSACTION`, `COMMIT`, `ROLLBACK`) deben gestionarse en la capa de negocio o en el script principal que coordina las operaciones, y no dentro de los procedimientos almacenados individuales.
+
+-   **Diseñar procedimientos autónomos y atómicos:** Cada procedimiento debe encargarse exclusivamente de su lógica de negocio interna. Si necesita fallar, debe retornar un código de error o un parámetro `OUT` para que sea la capa que lo invocó la encargada de decidir si hace un `COMMIT` o un `ROLLBACK`.
+
+-   **Cuidado con las sentencias DDL implícitas:** Evita incluir instrucciones DDL (`CREATE PROCEDURE`, `ALTER`, `DROP`) dentro de flujos transaccionales, ya que generan un cierre (*commit*) implícito inmediato.
+
+-   **Uso de Puntos de Salvaguarda (*Savepoints*):** Si un motor lo soporta (como en PostgreSQL o MySQL), en lugar de intentar anidar transacciones completas, utiliza *savepoints* (`SAVEPOINT` y `ROLLBACK TO SAVEPOINT`) para permitir recuperaciones parciales de errores dentro de una misma transacción activa sin cerrarla por completo.
+
+# Auditoría de Rutinas mediante `information_schema`
+
+Para comprobar qué procedimientos y funciones existen en una base de datos, qué nivel de seguridad tienen configurado o qué parámetros reciben, no necesitas adivinar: puedes consultar directamente las tablas del sistema de metadatos de MySQL (`information_schema`).
+
+## Auditoría del Comportamiento y Seguridad de las Rutinas (`information_schema.ROUTINES`)
+
+Esta consulta extrae un listado de todas las rutinas almacenadas en una base de datos específica (en este ejemplo, `academia_it`), mostrando información crítica de diseño y seguridad:
 
 ``` sql
-IF condicion THEN
-    -- Sentencias si se cumple la condición
-ELSE
-    -- Sentencias si no se cumple
-END IF;
+SELECT ROUTINE_NAME, SECURITY_TYPE, SQL_DATA_ACCESS, ROUTINE_COMMENT
+FROM information_schema.ROUTINES
+WHERE ROUTINE_SCHEMA = 'academia_it'
+ORDER BY ROUTINE_NAME;
 ```
 
-Ejemplo Sencillo (Evaluando una variable de sesión) Imagina que queremos evaluar una variable de usuario que ya tenemos cargada, mostrando un mensaje u otro sin necesidad de crear todavía una función o procedimiento almacenado completo:
+-   **`ROUTINE_NAME`**: El nombre del procedimiento o función almacenada.
+
+-   **`SECURITY_TYPE`**: Muestra si la rutina se ejecuta bajo el modo `DEFINER` (el usuario creador) o `INVOKER` (el usuario que la llama). Es vital para auditar que los procedimientos críticos no utilicen configuraciones de seguridad inseguras.
+
+-   **`SQL_DATA_ACCESS`**: Indica cómo interactúa la rutina con los datos (por ejemplo, `CONTAINS SQL`, `READS SQL DATA`, o `MODIFIES SQL DATA`), lo que ayuda a medir el impacto de rendimiento y permisos.
+
+-   **`ROUTINE_COMMENT`**: Comentarios o documentación interna dejada por el desarrollador al crear la rutina.
+
+## Auditoría de la Firma y Parámetros (`information_schema.PARAMETERS`)
+
+Esta segunda consulta sirve para inspeccionar detalladamente **los parámetros de entrada y salida** de cada rutina, asegurando que se conoce exactamente su contrato de datos:
 
 ``` sql
--- Simulamos una variable con una nota de prueba
-SET @nota_alumno = 6.5;
-
--- Bloque condicional procedural
-IF @nota_alumno >= 5 THEN
-    SELECT 'El alumno ha aprobado el curso' AS resultado;
-else
-    SELECT 'El alumno debe recuperar la materia' AS resultado;
-END IF;
+SELECT SPECIFIC_NAME, ORDINAL_POSITION, PARAMETER_NAME, PARAMETER_MODE, DTD_IDENTIFIER
+FROM information_schema.PARAMETERS
+WHERE SPECIFIC_SCHEMA = 'academia_it'
+ORDER BY SPECIFIC_NAME, ORDINAL_POSITION;
 ```
 
-- **Utiliza `CASE WHEN`** dentro de tus consultas `SELECT` normales cuando estés transformando filas de una tabla individualmente.
+-   **`SPECIFIC_NAME`**: El identificador o nombre técnico de la rutina a la que pertenece el parámetro.
 
-- **Utiliza la estructura `IF ... ELSE ... END IF`** cuando estés escribiendo bloques lógicos de control más extensos dentro de un procedimiento almacenado, función o script de automatización donde las expresiones de una sola línea se queden cortas.
+-   **`ORDINAL_POSITION`**: El orden en el que se declaran los parámetros (1º, 2º, 3º...).
+
+-   **`PARAMETER_NAME`**: El nombre del parámetro (ej. `p_id_usuario`).
+
+-   **`PARAMETER_MODE`**: Indica la dirección del flujo del dato:
+
+    -   `IN`: Parámetro de entrada (el valor entra a la rutina).
+
+    -   `OUT`: Parámetro de salida (la rutina devuelve un valor modificado).
+
+    -   `INOUT`: Parámetro mixto (entra con un valor y sale actualizado).
+
+-   **`DTD_IDENTIFIER`**: El tipo de dato exacto y su longitud (por ejemplo, `int(11)`, `varchar(50)`).
 

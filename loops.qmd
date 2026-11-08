@@ -1,0 +1,201 @@
+---
+title: "Estructuras de Repetición"
+format: html
+---
+
+Esta guía profundiza en los conceptos teóricos y prácticos sobre el control de flujo iterativo.
+
+En MySQL, el control de flujo en procedimientos almacenados permite ejecutar bloques de código de forma repetitiva. Existen tres estructuras principales con comportamientos distintos sobre cuándo se evalúa la condición de parada.
+
+# Comparativa de Estructuras
+
+| Estructura | Momento de Evaluación | Garantía de Ejecución |
+|:-----------------------|:-----------------------|:-----------------------|
+| **`WHILE`** | **Antes** de entrar al cuerpo (`Pre-condicional`) | **0 o más veces**. Si la condición inicial es falsa, el bucle no se ejecuta. |
+| **`REPEAT`** | **Al final** del cuerpo (`Post-condicional`) | **Al menos 1 vez**. El código se ejecuta antes de verificar la cláusula `UNTIL`. |
+| **`LOOP`** | **Sin evaluación implícita** | Indefinido. Requiere una sentencia explícita (`LEAVE`) para finalizar. |
+
+# Sentencias de Control: `LEAVE` e `ITERATE`
+
+Para gestionar el flujo dentro de un bloque etiquetado (`etiqueta: LOOP`):
+
+-   **`LEAVE etiqueta`**: Rompe la ejecución del bucle etiquetado y salta a la primera instrucción fuera de él (equivalente a `break` en C/Java).
+-   **`ITERATE etiqueta`**: Salta el resto del código en la iteración actual y vuelve al inicio de la siguiente vuelta (equivalente a `continue` en C/Java).
+
+> **Precaución:** Al usar `ITERATE`, las variables de control del bucle deben incrementarse **antes** del salto para evitar bucles infinitos.
+
+# Bucle WHILE (Pre-evaluación)
+
+El bucle `WHILE` evalúa la condición antes de ejecutar el bloque de código. Si la condición no se cumple desde el principio, el código del interior no se ejecuta ni una sola vez.
+
+``` sql
+WHILE condicion DO
+    -- Instrucciones a repetir
+    -- Actualizar la variable de control
+END WHILE;
+```
+
+un bucle que suma números mientras v_i sea menor o igual a 3:
+
+``` sql
+DECLARE v_i INT DEFAULT 1;
+DECLARE v_suma INT DEFAULT 0;
+
+WHILE v_i <= 3 DO
+    SET v_suma = v_suma + v_i;
+    SET v_i = v_i + 1;
+END WHILE;
+-- Resultado: v_suma valdrá 6 (1 + 2 + 3)
+```
+
+# Bucle REPEAT (Post-evaluación)
+
+El bucle `REPEAT` ejecuta primero el bloque de código y evalúa la condición al final (UNTIL). Esto garantiza que el bloque interno se ejecute siempre al menos una vez, sin importar el valor inicial de la condición.
+
+``` sql
+REPEAT
+    -- Instrucciones a repetir
+    -- Actualizar la variable de control
+UNTIL condicion_de_salida END REPEAT;
+```
+
+``` sql
+DECLARE v_i INT DEFAULT 1;
+DECLARE v_suma INT DEFAULT 0;
+
+REPEAT
+    SET v_suma = v_suma + v_i;
+    SET v_i = v_i + 1;
+UNTIL v_i > 3 END REPEAT;
+-- Resultado: v_suma valdrá 6
+```
+
+# Bucle LOOP (Control Manual con Etiquetas)
+
+El LOOP es un bucle infinito por naturaleza. No tiene ninguna condición integrada en su estructura. Para evitar que el servidor se quede colgado en un bucle sin fin, es obligatorio utilizar etiquetas junto con dos instrucciones de control de flujo: - `LEAVE`: Rompe el bucle y sale de él (equivalente a un break). - `ITERATE`: Salta inmediatamente a la siguiente iteración, ignorando el código que quede por debajo en esa vuelta (equivalente a un continue).
+
+``` sql
+nombre_etiqueta: LOOP
+    -- Instrucciones
+    
+    IF condicion_para_salir THEN 
+        LEAVE nombre_etiqueta; 
+    END IF;
+
+    IF condicion_para_saltar THEN 
+        ITERATE nombre_etiqueta; 
+    END IF;
+
+    -- Instrucciones que se saltan si se ejecuta ITERATE
+END LOOP nombre_etiqueta;
+```
+
+``` sql
+DECLARE v_i INT DEFAULT 0;
+DECLARE v_suma INT DEFAULT 0;
+
+mi_bucle: LOOP
+    SET v_i = v_i + 1;
+    
+    -- Condición de salida del bucle
+    IF v_i > 4 THEN 
+        LEAVE mi_bucle; 
+    END IF;
+
+    -- Condición para saltar una iteración concreta
+    IF v_i = 3 THEN 
+        ITERATE mi_bucle; -- Salta a la siguiente vuelta sin sumar el 3
+    END IF;
+
+    SET v_suma = v_suma + v_i;
+END LOOP mi_bucle;
+-- Resultado: v_suma valdrá 7 (1 + 2 + 4, el 3 se omitió)
+```
+
+::: nota
+Cuidado con el orden en los bucles LOOP. Si incrementas la variable después del ITERATE, al saltar te dejarás el incremento sin hacer y puedes provocar un bucle infinito real. Por eso se suele incrementar la variable justo al entrar al bucle.
+:::
+
+# Equivalencias en Bucles y Control de Flujo
+
+A diferencia de MySQL, que ofrece tres tipos de bucles (`WHILE`, `REPEAT` y `LOOP`), otros motores suelen simplificar esto basándose principalmente en un bucle genérico y un `WHILE`.
+
+|  |  |  |  |  |
+|------------|---------------|---------------|---------------|---------------|
+| **Funcionalidad** | **MySQL** | **SQL Server (T-SQL)** | **PostgreSQL (PL/pgSQL)** | **Oracle (PL/SQL)** |
+| **Pre-evaluación** | `WHILE ... DO ... END WHILE;` | `WHILE ... BEGIN ... END` | `WHILE ... LOOP ... END LOOP;` | `WHILE ... LOOP ... END LOOP;` |
+| **Post-evaluación** | `REPEAT ... UNTIL ... END REPEAT;` | *No existe nativo* (se simula con `WHILE`) | *No existe nativo* (se usa `LOOP ... EXIT WHEN`) | *No existe nativo* (se usa `LOOP ... EXIT WHEN`) |
+| **Bucle Infinito / Controlado** | `LOOP ... LEAVE / ITERATE ... END LOOP;` | `WHILE 1=1` + `BREAK` / `CONTINUE` | `LOOP ... EXIT / CONTINUE ... END LOOP;` | `LOOP ... EXIT / CONTINUE ... END LOOP;` |
+
+-   **Nota clave:** PostgreSQL y Oracle resuelven la falta de un `REPEAT` directo utilizando el bucle estándar `LOOP` acompañado de la instrucción `EXIT WHEN condicion;` justo al final del bloque.
+
+
+::: practica
+# WHILE REPEAT LOOP LEAVE e ITERATE
+
+| Estructura | Cuándo comprueba la condición                                 |
+|--------------|-----------------------------------------------|
+| WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
+| REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
+| LOOP       | No incorpora condición de salida: se programa explícitamente. |
+
+El siguiente procedimiento tiene un bucle de cada tipo, el while y el repeat hacen la suma acumulada de todos los números enteros consecutivos desde el 1 hasta el límite (1+2+3+4...), y el loop omite el 3. 
+
+``` sql
+DROP PROCEDURE IF EXISTS sp10_bucles;
+DELIMITER //
+CREATE PROCEDURE sp10_bucles(
+  IN p_limite INT,
+  OUT p_while INT,
+  OUT p_repeat INT,
+  OUT p_loop INT)
+SQL SECURITY INVOKER
+CONTAINS SQL
+BEGIN
+  DECLARE v_i INT DEFAULT 1;
+  IF p_limite IS NULL OR p_limite<1 OR p_limite>1000 THEN 
+     SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT='El limite debe estar entre 1 y 1000';
+  END IF;
+  SET p_while=0,p_repeat=0,p_loop=0;
+  
+  WHILE v_i<=p_limite DO 
+     SET p_while=p_while+v_i;
+     SET v_i=v_i+1;
+
+  END WHILE;
+  ---
+  SET v_i=1;
+  REPEAT 
+     SET p_repeat=p_repeat+v_i;
+     SET v_i=v_i+1;
+  UNTIL v_i>p_limite END REPEAT;
+  ----
+  SET v_i=0;
+  recorrer: LOOP 
+     SET v_i=v_i+1;
+     IF v_i>p_limite THEN LEAVE recorrer; END IF;
+
+     IF v_i=3 THEN ITERATE recorrer; END IF;
+     SET p_loop=p_loop+v_i;
+  END LOOP recorrer;
+END//
+DELIMITER ;
+```
+
+***v_i*** se reinicializa antes de cada demostración. ***p_while***, ***p_repeat*** y ***p_loop*** se inicializan a cero porque los OUT empiezan en NULL. recorrer es una etiqueta. LEAVE abandona ese bucle; ITERATE vuelve a su siguiente iteración. Incrementar v_i antes del ITERATE evita repetir indefinidamente el mismo número.
+
+**Comprobar resultados**
+
+``` sql
+CALL sp10_bucles(5,@w,@r,@l);
+SELECT @w,@r,@l;
+CALL sp10_bucles(1,@w,@r,@l);
+SELECT @w,@r,@l;
+```
+
+Se esperan 15, 15 y 12 para límite 5, y 1, 1 y 1 para límite 1. 
+Probar por separado el límite 0: la validación debe generar un error. El máximo 1000 mantiene la demostración limitada y evita desbordar los INT con sumas arbitrariamente grandes.
+
+Pregunta. Modificar una copia para que LOOP omita los pares. ¿Qué condición utilizar y qué resultado esperar con límite 5?
+:::

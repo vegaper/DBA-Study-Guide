@@ -14,7 +14,7 @@ Una práctica guiada para crear operaciones reutilizables, comprender sus permis
 # Cómo utilizar la práctica
 
 | Recorrido | Actividades |
-|-----------------------|-------------------------------------------------|
+|------------------------|------------------------------------------------|
 | Esencial | Apartados 1 a 21 y 27 a 29. Construcción paso a paso y reto de dos partes. |
 | Avanzado | Apartados 22 a 26. Bucles, cursores, SQL dinámico, bloqueos y COMMIT implícito. |
 
@@ -31,7 +31,7 @@ Conocimientos de partida. SELECT, JOIN, agregaciones y operaciones INSERT, UPDAT
 ## Paso 1 Identificar dónde se ejecuta cada instrucción
 
 | Entorno | Qué se ejecuta |
-|-------------------------|------------------------------------------------|
+|-------------------------|----------------------------------------------|
 | Cliente mysql o editor SQL | USE, SELECT, CREATE PROCEDURE, CALL y las demás instrucciones SQL. |
 | Terminal de Ubuntu | cd, mysql, mysqldump y la redirección de archivos. |
 | Otra conexión | Las pruebas de permisos y de bloqueo. Sus variables \@ son independientes. |
@@ -109,23 +109,23 @@ ORDER BY m.id_matricula;
 +--------------+---------+-------------+---------+------+
 ```
 
-- *curso_asignatura* relaciona un curso, una asignatura y un profesor.
+-   *curso_asignatura* relaciona un curso, una asignatura y un profesor.
 
-- *matriculas* enlaza un alumno con una fila de `curso_asignatura`.
+-   *matriculas* enlaza un alumno con una fila de `curso_asignatura`.
 
-- *notas* referencia una matrícula y `UNIQUE(id_matricula)` permite como máximo una nota final por matrícula.
+-   *notas* referencia una matrícula y `UNIQUE(id_matricula)` permite como máximo una nota final por matrícula.
 
-- Las claves foráneas, UNIQUE y CHECK continúan siendo la protección de los datos.
+-   Las claves foráneas, UNIQUE y CHECK continúan siendo la protección de los datos.
 
 Notas para la práctica
 
-- Crear o reemplazar definiciones fuera de las transacciones de prueba: el DDL puede provocar COMMIT implícito.
+-   Crear o reemplazar definiciones fuera de las transacciones de prueba: el DDL puede provocar COMMIT implícito.
 
-- Ejecutar los errores previstos individualmente. Después de un error, la siguiente instrucción de comprobación puede requerir una ejecución manual.
+-   Ejecutar los errores previstos individualmente. Después de un error, la siguiente instrucción de comprobación puede requerir una ejecución manual.
 
-- Cerrar cada prueba con ROLLBACK o con la recuperación expresamente indicada. Un identificador AUTO_INCREMENT puede consumirse aunque la fila se deshaga.
+-   Cerrar cada prueba con ROLLBACK o con la recuperación expresamente indicada. Un identificador AUTO_INCREMENT puede consumirse aunque la fila se deshaga.
 
-- No ejecutar las comprobaciones mientras otras sesiones modifiquen esos datos. autocommit=1 no demuestra por sí solo que no exista una transacción explícita abierta.
+-   No ejecutar las comprobaciones mientras otras sesiones modifiquen esos datos. autocommit=1 no demuestra por sí solo que no exista una transacción explícita abierta.
 
 Pregunta. ¿Por qué una matrícula sin fila de notas no es lo mismo que una fila de notas con nota NULL?
 
@@ -171,11 +171,11 @@ CALL sp00_listado();
 +-----------+---------+-----------+
 ```
 
-- Crear la rutina no había ejecutado el SELECT.
+-   Crear la rutina no había ejecutado el SELECT.
 
-- Cada CALL vuelve a consultar los datos visibles en esa ejecución; un cambio confirmado en alumnos puede cambiar el resultado de llamadas posteriores.
+-   Cada CALL vuelve a consultar los datos visibles en esa ejecución; un cambio confirmado en alumnos puede cambiar el resultado de llamadas posteriores.
 
-- No es necesario recrear el procedimiento para que lea datos nuevos.
+-   No es necesario recrear el procedimiento para que lea datos nuevos.
 
 ## Paso 3 Comprobar su persistencia
 
@@ -301,7 +301,7 @@ CALL sp00_contar_definer();
 Como administrador con los permisos necesarios, ambos ejemplos devuelven 12. Esa coincidencia no demuestra que los modos sean iguales: se necesita una cuenta con permisos diferentes para apreciar la diferencia.
 
 | Modo | Permisos para la consulta interior |
-|-----------------------|------------------------------------------------|
+|------------------------|-----------------------------------------------|
 | INVOKER | El invocador necesita EXECUTE y SELECT sobre alumnos. |
 | DEFINER | El invocador necesita EXECUTE. El definidor necesita los permisos de ejecución y SELECT necesarios. |
 | Sin SQL SECURITY explícito | Se utiliza DEFINER por defecto. |
@@ -909,15 +909,15 @@ END//
 DELIMITER ;
 ```
 
-- `NOT EXISTS` comprueba que la subconsulta no encuentra al alumno.
+-   `NOT EXISTS` comprueba que la subconsulta no encuentra al alumno.
 
-- `SELECT 1` utiliza una constante porque interesa la existencia de una fila, no su contenido.
+-   `SELECT 1` utiliza una constante porque interesa la existencia de una fila, no su contenido.
 
-- Si el alumno no existe, `SIGNAL` genera un error comprensible.
+-   Si el alumno no existe, `SIGNAL` genera un error comprensible.
 
-- Si existe pero no tiene matrículas, la consulta devuelve cero filas: es una situación distinta.
+-   Si existe pero no tiene matrículas, la consulta devuelve cero filas: es una situación distinta.
 
-- `CONCAT_WS` une las partes del nombre con espacios y omite los componentes NULL.
+-   `CONCAT_WS` une las partes del nombre con espacios y omite los componentes NULL.
 
 ## Paso 3 Consultar tres situaciones
 
@@ -984,11 +984,11 @@ DELIMITER ;
 
 La consulta agregada devuelve una fila y asigna tres columnas a tres destinos mediante `INTO`.
 
-- COUNT(\*) cuenta matrículas;
+-   COUNT(\*) cuenta matrículas;
 
-- COUNT(n.nota) cuenta calificaciones numéricas, incluido cero;
+-   COUNT(n.nota) cuenta calificaciones numéricas, incluido cero;
 
-- AVG ignora NULL y ROUND limita la media a dos decimales.
+-   AVG ignora NULL y ROUND limita la media a dos decimales.
 
 ## Paso 2 Recoger las tres salidas
 
@@ -1258,11 +1258,11 @@ Como la condición se atiende y no se propaga, `CALL` puede terminar sin devolve
 
 Sin un manejador aplicable,
 
-- `SQLEXCEPTION` interrumpe la rutina;
+-   `SQLEXCEPTION` interrumpe la rutina;
 
-- las advertencias `SQLWARNING` permiten continuar;
+-   las advertencias `SQLWARNING` permiten continuar;
 
-- NOT FOUND generado normalmente también permite continuar.
+-   NOT FOUND generado normalmente también permite continuar.
 
 No todo aviso es un error fatal. Un error de clave duplicada es una excepción, no una advertencia que se ignore por defecto.
 
@@ -1605,7 +1605,7 @@ ROLLBACK;
 SELECT COUNT(*) FROM matriculas;
 ```
 
-La fila 4 de curso_asignatura corresponde a SQL del curso 2. Se esperan 28 matrículas durante la prueba y 27 después del ROLLBACK. El identificador nuevo debe ser mayor que los originales, pero no se exige un número concreto. Después de deshacer la inserción, la variable puede conservar un identificador cuya fila ya no existe.
+La fila 4 de curso_asignatura corresponde a SQL del curso 2. Se esperan 28 matrículas durante la prueba y 27 después del ROLLBACK. El identificador nuevo debe ser mayor que los originales, pero no se exige un número concreto ya que después de deshacer la inserción, la variable puede conservar un identificador cuya fila ya no existe.
 
 ## Paso 5 Comprobar la regla de alumno activo
 
@@ -2118,7 +2118,7 @@ El error de la clave foránea inexistente se propaga; no es una duplicidad. La m
 Los `OUT` conservan la información de la llamada anterior. Es importante tener esto en cuenta para no entenderlos como resultado de esta nueva ejecución fallida.
 
 | Mecanismo | Función |
-|--------------------|----------------------------------------------------|
+|----------------------|--------------------------------------------------|
 | CONTINUE HANDLER | Atiende la condición y continúa tras la instrucción que la produjo. |
 | EXIT HANDLER | Atiende la condición y abandona el bloque donde se declaró. |
 | SIGNAL | Genera una condición con su información. |
@@ -2269,9 +2269,9 @@ ROLLBACK;
 
 ## Parte B Crear una matrícula y su primera calificación
 
-- Crear *sp15_matricular_con_nota* con entradas *id_alumno*, *id_curso_asignatura*, *nota* y *observaciones*, y una salida *id_matricula*.
+-   Crear *sp15_matricular_con_nota* con entradas *id_alumno*, *id_curso_asignatura*, *nota* y *observaciones*, y una salida *id_matricula*.
 
-- Reutilizar *sp06_matricular* y *sp07_guardar_nota*.
+-   Reutilizar *sp06_matricular* y *sp07_guardar_nota*.
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp06_matricular;
@@ -2333,13 +2333,13 @@ END//
 DELIMITER ;
 ```
 
-- La nueva rutina controla su transacción; se llama sin una transacción previa.
+-   La nueva rutina controla su transacción; se llama sin una transacción previa.
 
-- Si falla cualquier operación, no debe quedar ni la matrícula ni su nota.
+-   Si falla cualquier operación, no debe quedar ni la matrícula ni su nota.
 
-- El error debe propagarse.
+-   El error debe propagarse.
 
-- La matrícula recién creada conserva el estado matriculado: registrar una primera calificación no equivale aquí a cerrar toda la evaluación. No añadir tablas, columnas ni una regla de estado diferente.
+-   La matrícula recién creada conserva el estado matriculado: registrar una primera calificación no equivale aquí a cerrar toda la evaluación. No añadir tablas, columnas ni una regla de estado diferente.
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp15_matricular_con_nota;
@@ -2438,9 +2438,7 @@ WHERE id_alumno=1 AND id_curso_asignatura=4;
 
 Se esperan NULL y 0. La matrícula se insertó antes de que sp07 rechazara la nota; el ROLLBACK exterior debe deshacerla. No deducir el éxito de la llamada a partir de un identificador antiguo.
 
-![](images/paste-24.png)
-
-# Paso 3 Probar un alta correcta
+## Paso 3 Probar un alta correcta
 
 ``` sql
 SET @id_reto=NULL;
@@ -2452,7 +2450,7 @@ WHERE m.id_matricula=@id_reto;
 
 Se espera una matrícula nueva en estado matriculado, con nota 8,00. Los totales serán 28 matrículas y 26 notas. Como hubo COMMIT, un ROLLBACK posterior no elimina esas filas.
 
-# Paso 4 Recuperar únicamente el alta de esta prueba
+## Paso 4 Recuperar únicamente el alta de esta prueba
 
 ``` sql
 CALL sp00_eliminar_alta_prueba(@id_reto,1,4);
@@ -2464,31 +2462,41 @@ Se esperan 27 y 25. La herramienta valida el identificador y la pareja antes de 
 
 Pregunta. ¿Por qué el reto B necesita tanto un manejador de excepciones como una transacción?
 
-# Comprobar permisos con dos cuentas diferentes
+------------------------------------------------------------------------
+
+# Comprobar permisos de usuario
 
 Objetivo. Completar la comparación conceptual del apartado 4 con cuentas reales del laboratorio. No ejecutar CREATE USER ni GRANT dentro de transacciones de prueba. Las contraseñas siguientes son ejemplos locales; una política instalada puede exigir otras que deben anotarse para las conexiones posteriores.
 
-# Paso 1 Comprobar si los objetos de laboratorio ya existen
+## Paso 1 Comprobar si los objetos de laboratorio ya existen
 
 ``` sql
 SELECT User,Host FROM mysql.user
 WHERE User IN ('sp_academia_def','sp_academia_operador');
+
 SHOW PROCEDURE STATUS
 WHERE Db='academia_it' AND Name='sp13_contar_definer';
 ```
 
-Si ya existen, revisar SHOW GRANTS y SHOW CREATE PROCEDURE antes de repetir la preparación. No eliminar cuentas de otros trabajos ni restablecer sus contraseñas automáticamente. El archivo 03_seguridad_administrador.sql se utiliza una sola vez cuando esos nombres están libres.
+Si ya existen, revisar `SHOW GRANTS` y `SHOW CREATE PROCEDURE` antes de repetir la preparación. No eliminar cuentas de otros trabajos ni restablecer sus contraseñas automáticamente.
 
-# Paso 2 Preparar las cuentas como administrador
-
+## Paso 2 Preparar las cuentas como administrador
+Creamos dos cuentas de usuario y le damos a una de ellas permisos para leer en la tabla de matrículas.
 ``` sql
 USE academia_it;
+
 CREATE USER 'sp_academia_def'@'localhost'
   IDENTIFIED BY 'Lab_Def#2026_Clase' ACCOUNT LOCK;
+
 CREATE USER 'sp_academia_operador'@'localhost'
   IDENTIFIED BY 'Lab_Operador#2026_Clase';
+
 GRANT SELECT ON academia_it.matriculas
   TO 'sp_academia_def'@'localhost';
+```
+Creamos un procedimiento simple ***sp13_contar_definer*** que lee en la tabla matrículas. 
+
+``` sql
 DELIMITER //
 CREATE DEFINER='sp_academia_def'@'localhost'
 PROCEDURE sp13_contar_definer(
@@ -2501,21 +2509,35 @@ BEGIN
   FROM matriculas WHERE id_alumno=p_id_alumno;
 END//
 DELIMITER ;
+``` 
+Le damos permiso a las dos cuentas para ejecutar el procedimiento. 
+
+``` sql
 GRANT EXECUTE ON PROCEDURE academia_it.sp13_contar_definer
   TO 'sp_academia_def'@'localhost';
 
 GRANT EXECUTE ON PROCEDURE academia_it.sp13_contar_definer
   TO 'sp_academia_operador'@'localhost';
+```
+y le damos permiso a la cuenta operadora para ejecutar el procedimiento ***sp03_resumen_alumno*** que ya existía en la base de datos.
+``` sql
 GRANT EXECUTE ON PROCEDURE academia_it.sp03_resumen_alumno
   TO 'sp_academia_operador'@'localhost';
+
 SHOW GRANTS FOR 'sp_academia_operador'@'localhost';
 ```
 
-El definidor tiene SELECT únicamente sobre matriculas y EXECUTE sobre su rutina. ACCOUNT LOCK impide iniciar sesión con esa cuenta, pero no impide que actúe como definidora de un objeto. La cuenta operadora no recibe SELECT directo sobre las tablas.
+El definidor tiene `SELECT` únicamente sobre matriculas y `EXECUTE` sobre su rutina.
 
-El administrador que asigna un DEFINER distinto del propio debe disponer de los privilegios correspondientes. En MySQL 8.4, establecer cualquier definidor requiere SET_ANY_DEFINER y pueden aplicarse requisitos adicionales para cuentas de sistema. No basta con CREATE ROUTINE para asignar libremente otra identidad.
+`ACCOUNT LOCK` impide iniciar sesión con esa cuenta, pero no impide que actúe como definidora de un objeto.
 
-# Paso 3 Abrir otra conexión como operador
+La cuenta operadora no recibe `SELECT` directo sobre las tablas.
+
+El administrador que asigna un `DEFINER` distinto del propio debe disponer de los privilegios correspondientes.
+
+En MySQL 8.4, establecer cualquier definidor requiere `SET_ANY_DEFINER` y pueden aplicarse requisitos adicionales para cuentas de sistema. No basta con CREATE ROUTINE para asignar libremente otra identidad.
+
+## Paso 3 Abrir otra conexión como operador
 
 ``` bash
 mysql -u sp_academia_operador -p --default-character-set=utf8mb4
@@ -2531,25 +2553,25 @@ SELECT @total;
 
 Resultado esperado. 2. La llamada utiliza los permisos limitados del definidor y devuelve el recuento de matrículas de Alberto.
 
-# Paso 4 Comprobar dos denegaciones
+## Paso 4 Comprobar dos denegaciones
 
 ``` sql
 SELECT * FROM matriculas;
 CALL sp03_resumen_alumno(1,@t,@e,@m);
 ```
 
-Ejecutar individualmente. Ambas deben fallar por falta de acceso: la consulta directa necesita SELECT y la rutina INVOKER utiliza los permisos del operador para sus consultas interiores. EXECUTE no le concede esos SELECT.
+Ambas deben fallar por falta de acceso: la consulta directa necesita `SELECT` y la rutina `INVOKER` utiliza los permisos del operador para sus consultas interiores. `EXECUTE` no le concede esos SELECT.
 
-# Paso 5 Revocar y recuperar EXECUTE
+## Paso 5 Revocar y recuperar `EXECUTE`
 
-Mantener la conexión operadora y abrir otra administradora. Desde la administradora:
+Mantener la conexión operadora y abrir otra administradora. Desde la administradora revocamos los permisos del operador sobre el procedimiento.
 
 ``` sql
 REVOKE EXECUTE ON PROCEDURE academia_it.sp13_contar_definer
 FROM 'sp_academia_operador'@'localhost';
 ```
 
-Repetir la llamada DEFINER como operador: debe rechazarse por falta de EXECUTE. Después, como administrador, recuperar el permiso:
+Repetir la llamada DEFINER como operador: debe rechazarse por falta de `EXECUTE`. Después, como administrador, recuperar el permiso:
 
 ``` sql
 GRANT EXECUTE ON PROCEDURE academia_it.sp13_contar_definer
@@ -2562,305 +2584,36 @@ TO 'sp_academia_operador'@'localhost';
 | ALTER ROUTINE | Alterar las características permitidas o eliminar la rutina. |
 | EXECUTE | Autorizar su ejecución. |
 
-automatic_sp_privileges controla las concesiones automáticas al creador. Una cuenta definidora no debe eliminarse mientras existan rutinas que dependan de ella. El volcado de la base no incluye por sí solo las cuentas y todos sus GRANT.
+***automatic_sp_privileges*** controla las concesiones automáticas al creador. Una cuenta definidora no debe eliminarse mientras existan rutinas que dependan de ella. El volcado de la base no incluye por sí solo las cuentas y todos sus GRANT.
 
 Pregunta. ¿Por qué se utiliza una cuenta definidora limitada en vez de root?
 
-# Guardar restaurar y comprobar las rutinas
-
-Objetivo. Verificar una recuperación real. La copia debe incluir las definiciones y sus dependencias, además de los datos.
-
-# Paso 1 Preparar la copia
-
-Terminar las transacciones y la recuperación de las pruebas anteriores. No realizar cambios de estructura simultáneos. Ejecutar desde la terminal; cada línea continuada utiliza la barra inversa del shell de Ubuntu.
-
-``` bash
-sudo mysqldump --default-character-set=utf8mb4 \
-  --routines --triggers --events --single-transaction \
-  --no-tablespaces academia_it > academia_it_backup_final.sql
-```
-
---routines incluye procedimientos y funciones. --single-transaction obtiene una lectura consistente de las tablas transaccionales, pero no convierte en transaccional un DDL concurrente. --no-tablespaces evita incluir información innecesaria para esta práctica. Se omite --databases para restaurar bajo un nombre diferente.
-
-# Paso 2 Crear un destino nuevo sin tocar la base de trabajo
-
-``` bash
-sudo mysql -e \
-  "CREATE DATABASE academia_it_restaurada 
-   CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
-sudo mysql academia_it_restaurada < academia_it_backup_final.sql
-sudo mysql
-```
-
-La barra inversa continúa el comando de Ubuntu y las comillas conservan el SQL completo, aunque se escriba en varias líneas. Si el destino ya existe, revisar el intento anterior y elegir un destino nuevo; no se elimina automáticamente. Desde el cliente mysql:
-
-``` sql
-USE academia_it_restaurada;
-SHOW PROCEDURE STATUS WHERE Db='academia_it_restaurada';
-CALL sp03_resumen_alumno(1,@t,@e,@m);
-SELECT @t,@e,@m;
-CALL sp14_resumen_curso(1,@mat,@eval,@media);
-SELECT @mat,@eval,@media;
-```
-
-Se esperan 2, 2 y 7,88 para Alberto, y 7, 6 y 6,58 para el curso 1. Si también se realizó la ampliación de SQL dinámico, comprobar sp12_listar_ordenado('id_alumno',0): con los datos originales devuelve cero filas.
-
-# Paso 3 Revisar definidores y permisos del destino
-
-El volcado puede conservar DEFINER, pero no crea automáticamente todas sus cuentas y concesiones. En otro servidor deben prepararse esas identidades y permisos. Incluso en el mismo servidor, la cuenta limitada de sp13 tiene sus GRANT sobre academia_it, no sobre academia_it_restaurada: adaptar y verificar esos permisos antes de probar su ejecución allí.
-
-Las llamadas de comprobación anteriores son INVOKER y se ejecutan como administrador. Las rutinas de este material utilizan referencias locales a las tablas para permitir la restauración bajo otro nombre. Una referencia fija academia_it.tabla dentro de una rutina restaurada podría seguir accediendo a la base original y debe detectarse.
-
-``` sql
-USE academia_it;
-SELECT DATABASE();
-```
-
-Resultado esperado. academia_it. Mantener la base restaurada como evidencia independiente. La existencia de un archivo de copia no demuestra por sí sola que la restauración funcione.
-
-Pregunta. ¿Por qué una copia de tablas sin --routines puede ser insuficiente para recuperar una aplicación que utiliza CALL?
-
-# Practicar WHILE REPEAT LOOP LEAVE e ITERATE
-
-Ampliación avanzada
-
-Objetivo de ampliación. Comprender repetición y control de flujo sin modificar tablas. Se suman enteros de 1 al límite; LOOP omite el 3 para mostrar ITERATE.
-
-# Paso 1 Comparar las tres estructuras
-
-| Estructura | Cuándo comprueba la condición                                 |
-|-----------------------|------------------------------------------------|
-| WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
-| REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
-| LOOP       | No incorpora condición de salida: se programa explícitamente. |
-
-``` sql
-DROP PROCEDURE IF EXISTS sp10_bucles;
-DELIMITER //
-CREATE PROCEDURE sp10_bucles(
-  IN p_limite INT,OUT p_while INT,
-  OUT p_repeat INT,OUT p_loop INT)
-SQL SECURITY INVOKER
-CONTAINS SQL
-BEGIN
-  DECLARE v_i INT DEFAULT 1;
-  IF p_limite IS NULL OR p_limite<1 OR p_limite>1000 THEN 
-     SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT='El limite debe estar entre 1 y 1000';
-  END IF;
-  SET p_while=0,p_repeat=0,p_loop=0;
-  WHILE v_i<=p_limite DO 
-     SET p_while=p_while+v_i;
-     SET v_i=v_i+1;
-  END WHILE;
-  SET v_i=1;
-  REPEAT 
-     SET p_repeat=p_repeat+v_i;
-     SET v_i=v_i+1;
-  UNTIL v_i>p_limite END REPEAT;
-  SET v_i=0;
-  recorrer: LOOP 
-     SET v_i=v_i+1;
-     IF v_i>p_limite THEN LEAVE recorrer; END IF;
-
-     IF v_i=3 THEN ITERATE recorrer; END IF;
-     SET p_loop=p_loop+v_i;
-  END LOOP recorrer;
-END//
-DELIMITER ;
-```
-
-v_i se reinicializa antes de cada demostración. p_while, p_repeat y p_loop se inicializan a cero porque los OUT empiezan en NULL. recorrer es una etiqueta. LEAVE abandona ese bucle; ITERATE vuelve a su siguiente iteración. Incrementar v_i antes del ITERATE evita repetir indefinidamente el mismo número.
-
-# Paso 2 Comprobar resultados
-
-``` sql
-CALL sp10_bucles(5,@w,@r,@l);
-SELECT @w,@r,@l;
-CALL sp10_bucles(1,@w,@r,@l);
-SELECT @w,@r,@l;
-```
-
-Se esperan 15, 15 y 12 para límite 5, y 1, 1 y 1 para límite 1. Probar por separado el límite 0: la validación debe generar un error. El máximo 1000 mantiene la demostración limitada y evita desbordar los INT con sumas arbitrariamente grandes.
-
-Pregunta. Modificar una copia para que LOOP omita los pares. ¿Qué condición utilizar y qué resultado esperar con límite 5?
-
-# Recorrer filas mediante un cursor
-
-Ampliación avanzada
-
-Objetivo de ampliación. Procesar una fila en cada vuelta y comprender cuándo conviene sustituir ese recorrido por una consulta de conjuntos.
-
-# Paso 1 Identificar las piezas
-
-DECLARE CURSOR define la consulta del recorrido. OPEN abre el cursor; FETCH obtiene la siguiente fila; CLOSE lo cierra. NOT FOUND señala que FETCH ya no obtuvo una fila. Primero se declaran variables, después cursores y después manejadores.
-
-``` sql
-DROP PROCEDURE IF EXISTS sp11_cursor_curso;
-DELIMITER //
-CREATE PROCEDURE sp11_cursor_curso(
-  IN p_id_curso INT UNSIGNED,
-  OUT p_asignaturas BIGINT UNSIGNED,
-  OUT p_matriculas BIGINT UNSIGNED)
-SQL SECURITY INVOKER
-READS SQL DATA
-BEGIN
-  DECLARE v_fin BOOLEAN DEFAULT FALSE;
-  DECLARE v_id INT UNSIGNED;
-  DECLARE v_total BIGINT UNSIGNED;
-  DECLARE cur CURSOR FOR 
-     SELECT id_curso_asignatura FROM curso_asignatura 
-     WHERE id_curso=p_id_curso ORDER BY id_curso_asignatura;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin=TRUE;
-  IF NOT EXISTS (SELECT 1 FROM cursos 
-             WHERE id_curso=p_id_curso) THEN 
-     SIGNAL SQLSTATE '45000' 
-        SET MESSAGE_TEXT='El curso no existe';
-  END IF;
-  SET p_asignaturas=0,p_matriculas=0;
-  OPEN cur;
-  recorrer: LOOP 
-     FETCH cur INTO v_id;
-     IF v_fin THEN LEAVE recorrer; END IF;
-     SELECT COUNT(*) INTO v_total FROM matriculas 
-     WHERE id_curso_asignatura=v_id;
-     SET p_asignaturas=p_asignaturas+1;
-     SET p_matriculas=p_matriculas+v_total;
-
-  END LOOP recorrer;
-  CLOSE cur;
-END//
-DELIMITER ;
-```
-
-El cursor recorre las filas de curso_asignatura del curso solicitado. Después de FETCH se comprueba inmediatamente v_fin; si ya terminó, se abandona antes de volver a procesar el último v_id. La consulta COUNT(\*) interior siempre produce una fila, de modo que no se confunde con el fin del cursor.
-
-Los cursores de MySQL son de solo lectura, no desplazables libremente y asensibles: no debe asumirse una instantánea independiente de todos los cambios concurrentes. La consistencia concreta también depende del motor, de la transacción y del aislamiento.
-
-# Paso 2 Probar los tres cursos
-
-``` sql
-CALL sp11_cursor_curso(1,@asignaturas,@matriculas);
-SELECT @asignaturas,@matriculas;
-CALL sp11_cursor_curso(2,@asignaturas,@matriculas);
-SELECT @asignaturas,@matriculas;
-CALL sp11_cursor_curso(3,@asignaturas,@matriculas);
-SELECT @asignaturas,@matriculas;
-```
-
-Se esperan 3 y 7; 4 y 7; 8 y 13, respectivamente. El curso 999 debe generar un error. Un curso existente sin asignaturas debe devolver 0 y 0.
-
-# Paso 3 Comparar con SQL basado en conjuntos
-
-``` sql
-SELECT COUNT(DISTINCT ca.id_curso_asignatura) AS asignaturas,
-  COUNT(m.id_matricula) AS matriculas
-FROM curso_asignatura ca
-LEFT JOIN matriculas m 
-  ON m.id_curso_asignatura=ca.id_curso_asignatura
-WHERE ca.id_curso=1;
-```
-
-Se esperan los mismos valores 3 y 7. Para este cálculo, la consulta es más directa y evita una consulta de recuento por cada fila. El cursor se utiliza para aprender su funcionamiento; no debe añadirse cuando una operación de conjuntos resuelve claramente la necesidad.
-
-Pregunta. ¿Por qué COUNT(\*) no sería adecuado para contar matrículas en esa combinación externa?
-
-# Construir SQL dinámico con parámetros y lista blanca
-
-Ampliación avanzada
-
-Objetivo de ampliación. Elegir una columna de ordenación autorizada y mantener separado el valor del filtro. No se utiliza SQL dinámico solo por tener parámetros: una consulta estática suele ser suficiente para filtros normales.
-
-# Paso 1 Distinguir valores e identificadores
-
-Un marcador ? representa un valor, no el nombre de una columna ni una palabra SQL. El filtro activo puede pasarse como parámetro. La columna de ORDER BY debe elegirse entre identificadores permitidos antes de incorporarla al texto.
-
-``` sql
-DROP PROCEDURE IF EXISTS sp12_listar_ordenado;
-DELIMITER //
-CREATE PROCEDURE sp12_listar_ordenado(
-  IN p_orden VARCHAR(30),IN p_activo BOOLEAN)
-SQL SECURITY INVOKER
-READS SQL DATA
-BEGIN
-  DECLARE v_preparada BOOLEAN DEFAULT FALSE;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-     IF v_preparada THEN 
-         DEALLOCATE PREPARE lab_sp_stmt;
-     END IF;
-     SET @lab_sp_sql=NULL,@lab_sp_activo=NULL;
-     RESIGNAL;
-  END;
-  IF p_orden IS NULL OR p_orden NOT IN 
-     ('id_alumno','nombre','apellido1') THEN 
-     SIGNAL SQLSTATE '45000' 
-         SET MESSAGE_TEXT='Columna de ordenacion no permitida';
-  END IF;
-  IF p_activo IS NULL OR p_activo NOT IN (0,1) THEN 
-     SIGNAL SQLSTATE '45000' 
-         SET MESSAGE_TEXT='Activo debe valer 0 o 1';
-  END IF;
-  SET @lab_sp_sql=CONCAT(
-     'SELECT id_alumno,nombre,apellido1 FROM alumnos ',
-     'WHERE activo = ? ORDER BY ',p_orden,',id_alumno');
-  SET @lab_sp_activo=p_activo;
-  PREPARE lab_sp_stmt FROM @lab_sp_sql;
-  SET v_preparada=TRUE;
-
-  EXECUTE lab_sp_stmt USING @lab_sp_activo;
-  DEALLOCATE PREPARE lab_sp_stmt;
-  SET v_preparada=FALSE;
-  SET @lab_sp_sql=NULL,@lab_sp_activo=NULL;
-END//
-DELIMITER ;
-```
-
-PREPARE analiza y prepara el texto; EXECUTE lo ejecuta con el valor indicado; DEALLOCATE PREPARE libera la sentencia. En esta forma de PREPARE se utiliza una variable de usuario para el texto y variables de sesión en USING. Una sentencia preparada pertenece a la sesión y no desaparece automáticamente al terminar el procedimiento.
-
-Las variables locales y los parámetros del procedimiento no deben quedar referenciados como si continuaran existiendo dentro de una sentencia preparada para la sesión. v_preparada permite que el manejador libere el recurso si se preparó antes del error. RESIGNAL devuelve el fallo al llamador.
-
-Los nombres @lab_sp_sql, @lab_sp_activo y lab_sp_stmt quedan reservados para este ejercicio en la conexión. La rutina limpia esas variables, no conserva valores anteriores que una aplicación hubiera utilizado con esos mismos nombres.
-
-# Paso 2 Probar ordenaciones y filtro
-
-``` sql
-CALL sp12_listar_ordenado('nombre',1);
-CALL sp12_listar_ordenado('apellido1',1);
-CALL sp12_listar_ordenado('id_alumno',0);
-SELECT @lab_sp_sql,@lab_sp_activo;
-```
-
-Los dos primeros listados tienen doce alumnos activos. El tercero está vacío con los CSV originales. Las variables auxiliares valen NULL al finalizar.
-
-``` sql
-START TRANSACTION;
-UPDATE alumnos SET activo=FALSE WHERE id_alumno=12;
-CALL sp12_listar_ordenado('id_alumno',0);
-ROLLBACK;
-```
-
-Durante esta prueba aparece Hugo. Después vuelve a estar activo. Probar individualmente 'nombre DESC' y activo 2: deben rechazarse. La lista blanca contiene nombres completos permitidos, no fragmentos libres de ORDER BY.
-
-Pregunta. ¿Por qué no se concatena directamente el texto de ordenación enviado por un formulario?
 
 # Observar un bloqueo con dos sesiones
 
-Ampliación avanzada
+Comprobar que una llamada a un procedimiento sigue sujeta a los bloqueos y transacciones de InnoDB. No se trata de un error de sintaxis ni de un permiso denegado.
 
-Objetivo de ampliación. Comprobar que una llamada a un procedimiento sigue sujeta a los bloqueos y transacciones de InnoDB. No se trata de un error de sintaxis ni de un permiso denegado.
+## Paso 1 Preparar A y B
 
-# Paso 1 Preparar A y B
+Abrir dos conexiones administradoras independientes y ejecutar `USE academia_it` en ambas. 
 
-Abrir dos conexiones administradoras independientes y ejecutar USE academia_it en ambas. Haber terminado la recuperación del apartado 17. En B guardar de nuevo la captura actual; las variables de otra sesión no se transmiten.
-
+Esto guardará el estado de la matrícula 27 y su nota, para poder restaurarlos después. Se utiliza una variable de sesión para cada valor que se desea conservar. Este paso debe hacerse desde la sessión B que es la que va a restaurar los datos después de la prueba de bloqueo.
 ``` sql
 SET @m_prueba=27;
+
 SELECT estado INTO @estado_antes
-FROM matriculas WHERE id_matricula=@m_prueba;
-SELECT COUNT(*),MAX(nota),MAX(fecha_evaluacion),MAX(observaciones)
+FROM matriculas 
+WHERE id_matricula=@m_prueba;
+
+SELECT 
+COUNT(*)
+,MAX(nota)
+,MAX(fecha_evaluacion)
+,MAX(observaciones)
 INTO @nota_existia,@nota_antes,@fecha_antes,@obs_antes
-FROM notas WHERE id_matricula=@m_prueba;
+FROM notas 
+WHERE id_matricula=@m_prueba;
+
 SELECT @m_prueba,@estado_antes,@nota_existia;
 ```
 
@@ -2871,8 +2624,8 @@ START TRANSACTION;
 SELECT id_matricula,estado
 FROM matriculas WHERE id_matricula=27 FOR UPDATE;
 ```
-
-Mantener A abierta sin COMMIT ni ROLLBACK. El bloqueo sigue activo aunque el SELECT ya haya devuelto su resultado.
+Mantener A abierta sin `COMMIT` ni `ROLLBACK`. 
+El bloqueo sigue activo aunque el SELECT ya haya devuelto su resultado.
 
 # Paso 3 Llamar desde B sin transacción previa
 
@@ -2881,21 +2634,24 @@ SET SESSION innodb_lock_wait_timeout=5;
 CALL sp08_cerrar_evaluacion(27,6.50,'Prueba de bloqueo');
 ```
 
-Si A conserva el bloqueo, B espera y termina con error 1205 al agotar aproximadamente cinco segundos de espera por ese bloqueo de fila. Su manejador ejecuta ROLLBACK y propaga el error. Este límite no representa todos los tipos de bloqueo del servidor.
+Si A conserva el bloqueo, B espera y termina con error 1205 al agotar aproximadamente cinco segundos de espera por ese bloqueo de fila. 
+Su manejador ejecuta `ROLLBACK` y propaga el error. 
 
 # Paso 4 Liberar A y repetir B
-
-En A ejecutar ROLLBACK;. Después, en B:
+En A ejecutar `ROLLBACK`;. Después, en B:
 
 ``` sql
 CALL sp08_cerrar_evaluacion(27,6.50,'Tras liberar el bloqueo');
+
 SELECT m.estado,n.nota
-FROM matriculas m JOIN notas n USING(id_matricula)
+FROM matriculas m 
+JOIN notas n USING(id_matricula)
 WHERE m.id_matricula=27;
 ```
 
-Se esperan finalizado y 6,50. Recuperar desde B mediante su propia captura:
+Se esperan finalizado y 6,50. 
 
+Recuperar el estado original desde B mediante su propia captura:
 ``` sql
 CALL sp00_restaurar_evaluacion(
   @m_prueba,@estado_antes,@nota_existia,
@@ -2905,26 +2661,27 @@ FROM matriculas m LEFT JOIN notas n USING(id_matricula)
 WHERE m.id_matricula=@m_prueba;
 ```
 
-El tiempo de espera cambiado pertenece a B y desaparece al cerrar esa conexión. Un interbloqueo o deadlock es otro caso y puede generar error 1213. Cuando procede un reintento, se analiza la causa y se repite la operación transaccional completa, no se considera correcta una llamada que devolvió un error.
+El tiempo de espera cambiado pertenece a B y desaparece al cerrar esa conexión. 
+Un interbloqueo o deadlock es otro caso y puede generar error 1213. Cuando procede un reintento, se analiza la causa y se repite la operación transaccional completa, no se considera correcta una llamada que devolvió un error.
 
 Pregunta. ¿Qué libera el bloqueo de A: que termine el SELECT o que termine su transacción?
 
 # Observar COMMIT implícito y ampliar la inspección
 
-Ampliación avanzada
+**Objetivo.** Comprobar los límites de ROLLBACK frente a cambios de definiciones y consultar metadatos de las rutinas. Esta actividad modifica temporalmente un teléfono y lo recupera de forma expresa.
 
-Objetivo de ampliación. Comprobar los límites de ROLLBACK frente a cambios de definiciones y consultar metadatos de las rutinas. Esta actividad modifica temporalmente un teléfono y lo recupera de forma expresa.
-
-# Paso 1 Guardar el valor y comprobar el nombre
+## Paso 1 Guardar el valor y comprobar el nombre
 
 ``` sql
+--comprobamos si existe el procedimiento de prueba
 SHOW PROCEDURE STATUS
 WHERE Db='academia_it' AND Name='sp_demo_commit';
+-- guardamos el valor del teléfono antes de la prueba
 SELECT telefono INTO @telefono_antes
 FROM alumnos WHERE id_alumno=12;
 ```
 
-Si sp_demo_commit ya existe, elegir otro nombre libre en todas las instrucciones de esta prueba. Utilizar una conexión con autocommit=1 y sin una transacción previa. No ejecutar SET autocommit=1 sobre trabajo pendiente que se desee conservar sin confirmar.
+Si ***sp_demo_commit*** ya existe, elegir otro nombre libre en todas las instrucciones de esta prueba. Utilizar una conexión con autocommit=1 y sin una transacción previa. No ejecutar SET autocommit=1 sobre trabajo pendiente que se desee conservar sin confirmar.
 
 # Paso 2 Provocar el COMMIT implícito
 
@@ -2936,9 +2693,10 @@ ROLLBACK;
 SELECT telefono FROM alumnos WHERE id_alumno=12;
 ```
 
-Se conserva 600000099. CREATE PROCEDURE provoca un COMMIT implícito de la transacción previa, incluido el UPDATE. Su efecto no se limita a la definición del procedimiento. Por eso el material sitúa CREATE, DROP, ALTER y GRANT fuera de las transacciones de prueba.
+Se conserva 600000099. **`CREATE PROCEDURE` provoca un `COMMIT` implícito de la transacción previa, incluido el `UPDATE`**. 
+Su efecto no se limita a la definición del procedimiento. Por eso hay que situar `CREATE`, `DROP`, `ALTER` y `GRANT` fuera de las transacciones de prueba.
 
-# Paso 3 Recuperar el valor desde la misma sesión
+## Paso 3 Recuperar el valor desde la misma sesión
 
 ``` sql
 DROP PROCEDURE sp_demo_commit;
@@ -2946,9 +2704,7 @@ UPDATE alumnos SET telefono=@telefono_antes WHERE id_alumno=12;
 SELECT telefono FROM alumnos WHERE id_alumno=12;
 ```
 
-Con los CSV originales debe volver a NULL. Si se ha perdido la captura, no asignar un valor inventado: consultar el estado previo conservado.
-
-# Paso 4 Consultar características y parámetros
+## Paso 4 Consultar características y parámetros
 
 ``` sql
 SELECT ROUTINE_NAME,SECURITY_TYPE,
@@ -2964,251 +2720,6 @@ WHERE SPECIFIC_SCHEMA='academia_it'
 ORDER BY SPECIFIC_NAME,ORDINAL_POSITION;
 ```
 
-La primera consulta muestra seguridad, clasificación del acceso a datos y descripción. La segunda permite revisar el orden, modo y tipo de los parámetros. La visibilidad depende de la cuenta. ALTER PROCEDURE puede cambiar características, como COMMENT o SQL SECURITY, pero no el cuerpo ni los parámetros.
+La primera consulta muestra seguridad, clasificación del acceso a datos y descripción. La segunda permite revisar el orden, modo y tipo de los parámetros. La visibilidad depende de la cuenta. `ALTER PROCEDURE` puede cambiar características, como `COMMENT` o `SQL SECURITY`, pero no el cuerpo ni los parámetros.
 
 Pregunta. ¿Por qué un ROLLBACK después de CREATE PROCEDURE no recuperó el teléfono?
-
-# Comprobar los resultados y conservar evidencias
-
-Objetivo. Comprobar las operaciones y demostrar que las siete tablas conservan el estado previo a las pruebas, salvo los huecos esperables de AUTO_INCREMENT. La comprobación automática complementa la observación manual; no sustituye las pruebas con otra cuenta o con dos sesiones.
-
-# Paso 1 Revisar el estado antes de ejecutar el verificador
-
-Terminar la recuperación de cada actividad y cerrar las otras conexiones de prueba. El verificador se ejecuta desde una conexión nueva mediante la redirección de la terminal. Si los datos ya no coinciden con las referencias iniciales, investigar la diferencia; no recargar automáticamente la base.
-
-``` bash
-sudo mysql --default-character-set=utf8mb4 < 07_revision_final.sql
-```
-
-# Paso 2 Comprobar las rutinas esenciales
-
-Deben estar creadas las rutinas del recorrido esencial y las soluciones de los dos retos. Si se utiliza el archivo 01 para contrastarlas, importarlo solo después de guardar los intentos propios y fuera de una transacción. Reemplaza esas definiciones y exige revisar las concesiones específicas.
-
-``` bash
-sudo mysql --default-character-set=utf8mb4 \
-  < 04_verificar_esencial.sql
-```
-
-El archivo realiza 57 comprobaciones esenciales. Crea auxiliares sp_rev\_ para comprobar condiciones, atiende internamente los errores que espera y muestra mensajes OK. Un error inesperado interrumpe la comprobación; no utilizar --force. Al terminar correctamente se indica 57 comprobaciones esenciales superadas y se eliminan los auxiliares.
-
-El verificador compara recuentos y casos conocidos. Además calcula una huella SHA-256 del contenido de cada tabla antes y después de sus pruebas, con todas sus columnas y las filas ordenadas por la clave primaria. Esto comprueba la conservación respecto al estado de entrada; no demuestra por sí solo que cada campo coincidiera previamente con los CSV originales.
-
-Las pruebas que realizan COMMIT tienen recuperación expresa. Si alguna falla durante ellas, el manejador del verificador intenta restaurar la matrícula capturada o eliminar únicamente el alta de prueba identificada. Si aparece un fallo de recuperación, se informa y deben consultarse los pasos de recuperación y la copia inicial antes de continuar.
-
-# Paso 3 Comprobar la ampliación si se ha realizado
-
-``` bash
-sudo mysql --default-character-set=utf8mb4 \
-  < 05_verificar_ampliacion.sql
-```
-
-Debe haberse importado o construido el contenido de 02_soluciones_ampliacion.sql. Se realizan 13 comprobaciones adicionales de bucles, cursores, validaciones del SQL dinámico y conservación de datos. La salida final debe indicar 13 comprobaciones de ampliacion superadas. Los listados también deben inspeccionarse visualmente.
-
-# Paso 4 Añadir las evidencias manuales
-
-| Prueba | Evidencia necesaria |
-|-------------------------|-----------------------------------------------|
-| SELECT INTO | Una fila asigna, cero conserva el valor y varias filas producen 1172. |
-| Flujo de errores | Marcas distintas para ausencia de manejador, CONTINUE y EXIT. |
-| Salidas tras error | Conservación de valores exteriores al fallar y entrega al finalizar normalmente. |
-| Permisos | Llamada DEFINER permitida y dos denegaciones como operador; revocación de EXECUTE. |
-| Atomicidad | Cambio parcial sin transacción y recuperación conjunta con manejador y ROLLBACK. |
-| Dos sesiones | Espera, error 1205, liberación y reintento correcto. |
-| DDL y copia | COMMIT implícito observado y rutinas restauradas ejecutadas en el destino correcto. |
-
-Si un cliente detiene una importación por un error inesperado, pueden quedar definidas las rutinas auxiliares. El archivo 08_limpiar_auxiliares.sql elimina únicamente sp_rev_assert, sp_rev_huella y los verificadores; se ejecuta después de analizar el fallo y fuera de una transacción. No recupera datos ni sustituye la revisión del error.
-
-# Paso 5 Entregar el trabajo
-
-Conservar definiciones propias, respuestas de razonamiento, resultados de llamadas, errores previstos y evidencias de recuperación. Las capturas deben mostrar tanto la instrucción como su resultado, sin contraseñas.
-
-| Criterio del recorrido esencial            | Puntos |
-|--------------------------------------------|--------|
-| Creación inspección parámetros y ámbitos   | 2      |
-| Consultas agregaciones validaciones y NULL | 2      |
-| Errores salidas y transacciones            | 3      |
-| Seguridad y recuperación de copias         | 2      |
-| Justificación y conservación de los datos  | 1      |
-| Total esencial                             | 10     |
-
-La ampliación se valora por separado si se asigna: control de bucles, elección del cursor, parametrización segura, diagnóstico de bloqueos y COMMIT implícito. No se penaliza en el recorrido esencial la ausencia de actividades avanzadas no asignadas.
-
-# Errores comunes y buenas prácticas
-
-| Situación | Causa o corrección |
-|----------------------------|--------------------------------------------|
-| Crear y esperar el listado | CREATE guarda instrucciones; CALL las ejecuta. |
-| Repetir CREATE con el mismo nombre | Consultar la definición existente y reemplazar solo la rutina prevista. |
-| Definición enviada a medias | Seleccionar el bloque completo y utilizar correctamente DELIMITER en el cliente. |
-| Confundir permisos de llamada y de tablas | Revisar EXECUTE y el contexto INVOKER o DEFINER. |
-| Literal como destino OUT | Desde la llamada directa utilizar una variable donde guardar la salida. |
-| INOUT produce NULL | Inicializarlo y decidir cómo tratar una entrada NULL. |
-| Salida antigua después de un error | Comprobar primero el resultado de CALL; OUT e INOUT pueden no haberse propagado. |
-| SELECT INTO no encuentra filas | La variable conserva su valor: inicializar o tratar NOT FOUND. |
-| SELECT INTO devuelve varias filas | Elegir una consulta que produzca la fila requerida o una agregación adecuada. |
-| Confundir cero con NULL | El cero es una calificación; NULL indica ausencia de valor. |
-| HANDLER genérico engañoso | No describir cualquier excepción como duplicidad; conservar el diagnóstico útil. |
-| EXIT interpretado como ROLLBACK | Programar expresamente el control transaccional cuando sea necesario. |
-| ROLLBACK tardío sin efecto | Comprobar COMMIT explícitos e implícitos y quién controla la transacción. |
-| Restauración con variables perdidas | Conservar la conexión de captura y utilizar la copia previa si se ha perdido. |
-| Cursor procesa dos veces la última fila | Comprobar el fin inmediatamente después de FETCH. |
-| SQL dinámico concatena texto libre | Parametrizar valores y validar identificadores mediante lista blanca. |
-| Variable de sesión compartida accidentalmente | Reservar sus nombres y limpiar recursos; no confundirla con una variable local. |
-
-Una regla escrita en un procedimiento no se convierte automáticamente en una regla universal de la base. Otra vía de escritura podría no aplicarla. El diseño de permisos y las restricciones de tabla deben ser coherentes con las operaciones permitidas.
-
-Un procedimiento tampoco mejora automáticamente el rendimiento de sus consultas. Siguen importando los índices, el plan de ejecución y el volumen de datos. Favorecer operaciones basadas en conjuntos cuando resuelvan con claridad la necesidad.
-
-# Relacionar los conceptos y elegir el objeto adecuado
-
-Crear y ejecutar son operaciones distintas. Los parámetros comunican datos; las variables locales pertenecen al bloque y las variables \@ a la sesión. Las decisiones controlan qué instrucciones se ejecutan y los manejadores qué sucede ante una condición.
-
-La continuación de la ejecución y la confirmación de cambios son cuestiones independientes. BEGIN ... END no garantiza atomicidad. La transacción y sus manejadores deben diseñarse según quién controla la operación completa.
-
-Los permisos de CALL y los permisos de las instrucciones interiores se analizan por separado. Las copias deben incluir las rutinas y verificarse con sus definidores y permisos en el destino.
-
-| Necesidad | Objeto adecuado |
-|---------------------------------------------|--------------------------|
-| Guardar un listado que después se consulta y filtra con SELECT | Vista. |
-| Realizar varias instrucciones con parámetros mediante una llamada | Procedimiento almacenado. |
-| Calcular un valor que se utiliza dentro de una expresión SELECT | Función almacenada. |
-| Ejecutar una acción automáticamente ante un evento de modificación | Trigger. |
-
-La elección depende de cómo se necesita utilizar la operación. Un procedimiento se invoca con CALL; no sustituye directamente a una tabla o función dentro de cualquier SELECT.
-
-| Contenido                                          | Apartados  |
-|----------------------------------------------------|------------|
-| Creación ejecución e inspección temprana           | 2 y 3      |
-| Seguridad conceptual y demostración real           | 4 y 20     |
-| Bloques delimitadores y conjuntos de resultados    | 5          |
-| IN OUT INOUT variables y SELECT INTO               | 6 a 9 y 12 |
-| IF CASE SIGNAL y consultas del modelo              | 10 y 11    |
-| Manejadores diagnóstico y salidas ante errores     | 13 14 y 18 |
-| DML identificadores transacciones y reto integrado | 15 a 19    |
-| Copia y restauración verificadas                   | 21         |
-| Bucles cursores SQL dinámico y concurrencia        | 22 a 26    |
-| Comprobaciones evaluación y buenas prácticas       | 27 a 29    |
-
-# Anexo A Soluciones de los dos retos
-
-# Solución de la parte A Resumen de un curso
-
-``` sql
-DROP PROCEDURE IF EXISTS sp14_resumen_curso;
-DELIMITER //
-CREATE PROCEDURE sp14_resumen_curso(
-  IN p_id_curso INT UNSIGNED,
-  OUT p_matriculas BIGINT UNSIGNED,
-  OUT p_evaluadas BIGINT UNSIGNED,
-  OUT p_media DECIMAL(5,2))
-SQL SECURITY INVOKER
-READS SQL DATA
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM cursos
-           WHERE id_curso=p_id_curso) THEN 
-     SIGNAL SQLSTATE '45000' 
-       SET MESSAGE_TEXT='El curso no existe';
-  END IF;
-  SELECT COUNT(m.id_matricula),COUNT(n.nota),
-    ROUND(AVG(n.nota),2)
-  INTO p_matriculas,p_evaluadas,p_media
-  FROM curso_asignatura ca
-  LEFT JOIN matriculas m
-    ON m.id_curso_asignatura=ca.id_curso_asignatura
-  LEFT JOIN notas n ON n.id_matricula=m.id_matricula
-  WHERE ca.id_curso=p_id_curso;
-END//
-DELIMITER ;
-```
-
-La comprobación de cursos distingue inexistencia de ausencia de actividad. La consulta agregada sigue devolviendo una fila si no hay filas de curso_asignatura. COUNT(m.id_matricula) no cuenta como matrícula el NULL de una combinación externa; COUNT(n.nota) incluye cero e ignora NULL. AVG considera únicamente las notas numéricas.
-
-# Solución de la parte B Matrícula y nota en una transacción
-
-``` sql
-DROP PROCEDURE IF EXISTS sp15_matricular_con_nota;
-DELIMITER //
-CREATE PROCEDURE sp15_matricular_con_nota(IN p_id_alumno INT UNSIGNED,
-  IN p_id_curso_asignatura INT UNSIGNED,
-  IN p_nota DECIMAL(6,2),
-  IN p_observaciones VARCHAR(255),
-  OUT p_id_matricula INT UNSIGNED)
-SQL SECURITY INVOKER
-MODIFIES SQL DATA
-BEGIN
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    ROLLBACK;
-    RESIGNAL;
-  END;
-  START TRANSACTION;
-  CALL sp06_matricular(
-    p_id_alumno,p_id_curso_asignatura,p_id_matricula);
-  CALL sp07_guardar_nota(
-    p_id_matricula,p_nota,p_observaciones);
-  COMMIT;
-END//
-DELIMITER ;
-```
-
-sp06 valida y crea la matrícula, devolviendo su identificador al parámetro de la rutina exterior. sp07 guarda la nota sobre ese identificador. Ninguna de las dos confirma por su cuenta. Si cualquiera falla, el manejador exterior ejecuta ROLLBACK y RESIGNAL; si ambas funcionan, COMMIT confirma las dos filas.
-
-Como la rutina exterior gestiona la transacción, debe llamarse sin otra previa abierta. Una excepción que se propaga impide entregar su OUT. La prueba de nota inválida debe dejar la combinación sin matrícula y el destino de salida inicialmente NULL.
-
-Estas soluciones forman parte de 01_soluciones_esenciales.sql. La herramienta de recuperación del apartado 19 no pertenece a la lógica de producción del reto; existe para recuperar únicamente el alta de laboratorio después de comprobar el COMMIT.
-
-# Anexo B Respuestas de razonamiento
-
-1.  En el primer caso todavía no existe el registro de calificación; en el segundo existe, pero no contiene una calificación numérica. Ambos difieren de una nota cero, que sí es un valor evaluado.
-2.  No. El procedimiento guarda el SELECT y lo ejecuta de nuevo en cada llamada. La visibilidad concreta de cambios concurrentes depende también de las transacciones y del aislamiento.
-3.  DROP elimina el objeto y sus concesiones específicas de rutina. La nueva definición debe tener las concesiones necesarias; no debe suponerse que conservará todos los permisos anteriores.
-4.  No. Si la cuenta posee todos los permisos, ambos pueden funcionar. La diferencia debe comprobarse con una cuenta que tenga EXECUTE y carezca de SELECT directo.
-5.  END IF cierra una decisión; END cierra un bloque BEGIN; // es la señal que el cliente reconoce como final de la definición. Cada uno cumple una función distinta.
-6.  No utiliza el parámetro: compara una columna consigo misma. Deben distinguirse el nombre de la columna y el del parámetro, como en id_alumno=p_id_alumno.
-7.  Porque OUT entrega el valor a la variable. La visualización se realiza con el SELECT posterior; asignar y mostrar son acciones diferentes.
-8.  OUT no aprovecha el valor anterior del llamador. INOUT sí lo recibe y lo utiliza como punto de partida del cálculo.
-9.  Sí. SELECT ... INTO con cero filas deja el valor sin modificar. Debe inicializarse o tratarse NOT FOUND de forma explícita según la operación.
-10. Porque cero es una calificación numérica válida. La ausencia se comprueba mediante IS NULL, no mediante una comparación que confunda ambos casos.
-11. Perdería ambas matrículas porque ninguna tiene todavía una fila en notas. La combinación interna exige coincidencia y elimina esas filas.
-12. Cuenta sus matrículas, aunque no tengan calificación numérica. COUNT(n.nota) devuelve 1 para Diego y 0 para Hugo; el cero de Diego sí cuenta como evaluación.
-13. Qué instrucción falló, si se ejecutaron las instrucciones posteriores y qué cambios quedaron confirmados o fueron deshechos. Un manejador controla el flujo; la transacción controla la confirmación de cambios.
-14. No. Primero debe comprobarse si CALL terminó correctamente. Una excepción puede impedir la propagación de las salidas y dejar valores de ejecuciones anteriores.
-15. Porque otra sesión puede insertar la misma combinación después de la comprobación. La restricción UNIQUE es la protección definitiva y la rutina debe tratar el error que produzca.
-16. No. ROW_COUNT puede ser cero cuando los valores coinciden. Una ausencia de cambios no es, por sí sola, una prueba de inexistencia.
-17. sp07 no controla la transacción y participa en la del llamador. MySQL no anida transacciones; una rutina interna que inicie o confirme otra podría confirmar cambios que la externa esperaba deshacer.
-18. Ocultaría errores de claves foráneas, permisos, bloqueos u otras causas. El diagnóstico perdería su significado y podría inducir a tratar como previsto un fallo distinto.
-19. La transacción permite deshacer juntas las dos modificaciones. El manejador asegura que se ejecute ROLLBACK cuando aparece un error y RESIGNAL comunica el fallo; una de esas piezas no sustituye a la otra.
-20. Porque la operación debe disponer solo de los privilegios que necesita. Un definidor administrador expondría una capacidad mucho mayor si el código o los permisos de ejecución se diseñaran mal.
-21. Porque sus operaciones almacenadas no estarían incluidas. También deben verificarse los definidores, permisos y referencias a esquemas para que las rutinas restauradas funcionen en el destino.
-22. Puede utilizarse MOD(v_i,2)=0 para ITERATE. Se suman 1, 3 y 5 y se obtiene 9. No debe recorrerse una tabla suponiendo que sus identificadores sean consecutivos.
-23. También contaría la fila conservada de una asignatura sin matrículas. COUNT(m.id_matricula) ignora ese NULL. DISTINCT evita contar una misma asignatura varias veces por tener varias matrículas.
-24. Porque podría cambiar la estructura del SQL. Los valores se parametrizan y los identificadores se validan contra una lista cerrada. Para pocas ordenaciones, expresiones CASE estáticas pueden evitar SQL dinámico.
-25. El bloqueo se mantiene hasta que termina la transacción mediante COMMIT o ROLLBACK. Que se haya mostrado el resultado no significa que la transacción haya finalizado.
-26. Porque la creación confirmó implícitamente la transacción anterior. El UPDATE ya estaba confirmado cuando se ejecutó ROLLBACK.
-
-# Anexo C Archivos y orden de utilización
-
-| Archivo | Uso |
-|------------------------|------------------------------------------------|
-| 00_comprobar_base.sql | Lectura de estructura recuentos y registros de referencia. |
-| 01_soluciones_esenciales.sql | Definiciones esenciales y soluciones de los retos. Reemplaza esas rutinas; no modifica filas por sí solo. |
-| 02_soluciones_ampliacion.sql | Definiciones de bucles cursor y SQL dinámico. |
-| 03_seguridad_administrador.sql | Cuentas y rutina DEFINER. Preparación única tras comprobar nombres libres. |
-| 04_verificar_esencial.sql | Pruebas controladas del recorrido esencial y conservación de las siete tablas. |
-| 05_verificar_ampliacion.sql | Pruebas de bucles cursor y SQL dinámico. |
-| 06_comprobar_operador.sql | Llamada permitida como operador. Las denegaciones se ejecutan manualmente. |
-| 07_revision_final.sql | Revisión de solo lectura tras las pruebas. |
-| 08_limpiar_auxiliares.sql | Eliminación selectiva de auxiliares después de investigar un fallo. |
-| LEEME.txt | Secuencia de uso precauciones y resultados esperados. |
-
-Para el aprendizaje guiado, construir las rutinas en el orden del documento y comparar después con los archivos de solución. Para la comprobación completa por el docente, revisar 00, importar 01 y 02, preparar 03 solo si los objetos no existen, ejecutar 04 y 05 desde conexiones nuevas y realizar las demostraciones manuales. Las cuentas creadas en 03 no se eliminan automáticamente.
-
-No importar los archivos de solución dentro de una transacción que se pretenda deshacer: contienen DROP y CREATE. No utilizar --force. Si aparece un error inesperado, detener la secuencia y revisar su causa.
-
-El material no contiene un instalador ni una carga sustitutiva de academia_it. Las siete tablas y sus datos deben existir. Las pruebas automáticas de preservación comparan el contenido anterior y posterior a esa ejecución; los valores AUTO_INCREMENT siguientes pueden haber avanzado.
-
-# Anexo D Referencias técnicas
-
-Documentación oficial de MySQL 8.4 para consultar la sintaxis y los límites de las operaciones utilizadas.
-
-Creación de procedimientos y parámetros Definición de programas y delimitadores SELECT INTO Variables locales Manejadores de condiciones Condiciones y parámetros OUT e INOUT SIGNAL RESIGNAL GET DIAGNOSTICS Cursores Sentencias preparadas Control de acceso a objetos COMMIT implícito mysqldump y programas almacenados

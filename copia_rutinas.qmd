@@ -1,0 +1,199 @@
+---
+title: "Guía de Copia, Restauración y Comprobación de Rutinas en Bases de Datos"
+format: html
+---
+
+# Introducción y Conceptos Clave
+
+En los sistemas de gestión de bases de datos (SGBD), una copia de seguridad estándar no siempre incluye por defecto la lógica de negocio almacenada en el servidor (procedimientos almacenados, funciones, disparadores o eventos). 
+
+Al realizar backups de producción o entornos de desarrollo, es indispensable asegurar la **persistencia de las rutinas y sus dependencias** junto con la estructura de las tablas y los datos.
+
+---
+
+# Copia y Restauración en MySQL / MariaDB (Linux y Windows)
+
+## Explicación de los Parámetros Clave (`mysqldump`)
+
+| Parámetro | Descripción |
+| :--- | :--- |
+| `--routines` (`-R`) | Incluye procedimientos almacenados (`PROCEDURE`) y funciones (`FUNCTION`). |
+| `--triggers` | Incluye los disparadores asociados a las tablas (activo por defecto, pero se indica explícitamente). |
+| `--events` (`-E`) | Incluye los eventos programados en el Servidor (`Event Scheduler`). |
+| `--single-transaction` | Realiza una lectura consistente de las tablas InnoDB sin bloquear lecturas/escrituras durante el respaldo. |
+| `--no-tablespaces` | Evita la inclusión de sentencias `LOGFILE GROUP` y `TABLESPACE` (útil cuando no se tienen privilegios globales `PROCESS`). |
+| `--default-character-set=utf8mb4` | Garantiza que la codificación conserve caracteres especiales (acentos, eñes, emojis). |
+
+### ¿Qué son los Tablespaces y Logfile Groups?
+Son estructuras de almacenamiento de bajo nivel que definen cómo y dónde se guardan físicamente los ficheros de datos en el disco duro del servidor. Aunque en bases de datos relacionales estándar basadas en InnoDB con el comportamiento por defecto (file-per-table) no sueles gestionarlas manualmente, MySQL las utiliza internamente (especialmente en motores avanzados como MySQL NDB Cluster o cuando configuras Tablespaces generales personalizados).
+
+El problema del privilegio `PROCESS`
+Por defecto, cuando ejecutas `mysqldump`, este intenta inspeccionar la configuración global de almacenamiento del servidor para incluir en el archivo .sql las sentencias DDL correspondientes (CREATE TABLESPACE, ALTER LOGFILE GROUP, etc.). Para leer esa información global del sistema, MySQL exige que el usuario que ejecuta el comando tenga el privilegio global `PROCESS`.
+
+Con `--no-tablespaces`: Si eres un usuario que solo tiene permisos sobre su propia base de datos (por ejemplo, permisos de administrador local de la BD pero sin privilegios globales en el servidor), al lanzar el comando sin este parámetro obtendrás un error de acceso denegado (***Access denied; you need (at least one of) the PROCESS privilege(s)***). Al añadir `--no-tablespaces`, le ordenas a `mysqldump` que ignore por completo la sección de tablespaces, evitando esa comprobación de privilegios globales.
+
+**Portabilidad entre servidores distintos**
+Aunque tengas permisos de root, los tablespaces suelen apuntar a rutas absolutas del sistema de archivos en el disco del servidor origen (por ejemplo, directorios específicos de montaje o particiones). Si restauras ese archivo en otro servidor (un entorno de pruebas, un contenedor Docker o una máquina cloud) donde la estructura de carpetas es distinta, las sentencias de tablespace fallarán durante la restauración. Omitirlas hace que el script SQL sea 100% portable.
+
+En resumen: evita que el volcado falle por falta de privilegios de administrador de sistema y asegura que el archivo resultante se pueda restaurar en cualquier otro servidor sin pelearte con rutas de disco físicas.
+
+---
+
+## Permisos Necesarios para la Ejecución de `mysqldump`
+Para crear un usuario en MySQL con los privilegios estrictamente necesarios para realizar copias de seguridad completas (incluyendo datos, rutinas, eventos y disparadores) sin otorgarle permisos de superusuario o root, debes concederle privilegios a nivel global para ciertas operaciones de lectura y metadatos, y privilegios específicos sobre la base de datos que vas a respaldar.
+
+Aquí tienes los pasos exactos para crearlo y configurarlo de forma segura:
+
+### Paso 1: Conectarte como Administrador
+Abre tu terminal y conéctate al servidor MySQL con una cuenta que tenga privilegios para crear usuarios y asignar permisos (como root o un administrador): `sudo mysql -u root -p` 
+### Paso 2: Crear el Usuario de Copias de Seguridad
+Ejecuta la siguiente sentencia SQL para crear el usuario (en este ejemplo lo llamaremos backup_user) y asignarle una contraseña segura.
+`CREATE USER 'backup_user'@'localhost' IDENTIFIED BY 'TuContraseñaSegura123!';`
+
+Nota: Si las copias de seguridad se van a realizar desde una máquina remota, sustituye 'localhost' por la IP o el comodín '%' del cliente, aunque por seguridad se recomienda restringirlo).
+
+###Paso 3: Conceder los Privilegios Mínimos Necesarios
+Para que `mysqldump` pueda leer los datos, las estructuras, las rutinas (procedimientos y funciones almacenadas), los eventos y los disparadores, el usuario necesita los siguientes permisos:
+
+***Permisos sobre la base de datos objetivo*** (reemplaza academia_it por el nombre de tu base de datos):
+```sql
+GRANT SELECT, SHOW VIEW, EVENT, TRIGGER ON academia_it.* TO 'backup_user'@'localhost';
+``` 
+SELECT: Permite leer el contenido de las tablas.
+SHOW VIEW: Necesario para poder respaldar vistas correctamente.
+EVENT: Permite exportar los eventos programados incluidos con --events.
+TRIGGER: Permite respaldar los disparadores asociados a las tablas con --triggers.
+**Permisos globales requeridos para la exportación avanzada:**
+Para poder usar opciones avanzadas de consistencia como --single-transaction o evitar bloqueos y fallos de metadatos, se requieren ciertos permisos globales:
+```sql
+GRANT LOCK TABLES, PROCESS, SHOW DATABASES ON *.* TO 'backup_user'@'localhost';
+```
+LOCK TABLES: Permite bloquear tablas si fuera necesario (aunque con --single-transaction en InnoDB casi no se usa, mysqldump lo verifica).
+PROCESS: Permite consultar los hilos activos del servidor (necesario si omites --no-tablespaces para inspeccionar tablespaces).
+SHOW DATABASES: Permite listar las bases de datos para comprobar alcances.
+
+### Paso 4: Aplicar los Cambios
+Actualiza la tabla de privilegios de MySQL para que los cambios tengan efecto inmediato: `FLUSH PRIVILEGES;` 
+
+## Ejecución en Linux (Ubuntu/Debian)
+
+En Linux, la barra invertida (`\`) permite dividir comandos largos en varias líneas dentro del shell de Bash.
+
+### Paso 1: Generar el volcado (Backup)
+Entra en la terminal con el usuario que has creado para copias de seguridad y ejecuta el siguiente comando:
+
+```bash
+mysqldump --default-character-set=utf8mb4 \
+  --routines --triggers --events --single-transaction \
+  --no-tablespaces academia_it > academia_it_backup_final.sql
+```
+Si no has creado ningun usuario de backup, puedes usar el usuario root (aunque no es recomendable por seguridad) usando `sudo` antes de esa sentencia.
+
+
+### Paso 2: Crear base de datos de destino y restaurar
+
+```bash
+sudo mysql -e \
+  "CREATE DATABASE academia_it_restaurada 
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+
+sudo mysql academia_it_restaurada < academia_it_backup_final.sql
+```
+
+---
+
+## 1.3 Ejecución en Windows (PowerShell / CMD)
+
+En Windows, la sintaxis del comando cambia según el entorno de línea de comandos.
+
+### Usando PowerShell
+En PowerShell, el carácter de salto de línea / continuación es el acento grave (``` ` ```) o se puede escribir el comando en una sola línea. Además, para la redirección de codificación es recomendable usar `-r` o la sintaxis nativa:
+
+```powershell
+mysqldump -u root -p --default-character-set=utf8mb4 `
+  --routines --triggers --events --single-transaction `
+  --no-tablespaces academia_it > academia_it_backup_final.sql
+```
+
+Para la restauración en PowerShell:
+
+```powershell
+mysql -u root -p -e "CREATE DATABASE academia_it_restaurada CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+Get-Content academia_it_backup_final.sql | mysql -u root -p academia_it_restaurada
+```
+
+### B. Usando el Símbolo del Sistema (CMD)
+En CMD, el carácter para continuar línea es el signo kilométrico/caret (`^`):
+
+```cmd
+mysqldump -u root -p --default-character-set=utf8mb4 ^
+  --routines --triggers --events --single-transaction ^
+  --no-tablespaces academia_it > academia_it_backup_final.sql
+
+mysql -u root -p -e "CREATE DATABASE academia_it_restaurada CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+mysql -u root -p academia_it_restaurada < academia_it_backup_final.sql
+```
+
+---
+
+# 2. Comprobación y Verificación tras la Restauración
+
+Una copia de seguridad no se considera válida hasta que no se verifica su correcta restauración y ejecución.
+
+## 2.1 Verificación de Objetos y Rutinas Existentes
+
+Conéctate a la base de datos recién restaurada:
+
+```sql
+USE academia_it_restaurada;
+
+-- Verificar la existencia de procedimientos en esta BD
+SHOW PROCEDURE STATUS WHERE Db='academia_it_restaurada';
+
+-- Pruebas funcionales de ejecución
+CALL sp03_resumen_alumno(1, @t, @e, @m);
+SELECT @t AS Totales, @e AS Evaluados, @m AS Media;
+
+CALL sp14_resumen_curso(1, @mat, @eval, @media);
+SELECT @mat AS Matriculados, @eval AS Evaluados, @media AS MediaCurso;
+```
+
+## Aspectos Críticos de Definidores (`DEFINER`) y Permisos
+
+1. **El atributo `DEFINER`**:
+   - Por defecto, los volcados incluyen directivas como `DEFINER=`usuario`@`host``.
+   - Si se restaura la base de datos en un servidor diferente donde ese usuario no existe, la ejecución de la rutina fallará con un error de seguridad (`SQL SECURITY DEFINER`).
+2. **Contexto de Seguridad (`INVOKER` vs `DEFINER`)**:
+   - `DEFINER`: Ejecuta la rutina con los permisos del usuario creador.
+   - `INVOKER`: Ejecuta la rutina con los permisos del usuario que la invoca.
+3. **Referencias Cruzadas Harcodeadas**:
+   - Si una rutina dentro del script SQL contiene referencias cualificadas como `SELECT * FROM academia_it.alumnos;` en lugar de `SELECT * FROM alumnos;`, al ejecutarla en `academia_it_restaurada` **seguirá leyendo de la base de datos original**.
+   - Para comprobar el contexto activo de ejecución:
+     ```sql
+     SELECT DATABASE();
+     ```
+
+---
+
+# Comparativa: Gestión de Rutinas en Otros Motores de Base de Datos
+
+Cada motor de bases de datos administra el respaldo de sus objetos y rutinas de manera particular:
+
+## PostgreSQL (`pg_dump`)
+- **Comportamiento por defecto**: A diferencia de MySQL, `pg_dump` **incluye automáticamente todas las funciones, procedimientos y triggers** en sus copias por defecto.
+- **Comando de ejemplo**:
+  ```bash
+  pg_dump -U usuario -F c -b -v -f "backup_academia.dump" academia_it
+  ```
+- **Diferencia clave**: No requiere parámetros especiales como `--routines`.
+
+## Microsoft SQL Server (T-SQL)
+- **Copias de seguridad (`.bak`)**: Las copias nativas generadas con `BACKUP DATABASE` incluyen **absolutamente todos los objetos**: tablas, datos, procedimientos almacenados (`STORED PROCEDURE`), funciones y triggers.
+- **Generación de scripts**: Si se exporta a archivos `.sql` mediante SSMS (SQL Server Management Studio), se debe activar explícitamente en la configuración del asistente la opción *"Script Stored Procedures"*.
+
+## Oracle Database
+- **Herramienta `expdp` / `impdp` (Data Pump)**: Exporta el esquema completo por defecto, incluyendo paquetes (`PACKAGE`), procedimientos, funciones y disparadores.
+- **Consideración**: Los privilegios sobre los objetos y los sinónimos deben comprobarse explícitamente durante la importación (`impdp`).
+
+---
+

@@ -1,0 +1,202 @@
+---
+title: "Recorrido de Registros con Cursores"
+format: html
+---
+
+En MySQL, los cursores permiten recorrer un conjunto de resultados fila por fila, lo que es útil para procesar datos de manera secuencial. A diferencia de las operaciones basadas en conjuntos, que manipulan todos los registros a la vez, los cursores proporcionan un control más granular sobre cada registro individual.
+
+# Componentes de un Cursor en MySQL
+
+Un cursor permite procesar fila por fila el conjunto de resultados devuelto por una consulta `SELECT`.
+
+1.  **`DECLARE CURSOR FOR`**: Define la consulta asociada al cursor.
+2.  **`OPEN cur`**: Ejecuta la consulta y posiciona el puntero antes de la primera fila.
+3.  **`FETCH cur INTO variables`**: Recupera los valores de la fila actual y avanza el puntero.
+4.  **`CLOSE cur`**: Libera los recursos de memoria asignados al cursor.
+
+## Manejo de Fin de Registros (`HANDLER`)
+
+Para detectar cuándo el cursor ha leído la última fila se utiliza un manejador de excepciones:
+
+``` sql
+DECLARE CONTINUE HANDLER FOR NOT FOUND 
+    SET v_fin = TRUE;
+```
+
+Cuando `FETCH` no encuentra más filas, dispara el estado `NOT FOUND`, cambiando el valor de la variable de control `v_fin` a `TRUE`.
+
+# Características de los Cursores en MySQL
+
+-   **De solo lectura (`Read-only`)**: No se pueden actualizar datos directamente a través del cursor.
+-   **No desplazables (`Non-scrollable`)**: Solo pueden recorrerse en una dirección (hacia adelante, fila a fila) mediante `FETCH`.
+-   **Asensibles (`Asensitive`)**: El servidor puede o no trabajar sobre una copia temporal de los datos; no se debe asumir aislamiento total frente a escrituras concurrentes.
+
+# Las 4 fases obligatorias de un cursor
+
+Para utilizar un cursor en un procedimiento almacenado de MySQL, debes seguir siempre estos cuatro pasos en orden:
+
+1.  **Declarar el cursor:** Asocias un nombre de cursor a una sentencia `SELECT`.
+
+2.  **Declarar un manejador (*Handler*):** Creas una bandera o variable de control que avise a MySQL cuándo el cursor se ha quedado sin filas (`NOT FOUND`).
+
+3.  **Abrir y recorrer:** Abres el cursor con `OPEN`, lo recorres con un bucle usando `FETCH` para capturar cada fila, y cierras el bucle cuando se active la bandera de fin.
+
+4.  **Cerrar el cursor:** Liberas los recursos con `CLOSE`.
+
+``` sql
+DECLARE nombre_cursor CURSOR FOR SELECT columna1, columna2 FROM tabla WHERE condicion;
+DECLARE v_fin BOOLEAN DEFAULT FALSE;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin = TRUE;
+
+OPEN nombre_cursor;
+recorrer: LOOP
+    FETCH nombre_cursor INTO variable1, variable2;
+    IF v_fin THEN 
+        LEAVE recorrer; 
+    END IF;
+    
+    -- Lógica de procesamiento para cada fila aquí
+    
+END LOOP recorrer;
+CLOSE nombre_cursor;
+```
+
+Tenemos una tabla llamada `alumnos` y queremos crear un procedimiento que recorra los nombres de todos los alumnos activos y los concatene o procese uno a uno.
+
+``` sql
+DROP PROCEDURE IF EXISTS sp_ejemplo_basico_cursor;
+DELIMITER //
+
+CREATE PROCEDURE sp_ejemplo_basico_cursor()
+BEGIN
+    -- 1. Variables de trabajo
+    --- 2. Declarar el cursor con la consulta
+    DECLARE cur_alumnos CURSOR FOR 
+        SELECT nombre FROM alumnos WHERE activo = 1;
+
+    -- 3. Declarar el manejador para cuando el cursor se quede sin registros
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin = TRUE;
+
+    -- 4. Abrir el cursor
+    OPEN cur_alumnos;
+
+    -- 5. Bucle para recorrer fila por fila
+    bucle_lectura: LOOP
+        -- Extraer los datos de la fila actual en la variable local
+        FETCH cur_alumnos INTO v_nombre_actual;
+
+        -- Si ya no quedan filas, salimos del bucle
+        IF v_fin THEN 
+            LEAVE bucle_lectura; 
+        END IF;
+
+        -- (Aquí harías algo con v_nombre_actual, por ejemplo, mostrarlo o procesarlo)
+        SELECT CONCAT('Procesando alumno: ', v_nombre_actual) AS resultado;
+
+    END LOOP bucle_lectura;
+
+    -- 6. Cerrar el cursor obligatoriamente al terminar
+    CLOSE cur_alumnos;
+END//
+
+DELIMITER ;
+```
+
+::: nota
+-   **Orden de declaración:** En MySQL, las declaraciones dentro de un bloque `BEGIN ... END` deben seguir un orden estricto: primero las **variables locales**, luego los **cursores**, y finalmente los **manejadores** (*handlers*). Si alteras este orden, MySQL devolverá un error de sintaxis.
+
+-   **Consumo de memoria:** Los cursores consumen recursos del servidor y bloquean parcialmente los datos según el nivel de aislamiento. Si una tarea se puede resolver con una sola sentencia basada en conjuntos (como un `UPDATE` masivo o un `JOIN`), **siempre será más eficiente que usar un cursor**.
+:::
+
+## Ejemplo práctico:
+```sql
+-- 1. Creamos la tabla temporal de prueba
+DROP TEMPORARY TABLE IF EXISTS temp_notas;
+CREATE TEMPORARY TABLE temp_notas (
+    id INT PRIMARY KEY,
+    nombre VARCHAR(50),
+    nota INT
+);
+
+INSERT INTO temp_notas (id, nombre, nota) VALUES 
+(1, 'Ana', 8),
+(2, 'Carlos', 6),
+(3, 'Lucía', 10);
+
+-- 2. Creamos el procedimiento almacenado
+DROP PROCEDURE IF EXISTS sp_cursor_imprimir_filas;
+DELIMITER //
+
+CREATE PROCEDURE sp_cursor_imprimir_filas()
+BEGIN
+    -- Variables locales para capturar los datos de la fila
+    DECLARE v_fin BOOLEAN DEFAULT FALSE;
+    DECLARE v_nombre VARCHAR(50);
+    DECLARE v_nota INT;
+    
+    -- El cursor ahora selecciona dos columnas: nombre y nota
+    DECLARE cur_notas CURSOR FOR 
+        SELECT nombre, nota FROM temp_notas;
+        
+    -- Manejador de fin de cursor
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin = TRUE;
+    
+    OPEN cur_notas;
+    
+    bucle_recorrido: LOOP
+        -- Extraemos ambos valores del cursor en orden hacia las variables
+        FETCH cur_notas INTO v_nombre, v_nota;
+        
+        IF v_fin THEN 
+            LEAVE bucle_recorrido; 
+        END IF;
+        
+        -- "Imprimimos" el resultado de la fila actual usando CONCAT
+        SELECT CONCAT('El alumno/a ', v_nombre, ' ha obtenido una nota de: ', v_nota) AS mensaje_fila;
+        
+    END LOOP bucle_recorrido;
+    
+    CLOSE cur_notas;
+END//
+
+DELIMITER ;
+```
+La llamada al procedimiento `CALL sp_cursor_imprimir_filas();` recorrerá cada fila de la tabla temporal `temp_notas` y mostrará un mensaje con el nombre del alumno y su nota correspondiente. 
+```txt
+El alumno/a Ana ha obtenido una nota de: 8
+El alumno/a Carlos ha obtenido una nota de: 6
+El alumno/a Lucía ha obtenido una nota de: 10
+``` 
+
+# Equivalencias en otros motores
+
+El manejo de cursores cambia notablemente entre motores. Mientras que MySQL requiere declarar explícitamente un manejador de eventos (`CONTINUE HANDLER FOR NOT FOUND`), otros motores automatizan o simplifican este proceso.
+
+### SQL Server (T-SQL)
+
+Utiliza un enfoque muy estructurado basado en un estado de variables del sistema (`@@FETCH_STATUS`):
+
+``` sql
+DECLARE cur CURSOR FOR SELECT id FROM alumnos;
+OPEN cur;
+FETCH NEXT FROM cur INTO @v_id;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Procesar fila
+    FETCH NEXT FROM cur INTO @v_id;
+END
+CLOSE cur;
+DEALLOCATE cur;
+```
+
+### PostgreSQL y Oracle (Bucles `FOR` implícitos)
+
+En PostgreSQL (`PL/pgSQL`) y Oracle (`PL/SQL`), rara vez necesitas declarar un cursor manualmente para recorrer filas. Tienen **cursores implícitos** que abren, obtienen y cierran automáticamente en un bucle `FOR`:
+
+``` sql
+-- PostgreSQL / Oracle
+FOR v_fila IN SELECT id FROM alumnos LOOP
+    -- v_fila.id ya está disponible directamente aquí sin hacer FETCH ni CLOSE
+END LOOP;
+```
+

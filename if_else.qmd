@@ -1,0 +1,82 @@
+---
+title: "Bloques Condicionales Procedimentales: La Estructura `IF ... ELSE`"
+format: html
+---
+
+Cuando necesitamos evaluar reglas complejas o ejecutar flujos de múltiples instrucciones dentro de un bloque procedural, MySQL y MariaDB proporcionan la estructura condicional clásica `IF ... THEN ... ELSEIF ... ELSE ... END IF`.
+
+::: callout-important
+### Ámbito de Uso de `IF ... END IF`
+
+Esta estructura condicional **únicamente** se puede utilizar dentro de bloques de código programable (rutinas almacenadas): - **Procedimientos almacenados** (*Stored Procedures*) - **Funciones almacenadas** (*Stored Functions*) - **Disparadores** (*Triggers*) - **Eventos programados** (*Events*)
+
+**No es posible** escribir un bloque procedural `IF ... END IF` de forma aislada en una consulta SQL ordinaria (como un `SELECT`, `INSERT` o `UPDATE` ejecutado directamente en la consola o desde la capa de aplicación).
+:::
+
+------------------------------------------------------------------------
+
+# Sintaxis General
+
+La estructura permite evaluar múltiples condiciones en secuencia. En el momento en que una condición resulta verdadera, se ejecutan sus sentencias y se finaliza la evaluación del bloque.
+
+``` sql
+IF condicion_1 THEN
+    -- Sentencias a ejecutar si condicion_1 es verdadera
+ELSEIF condicion_2 THEN
+    -- Sentencias a ejecutar si condicion_2 es verdadera
+ELSE        
+    -- Sentencias a ejecutar si ninguna de las condiciones anteriores se cumplió
+END IF;
+```
+
+# Evaluación en Cortocircuito (*Short-Circuit Evaluation*)
+
+Un aspecto fundamental del funcionamiento de `IF ... ELSEIF ... ELSE` es que las condiciones se evalúan **de arriba a abajo y de forma secuencial**:
+
+1.  **Ejecución exclusiva:** El motor evalúa las condiciones en el orden exacto en que están escritas. En cuanto encuentra la **primera condición que se evalúa como `TRUE`**, ejecuta el bloque de código asociado e **ignora por completo todas las demás ramas** (`ELSEIF` o `ELSE` posteriores).
+
+2.  **Optimización de orden:** Es una buena práctica colocar siempre las condiciones más específicas o de mayor probabilidad de éxito al principio de la estructura para evitar evaluaciones innecesarias.
+
+3.  **Riesgo de lógica:** Si una condición previa es muy general, puede "ocultar" una condición posterior más específica que nunca llegará a ejecutarse.
+
+Supongamos que disponemos de una variable `v_stock_actual` con el stock disponible de un producto y una variable `p_cantidad_deseada` con la cantidad solicitada por un cliente. Queremos evaluar la disponibilidad y ejecutar distintas sentencias según el resultado.
+
+``` sql
+IF v_stock_actual >= p_cantidad_deseada THEN
+    -- Rama 1: Hay suficiente stock para cubrir la solicitud completa
+    UPDATE productos 
+    SET stock = stock - p_cantidad_deseada 
+    WHERE id = p_id_producto;
+
+    INSERT INTO log_movimientos (id_producto, accion) 
+    VALUES (p_id_producto, 'VENTA_COMPLETA');
+
+ELSEIF v_stock_actual > 0 THEN
+    -- Rama 2: Hay stock, pero es insuficiente (Evaluación en cortocircuito:
+    -- Solo entra aquí si v_stock_actual < p_cantidad_deseada)
+    
+    INSERT INTO log_movimientos (id_producto, accion) 
+    VALUES (p_id_producto, 'INTENTO_STOCK_INSUFICIENTE');
+    
+    SELECT 'Stock insuficiente para cubrir la solicitud completa' AS estado;     
+
+ELSE
+    -- Rama 3: Sin stock disponible (v_stock_actual <= 0)
+    UPDATE productos 
+    SET estado = 'Agotado' 
+    WHERE id = p_id_producto;
+
+    SELECT 'Sin stock disponible' AS estado;     
+
+END IF;
+```
+
+# ¿Cuándo usar cada alternativa condicional en SQL?
+
+Para evitar confusiones conceptuales al escribir código en MySQL:
+
+-   **Utiliza la estructura `IF ... ELSEIF ... END IF`:** Cuando estés dentro de una rutina almacenada (procedimiento, función, trigger) y necesites controlar el flujo de ejecución de **múltiples sentencias o bloques de código**.
+
+-   **Utiliza la expresión `CASE WHEN`:** Dentro de consultas `SELECT`, `UPDATE` o `ORDER BY` ordinarias cuando necesites transformar el valor de una columna fila por fila según distintas condiciones.
+
+-   **Utiliza la función `IF(condicion, v_true, v_false)`:** En consultas `SELECT` directas para evaluaciones binarias sencillas (verdadero/falso) en una sola línea.

@@ -1,0 +1,117 @@
+---
+title: "Estructura y Ámbito del Bloque `BEGIN ... END` en MySQL/MariaDB"
+format: html
+---
+
+En MySQL y MariaDB, la construcción **`BEGIN ... END`** se utiliza para definir un **bloque de sentencias compuestas** (*Compound Statement*). Su propósito es agrupar múltiples instrucciones SQL para que el motor las procese y ejecute como una unidad estructurada.
+
+A diferencia de otros lenguajes de programación donde los bloques delimitadores `{ ... }` se emplean en casi cualquier estructura (incluidos los condicionales), en MySQL el uso de `BEGIN ... END` está estrictamente delimitado a contextos procedimentales específicos.
+
+# Regla Fundamental: Ámbito de Aplicación
+
+Los bloques `BEGIN ... END` **solo son válidos dentro de objetos de código programable** (*Stored Routines*):
+
+* **Procedimientos Almacenados** (*Stored Procedures*)
+
+* **Funciones Almacenadas** (*Stored Functions*)
+
+* **Disparadores** (*Triggers*)
+
+* **Eventos Programados** (*Scheduled Events*)
+
+::: {.callout-warning}
+
+## Restricción de Sentencias SQL Ordinarias
+
+No es posible utilizar `BEGIN ... END` en consultas SQL ejecutadas de forma directa desde la consola o desde la capa de aplicación (como scripts PHP, Python o Node.js). En SQL plano, las sentencias se ejecutan de forma independiente delimitadas por `;`.
+:::
+
+# Los 3 Escenarios de Uso Obligatorio o Recomendado
+
+## Escenario A: Delimitación del Cuerpo Principal de una Rutina
+
+Cuando un procedimiento, función o disparador contiene **dos o más instrucciones**, es obligatorio envolver todo el conjunto de código entre `BEGIN` y `END`.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE sp_registrar_mascota(
+    IN p_nombre VARCHAR(50),
+    IN p_especie VARCHAR(30)
+)
+BEGIN
+    -- 1. Sentencia de inserción
+    INSERT INTO mascotas (nombre, especie) 
+    VALUES (p_nombre, p_especie);
+    
+    -- 2. Sentencia de auditoría
+    INSERT INTO log_actividades (descripcion) 
+    VALUES (CONCAT('Mascota registrada: ', p_nombre));
+END //
+
+DELIMITER ;
+
+```
+
+## Escenario B: Manejadores de Excepciones (`DECLARE ... HANDLER`)
+
+Cuando se interceptan errores técnicos del motor (como violaciones de clave única o errores de restricción), las acciones correctivas que deben ejecutarse ante el fallo se agrupan dentro de un bloque `BEGIN ... END` si constan de varias sentencias.
+
+```
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+    -- Bloque compuesto de respuesta ante errores
+    ROLLBACK;
+    INSERT INTO log_errores (mensaje, fecha) 
+    VALUES ('Error técnico durante la transacción', NOW());
+    RESIGNAL;
+END;
+
+```
+
+## Escenario C: Subbloques de Ámbito Local (*Scoping*)
+
+Dentro de un procedimiento extenso, es posible anidar bloques `BEGIN ... END` internos. Esto sirve para limitar la visibilidad (*scope*) y el tiempo de vida de las **variables locales** o **manejadores de errores**, aislándolos del resto del código.
+
+```
+CREATE PROCEDURE sp_proceso_complejo()
+BEGIN
+    -- Variable de ámbito global a la rutina
+    DECLARE v_global INT DEFAULT 1;
+
+    -- Subbloque anidado con su propio ámbito
+    BEGIN
+        -- Variable accesible ÚNICAMENTE dentro de este subbloque
+        DECLARE v_local INT DEFAULT 100;
+        SELECT v_local + v_global;
+    END;
+
+    -- Intentar acceder a v_local aquí provocaría un error de sintaxis
+END //
+
+```
+
+# 3. Mitos y Clarificaciones Frecuentes
+
+| Estructura | ¿Requiere `BEGIN ... END` internamente? | Razón Técnica | 
+| ----- | ----- | ----- | 
+| **`IF ... THEN ... ELSE`** | **NO** | Las palabras clave `THEN`, `ELSEIF`, `ELSE` y `END IF` ya delimitan de forma explícita el conjunto de sentencias de cada rama. | 
+| **`WHILE ... DO`** | **NO** | El bloque de sentencias a repetir se delimita naturalmente entre `DO` y `END WHILE`. | 
+| **`LOOP`** | **NO** | El cuerpo del bucle queda encapsulado entre `LOOP` y `END LOOP`. | 
+| **`REPEAT ... UNTIL`** | **NO** | Las sentencias a iterar se ubican directamente entre `REPEAT` y la condición `UNTIL`. | 
+
+# 4. Diferenciación Crítica de Conceptos
+
+Para evitar confusiones habituales en el desarrollo de bases de datos:
+
+1. **`BEGIN ... END` (Procedural):** Delimita código ejecutable dentro de rutinas. **No tiene ningún impacto sobre las transacciones de datos.**
+
+2. **`START TRANSACTION` (Control Transaccional):** Inicia una unidad de trabajo atómica sobre los datos (DML). En MySQL/MariaDB, nunca debe usarse la palabra `BEGIN` por sí sola para iniciar transacciones si se quiere evitar la confusión con los bloques procedurales.
+
+# Resumen Ejecutivo
+
+* Usa **`BEGIN ... END`** para marcar dónde empieza y termina el código de un procedimiento, función o *trigger*.
+
+* Úsalo dentro de los `HANDLERS` de excepciones para ejecutar múltiples acciones cuando ocurra un error.
+
+* **No lo añadas** dentro de las ramas de un `IF` o bucles `WHILE`, ya que esas estructuras cuentan con sus propios delimitadores nativos (`THEN`, `DO`, etc.).

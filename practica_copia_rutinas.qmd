@@ -1,0 +1,71 @@
+---
+title: "Práctica de copia, restauración y comprobación de rutinas en bases de datos"
+format: html
+---
+
+# Guardar restaurar y comprobar las rutinas
+
+Objetivo. Verificar una recuperación real. La copia debe incluir las definiciones y sus dependencias, además de los datos.
+Trabajaremos sobre la base de datos `academia_it` y su copia `academia_it_restaurada`. Se espera que el usuario tenga privilegios de administrador para crear bases y restaurar rutinas.
+
+## Paso 1 Preparar la copia
+
+Terminar las transacciones y la recuperación de las pruebas anteriores. No realizar cambios de estructura simultáneos. Ejecutar desde la terminal; cada línea continuada utiliza la barra inversa del shell de Ubuntu.
+
+``` bash
+sudo mysqldump --default-character-set=utf8mb4 \
+  --routines --triggers --events --single-transaction \
+  --no-tablespaces academia_it > academia_it_backup_final.sql
+```
+
+`--routines` incluye procedimientos y funciones.
+
+`--single-transaction` obtiene una lectura consistente de las tablas transaccionales, pero no convierte en transaccional un DDL concurrente.
+
+`--no-tablespaces` evita incluir información innecesaria para esta práctica.
+
+Se omite `--databases` para restaurar bajo un nombre diferente.
+
+## Paso 2 Crear un destino nuevo sin tocar la base de trabajo
+
+``` bash
+sudo mysql -e \
+  "CREATE DATABASE academia_it_restaurada 
+   CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+sudo mysql academia_it_restaurada < academia_it_backup_final.sql
+sudo mysql
+```
+
+La barra inversa continúa el comando de Ubuntu y las comillas conservan el SQL completo, aunque se escriba en varias líneas.
+
+Si el destino ya existe, revisar el intento anterior y elegir un destino nuevo; no se elimina automáticamente. Desde el cliente mysql:
+
+``` sql
+USE academia_it_restaurada;
+SHOW PROCEDURE STATUS WHERE Db='academia_it_restaurada';
+CALL sp03_resumen_alumno(1,@t,@e,@m);
+SELECT @t,@e,@m;
+CALL sp14_resumen_curso(1,@mat,@eval,@media);
+SELECT @mat,@eval,@media;
+```
+
+Se esperan 2, 2 y 7,88 para Alberto, y 7, 6 y 6,58 para el curso 1. Si también se realizó la ampliación de SQL dinámico, comprobar sp12_listar_ordenado('id_alumno',0): con los datos originales devuelve cero filas.
+
+## Paso 3 Revisar definidores y permisos del destino
+
+El volcado puede conservar DEFINER, pero no crea automáticamente todas sus cuentas y concesiones. En otro servidor deben prepararse esas identidades y permisos. Incluso en el mismo servidor, la cuenta limitada de sp13 tiene sus GRANT sobre academia_it, no sobre academia_it_restaurada: adaptar y verificar esos permisos antes de probar su ejecución allí.
+
+Las llamadas de comprobación anteriores son INVOKER y se ejecutan como administrador. Las rutinas de este material utilizan referencias locales a las tablas para permitir la restauración bajo otro nombre.
+
+Una referencia fija *academia_it.tabla* dentro de una rutina restaurada podría seguir accediendo a la base original y debe detectarse.
+
+``` sql
+USE academia_it;
+SELECT DATABASE();
+```
+
+Resultado esperado. academia_it.
+
+Mantener la base restaurada como evidencia independiente. La existencia de un archivo de copia no demuestra por sí sola que la restauración funcione.
+
+Pregunta. ¿Por qué una copia de tablas sin --routines puede ser insuficiente para recuperar una aplicación que utiliza CALL?

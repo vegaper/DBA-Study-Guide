@@ -1,0 +1,79 @@
+---
+title: "SQL Dinámico en MySQL"
+format: html
+---
+
+# Construcción de SQL Dinámico Seguro
+
+El SQL dinámico permite construir sentencias SQL mediante cadenas de texto en tiempo de ejecución. Es imprescindible para casos como ordenaciones variables (`ORDER BY`), donde no se pueden usar marcadores de parámetros (`?`).
+
+## 3.1 El Ciclo de Vida del SQL Dinámico
+
+1.  **`PREPARE`**: Compila y analiza la sintaxis del comando enviado en una variable de usuario (`@sql`).
+2.  **`EXECUTE ... USING`**: Ejecuta la sentencia preparada inyectando valores seguros a través de los marcadores de posición `?`.
+3.  **`DEALLOCATE PREPARE`**: Libera la sentencia preparada de la sesión en memoria.
+
+------------------------------------------------------------------------
+
+## 3.2 Listas Blancas (White-listing) y Manejo de Errores
+
+Los marcadores `?` solo pueden sustituir **valores de datos** (en cláusulas `WHERE`, `VALUES`, etc.), nunca **identificadores** (nombres de tablas, columnas) o palabras clave SQL.
+
+Para parametrizar una columna en `ORDER BY` de forma segura frente a **Inyección SQL**: 1. Se valida el parámetro de entrada contra una **lista blanca estricta**: `sql    IF p_orden IS NULL OR p_orden NOT IN ('id_alumno', 'nombre', 'apellido1') THEN         SIGNAL SQLSTATE '45000'             SET MESSAGE_TEXT = 'Columna de ordenación no permitida';    END IF;` 2. Solo si supera la validación, se concatena la variable de forma segura.
+
+### Limpieza con Manejador de Excepciones (`EXIT HANDLER`):
+
+Si ocurre un error durante la ejecución, el procedimiento captura la excepción (`SQLEXCEPTION`), desasigna la sentencia preparada si quedó abierta y limpia las variables de sesión para evitar efectos secundarios.
+
+------------------------------------------------------------------------
+
+## 3.3 Solución a la Pregunta 3
+
+> **Pregunta:** ¿Por qué no se concatena directamente el texto de ordenación enviado por un formulario?
+
+### Explicación:
+
+Concatenar variables procedentes de la entrada del usuario (formularios web, API) directamente en una sentencia SQL genera una vulnerabilidad grave de **Inyección SQL (SQL Injection)**.
+
+### Riesgos:
+
+Si concatenáramos `p_orden` directamente sin lista blanca:
+
+``` sql
+-- CÓDIGO INSEGURO Y VULNERABLE:
+SET @sql = CONCAT('SELECT * FROM alumnos ORDER BY ', p_orden);
+```
+
+Un atacante podría enviar en el parámetro `p_orden` inyecciones maliciosas como: 1. **Inyección de ordenación maliciosa**: `id_alumno; DROP TABLE alumnos; --` 2. **Extracción no autorizada de información (Blind SQLi)**: `(CASE WHEN (SELECT SUBSTRING(password,1,1) FROM usuarios)='a' THEN id_alumno ELSE nombre END)`
+
+**Conclusión:** La **lista blanca (White-listing)** garantiza que solo se procesen identificadores previamente autorizados y verificados por el desarrollador.
+
+### Equivalencias en SQL Dinámico para otros motores de bases de datos
+
+El SQL dinámico permite construir consultas en tiempo de ejecución a partir de cadenas de texto. Todos los motores exigen separar los identificadores/tablas (que deben concatenarse con precauciones de seguridad) de los valores de los parámetros (que deben pasarse mediante variables enlazadas para evitar inyecciones SQL).
+
+#### **SQL Server (T-SQL)**
+
+Utiliza el procedimiento almacenado del sistema `sp_executesql`, exigiendo definir explícitamente los tipos de datos de los parámetros:
+
+``` sql
+DECLARE @sql NVARCHAR(MAX);
+SET @sql = N'SELECT * FROM alumnos WHERE activo = @p_activo';
+EXEC sp_executesql @sql, N'@p_activo BIT', @p_activo = 1;
+```
+
+#### **PostgreSQL (PL/pgSQL)**
+
+Utiliza la instrucción nativa `EXECUTE` con la cláusula `USING`:
+
+``` sql
+EXECUTE 'SELECT * FROM alumnos WHERE activo = $1' USING p_activo;
+```
+
+#### **Oracle (PL/SQL)**
+
+Utiliza la instrucción `EXECUTE IMMEDIATE` acompañada de `USING`:
+
+``` sql
+EXECUTE IMMEDIATE 'SELECT * FROM alumnos WHERE activo = :1' USING p_activo;
+```

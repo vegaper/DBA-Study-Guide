@@ -1,0 +1,83 @@
+---
+title: "Práctica sql dinámico"
+format: html
+---
+
+# Construir SQL dinámico con parámetros y lista blanca
+
+Ampliación avanzada
+
+Objetivo de ampliación. Elegir una columna de ordenación autorizada y mantener separado el valor del filtro. No se utiliza SQL dinámico solo por tener parámetros: una consulta estática suele ser suficiente para filtros normales.
+
+# Paso 1 Distinguir valores e identificadores
+
+Un marcador ? representa un valor, no el nombre de una columna ni una palabra SQL. El filtro activo puede pasarse como parámetro. La columna de ORDER BY debe elegirse entre identificadores permitidos antes de incorporarla al texto.
+
+``` sql
+DROP PROCEDURE IF EXISTS sp12_listar_ordenado;
+DELIMITER //
+CREATE PROCEDURE sp12_listar_ordenado(
+  IN p_orden VARCHAR(30),IN p_activo BOOLEAN)
+SQL SECURITY INVOKER
+READS SQL DATA
+BEGIN
+  DECLARE v_preparada BOOLEAN DEFAULT FALSE;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+     IF v_preparada THEN 
+         DEALLOCATE PREPARE lab_sp_stmt;
+     END IF;
+     SET @lab_sp_sql=NULL,@lab_sp_activo=NULL;
+     RESIGNAL;
+  END;
+  IF p_orden IS NULL OR p_orden NOT IN 
+     ('id_alumno','nombre','apellido1') THEN 
+     SIGNAL SQLSTATE '45000' 
+         SET MESSAGE_TEXT='Columna de ordenacion no permitida';
+  END IF;
+  IF p_activo IS NULL OR p_activo NOT IN (0,1) THEN 
+     SIGNAL SQLSTATE '45000' 
+         SET MESSAGE_TEXT='Activo debe valer 0 o 1';
+  END IF;
+  SET @lab_sp_sql=CONCAT(
+     'SELECT id_alumno,nombre,apellido1 FROM alumnos ',
+     'WHERE activo = ? ORDER BY ',p_orden,',id_alumno');
+  SET @lab_sp_activo=p_activo;
+  PREPARE lab_sp_stmt FROM @lab_sp_sql;
+  SET v_preparada=TRUE;
+
+  EXECUTE lab_sp_stmt USING @lab_sp_activo;
+  DEALLOCATE PREPARE lab_sp_stmt;
+  SET v_preparada=FALSE;
+  SET @lab_sp_sql=NULL,@lab_sp_activo=NULL;
+END//
+DELIMITER ;
+```
+
+PREPARE analiza y prepara el texto; EXECUTE lo ejecuta con el valor indicado; DEALLOCATE PREPARE libera la sentencia. En esta forma de PREPARE se utiliza una variable de usuario para el texto y variables de sesión en USING. Una sentencia preparada pertenece a la sesión y no desaparece automáticamente al terminar el procedimiento.
+
+Las variables locales y los parámetros del procedimiento no deben quedar referenciados como si continuaran existiendo dentro de una sentencia preparada para la sesión. v_preparada permite que el manejador libere el recurso si se preparó antes del error. RESIGNAL devuelve el fallo al llamador.
+
+Los nombres @lab_sp_sql, @lab_sp_activo y lab_sp_stmt quedan reservados para este ejercicio en la conexión. La rutina limpia esas variables, no conserva valores anteriores que una aplicación hubiera utilizado con esos mismos nombres.
+
+# Paso 2 Probar ordenaciones y filtro
+
+``` sql
+CALL sp12_listar_ordenado('nombre',1);
+CALL sp12_listar_ordenado('apellido1',1);
+CALL sp12_listar_ordenado('id_alumno',0);
+SELECT @lab_sp_sql,@lab_sp_activo;
+```
+
+Los dos primeros listados tienen doce alumnos activos. El tercero está vacío con los CSV originales. Las variables auxiliares valen NULL al finalizar.
+
+``` sql
+START TRANSACTION;
+UPDATE alumnos SET activo=FALSE WHERE id_alumno=12;
+CALL sp12_listar_ordenado('id_alumno',0);
+ROLLBACK;
+```
+
+Durante esta prueba aparece Hugo. Después vuelve a estar activo. Probar individualmente 'nombre DESC' y activo 2: deben rechazarse. La lista blanca contiene nombres completos permitidos, no fragmentos libres de ORDER BY.
+
+Pregunta. ¿Por qué no se concatena directamente el texto de ordenación enviado por un formulario?
