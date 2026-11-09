@@ -200,3 +200,116 @@ FOR v_fila IN SELECT id FROM alumnos LOOP
 END LOOP;
 ```
 
+::: practica
+Crearemos un procedimiento que recorra dos números: 101 y 108.
+
+En cada vuelta:
+
+1. Recogerá un número.
+2. Comprobará si ha conseguido recogerlo.
+3. Lo mostrará.
+4. Volverá a intentar recoger el siguiente.
+
+Cuando no queden más números, saldrá del bucle y cerrará el cursor.
+
+Para centrarnos en el funcionamiento, no necesitamos ninguna tabla. Esta consulta proporciona los datos:
+
+```sql
+SELECT 101 AS numero
+UNION ALL
+SELECT 108
+ORDER BY numero;
+```
+
+Su resultado es:
+
+| numero | 
+| ----- | 
+| 101 | 
+| 108 | 
+
+`UNION ALL` reúne las filas de ambos `SELECT` y `ORDER BY numero` establece su orden.
+
+## El procedimiento completo
+
+Primero veremos todas las piezas juntas. Después seguiremos su ejecución.
+
+```sql
+DELIMITER //
+CREATE PROCEDURE demo_cursor_basico()
+BEGIN
+    -- Señal que indica si hemos detectado el final del recorrido.
+    DECLARE v_fin BOOLEAN DEFAULT FALSE;
+    -- Variable donde guardaremos el número recogido en cada vuelta.
+    DECLARE v_id INT;
+    -- Cursor asociado a la consulta que devuelve 101 y 108.
+    DECLARE cur_numeros CURSOR FOR
+        SELECT 101 AS numero
+        UNION ALL
+        SELECT 108
+        ORDER BY numero;
+    -- Respuesta que se ejecutará cuando no queden más filas.
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET v_fin = TRUE;
+    -- Abrimos el cursor una sola vez, antes del bucle.
+    OPEN cur_numeros;
+    -- Comienza el bloque de instrucciones que repetiremos.
+    recorrer: LOOP
+        -- Obtenemos la siguiente fila y guardamos su número.
+        FETCH cur_numeros INTO v_id;
+        -- Si no hemos obtenido otra fila, abandonamos el bucle.
+        IF v_fin THEN
+            LEAVE recorrer;
+        END IF;
+        -- Mostramos el número recogido en esta vuelta.
+        SELECT v_id AS numero_recogido;
+    -- Termina el bloque repetido: comienza otra vuelta.
+    END LOOP recorrer;
+    -- Llegamos aquí después de abandonar el bucle.
+    CLOSE cur_numeros;
+END//
+DELIMITER ;
+```
+
+Las declaraciones aparecen al principio y siguen este orden: variables → cursor → manejador. Después comienzan las instrucciones que abren y recorren el cursor.
+
+`DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_fin = TRUE;` : «Cuando un `FETCH` no encuentre otra fila, cambia `v_fin` a `TRUE` y permite que el procedimiento continúe».
+
+Hay dos detalles fundamentales:
+
+Esta declaración no cambia ahora `v_fin`. Deja preparada la respuesta.
+
+`CONTINUE` no significa empezar otra vuelta. Después de atender la condición, continúa la ejecución después del `FETCH`; en nuestro código, eso nos lleva al `IF`. [2]
+
+
+`OPEN cur_numeros;` : Abre el cursor y lo deja preparado para comenzar el recorrido.Observamos su ubicación: `OPEN` está fuera del bucle. Por tanto, las vueltas no vuelven a abrir el cursor: todas utilizan el mismo recorrido.
+
+| `END LOOP recorrer;` | Marca el final del bloque repetido; si llegamos hasta ella, comienza otra vuelta. | 
+| `LEAVE recorrer;` | Abandona el bucle y continúa después de su `END LOOP`. | 
+| `CLOSE cur_numeros;` | Cierra el cursor. | 
+| `END` del procedimiento | Marca el final del bloque del procedimiento. | 
+
+## Ejecutarlo y comprobar el resultado
+
+```sql
+CALL demo_cursor_basico();
+```
+| numero_recogido| 
+|101|
+
+| numero_recogido| 
+|108|
+
+## Qué debemos conservar para entender la práctica anterior
+
+Los errores que debemos evitar son:
+
+* Confundir `END LOOP` con una orden de salida: la salida la provoca `LEAVE`.
+* Pensar que cada `FETCH` comienza desde cero: utiliza la posición conservada por el cursor abierto.
+* Trabajar antes de comprobar `v_fin`: primero debemos verificar que la extracción ha obtenido una fila.
+* Pensar que `v_fin` cambia sola: la cambia la instrucción `SET` del manejador.
+* Confundir cerrar el cursor con confirmar cambios: `CLOSE` y `COMMIT` tienen responsabilidades distintas.
+
+La secuencia que seguiremos al leer la práctica será: abrir → recoger → comprobar → trabajar → repetir → salir → cerrar.
+
+:::

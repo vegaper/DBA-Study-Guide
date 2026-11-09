@@ -387,9 +387,64 @@ El procedimiento actualizará la media guardada de todos los alumnos de un curso
 
 La media se almacena para practicar la actualización mediante cursor. Representa el último cálculo realizado; no se actualiza automáticamente al introducir notas.
 
+```sql
+
+CREATE PROCEDURE recalcular_medias_curso (IN p_id_curso INT, OUT p_total_procesados INT)
+BEGIN
+    DECLARE v_fin BOOLEAN DEFAULT FALSE;
+    DECLARE v_id_alumno INT;
+    
+    DECLARE cursor_alumnos CURSOR FOR 
+        SELECT id_alumno FROM alumnos WHERE id_curso = p_id_curso;
+        
+    DECLARE CONTINUE HANDLER FOR NOT FOUND 
+        SET v_fin = TRUE;    
+    
+    SET p_total_procesados = 0;
+
+    -- Validar si el curso existe
+    IF NOT EXISTS (SELECT 1 FROM cursos WHERE id_curso = p_id_curso) THEN 
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Curso inexistente';
+    END IF;
+
+    -- 3. RECORRIDO CON EL CURSOR
+    OPEN cursor_alumnos;
+
+    operaciones: LOOP
+        FETCH cursor_alumnos INTO v_id_alumno;
+        
+        IF v_fin = TRUE THEN 
+            LEAVE operaciones; 
+        END IF;
+
+        -- Actualizar la media del alumno actual
+        UPDATE alumnos
+        SET media_calculada = (
+            SELECT ROUND(AVG(calificacion), 2) 
+            FROM notas 
+            WHERE id_alumno = v_id_alumno
+        )
+        WHERE id_alumno = v_id_alumno;
+
+        SET p_total_procesados = p_total_procesados + 1;
+    END LOOP operaciones;
+
+    CLOSE cursor_alumnos;
+END ;
+```
+
 ## Resultados sobre los datos iniciales
 
-Antes de registrar la nueva nota de Carla, ejecutad el cálculo para los cursos 1 y 2. Cada ejecución devolverá 3 alumnos procesados. Debéis obtener estas medias:
+
+Ejecutad el cálculo para los cursos 1 y 2. Cada ejecución devolverá 3 alumnos procesados. 
+```sql
+CALL recalcular_medias_curso(1,@salida);
+SELECT @salida;
+CALL recalcular_medias_curso(2,@salida);
+SELECT @salida;
+```
+La media calculada antes de registrar la nota de Carla era:
 
 | Alumno  | Curso | media_calculada |
 |---------|-------|-----------------|
@@ -400,7 +455,17 @@ Antes de registrar la nueva nota de Carla, ejecutad el cálculo para los cursos 
 | 5 Elena | 2     | 2.50            |
 | 6 Farah | 2     | NULL            |
 
-Después de registrar la nota 9.00 de Carla con `registrar_nota`, recalculad el curso 1: su media debe pasar a 9.00. Se procesan 3 alumnos y las demás medias conservan sus valores.
+Después de registrar la nota 9.00 de Carla con `registrar_nota` quedara
+```txt
+nombre	id_curso	media_calculada
+Ana	    1	7.17
+Bruno	1	5.00
+Carla	1	9.00
+Diego	2	8.00
+Elena	2	2.50
+Farah	2	null
+```
+
 
 # Plan de comprobación final
 

@@ -3,8 +3,6 @@ title: "Introducción a procedimientos almacenados en MySQL paso a paso"
 format: html
 ---
 
-Esta guía introduce los procedimientos almacenados de MySQL de forma progresiva. Explica qué son, cómo se crean y ejecutan, cómo intercambian datos mediante parámetros y cómo utilizan variables y condiciones. Los ejemplos se corresponden con los once pasos desarrollados y utilizan la tabla alumnos.
-
 # Objetivos de aprendizaje
 
 - Distinguir entre crear un procedimiento y ejecutarlo.
@@ -43,27 +41,21 @@ Referencia completa de alumnos.csv. Se conservan las 10 columnas y los 12 regist
 
 Total de alumnos: 12. Los identificadores 3 y 7 utilizados en los ejemplos corresponden a Diego Ruiz y Sara Romero Vidal. El valor 1 de activo identifica un registro activo.
 
-# Qué es un procedimiento almacenado
-
-Un *stored procedure*, o procedimiento almacenado, es un conjunto de instrucciones SQL que se guarda en el servidor MySQL con un nombre para ejecutarlo cuando sea necesario. Puede contener una sola instrucción o varias.
-
-La analogía es una receta: las instrucciones se escriben una vez y después pueden seguirse tantas veces como sea necesario. De forma parecida, se define qué debe hacer MySQL y se asigna un nombre a esa operación.
-
 **Una consulta que se utiliza habitualmente**
 
 Para consultar todos los alumnos se utiliza:
 
-SELECT * FROM alumnos;
+`SELECT * FROM alumnos;`
 
-Cada vez que se ejecuta esta sentencia, MySQL consulta la tabla y devuelve sus datos. Esta instrucción podría guardarse en un procedimiento llamado listar_alumnos. Una vez creado, se ejecutaría así:
+Cada vez que se ejecuta esta sentencia, MySQL consulta la tabla y devuelve sus datos. Esta instrucción podría guardarse en un procedimiento llamado ***listar_alumnos***. Una vez creado, se ejecutaría así:
 
 `CALL listar_alumnos();`
 
-CALL solicita la ejecución de un procedimiento almacenado. MySQL busca listar_alumnos, ejecuta el SELECT que contiene y devuelve los alumnos. En este punto el nombre es ilustrativo; el procedimiento se crea en el paso 2.
+`CALL` solicita la ejecución de un procedimiento almacenado. MySQL busca ***listar_alumnos***, y ejecuta las sentencias que contiene. 
 
 **Se guardan las instrucciones y no los resultados**
 
-Si un procedimiento contiene un SELECT, los resultados no quedan congelados al crearlo. La consulta se ejecuta de nuevo en cada llamada.
+Si un procedimiento contiene un `SELECT`, los resultados no quedan congelados al crearlo. La consulta se ejecuta de nuevo en cada llamada.
 
 Por ejemplo, si inicialmente hay 20 alumnos, una ejecución muestra 20. Si después se añade un alumno a la tabla, la siguiente ejecución muestra 21. Es un supuesto de funcionamiento; la tabla de referencia de esta guía contiene 12 alumnos.
 
@@ -92,7 +84,7 @@ SELECT * FROM alumnos;
 
 Al ser un procedimiento tan sencillo de una sola linea no hace falta usar la sintaxis completa con begin/end
 
-Esta definición omite SQL SECURITY. MySQL utiliza SQL SECURITY DEFINER por defecto; el siguiente paso explica qué permisos se aplican y cómo elegir otro modo.
+Esta definición omite `SQL SECURITY`. MySQL utiliza `SQL SECURITY DEFINER` por defecto; el siguiente paso explica qué permisos se aplican y cómo elegir otro modo.
 
 **Significado de la definición**
 
@@ -138,25 +130,25 @@ El procedimiento permanece guardado aunque se cierre la conexión o se reinicie 
 
 Si se ejecuta de nuevo el mismo CREATE PROCEDURE, MySQL devuelve un error porque ya existe un procedimiento con ese nombre en la base de datos. Para utilizarlo se ejecuta CALL.
 
-# **Elegir los permisos con SQL SECURITY**
+# Elegir los permisos con SQL SECURITY
 
-SQL SECURITY determina con qué permisos se ejecutan las instrucciones del procedimiento. No cambia lo que hace el código; cambia la cuenta cuyos privilegios se comprueban al ejecutarlo.
+`SQL SECURITY` determina con qué permisos se ejecutan las instrucciones del procedimiento. No cambia lo que hace el código; cambia la cuenta cuyos privilegios se comprueban al ejecutarlo.
 
 La analogía es una puerta con control de acceso. Tener autorización para pedir una operación no siempre significa tener autorización para consultar directamente todos los datos que utiliza esa operación.
 
 # Separar el permiso de llamada de los permisos de las instrucciones
 
-En un procedimiento que contiene SELECT * FROM alumnos hay dos cuestiones diferentes:
+En un procedimiento que contiene `SELECT * FROM alumnos` hay dos cuestiones diferentes:
 
-- Tener permiso EXECUTE para llamar al procedimiento.
+- Tener permiso `EXECUTE` para llamar al procedimiento.
 
-- Disponer de los permisos necesarios para ejecutar las instrucciones de su interior, como SELECT sobre alumnos.
+- Disponer de los permisos necesarios para ejecutar las instrucciones de su interior, como `SELECT` sobre alumnos.
 
-SQL SECURITY determina a qué cuenta corresponde la segunda comprobación.
+`SQL SECURITY` determina a qué cuenta corresponde la segunda comprobación.
 
 # SQL SECURITY INVOKER
 
-INVOKER significa que las instrucciones se ejecutan con los permisos de quien invoca el procedimiento. En estas llamadas directas, es la cuenta que ejecuta CALL.
+`INVOKER` significa que las instrucciones se ejecutan con los permisos de quien invoca el procedimiento. En estas llamadas directas, es la cuenta que ejecuta `CALL`.
 
 ``` sql
 CREATE PROCEDURE listar_alumnos_invoker()  
@@ -168,13 +160,13 @@ La característica se coloca después de los paréntesis de los parámetros y an
 
 Lo ejecutamos: `CALL listar_alumnos_invoker();`
 
-Si la cuenta que ejecuta CALL tiene EXECUTE sobre el procedimiento y SELECT sobre alumnos, la consulta funciona. Si tiene EXECUTE pero carece de SELECT sobre alumnos, la consulta falla por falta de permisos.
+Si la cuenta que ejecuta `CALL` tiene `EXECUTE` sobre el procedimiento y `SELECT` sobre alumnos, la consulta funciona. Si tiene `EXECUTE` pero carece de `SELECT` sobre alumnos, la consulta falla por falta de permisos.
 
-Esto sucede aunque el procedimiento lo haya creado una cuenta administradora. Con INVOKER, no se utilizan los permisos de esa cuenta para ejecutar el SELECT.
+Esto sucede aunque el procedimiento lo haya creado una cuenta administradora. Con `INVOKER`, no se utilizan los permisos de esa cuenta para ejecutar el `SELECT`.
 
 # SQL SECURITY DEFINER
 
-DEFINER significa que las instrucciones se ejecutan con los permisos de la cuenta registrada como definidora del procedimiento.
+`DEFINER` significa que las instrucciones se ejecutan con los permisos de la cuenta registrada como definidora del procedimiento.
 
 ``` sql
 CREATE PROCEDURE listar_alumnos_definer()  
@@ -184,23 +176,23 @@ SELECT * FROM alumnos;
 
 La llamada es: `CALL listar_alumnos_definer();`
 
-En este caso, quien llama necesita EXECUTE sobre el procedimiento. El SELECT interior se comprueba con los permisos de la cuenta definidora, que debe disponer de SELECT sobre alumnos y del permiso de ejecución correspondiente.
+En este caso, quien llama necesita `EXECUTE` sobre el procedimiento. El `SELECT` interior se comprueba con los permisos de la cuenta definidora, que debe disponer de `SELECT` sobre alumnos y del permiso de ejecución correspondiente.
 
-Por tanto, una cuenta sin SELECT directo sobre alumnos puede obtener el listado a través de este procedimiento si tiene EXECUTE y la cuenta definidora dispone de los permisos necesarios.
+Por tanto, una cuenta sin `SELECT` directo sobre alumnos puede obtener el listado a través de este procedimiento si tiene `EXECUTE` y la cuenta definidora dispone de los permisos necesarios.
 
-Esto no concede SELECT permanente a quien llama ni permite ejecutar cualquier consulta. Permite realizar las operaciones que el procedimiento haya definido. En este ejemplo, esa operación muestra todas las columnas y filas de alumnos.
+Esto no concede `SELECT` permanente a quien llama ni permite ejecutar cualquier consulta. Permite realizar las operaciones que el procedimiento haya definido. En este ejemplo, esa operación muestra todas las columnas y filas de alumnos.
 
 # Identificar la cuenta definidora
 
-Si no se escribe una cláusula DEFINER explícita, MySQL registra como definidora la cuenta que crea el procedimiento.
+Si no se escribe una cláusula `DEFINER` explícita, MySQL registra como definidora la cuenta que crea el procedimiento.
 
-La cláusula DEFINER identifica una cuenta. SQL SECURITY decide si sus privilegios se utilizan durante la ejecución o si se utilizan los del invocador. Son dos elementos relacionados, pero distintos.
+La cláusula `DEFINER` identifica una cuenta. `SQL SECURITY` decide si sus privilegios se utilizan durante la ejecución o si se utilizan los del invocador. Son dos elementos relacionados, pero distintos.
 
-Un procedimiento INVOKER también tiene una cuenta definidora registrada. Esa cuenta no determina los permisos de sus instrucciones cuando se ejecuta con seguridad INVOKER.
+Un procedimiento `INVOKER` también tiene una cuenta definidora registrada. Esa cuenta no determina los permisos de sus instrucciones cuando se ejecuta con seguridad `INVOKER`.
 
 # Comparar ambos modos con el mismo supuesto
 
-Se supone que una cuenta docente define ambos procedimientos y dispone de SELECT sobre alumnos y de los permisos de ejecución necesarios. Otra cuenta, utilizada para consultar, dispone de EXECUTE sobre ambos procedimientos, pero no tiene SELECT sobre alumnos.
+Se supone que una cuenta docente define ambos procedimientos y dispone de `SELECT` sobre alumnos y de los permisos de ejecución necesarios. Otra cuenta, utilizada para consultar, dispone de `EXECUTE` sobre ambos procedimientos, pero no tiene `SELECT` sobre alumnos.
 
 +------------------------------------+-------------------------------------------------------------------+
 | Operación de la cuenta de consulta | Resultado                                                         |
@@ -212,9 +204,9 @@ Se supone que una cuenta docente define ambos procedimientos y dispone de SELECT
 | CALL listar_alumnos_definer();     | Funciona: el SELECT utiliza los permisos de la cuenta definidora. |
 +------------------------------------+-------------------------------------------------------------------+
 
-Si se retirara también EXECUTE a la cuenta de consulta, no podría llamar a ninguno de los dos procedimientos.
+Si se retirara también `EXECUTE` a la cuenta de consulta, no podría llamar a ninguno de los dos procedimientos.
 
-Vamos a empezar por probar con una cuenta que no tiene permisos de ejecución. Usaremos la cuenta Secretaria_Red que creamos en la práctica de la academia_it.
+Vamos a empezar por probar con una cuenta que no tiene permisos de ejecución. Usaremos la cuenta **Secretaria_Red** que creamos en la práctica de la **academia_it**.
 
 Desde otro ordenador de la misma red, con el mysql CLI instalado: `mysqlsh -h 10.0.20.101 -u secretaria_red -p` e introducimos la contraseña, que para esta cuenta era Secretaria_Red_2026!
 
@@ -248,21 +240,21 @@ Si ambos procedimientos se prueban desde una cuenta administradora con todos los
 
 El siguiente procedimiento debe realizar dos operaciones: mostrar todos los alumnos y mostrar cuántos hay. Las consultas por separado son:
 
-- SELECT * FROM alumnos;
+- `SELECT * FROM alumnos;`
 
-- SELECT COUNT(*) AS total_alumnos FROM alumnos;
+- `SELECT COUNT(*) AS total_alumnos FROM alumnos;`
 
-Para incluir ambas instrucciones en el cuerpo de un mismo procedimiento se agrupan entre BEGIN y END. Estas palabras abren y cierran el bloque de instrucciones.
+Para incluir ambas instrucciones en el cuerpo de un mismo procedimiento se agrupan entre `BEGIN` y `END`. Estas palabras abren y cierran el bloque de instrucciones.
 
 # Por qué se utiliza DELIMITER
 
 En la consola mysql, el punto y coma indica normalmente que una sentencia está completa y puede enviarse al servidor. La definición de un procedimiento con varias instrucciones contiene puntos y coma interiores.
 
-Si el cliente interpreta el primero como el final del CREATE PROCEDURE, envía una definición incompleta. Para evitarlo, se cambia temporalmente la señal de finalización: `DELIMITER //`
+Si el cliente interpreta el primero como el final del `CREATE PROCEDURE`, envía una definición incompleta. Para evitarlo, se cambia temporalmente la señal de finalización: `DELIMITER //`
 
 Esto indica al cliente que debe esperar a encontrar `//` antes de enviar la definición completa. Los puntos y coma siguen separando las instrucciones del interior.
 
-DELIMITER es una orden del cliente, no una instrucción SQL que forme parte del procedimiento. El siguiente bloque puede ejecutarse en la consola mysql o como script en MySQL Workbench.
+`DELIMITER` es una orden del cliente, no una instrucción SQL que forme parte del procedimiento. El siguiente bloque puede ejecutarse en la consola mysql o como script en MySQL Workbench.
 
 # Crear el procedimiento completo
 
@@ -279,9 +271,9 @@ END//
 DELIMITER ;
 ```
 
-La primera línea cambia el delimitador a //. CREATE PROCEDURE define el procedimiento sin parámetros. BEGIN abre su bloque y cada SELECT termina con un punto y coma.
+La primera línea cambia el delimitador a `//`. `CREATE PROCEDURE` define el procedimiento sin parámetros. `BEGIN` abre su bloque y cada `SELECT` termina con un punto y coma.
 
-En END//, END cierra el bloque y // indica al cliente que la definición está completa. La última línea, DELIMITER ;, restaura el delimitador habitual.
+En `END//`,` END` cierra el bloque y `//` indica al cliente que la definición está completa. La última línea, `DELIMITER ;`, restaura el delimitador habitual.
 
 Volvemos a comprobar:
 
@@ -299,7 +291,8 @@ SELECT routine_name, routine_type  FROM information_schema.routines  WHERE routi
 
 # Ejecutar y observar los dos resultados
 
-`CALL listar_y_contar_alumnos();` La llamada devuelve dos resultados en orden: - El listado de alumnos.
+`CALL listar_y_contar_alumnos();` La llamada devuelve dos resultados en orden: 
+- El listado de alumnos.
 - Una fila con la columna total_alumnos.
 
 Si hubiera 20 alumnos, la segunda consulta mostraría 20. Con los datos de referencia muestra 12. La llamada vuelve a terminar con punto y coma porque ya se ha restaurado el delimitador habitual.
@@ -335,7 +328,7 @@ END//
 DELIMITER ;
 ```
 
-La declaración IN p_id_alumno INT tiene tres elementos:
+La declaración `IN p_id_alumno INT` tiene tres elementos:
 
 +-------------+---------------------------------------------------------+
 | Elemento    | Significado                                             |
@@ -347,7 +340,7 @@ La declaración IN p_id_alumno INT tiene tres elementos:
 | INT         | Tipo de dato del parámetro, un número entero.           |
 +-------------+---------------------------------------------------------+
 
-El prefijo p\_ es una convención para reconocer los parámetros. No es obligatorio.
+El prefijo p_ es una convención para reconocer los parámetros. No es obligatorio.
 
 **Diferenciar la columna del parámetro**
 
@@ -395,7 +388,7 @@ Entregar un identificador no modifica los datos de la tabla. El procedimiento so
 
 # Obtener un dato mediante un parámetro OUT
 
-Con IN se entrega un dato al procedimiento. Con OUT, el procedimiento entrega un dato al exterior y lo guarda en una variable que puede consultarse o utilizarse después.
+Con `IN` se entrega un dato al procedimiento. Con `OUT`, el procedimiento entrega un dato al exterior y lo guarda en una variable que puede consultarse o utilizarse después.
 
 ## Crear el procedimiento que cuenta alumnos
 
@@ -411,7 +404,7 @@ END//
 DELIMITER ;
 ```
 
-OUT indica que `p_total` es un parámetro de salida. `INT` establece que contendrá un número entero.
+`OUT` indica que `p_total` es un parámetro de salida. `INT` establece que contendrá un número entero.
 
 La instrucción siguiente `SELECT COUNT(*) INTO p_total FROM alumnos;` cuenta las filas y guarda el resultado en `p_total`:
 
