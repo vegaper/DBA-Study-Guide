@@ -3,11 +3,216 @@ title: "SQL Dinámico en MySQL"
 format: html
 ---
 
-# Construcción de SQL Dinámico Seguro
+El **SQL Dinámico** es una técnica de programación que permite construir y ejecutar sentencias SQL de forma dinámica en tiempo de ejecución. A diferencia del **SQL Estático**, donde la consulta está predefinida y compilada previamente, el SQL dinámico se ensambla como una cadena de texto (string) que luego es interpretada y ejecutada por el motor de base de datos.
 
-El SQL dinámico permite construir sentencias SQL mediante cadenas de texto en tiempo de ejecución. Es imprescindible para casos como ordenaciones variables (`ORDER BY`), donde no se pueden usar marcadores de parámetros (`?`).
 
-## 3.1 El Ciclo de Vida del SQL Dinámico
+# ¿Cuándo y por qué usar SQL Dinámico?
+
+## Usos Principales
+1. **Filtros de Búsqueda Flexibles:** Consultas donde los campos por los cuales filtrar, ordenar o agrupar son seleccionados dinámicamente por el usuario en la interfaz.
+2. **Manejo de Esquemas Variables:** Operaciones sobre tablas o columnas cuyos nombres se determinan en tiempo de ejecución (por ejemplo, tablas particionadas por fecha como `ventas_2024_01`).
+3. **Automatización de Tareas de Mantenimiento (DBA):** Scripts para respaldar, reconstruir índices o analizar fragmentaciones de múltiples tablas mediante bucles.
+4. **Construcción de Reports (Pivot Tables):** Generación de reportes donde las filas deben convertirse en columnas dinámicamente según los datos existentes.
+
+## Ventajas vs. Desventajas
+
+| Ventajas | Desventajas |
+| :--- | :--- |
+| Alta flexibilidad y reusabilidad de código | Complejidad de depuración y mantenimiento |
+| Permite consultar estructuras cambiantes | Potencial vulnerabilidad a **SQL Injection** si no se sanitiza |
+| Reduce código duplicado en procedimientos almacenados | Menor rendimiento debido al tiempo de compilación/planificación en runtime |
+
+---
+
+# 2. Sintaxis y Operación en MySQL
+
+En MySQL, el SQL Dinámico se implementa principalmente dentro de **Procedimientos Almacenados (Stored Procedures)** utilizando la sintaxis `PREPARE`, `EXECUTE` y `DEALLOCATE PREPARE`.
+
+## Flujo Fundamental (3 Pasos)
+1. **`PREPARE`**: Compila la cadena de texto como una sentencia ejecutable.
+2. **`EXECUTE`...`USING`**: Ejecuta la sentencia preparada, pasando variables para los parámetros si existen.
+3. **`DEALLOCATE PREPARE`**: Libera los recursos de memoria asignados a la sentencia preparada.
+
+El parámetro que se pasa a la sentencia debe convertirse antes a una variable de sesión.La cláusula USING de MySQL solo acepta variables de sesión (las que llevan el prefijo @, conocidas como user-defined variables). No puedes pasar directamente un parámetro del procedimiento (p_rol) ni una variable local declarada con DECLARE dentro de la cláusula USING
+---
+
+## Ejemplos Prácticos en MySQL
+
+### Ejemplo 1: Consulta básica con parámetros de entrada (`?`)
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE ObtenerUsuariosPorRol(
+    IN p_rol VARCHAR(50)
+)
+BEGIN
+    -- 1. Definir la consulta como string
+    SET @sql_query = 'SELECT id, nombre, email, rol FROM usuarios WHERE rol = ?';
+    
+    -- 2. Asignar el parámetro a una variable de sesión
+    SET @rol_param = p_rol;
+    
+    -- 3. Preparar la sentencia
+    PREPARE mi_consulta FROM @sql_query;
+    
+    -- 4. Ejecutar pasando la variable de sesión
+    EXECUTE mi_consulta USING @rol_param;
+    
+    -- 5. Liberar la memoria
+    DEALLOCATE PREPARE mi_consulta;
+END //
+
+DELIMITER ;
+
+-- Llamada al procedimiento:
+CALL ObtenerUsuariosPorRol('admin');
+```
+
+---
+
+### Ejemplo 2: Filtrado dinámico con múltiples condiciones opcionales
+
+Un caso de uso común es una búsqueda donde el usuario puede enviar o no ciertos filtros:
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE BuscarProductos(
+    IN p_categoria VARCHAR(50),
+    IN p_precio_max DECIMAL(10,2)
+)
+BEGIN
+    -- Base de la consulta
+    SET @query = 'SELECT id, nombre, precio, categoria FROM productos WHERE 1=1';
+    
+    -- Concatenación condicional
+    IF p_categoria IS NOT NULL THEN
+        SET @query = CONCAT(@query, ' AND categoria = ?');
+    END IF;
+    
+    IF p_precio_max IS NOT NULL THEN
+        SET @query = CONCAT(@query, ' AND precio <= ?');
+    END IF;
+    
+    -- Preparar sentencia
+    PREPARE stmt FROM @query;
+    
+    -- Ejecución según los parámetros provistos
+    IF p_categoria IS NOT NULL AND p_precio_max IS NOT NULL THEN
+        SET @cat_var = p_categoria;
+        SET @precio_var = p_precio_max;
+        EXECUTE stmt USING @cat_var, @precio_var;
+    ELSEIF p_categoria IS NOT NULL THEN
+        SET @cat_var = p_categoria;
+        EXECUTE stmt USING @cat_var;
+    ELSEIF p_precio_max IS NOT NULL THEN
+        SET @precio_var = p_precio_max;
+        EXECUTE stmt USING @precio_var;
+    ELSE
+        EXECUTE stmt;
+    END IF;
+    
+    DEALLOCATE PREPARE stmt;
+END //
+
+DELIMITER ;
+```
+
+---
+
+### Ejemplo 3: Dinamizar Nombres de Tablas o Columnas
+
+> **Importante:** Los identificadores (nombres de tablas, bases de datos o columnas) **NO** pueden pasarse mediante marcadores de posición (`?`). Deben concatenarse directamente, aplicando validaciones de seguridad strictas.
+
+```sql
+DELIMITER //
+
+CREATE PROCEDURE ContarRegistrosTabla(
+    IN p_nombre_tabla VARCHAR(64)
+)
+BEGIN
+    -- Validar que el nombre de la tabla no contenga caracteres maliciosos
+    -- En MySQL, los identificadores se delimitan con backticks (`)
+    SET @query = CONCAT('SELECT COUNT(*) AS total FROM `', REPLACE(p_nombre_tabla, '`', '``'), '`');
+    
+    PREPARE stmt FROM @query;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+END //
+
+DELIMITER ;
+```
+
+---
+
+# 3. Buenas Prácticas de Seguridad (Prevención de SQL Injection)
+
+El SQL dinámico es el principal vector de ataques de **Inyección SQL** si los datos ingresados por usuarios se concatenan directamente en la sentencia.
+
+## Reglas de Oro
+
+1. **Usar Consultas Preparadas (Parameterized Queries / Placeholders):**
+   Siempre que se concatenen valores de datos, usa marcadores `?` en lugar de concatenar cadenas directamente.
+   
+   * ❌ **Vulnerable:**
+     ```sql
+     SET @sql = CONCAT('SELECT * FROM usuarios WHERE email = ''', input_email, '''');
+     ```
+   * ✅ **Seguro:**
+     ```sql
+     SET @sql = 'SELECT * FROM usuarios WHERE email = ?';
+     -- Usar EXECUTE ... USING
+     ```
+
+2. **Validación y Listas Blancas (Whitelisting) para Identificadores:**
+   Cuando debas concatenar nombres de tablas, columnas u ordenamientos (`ORDER BY`), valida que el valor pertenezca a una lista de valores permitidos.
+
+   ```sql
+   -- Ejemplo de validación para orden dinámico
+   IF p_orden NOT IN ('nombre', 'fecha_creacion', 'precio') THEN
+       SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Columna de ordenamiento no válida';
+   END IF;
+   ```
+
+3. **Escapado de Identificadores:**
+   Si concatenas identificadores, asegúrate de envolverlos en comillas invertidas (backticks `` ` `` en MySQL) y escapar cualquier caracter interno correspondiente.
+
+4. **Principio de Menor Privilegio:**
+   Asegúrate de que la cuenta de base de datos que ejecuta los procedimientos almacenados solo tenga los permisos estrictamente necesarios (`SELECT`, `INSERT`, etc.) y no permisos administrativos como `DROP TABLE`.
+
+---
+
+# 4. Comparativa de Compatibilidad entre Motores
+
+Cada Sistema Gestor de Bases de Datos (RDBMS) tiene su propia sintaxis y mecanismos para manejar SQL Dinámico:
+
+| Motor | Sintaxis / Mecanismo Principal | Ejemplo Breve |
+| :--- | :--- | :--- |
+| **MySQL / MariaDB** | `PREPARE ... FROM`, `EXECUTE ... USING`, `DEALLOCATE PREPARE` | `PREPARE stmt FROM @sql; EXECUTE stmt;` |
+| **PostgreSQL** | `EXECUTE ... USING` (dentro de PL/pgSQL) | `EXECUTE 'SELECT * FROM ' \|\| quote_ident(tabla) \|\| ' WHERE id = $1' USING var_id;` |
+| **SQL Server (T-SQL)** | `sp_executesql` (Recomendado) o `EXEC()` | `EXEC sp_executesql @stmt, @params, @param1 = val1;` |
+| **Oracle (PL/SQL)** | `EXECUTE IMMEDIATE ... USING ... INTO` | `EXECUTE IMMEDIATE 'SELECT nombre FROM emp WHERE id = :1' INTO v_nombre USING p_id;` |
+
+## Diferencias Clave a Considerar al Portar Código:
+
+1. **Marcadores de Posición:**
+   * **MySQL:** Usa `?`.
+   * **PostgreSQL:** Usa `$1`, `$2`, `$3`.
+   * **Oracle / SQL Server:** Usan variables con nombre `:param` o `@param`.
+
+2. **Funciones de Sanitización Integradas:**
+   * **PostgreSQL:** Proporciona funciones nativas como `quote_ident()` (para nombres de tablas/columnas) y `quote_literal()` (para cadenas de texto).
+   * **SQL Server:** Ofrece `QUOTENAME()`.
+   * **MySQL:** Requiere lógica personalizada o el uso de funciones como `QUOTE()`.
+
+---
+
+# Conclusión
+
+El SQL Dinámico es una herramienta sumamente potente para resolver escenarios avanzados donde las estructuras o consultas cambian en tiempo de ejecución. Sin embargo, requiere una disciplina rigurosa en el uso de **parámetros vinculados** y **validaciones de listas blancas** para evitar vulnerabilidades de seguridad críticas.
+
+# El Ciclo de Vida del SQL Dinámico
 
 1.  **`PREPARE`**: Compila y analiza la sintaxis del comando enviado en una variable de usuario (`@sql`).
 2.  **`EXECUTE ... USING`**: Ejecuta la sentencia preparada inyectando valores seguros a través de los marcadores de posición `?`.
@@ -15,44 +220,29 @@ El SQL dinámico permite construir sentencias SQL mediante cadenas de texto en t
 
 ------------------------------------------------------------------------
 
-## 3.2 Listas Blancas (White-listing) y Manejo de Errores
+# Listas Blancas (White-listing) y Manejo de Errores
 
 Los marcadores `?` solo pueden sustituir **valores de datos** (en cláusulas `WHERE`, `VALUES`, etc.), nunca **identificadores** (nombres de tablas, columnas) o palabras clave SQL.
 
-Para parametrizar una columna en `ORDER BY` de forma segura frente a **Inyección SQL**: 1. Se valida el parámetro de entrada contra una **lista blanca estricta**: `sql    IF p_orden IS NULL OR p_orden NOT IN ('id_alumno', 'nombre', 'apellido1') THEN         SIGNAL SQLSTATE '45000'             SET MESSAGE_TEXT = 'Columna de ordenación no permitida';    END IF;` 2. Solo si supera la validación, se concatena la variable de forma segura.
+Para parametrizar una columna en `ORDER BY` de forma segura frente a **Inyección SQL**: 
+1. Se valida el parámetro de entrada contra una **lista blanca estricta**: 
+```sql
+    IF p_orden IS NULL OR p_orden NOT IN ('id_alumno', 'nombre', 'apellido1') THEN         
+        SIGNAL SQLSTATE '45000'             
+            SET MESSAGE_TEXT = 'Columna de ordenación no permitida';    
+    END IF;
+```
+2. Solo si supera la validación, se concatena la variable de forma segura.
 
-### Limpieza con Manejador de Excepciones (`EXIT HANDLER`):
+# Limpieza con Manejador de Excepciones (`EXIT HANDLER`):
 
 Si ocurre un error durante la ejecución, el procedimiento captura la excepción (`SQLEXCEPTION`), desasigna la sentencia preparada si quedó abierta y limpia las variables de sesión para evitar efectos secundarios.
 
-------------------------------------------------------------------------
-
-## 3.3 Solución a la Pregunta 3
-
-> **Pregunta:** ¿Por qué no se concatena directamente el texto de ordenación enviado por un formulario?
-
-### Explicación:
-
-Concatenar variables procedentes de la entrada del usuario (formularios web, API) directamente en una sentencia SQL genera una vulnerabilidad grave de **Inyección SQL (SQL Injection)**.
-
-### Riesgos:
-
-Si concatenáramos `p_orden` directamente sin lista blanca:
-
-``` sql
--- CÓDIGO INSEGURO Y VULNERABLE:
-SET @sql = CONCAT('SELECT * FROM alumnos ORDER BY ', p_orden);
-```
-
-Un atacante podría enviar en el parámetro `p_orden` inyecciones maliciosas como: 1. **Inyección de ordenación maliciosa**: `id_alumno; DROP TABLE alumnos; --` 2. **Extracción no autorizada de información (Blind SQLi)**: `(CASE WHEN (SELECT SUBSTRING(password,1,1) FROM usuarios)='a' THEN id_alumno ELSE nombre END)`
-
-**Conclusión:** La **lista blanca (White-listing)** garantiza que solo se procesen identificadores previamente autorizados y verificados por el desarrollador.
-
-### Equivalencias en SQL Dinámico para otros motores de bases de datos
+# Equivalencias en SQL Dinámico para otros motores de bases de datos
 
 El SQL dinámico permite construir consultas en tiempo de ejecución a partir de cadenas de texto. Todos los motores exigen separar los identificadores/tablas (que deben concatenarse con precauciones de seguridad) de los valores de los parámetros (que deben pasarse mediante variables enlazadas para evitar inyecciones SQL).
 
-#### **SQL Server (T-SQL)**
+## **SQL Server (T-SQL)**
 
 Utiliza el procedimiento almacenado del sistema `sp_executesql`, exigiendo definir explícitamente los tipos de datos de los parámetros:
 
@@ -62,7 +252,7 @@ SET @sql = N'SELECT * FROM alumnos WHERE activo = @p_activo';
 EXEC sp_executesql @sql, N'@p_activo BIT', @p_activo = 1;
 ```
 
-#### **PostgreSQL (PL/pgSQL)**
+## **PostgreSQL (PL/pgSQL)**
 
 Utiliza la instrucción nativa `EXECUTE` con la cláusula `USING`:
 
@@ -70,7 +260,7 @@ Utiliza la instrucción nativa `EXECUTE` con la cláusula `USING`:
 EXECUTE 'SELECT * FROM alumnos WHERE activo = $1' USING p_activo;
 ```
 
-#### **Oracle (PL/SQL)**
+## **Oracle (PL/SQL)**
 
 Utiliza la instrucción `EXECUTE IMMEDIATE` acompañada de `USING`:
 

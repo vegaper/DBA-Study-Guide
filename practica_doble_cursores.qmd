@@ -214,7 +214,7 @@ ORDER BY c.id_contrato;
 -- Confirmamos el lote.
 COMMIT;
 ```
-
+```
 +---------+------------+-------+
 | cliente | periodo    | total |
 +---------+------------+-------+
@@ -222,7 +222,7 @@ COMMIT;
 | Luis    | 2026-10-01 | 37.50 |
 | Marta   | 2026-10-01 | 35.00 |
 +---------+------------+-------+
-
+```
 
 Comprobad también los conceptos:
 
@@ -256,12 +256,13 @@ START TRANSACTION;
 CALL facturar_pendientes();
 COMMIT;
 ```
+```
 +----------------------+
 | contratos_facturados |
 +----------------------+
 |                    0 |
 +----------------------+
-
+```
 Las facturas guardadas y el filtro NOT EXISTS excluyen los contratos terminados.
 
 | Operación | Efecto |
@@ -505,30 +506,32 @@ DELIMITER ;
 START TRANSACTION;
 CALL cerrar_pendientes();
 ```
+```
 +--------+----------------+
 | vuelta | pedido_cerrado |
 +--------+----------------+
 |      1 |            101 |
 +--------+----------------+
-1 row in set (0,00 sec)
-
+```
+```
 +--------+----------------+
 | vuelta | pedido_cerrado |
 +--------+----------------+
 |      2 |            108 |
 +--------+----------------+
-1 row in set (0,01 sec)
-
+```
+```
 +------------------+
 | pedidos_cerrados |
 +------------------+
 |                2 |
 +------------------+
-1 row in set (0,01 sec)
+```
 ### Comprobamos estados, existencias y movimientos.
 
 ```sql
 SELECT * FROM pedidos ORDER BY id_pedido;
+```
 ```
 +-----------+-------------+----------+--------+-----------+
 | id_pedido | id_producto | cantidad | pagado | estado    |
@@ -537,9 +540,10 @@ SELECT * FROM pedidos ORDER BY id_pedido;
 |       108 |           2 |        3 |      1 | cerrado   |
 |       125 |           1 |        1 |      0 | pendiente |
 +-----------+-------------+----------+--------+-----------+
-
+```
 ```sql
 SELECT * FROM productos ORDER BY id_producto;
+```
 ```
 +-------------+---------+-------+
 | id_producto | nombre  | stock |
@@ -547,11 +551,12 @@ SELECT * FROM productos ORDER BY id_producto;
 |           1 | Teclado |     8 |
 |           2 | Ratón   |     5 |
 +-------------+---------+-------+
-
+```
 ```sql
 SELECT id_pedido, id_producto, unidades
 FROM movimientos_stock
 ORDER BY id_pedido;
+```
 ```
 +-----------+-------------+----------+
 | id_pedido | id_producto | unidades |
@@ -559,7 +564,7 @@ ORDER BY id_pedido;
 |       101 |           1 |       -2 |
 |       108 |           2 |       -3 |
 +-----------+-------------+----------+
-
+```
 ```sql
 COMMIT;
 ```
@@ -583,12 +588,13 @@ START TRANSACTION;
 CALL cerrar_pendientes();
 COMMIT;
 ```
+```
 +------------------+
 | pedidos_cerrados |
 +------------------+
 |                0 |
 +------------------+
-
+```
 
 ## Paso 6. Recibir el pago pendiente
 
@@ -606,6 +612,7 @@ Utilizamos el mismo procedimiento, sin cambiar su código.
 CALL cerrar_pendientes();
 COMMIT;
 ```
+```
 +--------+----------------+
 | vuelta | pedido_cerrado |
 +--------+----------------+
@@ -616,12 +623,14 @@ COMMIT;
 +------------------+
 |                1 |
 +------------------+
+```
 Comprobamos el resultado.
 ```sql
 SELECT * FROM productos ORDER BY id_producto;
 SELECT id_pedido, unidades
 FROM movimientos_stock
 ORDER BY id_pedido;
+```
 ```
 +-------------+---------+-------+
 | id_producto | nombre  | stock |
@@ -636,7 +645,7 @@ ORDER BY id_pedido;
 |       108 |       -3 |
 |       125 |       -1 |
 +-----------+----------+
-
+```
 Resultado esperado: se cierra un pedido, el 125; quedan 7 teclados y 5 ratones; aparece una tercera salida de −1 unidad. 
 La consulta del cursor ha encontrado un nuevo trabajo pendiente y ha reutilizado la operación individual.
 
