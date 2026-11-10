@@ -1,28 +1,30 @@
 ---
-title: " "
+title: "Practicas: Cursores "
 format: html
 ---
 
-# Práctica doble de CURSOR
-
 Facturación telefónica y cierre de pedidos · MySQL 8.4
 
-Trabajaremos en una base de datos independiente llamada laboratorio_cursor. Las dos prácticas siguen esta secuencia: consultar pendientes → probar una operación individual → utilizar el cursor para repetir esa operación → comprobar los cambios.
+Trabajaremos en una base de datos independiente llamada ***laboratorio_cursor***. Las dos prácticas siguen esta secuencia: consultar pendientes → probar una operación individual → utilizar el cursor para repetir esa operación → comprobar los cambios.
 
 Objetivos: comprender qué aporta un cursor, identificar la función de FETCH y reutilizar una operación de varias instrucciones para cada fila seleccionada.
 
-## Preparar la base de datos
+# Preparar la base de datos
+
+Aunque las dos prácticas no están relacionadas, hemos agrupado los datos en una sola base de datos por simplicidad. 
 
 Ejecuta el script para preparar la base de datos [practica_doble_cursores.sql](practica_doble_cursores.sql)
 
 Las claves foráneas relacionan las tablas. Las restricciones UNIQUE impiden duplicar facturas o movimientos del mismo pedido. Utilizamos InnoDB para poder deshacer los cambios de las pruebas.
 
-## Práctica A: facturación telefónica
+# Práctica A: facturación telefónica
 
 Objetivo: generar una factura y sus conceptos para cada contrato pendiente. Trabajaremos exclusivamente con octubre de 2026, sin IVA ni cobros, para concentrarnos en el cursor.
 
-### Paso 1. Consultar los contratos pendientes
 
+## Paso 1. Consultar los contratos pendientes
+
+Los contratos con facturación pendiente serán aquellos que no tengan ya una factura para el período '2026-10-01'
 ```sql
 SELECT c.id_contrato, c.cliente
 FROM contratos c
@@ -35,14 +37,17 @@ WHERE c.activo = TRUE
   )
 ORDER BY c.id_contrato;
 ```
-
 La consulta selecciona contratos activos que todavía no tienen factura de ese mes.
 
+```
++-------------+---------+
 | id_contrato | cliente |
-| --- | --- |
-| 1 | Ana |
-| 2 | Luis |
-| 3 | Marta |
++-------------+---------+
+|           1 | Ana     |
+|           2 | Luis    |
+|           3 | Marta   |
++-------------+---------+
+```
 
 NOT EXISTS exige que no se encuentre la factura correspondiente. SELECT 1 comprueba la existencia de una fila; no necesitamos mostrar sus columnas. ORDER BY establece el orden de los contratos.
 
@@ -55,7 +60,7 @@ FROM facturas;
 
 Resultado esperado: 0. El SELECT ha mostrado la lista de trabajo. Todavía no hemos facturado a nadie.
 
-### Paso 2. Crear la operación para facturar un contrato
+## Paso 2. Crear la operación para facturar un contrato
 
 Este procedimiento realiza el trabajo para un solo identificador: crea una cabecera y tres conceptos. Ejecutad el bloque completo. Los comentarios explican cada instrucción.
 
@@ -94,8 +99,10 @@ BEGIN
 -- Guarda el periodo y el importe calculado.
  VALUES(p_id,'2026-10-01',v_cuota+v_extra-v_desc);
 -- Recoge el identificador generado en esta conexión.
+ 
  SET v_factura=LAST_INSERT_ID();
 -- Prepara los conceptos asociados a esa cabecera.
+ 
  INSERT INTO detalle_factura(id_factura,concepto,importe)
 -- Añade el concepto de cuota.
  VALUES(v_factura,'Cuota',v_cuota),
@@ -110,7 +117,7 @@ DELIMITER ;
 
 COUNT y MAX producen una fila incluso si el contrato no existe. En ese caso, el recuento es cero y los importes son NULL; la validación impide llegar al INSERT. Como el identificador es único, MAX recoge el importe de la única fila posible.
 
-### Paso 3. Probar una factura y deshacerla
+## Paso 3. Probar una factura y deshacerla
 
 ```sql
 -- Agrupamos los cambios para poder deshacer esta prueba.
@@ -129,9 +136,12 @@ FROM facturas;
 
 Antes del ROLLBACK veremos una factura de 30,00 € y tres conceptos: cuota 30,00, extras 0,00 y descuento 0,00. Después del ROLLBACK, volverá a haber cero facturas.
 
-Ya tenemos una operación útil para un contrato. El siguiente objetivo es ejecutarla para todos los pendientes.
+Ya tenemos una operación útil para un contrato. El siguiente objetivo es ejecutarla para todos los pendientes usando un cursor.
 
-### Paso 4. Crear el procedimiento con cursor
+## Paso 4. Crear el procedimiento con cursor
+
+Creamos un procedimiento que tiene un cursor que recorre las distintas filas de la query que hemos visto en el paso1. Para cada una de ellas llama al procedimiento que hemos creado en el paso 2, que realiza la facturación para el período. 
+
 
 ```sql
 DELIMITER //
@@ -143,62 +153,55 @@ SQL SECURITY INVOKER
 MODIFIES SQL DATA
 -- Abre el bloque del lote.
 BEGIN
--- Al principio todavía no se ha agotado el cursor.
+-- la variable que determinará cuándo se sale del cursor
+-- se inicializa a FALSE.
  DECLARE v_fin BOOLEAN DEFAULT FALSE;
--- Recibirá el identificador de la fila actual.
- DECLARE v_id INT;
--- Cuenta llamadas individuales completadas.
- DECLARE v_hechos INT DEFAULT 0;
--- Asocia el cursor a la consulta siguiente.
+ DECLARE v_id INT; --guardará las ids sobre las que tenemos que trabajar.
+ DECLARE v_hechos INT DEFAULT 0; -- esta variable nos servirá de contador
+ 
  DECLARE cur CURSOR FOR
--- Selecciona identificadores; no crea facturas.
   SELECT c.id_contrato FROM contratos c
--- Exige un contrato activo que aún no tenga factura.
-  WHERE c.activo=TRUE AND NOT EXISTS (
--- Busca una factura que coincida con el contrato.
-   SELECT 1 FROM facturas f
--- Relaciona la factura con este contrato.
-   WHERE f.id_contrato=c.id_contrato
--- Limita la búsqueda al periodo del laboratorio.
-     AND f.periodo='2026-10-01')
--- Fija el orden del recorrido: 1, 2 y 3 al principio.
+  WHERE c.activo=TRUE 
+    AND NOT EXISTS (SELECT 1 FROM facturas f
+                    WHERE f.id_contrato=c.id_contrato
+                      AND f.periodo='2026-10-01')
   ORDER BY c.id_contrato;
+
 -- Define cómo responder cuando FETCH ya no obtiene filas.
  DECLARE CONTINUE HANDLER FOR NOT FOUND
--- Marca que el recorrido ha terminado.
-  SET v_fin=TRUE;
--- Abre el cursor. No ejecuta la operación individual.
- OPEN cur;
--- Comienza el bucle llamado recorrer.
- recorrer: LOOP
--- Obtiene el siguiente identificador y avanza el cursor.
-  FETCH cur INTO v_id;
--- Comprueba inmediatamente si esa extracción no obtuvo fila.
-  IF v_fin THEN
--- Abandona el bucle sin repetir el último identificador.
-   LEAVE recorrer;
--- Cierra la comprobación del fin.
-  END IF;
--- Ejecuta el trabajo real para el identificador recogido.
-  CALL facturar_contrato(v_id);
--- Cuenta la llamada que ha terminado correctamente.
-  SET v_hechos=v_hechos+1;
--- Muestra el seguimiento después de realizar el trabajo.
-  SELECT v_hechos AS vuelta, v_id AS contrato_facturado;
--- Vuelve a solicitar el siguiente identificador.
- END LOOP recorrer;
--- Cierra el cursor y libera sus recursos.
- CLOSE cur;
--- Devuelve cuántos elementos se han procesado.
+  SET v_fin=TRUE; -- Marca que el recorrido ha terminado.
+
+ OPEN cur; -- Abre el cursor. No ejecuta la operación individual.
+
+  recorrer: LOOP -- Comienza el bucle llamado recorrer.
+  -- Obtiene el siguiente identificador y avanza el cursor.
+    FETCH cur INTO v_id;
+  -- Comprueba inmediatamente si esa extracción no obtuvo fila.
+    IF v_fin THEN
+    LEAVE recorrer; -- Abandona el bucle sin repetir el último identificador.
+    END IF;
+
+  -- Ejecuta el trabajo real para el identificador recogido.
+    CALL facturar_contrato(v_id);
+  -- Cuenta la llamada que ha terminado correctamente.
+    SET v_hechos=v_hechos+1;
+  -- Muestra el seguimiento después de realizar el trabajo.
+    SELECT v_hechos AS vuelta, v_id AS contrato_facturado;
+
+ END LOOP recorrer;-- cierra este ciclo e inicia automáticamente otro.
+
+
+ CLOSE cur; -- Cierra el cursor y libera sus recursos.
+
  SELECT v_hechos AS contratos_facturados;
--- Termina el procedimiento del lote.
+
 END//
 DELIMITER ;
 ```
 
 Las declaraciones se colocan en este orden: variables → cursor → manejador. En la cuarta extracción no quedará ningún contrato. El manejador establecerá v_fin = TRUE. Después, CONTINUE permitirá llegar al IF, que abandonará el bucle.
 
-### Paso 5. Ejecutar el lote
+## Paso 5. Ejecutar el lote
 
 ```sql
 START TRANSACTION;
@@ -212,21 +215,14 @@ ORDER BY c.id_contrato;
 COMMIT;
 ```
 
-La llamada mostrará tres seguimientos:
++---------+------------+-------+
+| cliente | periodo    | total |
++---------+------------+-------+
+| Ana     | 2026-10-01 | 30.00 |
+| Luis    | 2026-10-01 | 37.50 |
+| Marta   | 2026-10-01 | 35.00 |
++---------+------------+-------+
 
-| vuelta | contrato_facturado |
-| --- | --- |
-| 1 | 1 |
-| 2 | 2 |
-| 3 | 3 |
-
-El resumen final indicará 3 contratos facturados. Las facturas serán:
-
-| Cliente | Total |
-| --- | --- |
-| Ana | 30,00 € |
-| Luis | 37,50 € |
-| Marta | 35,00 € |
 
 Comprobad también los conceptos:
 
@@ -237,18 +233,36 @@ JOIN facturas f USING (id_factura)
 JOIN contratos c USING (id_contrato)
 ORDER BY c.id_contrato, d.id_detalle;
 ```
+```txt
++---------+-----------+---------+
+| cliente | concepto  | importe |
++---------+-----------+---------+
+| Ana     | Cuota     |   30.00 |
+| Ana     | Extras    |    0.00 |
+| Ana     | Descuento |    0.00 |
+| Luis    | Cuota     |   25.00 |
+| Luis    | Extras    |   12.50 |
+| Luis    | Descuento |    0.00 |
+| Marta   | Cuota     |   40.00 |
+| Marta   | Extras    |    5.00 |
+| Marta   | Descuento |  -10.00 |
++---------+-----------+---------+
+```
 
-Veremos nueve conceptos, tres por factura.
-
-### Paso 6. Repetir la ejecución
+## Paso 6. Repetir la ejecución
 
 ```sql
 START TRANSACTION;
 CALL facturar_pendientes();
 COMMIT;
 ```
++----------------------+
+| contratos_facturados |
++----------------------+
+|                    0 |
++----------------------+
 
-Resultado esperado: 0 contratos facturados. No es el cursor quien recuerda ejecuciones anteriores. Las facturas guardadas y el filtro NOT EXISTS excluyen los contratos terminados.
+Las facturas guardadas y el filtro NOT EXISTS excluyen los contratos terminados.
 
 | Operación | Efecto |
 | --- | --- |
@@ -256,7 +270,7 @@ Resultado esperado: 0 contratos facturados. No es el cursor quien recuerda ejecu
 | CALL facturar_contrato(1) | Crea la factura de un contrato. |
 | CALL facturar_pendientes() | Recorre los pendientes y ejecuta la operación individual para cada uno. |
 
-### Paso 7. Recuperar el punto de partida de la práctica A
+## Paso 7. Recuperar el punto de partida de la práctica A
 
 Objetivo: eliminar las facturas y sus conceptos para poder repetir la facturación de los tres contratos.
 
@@ -301,11 +315,12 @@ Ahora los tres contratos vuelven a cumplir la condición de pendientes de factur
 
 Los identificadores automáticos pueden continuar desde números posteriores: eliminar las filas no reinicia AUTO_INCREMENT, y no necesitamos reiniciarlo para repetir la práctica.
 
-## Práctica B: cierre de pedidos
+-----------------------------------------------
+# Práctica B: cierre de pedidos
 
 Objetivo: ejecutar tres acciones por cada pedido pagado pendiente: descontar existencias, registrar el movimiento de salida y marcar el pedido como cerrado.
 
-### Paso 1. Consultar los pedidos que pueden cerrarse
+## Paso 1. Consultar los pedidos que pueden cerrarse
 
 ```sql
 SELECT id_pedido, id_producto, cantidad
@@ -314,175 +329,238 @@ WHERE pagado = TRUE
   AND estado = 'pendiente'
 ORDER BY id_pedido;
 ```
+```
++-----------+-------------+----------+
+| id_pedido | id_producto | cantidad |
++-----------+-------------+----------+
+|       101 |           1 |        2 |
+|       108 |           2 |        3 |
++-----------+-------------+----------+
+``` 
 
-Resultado esperado: pedidos 101 y 108. El pedido 125 no aparece porque todavía no está pagado. Comprobamos que consultar no ha realizado el cierre:
+
 
 ```sql
 SELECT * FROM productos ORDER BY id_producto;
+```
+```
++-------------+---------+-------+
+| id_producto | nombre  | stock |
++-------------+---------+-------+
+|           1 | Teclado |    10 |
+|           2 | Ratón   |     8 |
++-------------+---------+-------+
+``` 
+```sql
 SELECT COUNT(*) AS movimientos
 FROM movimientos_stock;
 ```
-
+```
++-------------+
+| movimientos |
++-------------+
+|           0 |
++-------------+
+```
 El stock sigue siendo 10 teclados y 8 ratones, y hay cero movimientos.
 
-### Paso 2. Crear la operación para cerrar un pedido
+## Paso 2. Crear la operación para cerrar un pedido
 
 ```sql
 DELIMITER //
--- Recibe el identificador de un pedido.
+
 CREATE PROCEDURE cerrar_pedido(IN p_id INT)
--- Utiliza los permisos de quien llama.
 SQL SECURITY INVOKER
--- Describe que la rutina escribe datos.
 MODIFIES SQL DATA
--- Abre la operación individual.
 BEGIN
--- Variables para el recuento y los datos del pedido.
  DECLARE v_n, v_producto, v_cantidad, v_pagado INT;
--- Guardará el estado del pedido.
  DECLARE v_estado VARCHAR(10);
--- Recoge el recuento, el producto y las unidades.
- SELECT COUNT(*),MAX(id_producto),MAX(cantidad),
--- Recoge también el pago y el estado.
-        MAX(pagado),MAX(estado)
--- Asigna las cinco columnas a las cinco variables.
- INTO v_n,v_producto,v_cantidad,v_pagado,v_estado
--- Consulta el pedido solicitado.
+
+ -- seleccionamos el pedido con la id que nos han pasado como parametro.
+ SELECT COUNT(*),MAX(id_producto),MAX(cantidad),MAX(pagado),MAX(estado)
+ INTO   v_n,         v_producto,  v_cantidad,   v_pagado,   v_estado
  FROM pedidos WHERE id_pedido=p_id;
--- Rechaza pedidos inexistentes, impagados o ya cerrados.
+ 
+ -- rechazar pedidos invalidos por lógica del negocio
  IF v_n<>1 OR v_pagado<>1 OR v_estado<>'pendiente' THEN
--- Genera un error de validación.
   SIGNAL SQLSTATE '45000'
--- Explica por qué no puede cerrarse.
    SET MESSAGE_TEXT='Pedido no apto para cierre';
--- Cierra la validación.
  END IF;
+
 -- Descuenta las unidades del producto.
  UPDATE productos SET stock=stock-v_cantidad
--- Solo permite el descuento si hay existencias suficientes.
- WHERE id_producto=v_producto AND stock>=v_cantidad;
--- Comprueba inmediatamente si se hizo el descuento.
+ WHERE id_producto=v_producto 
+      AND stock>=v_cantidad; -- Solo permite el descuento si hay existencias suficientes.
+
+-- Comprueba inmediatamente si se hizo el descuento y lanza un error si es necesario
  IF ROW_COUNT()<>1 THEN
--- Genera un error cuando no pudo realizarse.
   SIGNAL SQLSTATE '45000'
--- Informa del problema de existencias.
    SET MESSAGE_TEXT='Stock insuficiente';
--- Cierra la comprobación del descuento.
  END IF;
+
 -- Registra la salida de almacén.
  INSERT INTO movimientos_stock
--- Identifica pedido, producto y variación de unidades.
   (id_pedido,id_producto,unidades)
--- Guarda la cantidad negativa que se ha descontado.
  VALUES(p_id,v_producto,-v_cantidad);
+
 -- Marca el pedido como cerrado.
  UPDATE pedidos SET estado='cerrado'
--- Modifica únicamente el pedido recibido.
  WHERE id_pedido=p_id;
--- Finaliza las tres acciones del cierre.
+
 END//
 DELIMITER ;
 ```
 
-ROW_COUNT() se consulta inmediatamente después del descuento. Como la cantidad solicitada es positiva, modificar una fila indica que se han descontado unidades.
+ROW_COUNT() se consulta inmediatamente después de la operación. Como la cantidad solicitada es positiva, modificar una fila indica que se han descontado unidades.
 
-Este procedimiento no confirma por su cuenta. Las tres acciones pertenecen a la transacción que controla quien lo llama.
 
-### Paso 3. Probar un cierre individual
+## Paso 3. Probar un cierre individual
 
 ```sql
 START TRANSACTION;
 CALL cerrar_pedido(101);
--- Comprobamos los tres efectos.
-SELECT * FROM productos ORDER BY id_producto;
-SELECT * FROM movimientos_stock;
-SELECT * FROM pedidos WHERE id_pedido = 101;
--- Recuperamos el estado inicial.
-ROLLBACK;
 ```
 
-Antes del ROLLBACK veremos:
+Comprobamos que las tres acciones se han realizado con éxito:
+```sql 
+SELECT * FROM productos ORDER BY id_producto;
+```
++-------------+---------+-------+
+| id_producto | nombre  | stock |
++-------------+---------+-------+
+|           1 | Teclado |     8 |
+|           2 | Ratón   |     8 |
++-------------+---------+-------+
 
-| Comprobación | Resultado |
-| --- | --- |
-| Stock de teclados | 8 |
-| Movimiento del pedido 101 | −2 unidades |
-| Estado del pedido 101 | Cerrado |
+```sql 
+SELECT * FROM movimientos_stock;
+```
++---------------+-----------+-------------+----------+
+| id_movimiento | id_pedido | id_producto | unidades |
++---------------+-----------+-------------+----------+
+|             1 |       101 |           1 |       -2 |
++---------------+-----------+-------------+----------+
+```sql 
+SELECT * FROM pedidos WHERE id_pedido = 101;
+```
++-----------+-------------+----------+--------+---------+
+| id_pedido | id_producto | cantidad | pagado | estado  |
++-----------+-------------+----------+--------+---------+
+|       101 |           1 |        2 |      1 | cerrado |
++-----------+-------------+----------+--------+---------+
+Recuperamos el estado inicial.
+```sql 
+ROLLBACK;
+```
+## Paso 4. Crear el procedimiento con cursor que reutiliza el cierre
 
-Después del ROLLBACK, tendremos de nuevo 10 teclados, ningún movimiento y el pedido pendiente.
+Ahora utilizaremos un nuevo procedimiento que iterará sobre los pedidos que necesiten ser cerrados y llamará al procedimiento que acabamos de crear:
 
-### Paso 4. Crear el cursor que reutiliza el cierre
 
 ```sql
 DELIMITER //
--- Define una operación de lote sin parámetros.
 CREATE PROCEDURE cerrar_pendientes()
--- Utiliza los permisos de quien llama.
 SQL SECURITY INVOKER
--- Describe los cambios realizados a través de las llamadas.
 MODIFIES SQL DATA
--- Abre el bloque del lote.
 BEGIN
--- Al principio todavía no se ha agotado el cursor.
+
  DECLARE v_fin BOOLEAN DEFAULT FALSE;
--- Recibirá el identificador de la fila actual.
  DECLARE v_id INT;
--- Cuenta llamadas individuales completadas.
  DECLARE v_hechos INT DEFAULT 0;
--- Asocia el cursor a la consulta siguiente.
+
  DECLARE cur CURSOR FOR
--- Selecciona los pedidos que pueden procesarse.
   SELECT id_pedido FROM pedidos
--- Exige pago recibido y cierre todavía pendiente.
   WHERE pagado=TRUE AND estado='pendiente'
--- Fija el orden: 101 y 108 al principio.
   ORDER BY id_pedido;
--- Define cómo responder cuando FETCH ya no obtiene filas.
+
  DECLARE CONTINUE HANDLER FOR NOT FOUND
--- Marca que el recorrido ha terminado.
   SET v_fin=TRUE;
--- Abre el cursor. No ejecuta la operación individual.
+
  OPEN cur;
--- Comienza el bucle llamado recorrer.
+
  recorrer: LOOP
--- Obtiene el siguiente identificador y avanza el cursor.
+
   FETCH cur INTO v_id;
--- Comprueba inmediatamente si esa extracción no obtuvo fila.
   IF v_fin THEN
--- Abandona el bucle sin repetir el último identificador.
    LEAVE recorrer;
--- Cierra la comprobación del fin.
   END IF;
--- Ejecuta el trabajo real para el identificador recogido.
+
   CALL cerrar_pedido(v_id);
--- Cuenta la llamada que ha terminado correctamente.
   SET v_hechos=v_hechos+1;
--- Muestra el seguimiento después de realizar el trabajo.
   SELECT v_hechos AS vuelta, v_id AS pedido_cerrado;
--- Vuelve a solicitar el siguiente identificador.
+
  END LOOP recorrer;
--- Cierra el cursor y libera sus recursos.
+
  CLOSE cur;
--- Devuelve cuántos elementos se han procesado.
+
  SELECT v_hechos AS pedidos_cerrados;
--- Termina el procedimiento del lote.
+
 END//
 DELIMITER ;
 ```
 
-La estructura del cursor es la misma que en telefonía. Cambian la selección de pendientes y el procedimiento al que llamamos.
-
-### Paso 5. Ejecutar el cierre del lote
+## Paso 5. Ejecutar el procedimiento en lote
 
 ```sql
 START TRANSACTION;
 CALL cerrar_pendientes();
--- Comprobamos estados, existencias y movimientos.
+```
++--------+----------------+
+| vuelta | pedido_cerrado |
++--------+----------------+
+|      1 |            101 |
++--------+----------------+
+1 row in set (0,00 sec)
+
++--------+----------------+
+| vuelta | pedido_cerrado |
++--------+----------------+
+|      2 |            108 |
++--------+----------------+
+1 row in set (0,01 sec)
+
++------------------+
+| pedidos_cerrados |
++------------------+
+|                2 |
++------------------+
+1 row in set (0,01 sec)
+### Comprobamos estados, existencias y movimientos.
+
+```sql
 SELECT * FROM pedidos ORDER BY id_pedido;
+```
++-----------+-------------+----------+--------+-----------+
+| id_pedido | id_producto | cantidad | pagado | estado    |
++-----------+-------------+----------+--------+-----------+
+|       101 |           1 |        2 |      1 | cerrado   |
+|       108 |           2 |        3 |      1 | cerrado   |
+|       125 |           1 |        1 |      0 | pendiente |
++-----------+-------------+----------+--------+-----------+
+
+```sql
 SELECT * FROM productos ORDER BY id_producto;
+```
++-------------+---------+-------+
+| id_producto | nombre  | stock |
++-------------+---------+-------+
+|           1 | Teclado |     8 |
+|           2 | Ratón   |     5 |
++-------------+---------+-------+
+
+```sql
 SELECT id_pedido, id_producto, unidades
 FROM movimientos_stock
 ORDER BY id_pedido;
+```
++-----------+-------------+----------+
+| id_pedido | id_producto | unidades |
++-----------+-------------+----------+
+|       101 |           1 |       -2 |
+|       108 |           2 |       -3 |
++-----------+-------------+----------+
+
+```sql
 COMMIT;
 ```
 
@@ -505,10 +583,14 @@ START TRANSACTION;
 CALL cerrar_pendientes();
 COMMIT;
 ```
++------------------+
+| pedidos_cerrados |
++------------------+
+|                0 |
++------------------+
 
-Obtendremos 0 pedidos cerrados. El stock seguirá siendo 8 y 5.
 
-### Paso 6. Recibir el pago pendiente
+## Paso 6. Recibir el pago pendiente
 
 Ahora simulamos que se ha pagado el pedido 125:
 
@@ -518,19 +600,47 @@ START TRANSACTION;
 UPDATE pedidos
 SET pagado = TRUE
 WHERE id_pedido = 125;
--- Utilizamos el mismo procedimiento, sin cambiar su código.
+```
+Utilizamos el mismo procedimiento, sin cambiar su código.
+```sql
 CALL cerrar_pendientes();
 COMMIT;
--- Comprobamos el resultado.
+```
++--------+----------------+
+| vuelta | pedido_cerrado |
++--------+----------------+
+|      1 |            125 |
++--------+----------------+
++------------------+
+| pedidos_cerrados |
++------------------+
+|                1 |
++------------------+
+Comprobamos el resultado.
+```sql
 SELECT * FROM productos ORDER BY id_producto;
 SELECT id_pedido, unidades
 FROM movimientos_stock
 ORDER BY id_pedido;
 ```
++-------------+---------+-------+
+| id_producto | nombre  | stock |
++-------------+---------+-------+
+|           1 | Teclado |     7 |
+|           2 | Ratón   |     5 |
++-------------+---------+-------+
++-----------+----------+
+| id_pedido | unidades |
++-----------+----------+
+|       101 |       -2 |
+|       108 |       -3 |
+|       125 |       -1 |
++-----------+----------+
 
-Resultado esperado: se cierra un pedido, el 125; quedan 7 teclados y 5 ratones; aparece una tercera salida de −1 unidad. La consulta del cursor ha encontrado un nuevo trabajo pendiente y ha reutilizado la operación individual.
+Resultado esperado: se cierra un pedido, el 125; quedan 7 teclados y 5 ratones; aparece una tercera salida de −1 unidad. 
+La consulta del cursor ha encontrado un nuevo trabajo pendiente y ha reutilizado la operación individual.
 
-## Qué debemos haber comprendido
+# Qué debemos haber comprendido
 
 | Elemento | Función en ambas prácticas |
 | --- | --- |
@@ -548,7 +658,7 @@ La utilidad del cursor está en reutilizar una operación de varias instruccione
 
 Para calcular un total o aplicar una misma modificación a muchas filas, una consulta o un UPDATE de conjunto suele ser más sencillo. En estos ejemplos queremos llamar repetidamente a una operación individual que ya hemos creado y comprobado.
 
-### Errores que debemos evitar
+## Errores que debemos evitar
 
 * No comprobar v_fin después de FETCH: podríamos reutilizar el último identificador.
 * Pensar que CLOSE confirma cambios: cerrar el cursor y confirmar la transacción son operaciones distintas.
@@ -556,7 +666,7 @@ Para calcular un total o aplicar una misma modificación a muchas filas, una con
 * Continuar tras un error: si falla una llamada durante una transacción, deteneos y ejecutad ROLLBACK en esa misma conexión.
 * Ejecutar estos lotes simultáneamente desde varias sesiones: esta práctica está diseñada para una sola sesión.
 
-## Recuperar el punto de partida
+# Recuperar el punto de partida
 
 Para repetir las demostraciones, ejecutad este bloque al terminar y sin transacciones pendientes:
 
@@ -582,7 +692,4 @@ SELECT COUNT(*) AS facturas FROM facturas;
 SELECT * FROM pedidos ORDER BY id_pedido;
 SELECT * FROM productos ORDER BY id_producto;
 ```
-
 Los identificadores automáticos pueden conservar huecos después de las pruebas; no necesitan volver a empezar por uno.
-
-Nota de validación: se ha revisado la coherencia del material. La ejecución completa de las pruebas en MySQL sigue pendiente.

@@ -72,6 +72,13 @@ DECLARE v_total_mascotas INT DEFAULT 0; --DECLARACION
 SET v_total_mascotas =1 ---ASIGNACION
 ```
 
+También se pueden crear varias variables a la vez del mismo tipo:
+```sql
+DECLARE v_var1, v_var2, v_var3 DECIMAL(8,2) DEFAULT 0.00;
+SET v_var1 = 10.50, v_var2 = 20.00, v_var3 = 30.25;
+
+```
+
 ## Variables de Sesión (Variables de Usuario)
 
 Ámbito (Scope): Disponibles globalmente durante toda la conexión/sesión actual del usuario. Sintaxis: Se identifican por llevar el prefijo \@ (@nombre_variable). Vida útil: Persisten hasta que el usuario cierra la sesión o finaliza la conexión con el servidor. No requieren declaración previa de tipo.
@@ -98,6 +105,25 @@ SELECT COUNT(*) INTO v_total_mascotas
 FROM mascotas 
 WHERE estado = 'En adopción';
 ```
+
+Si vas a trabajar con más de una variable a la vez la sintaxis queda así:
+```sql
+DECLARE v_var1 VARCHAR(50);
+DECLARE v_var2 INT;
+DECLARE v_var3 VARCHAR(50);
+
+SELECT nombre, edad, raza 
+INTO v_var1, v_var2, v_var3 
+FROM mascotas 
+WHERE id = 1; 
+``` 
+
+::: nota
+Cuando usas SELECT ... INTO para asignar variables en un procedimiento almacenado, la consulta debe devolver exactamente una sola fila.
+Si la consulta devuelve cero filas, las variables se quedarán con su valor anterior (o NULL) y MySQL lanzará una advertencia.
+
+Si la consulta devuelve más de una fila, MySQL lanzará un error crítico (Error Code: 1172. Result consisted of more than one row) y el procedimiento fallará. Por eso siempre es buena práctica asegurarte de que tu WHERE apunte a un registro único (usando una llave primaria, etc.).
+:::
 
 # Tipos de variables por ambito (scope) en SQL Server / T-SQL
 
