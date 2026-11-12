@@ -1,0 +1,254 @@
+---
+title: "Monitor de Base de Datos con Percona"
+format: html
+---
+
+Vamos a usar una herramienta de monitorización gratuita y open source.
+
+<https://docs.percona.com/percona-monitoring-and-management/3/index.html>
+
+Trabajamos en cualquier maquina virtual donde hayamos instalado el servidor MySQL.
+
+Si no lo hemos hecho aún en nuestro servidor, configurar DNS para poder descargar la repo de PMM
+
+``` bash
+sudo mkdir -p /etc/systemd/resolved.conf.d/
+sudo tee /etc/systemd/resolved.conf.d/dns.conf <<EOF
+[Resolve]
+DNS=8.8.8.8 1.1.1.1
+EOF
+sudo systemctl restart systemd-resolved
+```
+
+# Instalar y levantar Docker
+
+``` bash
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+```
+
+Añadir el repositorio de Docker
+
+``` bash
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+```
+
+``` bash
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+comprobar
+
+``` bash
+sudo systemctl status docker
+```
+
+
+Las instrucciones para configurar Percona están completas pero en inglés [aqui ](https://docs.percona.com/percona-monitoring-and-management/3/quickstart/quickstart.html)
+
+# Desplegar el servidor PMM mediante el script oficial
+
+El script de instalación automatizada detecta el entorno, gestiona contenedores previos y despliega la versión de servidor compatible de forma autónoma.
+Instala el paquete del agente de Percona directamente en el sistema operativo de la máquina virtual para que pueda extraer las métricas de tu MySQL nativo
+
+``` bash
+curl -fsSL https://raw.githubusercontent.com/percona/pmm/refs/heads/main/get-pmm.sh | /bin/bash
+```
+
+- Instala Docker si no estaba ya instalado en tu sistema.
+
+- Para cualquier contenedor de Docker que esté corriendo actualmente PMM y lo renombra de `pmm-server` a `pmm-server-{timestamp}` .
+
+- Descarga y corre la última imagen docker de PMM.
+
+``` txt
+Checking docker installation - installed.
+
+Pulling percona/pmm-server:3
+Created PMM Data Volume: pmm-data
+Starting PMM Server...
+Created PMM Server: pmm-server
+
+Use the following command if you ever need to update your container manually:
+        docker pull percona/pmm-server:3
+
+        docker run -d -p 443:8443 --volume pmm-data:/srv --name pmm-server --network pmm-net  --restart always percona/pmm-server:3
+
+PMM Server has been successfully setup on this system!
+
+You can access your new server using one of the following web addresses:
+        https://127.0.0.1:443/
+        https://10.0.20.101:443/
+        https://172.17.0.1:443/
+        https://172.18.0.1:443/
+
+The default username is 'admin' and the password is 'admin' :)
+Note: Some browsers may not trust the default SSL certificate when you first open one of the urls above.
+If this is the case, Chrome users may want to type 'thisisunsafe' to bypass the warning.
+```
+
+## Comprobar que el servicio está activo e inicializar contraseña.
+
+Abre un navegador y conectate a la ip de tu servidor, en nuestro caso: `http://10.0.20.101`
+
+se abrirá <https://10.0.20.101/graph/login>
+
+![](images/paste-45.png)
+
+Entra con los valores por defecto:
+
+- usuario: admin
+
+- contraseña: admin
+
+Tras esa primera conexión se nos pedirá que cambiemos la contraseña. Para esta practica pondremos 1234.
+
+# **Conectar a la base de datos**
+
+## Crear un usuario en la base de datos.
+
+Dentro de mysql: cambia \<your_password\> por 1234 o la contraseña que hayas creado en el paso anterior.
+
+``` sql
+CREATE USER 'pmm'@'127.0.0.1' IDENTIFIED BY '<your_password>' WITH MAX_USER_CONNECTIONS 10;
+GRANT SELECT, PROCESS, REPLICATION CLIENT, RELOAD, BACKUP_ADMIN ON *.* TO 'pmm'@'127.0.0.1';
+```
+
+## Instalar el cliente PMM en la VM
+
+Instala el paquete del cliente directamente utilizando el gestor de paquetes del sistema operativo:
+
+Ejecuta en la terminal con permisos de root.
+
+Descarga la repo:
+
+``` bash
+
+sudo wget https://repo.percona.com/apt/percona-release_latest.generic_all.deb
+dpkg -i percona-release_latest.generic_all.deb
+```
+
+Activa la repo:
+
+``` bash
+sudo percona-release enable pmm3-client release
+```
+
+Instala el paquete del cliente PMM:
+
+``` bash
+sudo apt update
+sudo apt install -y pmm-client
+```
+
+Registra el cliente en la base de datos:
+
+``` sql
+pmm-admin config --server-insecure-tls --server-url=https://admin:{contraseña}@{ip}:443
+```
+
+cambiar {contraseña} y {ip} por los valores de tu sistema, en nuestro caso \`sudo pmm-admin config --server-insecure-tls --server-url=[https://admin:1234\@10.0.20.101:443](https://admin:1234@10.0.20.101:443)\`
+
+Añade a PMM tu base de datos usando *Performance Schema*
+
+``` bash
+sudo pmm-admin add mysql --query-source=perfschema --username=pmm --password=<your_password>
+```
+
+``` txt
+MySQL Service added.
+Service ID  : b6301ce6-655d-45d0-8a58-7d1a667caea9
+Service name: myserver-mysql
+
+Table statistics collection enabled (the limit is 1000, the actual table count is 386).
+```
+
+# Usar el dashboard
+
+Después de instalar y connectar la base de datos ya podemos ir a la página del monitor.
+
+Refrescar o volver a abrir <https://10.0.20.101/>
+
+El monitor estará ya mostrando los datos de nuestro servidor\
+![](images/paste-46.png)
+
+## Crear unas queries de prueba
+
+### Generar carga de CPU con bucles matemáticos:Prueba rápida.
+
+Ejecuta esta consulta para forzar cálculos pesados en un bucle repetitivo durante unos segundos, lo que elevará el uso de CPU visible en el dashboard de rendimiento de MySQL:
+
+``` sql
+SELECT BENCHMARK(50000000, MD5(RAND()));
+```
+
+*Verification:* El dashboard de PMM en Grafana (en la sección *MySQL Performance* \> *MySQL Overview*) mostrará un pico repentino en el uso de CPU de la base de datos.
+
+### Generar lentitud artificial (Slow Query Log):Prueba de QAN.
+
+Ejecuta esta consulta para simular una consulta lenta artificialmente utilizando la función de pausa del sistema:
+
+``` sql
+SELECT SLEEP(5);
+```
+
+### Provocar contención de bloqueos (Locks)
+
+Abre dos terminales de MySQL distintas para simular bloqueos concurrentes:
+
+- **Terminal 1:** Bloquea una variable global temporal para mantener un recurso ocupado:
+
+  ``` sql
+  SELECT GET_LOCK('prueba_pmm_lock', 30);
+  ```
+
+- **Terminal 2:** Intenta adquirir el mismo bloqueo, lo que provocará una espera que PMM registrará como contención:
+
+  ``` sql
+  SELECT GET_LOCK('prueba_pmm_lock', 30);
+  ```
+
+- Terminal 1: Libera el bloqueo.
+
+  ``` sql
+  SELECT RELEASE_LOCK('prueba_pmm_lock');
+  ```
+
+  # HAcer el monitor accesible a todas las direcciones de red.
+  sudo docker stop pmm-server
+sudo docker rm pmm-server
+
+```bash
+sudo docker run -d \
+  --name pmm-server \
+  -p 80:80 \
+  -p 443:443 \
+  --restart always \
+  -v pmm-data:/srv \
+  percona/pmm-server:3
+```
+```txt
+CONTAINER ID   IMAGE                  COMMAND                CREATED              STATUS                        PORTS                                                                                              NAMES
+60186f025a3f   percona/pmm-server:3   "/opt/entrypoint.sh"   About a minute ago   Up About a minute (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 8080/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 8443/tcp   pmm-server
+```
+vemos que el contenedor docker está ahora escuchando por 0.0.0.0 en los puertos 80 y 443
+
+Permitir el tráfico en el cortafuegos de Ubuntu (UFW)
+Si tienes el cortafuegos del sistema activo, asegúrate de permitir el tráfico web entrante en esos puertos:
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw reload
+```
+
+Verification: Ejecuta sudo ufw status y comprueba que las reglas de los puertos 80 y 443 se muestran como ALLOW.
+
+Comprueba que otro ordenador puede acceder: https://10.0.20.101/
+

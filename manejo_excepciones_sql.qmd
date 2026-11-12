@@ -18,14 +18,12 @@ Antes de ver la sintaxis específica de cada gestor, es necesario entender tres 
 
 ## Modos de Reacción al Error
 
--   **Continuar (Continue):** Se detecta el fallo, se ejecuta una acción correctiva o de registro (*logging*), y el programa **continúa** ejecutando la siguiente línea.
--   **Salir/Abortar (Exit / Rollback):** Se captura el error, se cancela la transacción en curso para no dejar datos a medias, y se interrumpe la ejecución del bloque actual.
+- **Continuar (Continue):** Se detecta el fallo, se ejecuta una acción correctiva o de registro (*logging*), y el programa **continúa** ejecutando la siguiente línea.
+- **Salir/Abortar (Exit / Rollback):** Se captura el error, se cancela la transacción en curso para no dejar datos a medias, y se interrumpe la ejecución del bloque actual.
 
 ## Identificadores de Error (SQLSTATE y Códigos)
 
 La mayoría de motores relacionales utilizan el estándar ISO de códigos de error de 5 caracteres alfanuméricos llamado **`SQLSTATE`**. \* Por ejemplo, la clase `45000` está reservada globalmente para **excepciones personalizadas definidas por el usuario**.
-
-
 
 # El comando `SIGNAL` en MySQL y MariaDB
 
@@ -40,11 +38,11 @@ SIGNAL SQLSTATE 'sqlstate_value'
     [SET MESSAGE_TEXT = 'Descripción detallada del error'];
 ```
 
--   **`SQLSTATE`**: Es un código de 5 caracteres estandarizado a nivel internacional.
+- **`SQLSTATE`**: Es un código de 5 caracteres estandarizado a nivel internacional.
 
-    -   Por convenio universal, para **errores personalizados creados por el usuario** (reglas de negocio propias), siempre se utiliza el código genérico **`'45000'`**.
+  - Por convenio universal, para **errores personalizados creados por el usuario** (reglas de negocio propias), siempre se utiliza el código genérico **`'45000'`**.
 
--   **`MESSAGE_TEXT`**: Es el mensaje de texto legible que recibirá la aplicación cliente o que atrapará tu manejador de excepciones (`DECLARE HANDLER`).
+- **`MESSAGE_TEXT`**: Es el mensaje de texto legible que recibirá la aplicación cliente o que atrapará tu manejador de excepciones (`DECLARE HANDLER`).
 
 ## Casos de Uso Principales
 
@@ -192,18 +190,19 @@ END;
 
 Un handler en MySQL es un mecanismo de control de excepciones que permite capturar y gestionar errores, advertencias o condiciones específicas que ocurren durante la ejecución de un procedimiento almacenado, función, trigger o evento. Cuando se produce la condición definida, MySQL ejecuta el bloque de código asociado al handler, permitiendo por ejemplo realizar un ROLLBACK, registrar el error o continuar la ejecución sin interrumpir completamente el proceso.
 
-```sql
+``` sql
 DECLARE {CONTINUE | EXIT} HANDLER
     FOR condicion
     sentencia;
 ```
+
 Donde:
 
-CONTINUE: ejecuta el handler y continúa con la siguiente instrucción.
-EXIT: ejecuta el handler y abandona el bloque BEGIN...END actual.
+CONTINUE: ejecuta el handler y continúa con la siguiente instrucción. EXIT: ejecuta el handler y abandona el bloque BEGIN...END actual.
 
-Condiciones disponibles: 
-```sql
+Condiciones disponibles:
+
+``` sql
 -- Cualquier error SQL
 SQLEXCEPTION
 
@@ -218,11 +217,11 @@ NOT FOUND
 
 -- Estado SQL (SQLSTATE)
 SQLSTATE '23000'
-``` 
+```
 
 Ejemplos:
 
-```sql
+``` sql
 -- Capturar cualquier error SQL
 DECLARE EXIT HANDLER FOR SQLEXCEPTION
 BEGIN
@@ -230,33 +229,36 @@ BEGIN
 END;
 ```
 
-```sql
+``` sql
 -- Capturar clave duplicada (error 1062)
 DECLARE CONTINUE HANDLER FOR 1062
 SET v_duplicado = 1;
 ```
-```sql
+
+``` sql
 -- Capturar violación de restricción de integridad
 DECLARE EXIT HANDLER FOR SQLSTATE '23000'
 BEGIN
     ROLLBACK;
 END;
 ```
-```sql
+
+``` sql
 -- Capturar múltiples condiciones
 DECLARE EXIT HANDLER FOR SQLWARNING, SQLEXCEPTION
 BEGIN
     ROLLBACK;
 END;
 ```
+
 Las condiciones basadas en SQLSTATE suelen ser más portables entre versiones y motores, mientras que los códigos numéricos (por ejemplo, 1062) son específicos de MySQL.
 
 En MySQL, los DECLARE ... HANDLER solo pueden definirse dentro de rutinas almacenadas:
 
--   PROCEDURE
--   FUNCTION
--   TRIGGER
--   EVENT
+- PROCEDURE
+- FUNCTION
+- TRIGGER
+- EVENT
 
 No puedes declarar un manejador de errores directamente en un script SQL normal ejecutado desde el cliente.
 
@@ -275,10 +277,10 @@ END;
 
 ## Tipos de Condición en MySQL
 
--   `SQLEXCEPTION`: Captura cualquier error grave de SQL.
--   `SQLWARNING`: Captura advertencias.
--   `NOT FOUND`: Captura casos donde un `SELECT INTO` o un `FETCH` de cursor no encuentra filas.
--   `SQLSTATE 'codigo'`: Captura un código específico de error.
+- `SQLEXCEPTION`: Captura cualquier error grave de SQL.
+- `SQLWARNING`: Captura advertencias.
+- `NOT FOUND`: Captura casos donde un `SELECT INTO` o un `FETCH` de cursor no encuentra filas.
+- `SQLSTATE 'codigo'`: Captura un código específico de error.
 
 ## Ejemplo Práctico en MySQL: Transacción Segura con `EXIT HANDLER`
 
@@ -354,8 +356,10 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql;
 ```
+
 Se pueden dentro de bloques PL/pgSQL anónimos (DO), sin necesidad de crear una función permanente:
-```sql
+
+``` sql
 DO $$
 BEGIN
     INSERT INTO clientes VALUES (1);
@@ -372,7 +376,6 @@ $$;
 Permite manejo de errores directamente en scripts mediante bloques TRY...CATCH, sin necesidad de crear un procedimiento.
 
 SQL Server adopta la sintaxis nativa **`BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH`**, idéntica al manejo de errores en lenguajes como C# o Java.
-
 
 ### Ejemplo Ilustrativo:
 
@@ -406,7 +409,7 @@ END;
 
 o fuera de un procedimiento:
 
-```sql
+``` sql
 BEGIN TRY
     BEGIN TRANSACTION;
 
@@ -419,7 +422,7 @@ BEGIN CATCH
 
     PRINT ERROR_MESSAGE();
 END CATCH;
-``` 
+```
 
 ## Oracle (PL/SQL)
 
@@ -458,8 +461,10 @@ EXCEPTION
 END;
 /
 ```
+
 Permite ejecutar bloques anónimos PL/SQL con manejo de excepciones sin necesidad de encapsular en un procedimiento
-```sql
+
+``` sql
 BEGIN
     INSERT INTO clientes VALUES (1);
 
@@ -469,12 +474,13 @@ EXCEPTION
 END;
 /
 ```
+
 ------------------------------------------------------------------------
 
 # Cuadro Comparativo Resumen
 
 | Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
-|:----------------|:----------------|:----------------|:--------------------|
+|:-----------|:----------------|:----------------|:------------------------|
 | **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
 | **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
 | **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
@@ -562,8 +568,10 @@ DELIMITER ;
 
 De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.
 
-::: practica
+
 # Ejemplos explicativos de manejo de errores y `RESIGNAL`.
+
+::: practica
 
 Vamos a ver en la práctica cómo responde sql a errores en distintas situaciones de manejo. Tenemos un procedimiento muy sencillo donde simplemente sumamos uno al valor introducido y lo devolvemos, pero tenemos dos situaciones que generarán un error de lógica interna: valores de 2 y 3 dan error.
 
@@ -759,7 +767,7 @@ CASO 3: `CALL sp_test_v2(3,@salida);` Atrapa el error, asigna p_out = -3 antes d
 
 ![](images/paste-18.png)
 
-CASO 4: `CALL sp_test_v2(3,@salida);`
+CASO 4: `CALL sp_test_v2(4,@salida);`
 
 El código es igual que el anterior pero con RESIGNAL.
 
@@ -1014,11 +1022,11 @@ A. El procedimiento termina normalmente
 
 OUT devuelto
 
--   Sin errores.
+- Sin errores.
 
--   Error capturado por EXIT sin RESIGNAL.
+- Error capturado por EXIT sin RESIGNAL.
 
--   Error capturado por CONTINUE sin RESIGNAL.
+- Error capturado por CONTINUE sin RESIGNAL.
 
 MySQL devuelve al exterior el valor que tenga el parámetro `OUT` al finalizar el procedimiento.
 
@@ -1026,11 +1034,11 @@ B. El procedimiento termina propagando un error
 
 OUT no devuelto
 
--   SIGNAL sin HANDLER.
+- SIGNAL sin HANDLER.
 
--   EXIT con RESIGNAL.
+- EXIT con RESIGNAL.
 
--   CONTINUE con RESIGNAL.
+- CONTINUE con RESIGNAL.
 
 Aunque se haya asignado un valor a `OUT` antes o dentro del manejador, no se devuelve al parámetro externo.
 
@@ -1111,13 +1119,13 @@ style PADRE fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 
 La regla fundamental:
 
-\- El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
+-  El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
 
-\- Decide en función de si recibe o no una excepción.
+-  Decide en función de si recibe o no una excepción.
 
-\- Un HANDLER que captura el error sin relanzarlo oculta la excepción al procedimiento padre.
+-  Un HANDLER que captura el error sin relanzarlo oculta la excepción al procedimiento padre.
 
-\- RESIGNAL vuelve a propagar la excepción y permite que el padre active su propio manejador.
+-  RESIGNAL vuelve a propagar la excepción y permite que el padre active su propio manejador.
 
 EXIT y CONTINUE determinan qué sucede con el flujo del procedimiento. RESIGNAL determina si el error sigue propagándose. Y es la propagación del error, no su mera existencia, la que determina si el procedimiento padre entra en su manejador de excepciones y ejecuta el ROLLBACK.
 :::
@@ -1153,15 +1161,15 @@ GET DIAGNOSTICS CONDITION 1
     variable_mensaje = MESSAGE_TEXT;
 ```
 
--   **`CONDITION 1`**: Indica que quieres revisar el primer error o advertencia registrado en la pila de diagnósticos.
+- **`CONDITION 1`**: Indica que quieres revisar el primer error o advertencia registrado en la pila de diagnósticos.
 
--   **Atributos comunes que puedes extraer**:
+- **Atributos comunes que puedes extraer**:
 
-    -   `RETURNED_SQLSTATE`: El código estándar de 5 caracteres del estándar SQL.
+  - `RETURNED_SQLSTATE`: El código estándar de 5 caracteres del estándar SQL.
 
-    -   `MYSQL_ERRNO`: El código numérico interno del error (específico de MySQL/MariaDB).
+  - `MYSQL_ERRNO`: El código numérico interno del error (específico de MySQL/MariaDB).
 
-    -   `MESSAGE_TEXT`: El mensaje de texto explicativo que generó el motor de base de datos.
+  - `MESSAGE_TEXT`: El mensaje de texto explicativo que generó el motor de base de datos.
 
 ## Casos de Uso Principales
 
@@ -1174,7 +1182,7 @@ GET DIAGNOSTICS CONDITION 1
 ## Tabla de Compatibilidad entre Motores SQL
 
 |  |  |  |
-|-------------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------------|----------------|-----------------------------------------|
 | **Motor de Base de Datos** | **Soporte para GET DIAGNOSTICS** | **Alternativa o Forma de Uso** |
 | **MySQL / MariaDB** | **Sí** (Desde la versión 5.6) | Soporte completo tanto para `ROW_COUNT` como para `CONDITION n` con atributos como `MYSQL_ERRNO` y `MESSAGE_TEXT`. |
 | **PostgreSQL** | **Sí** (Estándar nativo) | Altamente compatible con el estándar SQL ANSI, permitiendo capturar múltiples métricas de diagnóstico en bloques PL/pgSQL. |
