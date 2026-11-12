@@ -128,18 +128,34 @@ Instala el paquete del cliente directamente utilizando el gestor de paquetes del
 Ejecuta en la terminal con permisos de root.
 
 Descarga la repo:
+Este bloque de dos comandos se utiliza para descargar e instalar el paquete oficial de configuración de repositorios de Percona en tu sistema Ubuntu, permitiendo que el gestor de paquetes reconozca y obtenga los programas y herramientas oficiales de la marca (como el cliente PMM).
 
 ``` bash
 
 sudo wget https://repo.percona.com/apt/percona-release_latest.generic_all.deb
-dpkg -i percona-release_latest.generic_all.deb
+sudo dpkg -i percona-release_latest.generic_all.deb
 ```
+wget: Descarga (download) desde la web oficial de Percona el paquete instalable con extensión .deb (específico para distribuciones basadas en Debian/Ubuntu) que contiene las llaves de seguridad y las rutas de los repositorios de software de Percona.
+dpkg -i: Invoca al gestor de paquetes de bajo nivel de Debian (dpkg) con el parámetro -i (de install) para descomprobar, instalar y registrar en tu sistema operativo el archivo .deb que acabas de descargar.
+
+::: nota
+La diferencia principal entre `dpkg` y `apt` en Ubuntu radica en su nivel de abstracción y en cómo manejan las dependencias de los programas:
+
+dpkg (Debian Package Manager): Es una herramienta de bajo nivel. Se encarga de instalar, consultar y desinstalar archivos individuales con extensión .deb. Su gran limitación es que no resuelve dependencias automáticamente; si el paquete que intentas instalar requiere otras librerías o programas previos que no están en tu sistema, dpkg fallará y te pedirá que los instales manualmente.
+
+apt (Advanced Packaging Tool): Es una herramienta de alto nivel construida por encima de dpkg. Se conecta a los repositorios oficiales de software, busca catálogos actualizados y gestiona automáticamente todas las dependencias, descargando e instalando cualquier librería o componente adicional que el paquete principal necesite para funcionar sin errores.
+
+En resumen, utilza apt como tu opción principal para instalar software de forma cómoda y segura, y reserva dpkg únicamente para casos específicos en los que descargues un archivo .deb local de forma manual.
+:::
 
 Activa la repo:
 
 ``` bash
 sudo percona-release enable pmm3-client release
 ```
+-  percona-release: Es la utilidad propia de gestión de repositorios de Percona que se instaló previamente con el paquete .deb.
+-  enable: Le indica a la herramienta que active un canal o repositorio específico que estaba guardado pero desactivado.
+-  pmm3-client release: Selecciona el repositorio concreto correspondiente a la versión 3 del cliente PMM en su rama estable (release).
 
 Instala el paquete del cliente PMM:
 
@@ -151,17 +167,26 @@ sudo apt install -y pmm-client
 Registra el cliente en la base de datos:
 
 ``` sql
-pmm-admin config --server-insecure-tls --server-url=https://admin:{contraseña}@{ip}:443
+sudo pmm-admin config --server-insecure-tls --server-url=https://admin:{contraseña}@{ip}:443
 ```
 
 cambiar {contraseña} y {ip} por los valores de tu sistema, en nuestro caso \`sudo pmm-admin config --server-insecure-tls --server-url=[https://admin:1234\@10.0.20.101:443](https://admin:1234@10.0.20.101:443)\`
 
-Añade a PMM tu base de datos usando *Performance Schema*
+Este comando es fundamental para conectar y registrar el agente cliente (pmm-client) que acabas de instalar en tu máquina con el servidor PMM central.   
+Aquí tienes el desglose detallado de cada parte del comando:
+-  pmm-admin config: Es la orden principal de la herramienta de administración de PMM para configurar los parámetros de conexión iniciales del cliente.
+-  --server-insecure-tls: Le indica al cliente que ignore la validación estricta de certificados SSL. Como PMM utiliza por defecto un certificado autofirmado (que los navegadores y sistemas marcan como "no seguro"), esta opción evita que el comando falle por un error de certificado no confiable.
+-  --server-url=https://admin:{contraseña}@{ip}:443: Define la URL completa a la que se conectará el agente para reportar las métricas, estructurada de la siguiente forma:
+   -  El protocolo seguro https://.  
+   -  Las credenciales de acceso incrustadas (admin como usuario y {contraseña} como tu contraseña real).   
+   -  La dirección IP de tu servidor ({ip}) y el puerto por el que escucha (443).   
+   Al ejecutarlo con tus datos reales (por ejemplo, admin:1234@10.0.20.101), el cliente valida la conexión contra el servidor y queda listo para que después puedas añadir servicios específicos como tu base de datos MySQL.   
+
+## Añade a PMM tu base de datos usando *Performance Schema*
 
 ``` bash
 sudo pmm-admin add mysql --query-source=perfschema --username=pmm --password=<your_password>
 ```
-
 ``` txt
 MySQL Service added.
 Service ID  : b6301ce6-655d-45d0-8a58-7d1a667caea9
@@ -169,12 +194,19 @@ Service name: myserver-mysql
 
 Table statistics collection enabled (the limit is 1000, the actual table count is 386).
 ```
+Este comando final se utiliza para registrar y añadir tu instancia local de MySQL al sistema de monitorización PMM, de modo que empiece a recopilar métricas de rendimiento y consultas en tiempo real.   
+-  pmm-admin add mysql: Indica a la herramienta de administración de Percona que añada un nuevo servicio de tipo MySQL a los elementos monitorizados. 
+-  --query-source=perfschema: Configura la fuente de obtención de datos para las métricas de consultas y rendimiento (Query Analysis o QAN), indicando que utilice el motor nativo Performance Schema de MySQL.   
+-  --username=pmm: Especifica el nombre de usuario de la base de datos (en este caso, el usuario pmm que creaste previamente en MySQL) que tiene los permisos necesarios para leer las métricas.   
+-  --password=<your_password>: Corresponde a la contraseña asignada a ese usuario en MySQL (por ejemplo, 1234), necesaria para que el agente pueda autenticarse y conectarse a la base de datos de manera segura.  
+
+Una vez ejecutado correctamente, la terminal te devolverá un identificador único de servicio (Service ID y Service name) y el número de tablas detectadas, lo que confirma que PMM ya está conectado y vigilando la actividad de tu base de datos.   
 
 # Usar el dashboard
 
 Después de instalar y connectar la base de datos ya podemos ir a la página del monitor.
 
-Refrescar o volver a abrir <https://10.0.20.101/>
+Refrescar o volver a abrir https://10.0.20.101/
 
 El monitor estará ya mostrando los datos de nuestro servidor\
 ![](images/paste-46.png)
@@ -221,9 +253,17 @@ Abre dos terminales de MySQL distintas para simular bloqueos concurrentes:
   SELECT RELEASE_LOCK('prueba_pmm_lock');
   ```
 
-  # HAcer el monitor accesible a todas las direcciones de red.
-  sudo docker stop pmm-server
+# Hacer el monitor accesible a todas las direcciones de red.
+```bash
+sudo docker ps
+```
+Podemos ver desde qué interfaces está escuchando el contenedor docker en los puertos 80 y 443, si está escuchando solo por la dirección loopback, la página de monitorización no estará disponible para otras máquinas. 
+
+Paramos y borramos el contenedor ya creado.
+```bash
+sudo docker stop pmm-server
 sudo docker rm pmm-server
+```
 
 ```bash
 sudo docker run -d \
@@ -238,9 +278,18 @@ sudo docker run -d \
 CONTAINER ID   IMAGE                  COMMAND                CREATED              STATUS                        PORTS                                                                                              NAMES
 60186f025a3f   percona/pmm-server:3   "/opt/entrypoint.sh"   About a minute ago   Up About a minute (healthy)   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 8080/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 8443/tcp   pmm-server
 ```
+-  docker run -d:  Ordena a Docker que cree y ejecute un nuevo contenedor. El parámetro -d (detached) indica que se ejecutará en segundo plano, liberando la terminal.
+
+-  --name pmm-server: Asigna un nombre fijo e identificable (pmm-server) al contenedor para que puedas gestionarlo fácilmente en el futuro (pararlo, reiniciarlo o ver sus registros).
+-  -p 80:80: Mapea el puerto 80 del ordenador anfitrión con el puerto 80 del contenedor, permitiendo el tráfico web HTTP estándar.
+-  -p 443:8443: Mapea el puerto seguro. Conecta el puerto externo 443 de tu máquina con el puerto interno 8443 del contenedor de PMM versión 3 (que es donde realmente escucha el servicio HTTPS por defecto).
+-  --restart always: Configura una política de reintento automático para que el contenedor se encienda solo cada vez que reinicies la máquina virtual o el servicio de Docker.
+-  -v pmm-data:/srv: Crea o enlaza un volumen persistente de Docker llamado pmm-data y lo monta en la ruta interna /srv del contenedor. Esto garantiza que las bases de datos y la configuración no se pierdan si borras o actualizas el contenedor.
+-  percona/pmm-server:3: Es la imagen oficial de Docker que se va a descargar y utilizar para levantar el servidor, concretamente la versión mayor número 3.
 vemos que el contenedor docker está ahora escuchando por 0.0.0.0 en los puertos 80 y 443
 
-Permitir el tráfico en el cortafuegos de Ubuntu (UFW)
+
+## Permitir el tráfico en el cortafuegos de Ubuntu (UFW)
 Si tienes el cortafuegos del sistema activo, asegúrate de permitir el tráfico web entrante en esos puertos:
 ```bash
 sudo ufw allow 80/tcp
