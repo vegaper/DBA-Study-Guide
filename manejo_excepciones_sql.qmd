@@ -109,9 +109,44 @@ En cuanto la ejecución del procedimiento lee la línea de `SIGNAL`:
 
 1.  **Detiene el flujo normal** de manera inmediata.
 
-2.  Si **no hay** un manejador de errores (`DECLARE HANDLER`) activo, el error escala directamente hacia afuera, aborta el procedimiento por completo y devuelve el mensaje a la consola o aplicación cliente.
+2.  Si **no hay** un manejador de errores (`DECLARE HANDLER`) activo, el error escala directamente hacia afuera del bloque `BEGIN....END` donde está declarado, si está en el bloque principal, aborta el procedimiento por completo y devuelve el mensaje a la consola o aplicación cliente, si está en un bloque `BEGIN....END` anidado, sale de ese bloque y pasa el error al siguiente nivel, si ahí hay un handler para ese error, lo recogerá, sino seguirá propagándose hacia fuera.
 
 3.  Si **sí hay** un manejador configurado ( `CONTINUE` o `EXIT`), este interceptará el error para ejecutar tareas de limpieza o auditoría.
+
+## Ejemplo de uso en bloques anidados
+
+Cuando ejecutas un `SIGNAL` para lanzar un error personalizado, MySQL evalúa los manejadores (ver siguiente sección) disponibles de la siguiente manera:
+
+1.  **Búsqueda local:** MySQL busca primero dentro del mismo bloque hijo si existe un `HANDLER` configurado para atrapar ese `SQLSTATE` o tipo de error.
+
+2.  **Si lo encuentra localmente (y es un `EXIT`):** El manejador intercepta el error y **termina únicamente el bloque hijo**, permitiendo que el procedimiento principal siga su curso en la siguiente instrucción posterior al bloque.
+
+3.  **Si NO lo encuentra localmente:** El error generado por el `SIGNAL` **se propaga (burbujea) hacia arriba** hacia el bloque padre. Si el bloque padre tiene un manejador compatible, lo atrapará allí; si llega al bloque principal sin ser interceptado en ningún lado, abortará todo el procedimiento.
+
+``` sql
+CREATE PROCEDURE proc_prueba()
+BEGIN
+    -- Bloque principal
+    SELECT 'Inicio' AS paso;
+
+    BEGIN
+        -- Bloque hijo con su propio handler para el SIGNAL
+        DECLARE EXIT HANDLER FOR SQLSTATE '45000' 
+        BEGIN
+            SELECT 'SIGNAL atrapado dentro del bloque hijo' AS origen;
+        END;
+
+        -- Lanzamos un error personalizado
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error forzado';
+        
+        -- Esta línea se omite por el EXIT
+        SELECT 'Línea muerta en el hijo';
+    END;
+
+    -- El flujo regresa aquí de forma normal
+    SELECT 'El procedimiento principal continúa con normalidad' AS paso;
+END;
+```
 
 ## Equivalencias en otros motores de bases de datos
 
@@ -188,7 +223,7 @@ END;
 
 # Manejo de Excepciones en MySQL y MariaDB
 
-Un handler en MySQL es un mecanismo de control de excepciones que permite capturar y gestionar errores, advertencias o condiciones específicas que ocurren durante la ejecución de un procedimiento almacenado, función, trigger o evento. Cuando se produce la condición definida, MySQL ejecuta el bloque de código asociado al handler, permitiendo por ejemplo realizar un ROLLBACK, registrar el error o continuar la ejecución sin interrumpir completamente el proceso.
+Un handler en MySQL es un mecanismo de control de excepciones que permite capturar y gestionar errores, advertencias o condiciones específicas que ocurren durante la ejecución de un procedimiento almacenado, función, trigger o evento. Cuando se produce la condición definida, MySQL ejecuta el bloque de código asociado al handler, permitiendo por ejemplo realizar un `ROLLBACK`, registrar el error o continuar la ejecución sin interrumpir completamente el proceso.
 
 ``` sql
 DECLARE {CONTINUE | EXIT} HANDLER
@@ -198,7 +233,7 @@ DECLARE {CONTINUE | EXIT} HANDLER
 
 Donde:
 
-CONTINUE: ejecuta el handler y continúa con la siguiente instrucción. EXIT: ejecuta el handler y abandona el bloque BEGIN...END actual.
+`CONTINUE`: ejecuta el handler y continúa con la siguiente instrucción. `EXIT`: ejecuta el handler y abandona el bloque `BEGIN...END` actual.
 
 Condiciones disponibles:
 
@@ -251,9 +286,9 @@ BEGIN
 END;
 ```
 
-Las condiciones basadas en SQLSTATE suelen ser más portables entre versiones y motores, mientras que los códigos numéricos (por ejemplo, 1062) son específicos de MySQL.
+Las condiciones basadas en `SQLSTATE` suelen ser más portables entre versiones y motores, mientras que los códigos numéricos (por ejemplo, 1062) son específicos de MySQL.
 
-En MySQL, los DECLARE ... HANDLER solo pueden definirse dentro de rutinas almacenadas:
+En MySQL, los `DECLARE...HANDLER` solo pueden definirse dentro de rutinas almacenadas:
 
 - PROCEDURE
 - FUNCTION
@@ -263,7 +298,7 @@ En MySQL, los DECLARE ... HANDLER solo pueden definirse dentro de rutinas almace
 No puedes declarar un manejador de errores directamente en un script SQL normal ejecutado desde el cliente.
 
 ::: nota
-Debe ser declarado obligatoriamente **después** de la declaración de variables y cursores, pero **antes** del código principal del bloque.
+Debe ser declarado obligatoriamente **después** de la declaración de variables y cursores, pero **antes** del código principal del bloque `BEGIN...END` donde lo estemos creando.
 :::
 
 ## Sintaxis General
@@ -327,6 +362,44 @@ END //
 
 DELIMITER ;
 ```
+
+## Ejemplo de su comportamiento en bloques anidados
+
+``` sql
+CREATE PROCEDURE mi_procedimiento()
+BEGIN
+    -- Bloque principal
+    SELECT 'Inicio del procedimiento' AS estado;
+
+    -- Bloque hijo
+    BEGIN
+        -- EXIT HANDLER declarado localmente en el bloque hijo
+        DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+        BEGIN
+            SELECT 'Error detectado en el bloque hijo. Saliendo solo de este bloque.' AS aviso;
+        END;
+
+        -- Sentencia que provoca un error (ej. tabla inexistente)
+        INSERT INTO tabla_inexistente VALUES (1);
+        
+        -- Esta línea ya no se ejecuta debido al EXIT
+        SELECT 'Línea interna del bloque hijo' AS estado;
+    END;
+
+    -- El flujo CONTINÚA aquí en el bloque principal
+    SELECT 'El procedimiento sigue su curso en el bloque principal' AS estado;
+END;
+```
+
+**Flujo de ejecución**
+
+1.  **Captura:** El error ocurre dentro del ámbito del bloque hijo donde se registró el manejador.
+
+2.  **Ejecución del Handler:** Se ejecuta el bloque de código interno del manejador (por ejemplo, para limpiar recursos o registrar información).
+
+3.  **Salida del bloque:** El modificador `EXIT` fuerza la salida inmediata de ese bloque `BEGIN...END` específico.
+
+4.  **Continuación:** El procedimiento **no se cancela por completo**; el flujo de ejecución regresa al bloque superior (padre) y continúa ejecutando de manera normal la instrucción que se encuentre inmediatamente después de finalizar el bloque hijo.
 
 # Manejo de Excepciones en otros Motores Principales
 
@@ -480,7 +553,7 @@ END;
 # Cuadro Comparativo Resumen
 
 | Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
-|:-----------|:----------------|:----------------|:------------------------|
+|:----------------|:----------------|:----------------|:----------------------|
 | **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
 | **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
 | **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
@@ -568,11 +641,9 @@ DELIMITER ;
 
 De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.
 
-
 # Ejemplos explicativos de manejo de errores y `RESIGNAL`.
 
 ::: practica
-
 Vamos a ver en la práctica cómo responde sql a errores en distintas situaciones de manejo. Tenemos un procedimiento muy sencillo donde simplemente sumamos uno al valor introducido y lo devolvemos, pero tenemos dos situaciones que generarán un error de lógica interna: valores de 2 y 3 dan error.
 
 ## Preparación
@@ -866,7 +937,7 @@ EL valor final de @salida después del procedimiento es 555.
 
 ------------------------------------------------------------------------
 
-# Manejando los errores en procedimientos anidados
+## Manejando los errores en procedimientos anidados
 
 Vamos a crear una tabla que nos sirva de log de auditoría para ver cómo se ven el resultado de un procedimiento desde fuera.
 
@@ -1119,13 +1190,13 @@ style PADRE fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,rx:6,ry:6;
 
 La regla fundamental:
 
--  El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
+- El procedimiento padre no decide en función de si el hijo ha tenido un error interno.
 
--  Decide en función de si recibe o no una excepción.
+- Decide en función de si recibe o no una excepción.
 
--  Un HANDLER que captura el error sin relanzarlo oculta la excepción al procedimiento padre.
+- Un HANDLER que captura el error sin relanzarlo oculta la excepción al procedimiento padre.
 
--  RESIGNAL vuelve a propagar la excepción y permite que el padre active su propio manejador.
+- RESIGNAL vuelve a propagar la excepción y permite que el padre active su propio manejador.
 
 EXIT y CONTINUE determinan qué sucede con el flujo del procedimiento. RESIGNAL determina si el error sigue propagándose. Y es la propagación del error, no su mera existencia, la que determina si el procedimiento padre entra en su manejador de excepciones y ejecuta el ROLLBACK.
 :::
@@ -1182,7 +1253,7 @@ GET DIAGNOSTICS CONDITION 1
 ## Tabla de Compatibilidad entre Motores SQL
 
 |  |  |  |
-|----------------|----------------|-----------------------------------------|
+|-----------------|-----------------|--------------------------------------|
 | **Motor de Base de Datos** | **Soporte para GET DIAGNOSTICS** | **Alternativa o Forma de Uso** |
 | **MySQL / MariaDB** | **Sí** (Desde la versión 5.6) | Soporte completo tanto para `ROW_COUNT` como para `CONDITION n` con atributos como `MYSQL_ERRNO` y `MESSAGE_TEXT`. |
 | **PostgreSQL** | **Sí** (Estándar nativo) | Altamente compatible con el estándar SQL ANSI, permitiendo capturar múltiples métricas de diagnóstico en bloques PL/pgSQL. |

@@ -1,0 +1,1 @@
+https://store.godox.pl/es/paraguas/5469-godox-ub-010-paraguas-tipo-softbox-blanco-y-negro-84cm-6952344205884.html
