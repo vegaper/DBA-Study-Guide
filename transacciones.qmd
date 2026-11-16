@@ -238,6 +238,18 @@ En **MySQL (motor InnoDB)**, el comportamiento con las tablas temporales (`TEMPO
 :::
 ::::
 
+
+::: nota-importante
+En MySQL, las variables de sesión (las que empiezan por @) no forman parte de la transacción.
+
+Las transacciones (START TRANSACTION, COMMIT y ROLLBACK) operan exclusivamente sobre los datos almacenados en las tablas del motor transaccional (como InnoDB). Por el contrario, las variables de usuario y de sesión pertenecen al ámbito de la conexión activa, no a la transacción.
+
+El comando ROLLBACK deshace los cambios realizados en las tablas (modificaciones, inserciones, borrados).
+Sin embargo, **no revierte los valores asignados a las variables de sesión (SET @variable = ...), ya que estas existen de forma independiente fuera del contexto de la transacción.** 
+Si necesitas un comportamiento que se revierta ante un fallo, debes manejarlo mediante la lógica de tu aplicación o procedimientos almacenados, pero nunca confiando en que una variable de sesión se limpie sola con un ROLLBACK.
+
+:::
+
 ---
 title: "Control de Flujo y Manejo de Transacciones en SQL"
 format: html

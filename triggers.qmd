@@ -1,0 +1,90 @@
+---
+title: "Triggers"
+format: html
+---
+
+Un trigger es un objeto de la base de datos que se ejecutan automáticamente cuando se produce un acontecimiento sobre una tabla. Se almacenan a nivel de tabla.
+
+Cuándo se pueden lanzar?
+Se ejecutan antes o despues de: `INSERT`, `UPDATE` o `DELETE`.
+
+Los triggers en MySQL funcionan por fila (`FOR EACH ROW`) Si un `UPDATE` afecta a diez alumnos, el trigger se ejecutará diez veces, una por cada fila. 
+
+# Sintaxis 
+
+en MySQL
+
+```sql
+
+DELIMITER //
+CREATE TRIGGER nombre_trigger
+BEFORE/AFTER INSERT/UPDATE/DELETE ON nombre_tabla
+FOR EACH ROW
+BEGIN
+ -- Instrucciones a ejectuar
+END//
+DELIMITER ; 
+```
+
+# OLD y NEW
+OLD permite acceder a los valores anteriores del registro
+NEW Permite acceder a los valores nuevos del registro
+
+Con UPDATE tenemos acceso a ambos valores, con INSERT solo a nuevo y con DELETE solo al valor antiguo.
+
+Ejemplo
+```sql
+DELIMITER //
+CREATE TRIGGER tr_alumnos_limpiar_email
+BEFORE INSERT ON alumnos
+FOR EACH ROW
+BEGIN
+    SET NEW.email = LOWER(TRIM(NEW.email));
+END //
+DELIMITER ; 
+```
+
+Como esto es sobre INSERT, no modificará datos de filas ya creadas.
+
+
+Ejemplo con DELETE
+
+```sql
+DELIMITER //
+CREATE TRIGGER tr_alumnos_almnos_activos
+BEFORE DELETE ON alumnos
+FOR EACH ROW
+BEGIN
+    IF OLD.activo =1 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No se puede eliminar un alumno activo';
+    END IF;
+END //
+DELIMITER ; 
+// 
+```
+
+# TRIGGER vs PROCEDIMIENTO ALMACENADO
+como se ejecuta:  CALL vs automático
+qué lo activa: LLamada explícita vs INSERT, UPDATE, DELET
+parámetros: sí vs no
+old/ new: no vs sí 
+
+# Consultar y eliminar triggers
+```sql
+SHOW TRIGGERS FROM academia_it;
+
+SHOW CREATE TRIGGER nombre\G;
+
+DROP TRIGGER IF EXISTS nombre;
+```
+
+# Usos principales
+Normalizar datos, validar operaciones, aplicar reglas de negocio y registrar cambios en tablas de historial (auditoría). 
+
+# Buenas prácticas
+
+`TRUNCATE` no activa un `DELETE` trigger, por lo tanto un trigger no es una protección eficaz para evitar eliminaciones. 
+
+PERMISOS: crear triggers requiere el permiso `TRIGGER`. Sus modificaciones participan en la transacción activa, si hay un ROLLBACK, también se desacen sus cambios. 
+

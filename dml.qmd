@@ -265,6 +265,75 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 
 - En un `UPDATE` multirregistro, si una sola fila viola una restricción, **toda la operación se cancela (rollback)** y ninguna fila se modifica.
 
+
+## Atomicidad a nivel de sentencia en operaciones DML
+Cuando ejecutas una sentencia DML de modificación múltiple (`INSERT`, `UPDATE` o `DELETE`) que afecta a varias filas, el motor de almacenamiento transaccional de MySQL (InnoDB) procesa toda la instrucción como una unidad lógica indivisible.
+
+Esto se conoce como atomicidad a nivel de sentencia: o la instrucción completa tiene éxito y aplica todos los cambios propuestos, o falla por completo y revierte automáticamente cualquier modificación parcial que hubiera llegado a realizar antes de encontrar el error.
+
+**El flujo de ejecución y reversión ante un fallo**
+Si una sentencia intenta modificar 10 filas y la fila número 8 viola una restricción de integridad (como un CHECK, UNIQUE, NOT NULL o una clave foránea FOREIGN KEY), InnoDB no deja guardadas las primeras 7 filas. En su lugar, aborta la sentencia y deshace los cambios realizados por esa instrucción concreta, devolviendo la tabla al estado exacto que tenía justo antes de lanzarla.
+
+Ejemplo práctico con INSERT y restricción CHECK
+Partimos de una tabla con una regla de validación que solo admite valores entre 1 y 10:
+```sql
+CREATE TABLE prueba_insert_con_fallo (
+    numero INT,
+    uno_al_10 INT,
+    CONSTRAINT test CHECK (uno_al_10 BETWEEN 1 AND 10)
+);
+```
+Intentamos insertar seis registros en una única sentencia, donde el quinto registro ((5, 0)) incumple la condición:
+```sql
+INSERT INTO prueba_insert_con_fallo (numero, uno_al_10) 
+VALUES (1,1), (2,2), (3,3), (4,4), (5,0), (6,6);
+-- ERROR 3819 (HY000): Check constraint 'test' is violated.
+```
+Al comprobar el contenido de la tabla, vemos que ningún registro ha sido insertado:
+```sql
+SELECT * FROM prueba_insert_con_fallo;
+-- Empty set (0,00 sec)
+```
+### Alcance en UPDATE y DELETE
+El mismo principio rige cuando actualizas o eliminas múltiples registros mediante una condición WHERE:
+
+En `UPDATE`: Si actualizas el salario de 50 empleados y el cálculo para uno de ellos desborda el tipo de dato o incumple una restricción `CHECK`, ninguno de los 50 empleados verá modificado su salario.
+
+En `DELETE`: Si intentas borrar 20 clientes inactivos y el cliente número 15 tiene facturas asociadas protegidas por una clave foránea (`ON DELETE RESTRICT`), la sentencia se aborta y no se borra ninguno de los 20 clientes.
+
+::: nota 
+**Diferencia entre fallo de sentencia y fallo de transacción**
+Es importante distinguir el alcance de la reversión cuando trabajas dentro de una transacción explícita (START TRANSACTION):
+
+Si falla una sentencia: InnoDB revierte únicamente los efectos de esa sentencia fallida, pero la transacción sigue abierta y conserva las modificaciones de las sentencias anteriores que sí se ejecutaron con éxito.
+
+Decisión del usuario/código: Tras un error de sentencia, eres tú (o un `HANDLER` en un procedimiento almacenado) quien debe decidir si ejecuta un `ROLLBACK` total para deshacer también los pasos previos, o un `COMMIT` para confirmar lo que sí funcionó antes del fallo.
+Esto lo veremos en otras lecciones posteriores.
+
+::: 
+
+### La excepción: el modificador `IGNORE`
+MySQL permite alterar este comportamiento estricto añadiendo la palabra clave IGNORE (INSERT IGNORE, UPDATE IGNORE, DELETE IGNORE).
+Con IGNORE, los errores críticos de integridad se degradan a advertencias (warnings). El motor descarta únicamente la fila problemática (5, 0) e inserta las otras 5 filas válidas. Debe usarse con extrema precaución en entornos de producción, ya que puede ocultar fallos graves de calidad o lógica en los datos.
+
+```sql
+INSERT IGNORE INTO prueba_insert_con_fallo (numero, uno_al_10) 
+VALUES (1,1), (2,2), (3,3), (4,4), (5,0), (6,6);
+-- Query OK, 5 rows affected, 1 warning (0,01 sec)
+SELECT * FROM prueba_insert_con_fallo;
+```
+```
++--------+-----------+
+| numero | uno_al_10 |
++--------+-----------+
+|      1 |         1 |
+|      2 |         2 |
+|      3 |         3 |
+|      4 |         4 |
+|      6 |         6 |
++--------+-----------+
+```
+
 ## Resumen de Buenas Prácticas
 
 |  |  |
@@ -276,7 +345,7 @@ Al ejecutar un `UPDATE`, MySQL valida inmediatamente todas las restricciones (`C
 
 # ON DUPLICATE KEY UPDATE
 
-Es una extensión de la instrucción INSERT (específica de MySQL y MariaDB) que permite realizar una operación del tipo "Upsert" (Insertar o Actualizar).
+Es una extensión de la instrucción `INSERT` (específica de MySQL y MariaDB) que permite realizar una operación del tipo "Upsert" (Insertar o Actualizar).
 
 Cuando intentas insertar una fila en una tabla y se produce un conflicto debido a una clave duplicada (es decir, el valor choca con una llave primaria PRIMARY KEY o un índice único UNIQUE), en lugar de que la base de datos devuelva un error, ejecuta una actualización (UPDATE) sobre la fila existente.
 
