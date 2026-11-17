@@ -3,37 +3,48 @@ title: "Triggers"
 format: html
 ---
 
-Un trigger es un objeto de la base de datos que se ejecutan automáticamente cuando se produce un acontecimiento sobre una tabla. Se almacenan a nivel de tabla.
+Un trigger (disparador) es un objeto de la base de datos que se ejecuta automáticamente cuando se produce un acontecimiento sobre una tabla. Se almacenan a nivel de tabla.
 
-Cuándo se pueden lanzar?
-Se ejecutan antes o despues de: `INSERT`, `UPDATE` o `DELETE`.
+¿Cuándo se pueden lanzar? Se ejecutan antes (`BEFORE`) o después (`AFTER`) de: `INSERT`, `UPDATE` o `DELETE`.
 
-Los triggers en MySQL funcionan por fila (`FOR EACH ROW`) Si un `UPDATE` afecta a diez alumnos, el trigger se ejecutará diez veces, una por cada fila. 
+Los triggers en MySQL funcionan por fila (`FOR EACH ROW`). Si un `UPDATE` afecta a diez alumnos, el trigger se ejecutará diez veces, una por cada fila.
 
-# Sintaxis 
+# Sintaxis
 
-en MySQL
+En MySQL:
 
-```sql
-
+``` sql
 DELIMITER //
 CREATE TRIGGER nombre_trigger
 BEFORE/AFTER INSERT/UPDATE/DELETE ON nombre_tabla
 FOR EACH ROW
 BEGIN
- -- Instrucciones a ejectuar
+ -- Instrucciones a ejecutar
 END//
 DELIMITER ; 
 ```
 
+## Convención de nombres y múltiples triggers por evento
+
+- **Nomenclatura recomendada:** Es una buena práctica nombrarlos siguiendo el patrón `tr_<tabla>_<momento><evento>_<proposito>` (ej. `tr_alumnos_bi_email` para *Before Insert*).
+- **Múltiples triggers (MySQL 5.7+ / 8.x):** Se pueden crear varios triggers para el mismo momento y evento en una misma tabla. Por defecto se ejecutan en el orden en que fueron creados, aunque puedes controlar el orden explícitamente usando las cláusulas `FOLLOWS` o `PRECEDES` dentro de la definición del trigger.
+- **No existe `ALTER TRIGGER`:** En MySQL no puedes modificar el cuerpo de un trigger directamente. Si necesitas cambiarlo, debes eliminarlo con `DROP TRIGGER` y volver a crearlo (o usar `CREATE OR REPLACE TRIGGER` si trabajas en MariaDB, aunque en MySQL estándar 8.4 no está soportado).
+
 # OLD y NEW
-OLD permite acceder a los valores anteriores del registro
-NEW Permite acceder a los valores nuevos del registro
 
-Con UPDATE tenemos acceso a ambos valores, con INSERT solo a nuevo y con DELETE solo al valor antiguo.
+`OLD` permite acceder a los valores anteriores del registro (antes de la operación). `NEW` permite acceder a los valores nuevos del registro (propuestos o ya aplicados).
 
-Ejemplo
-```sql
+| Evento | `OLD` disponible | `NEW` disponible | ¿Se puede modificar `NEW`? |
+|:-----------------|:-----------------|:-----------------|:-----------------|
+| **`INSERT`** | No | Sí | Sí, únicamente en `BEFORE INSERT` |
+| **`UPDATE`** | Sí | Sí | Sí, únicamente en `BEFORE UPDATE` |
+| **`DELETE`** | Sí | No | No aplica |
+
+> **Importante:** En un trigger `AFTER`, los valores de `NEW` son de solo lectura. Si intentas hacer `SET NEW.columna = valor` dentro de un `AFTER INSERT` o `AFTER UPDATE`, MySQL lanzará un error (`ERROR 1362`).
+
+## Ejemplo con INSERT (Normalización)
+
+``` sql
 DELIMITER //
 CREATE TRIGGER tr_alumnos_limpiar_email
 BEFORE INSERT ON alumnos
@@ -44,47 +55,270 @@ END //
 DELIMITER ; 
 ```
 
-Como esto es sobre INSERT, no modificará datos de filas ya creadas.
+Como esto es sobre `INSERT`, no modificará datos de filas ya creadas (no es retroactivo). Si quieres aplicar la misma regla al modificar registros existentes, necesitarás crear un trigger adicional para `BEFORE UPDATE`.
 
+## Ejemplo con DELETE (Validación y bloqueo con SIGNAL)
 
-Ejemplo con DELETE
-
-```sql
+``` sql
 DELIMITER //
-CREATE TRIGGER tr_alumnos_almnos_activos
+CREATE TRIGGER tr_alumnos_activos
 BEFORE DELETE ON alumnos
 FOR EACH ROW
 BEGIN
-    IF OLD.activo =1 THEN
+    IF OLD.activo = 1 THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'No se puede eliminar un alumno activo';
     END IF;
 END //
 DELIMITER ; 
-// 
+```
+
+- **`SIGNAL SQLSTATE '45000'`:** Es el mecanismo estándar para abortar la operación y lanzar un error personalizado desde el trigger hacia el cliente. Al lanzarse en un `BEFORE`, la fila no llega a borrarse.
+
+## Ejemplo con AFTER UPDATE (Auditoría e historial)
+
+Un caso clásico de `AFTER` es registrar cambios en una tabla de auditoría una vez que sabemos que la operación principal ha superado las restricciones de la tabla:
+
+``` sql
+DELIMITER //
+CREATE TRIGGER tr_notas_au_auditoria
+AFTER UPDATE ON notas
+FOR EACH ROW
+BEGIN
+    -- El operador <=> compara de forma segura incluyendo valores NULL
+    IF NOT (OLD.nota <=> NEW.nota) THEN
+        INSERT INTO historial_notas (id_nota, nota_anterior, nota_nueva, fecha_cambio, usuario)
+        VALUES (OLD.id_nota, OLD.nota, NEW.nota, NOW(), CURRENT_USER());
+    END IF;
+END //
+DELIMITER ;
 ```
 
 # TRIGGER vs PROCEDIMIENTO ALMACENADO
-como se ejecuta:  CALL vs automático
-qué lo activa: LLamada explícita vs INSERT, UPDATE, DELET
-parámetros: sí vs no
-old/ new: no vs sí 
+
+| Característica | Procedimiento Almacenado (`PROCEDURE`) | Trigger (`TRIGGER`) |
+|:-----------------------|:-----------------------|:-----------------------|
+| **Cómo se ejecuta** | Mediante `CALL nombre_proc()` | Automáticamente |
+| **Qué lo activa** | Llamada explícita del usuario o aplicación | Eventos DML (`INSERT`, `UPDATE`, `DELETE`) |
+| **Parámetros (`IN`/`OUT`)** | Sí | No |
+| **Acceso a `OLD` y `NEW`** | No | Sí |
+| **Control transaccional** | Permite `START TRANSACTION`, `COMMIT`, `ROLLBACK` | **Prohibido** usar `COMMIT` o `ROLLBACK` dentro |
 
 # Consultar y eliminar triggers
-```sql
+
+``` sql
+-- Listar todos los triggers de una base de datos
 SHOW TRIGGERS FROM academia_it;
 
-SHOW CREATE TRIGGER nombre\G;
+-- Consultar metadatos detallados en information_schema
+SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE, ACTION_TIMING, EVENT_MANIPULATION, ACTION_ORDER
+FROM information_schema.TRIGGERS
+WHERE TRIGGER_SCHEMA = 'academia_it';
 
+-- Ver el código exacto con el que se creó un trigger
+SHOW CREATE TRIGGER nombre\G
+
+-- Eliminar un trigger
 DROP TRIGGER IF EXISTS nombre;
 ```
 
 # Usos principales
-Normalizar datos, validar operaciones, aplicar reglas de negocio y registrar cambios en tablas de historial (auditoría). 
+
+- **Normalizar datos:** Formatear textos, correos electrónicos o fechas antes de que se guarden (`BEFORE`).
+- **Validar operaciones complejas:** Comprobar reglas de negocio que involucran lógica condicional o consultas a otras tablas (cuando una restricción `CHECK` simple no es suficiente).
+- **Auditoría e historial:** Registrar qué usuario cambió qué dato y cuándo en una tabla de log (`AFTER`).
+- **Mantener datos derivados o resúmenes:** Actualizar contadores, saldos o totales en tablas resumen cada vez que se inserta, modifica o borra un detalle (`AFTER`).
+
+# Atomicidad a nivel de sentencia en operaciones DML
+
+Cuando ejecutas una sentencia DML de modificación múltiple (INSERT, UPDATE o DELETE) que afecta a varias filas, el motor de almacenamiento transaccional de MySQL (InnoDB) procesa toda la instrucción como una unidad lógica indivisible.
+
+Esto se conoce como atomicidad a nivel de sentencia: o la instrucción completa tiene éxito y aplica todos los cambios propuestos, o falla por completo y revierte automáticamente cualquier modificación parcial que hubiera llegado a realizar antes de encontrar el error.
+
+El flujo de ejecución y reversión ante un fallo Si una sentencia intenta modificar 10 filas y la fila número 8 viola una restricción de integridad (como un CHECK, UNIQUE, NOT NULL o una clave foránea FOREIGN KEY), InnoDB no deja guardadas las primeras 7 filas. En su lugar, aborta la sentencia y deshace los cambios realizados por esa instrucción concreta, devolviendo la tabla al estado exacto que tenía justo antes de lanzarla.
+
+Ejemplo práctico con INSERT y restricción CHECK Partimos de una tabla con una regla de validación que solo admite valores entre 1 y 10:
+
+``` sql
+CREATE TABLE prueba_insert_con_fallo (
+    numero INT,
+    uno_al_10 INT,
+    CONSTRAINT test CHECK (uno_al_10 BETWEEN 1 AND 10)
+);
+```
+
+Intentamos insertar seis registros en una única sentencia, donde el quinto registro ((5, 0)) incumple la condición:
+
+``` sql
+INSERT INTO prueba_insert_con_fallo (numero, uno_al_10) 
+VALUES (1,1), (2,2), (3,3), (4,4), (5,0), (6,6);
+-- ERROR 3819 (HY000): Check constraint 'test' is violated.
+```
+
+Al comprobar el contenido de la tabla, vemos que ningún registro ha sido insertado:
+
+``` sql
+SELECT * FROM prueba_insert_con_fallo;
+```
+
+```         
+-- Empty set (0,00 sec)
+```
+
+## Alcance en UPDATE y DELETE
+
+El mismo principio rige cuando actualizas o eliminas múltiples registros mediante una condición `WHERE`:
+
+En `UPDATE`: Si actualizas el salario de 50 empleados y el cálculo para uno de ellos desborda el tipo de dato o incumple una restricción `CHECK`, ninguno de los 50 empleados verá modificado su salario.
+
+En `DELETE`: Si intentas borrar 20 clientes inactivos y el cliente número 15 tiene facturas asociadas protegidas por una clave foránea (`ON DELETE RESTRICT`), la sentencia se aborta y no se borra ninguno de los 20 clientes.
+
+## Diferencia entre fallo de sentencia y fallo de transacción
+
+Es importante distinguir el alcance de la reversión cuando trabajas dentro de una transacción explícita (`START TRANSACTION`):
+
+Si falla una sentencia: InnoDB revierte únicamente los efectos de esa sentencia fallida, pero la transacción sigue abierta y conserva las modificaciones de las sentencias anteriores que sí se ejecutaron con éxito.
+
+Decisión del usuario/código: Tras un error de sentencia, eres tú (o un `HANDLER` en un procedimiento almacenado) quien debe decidir si ejecuta un `ROLLBACK` total para deshacer también los pasos previos, o un `COMMIT` para confirmar lo que sí funcionó antes del fallo.
+
+La excepción: el modificador `IGNORE` MySQL permite alterar este comportamiento estricto añadiendo la palabra clave `IGNORE` (`INSERT IGNORE`, `UPDATE IGNORE`, `DELETE IGNORE`).
+
+``` sql
+INSERT IGNORE INTO prueba_insert_con_fallo (numero, uno_al_10) 
+VALUES (1,1), (2,2), (3,3), (4,4), (5,0), (6,6);
+-- Query OK, 5 rows affected, 1 warning (0,01 sec)
+```
+
+```         
++--------+-----------+
+| numero | uno_al_10 |
++--------+-----------+
+|      1 |         1 |
+|      2 |         2 |
+|      3 |         3 |
+|      4 |         4 |
+|      6 |         6 |
++--------+-----------+
+```
+
+Con `IGNORE`, los errores críticos de integridad se degradan a advertencias (warnings). El motor descarta únicamente la fila problemática (5, 0) e inserta las otras 5 filas válidas. Debe usarse con extrema precaución en entornos de producción, ya que puede ocultar fallos graves de calidad o lógica en los datos.
+
+## Correspondencia con otros motores de bases de datos
+
+La atomicidad a nivel de sentencia es el comportamiento estándar definido por ANSI SQL para operaciones transaccionales, aunque cada motor implementa matices propios en su gestión de errores y sintaxis de omisión:
+
+|  |  |  |  |
+|-----------------|-------------------|-------------------|-------------------|
+| **Motor de Base de Datos** | **Comportamiento por defecto (DML multifila)** | **Impacto en transacción abierta (BEGIN / START TRANSACTION)** | **Alternativa para omitir filas con error (equivalente a IGNORE)** |
+| **MySQL (InnoDB)** | **Atómico.** Aborta y revierte toda la sentencia ante el primer error. | La transacción **permanece abierta**; conserva las sentencias previas válidas. | Cláusula `IGNORE` (`INSERT IGNORE`, `UPDATE IGNORE`). |
+| **PostgreSQL** | **Atómico.** Aborta y revierte toda la sentencia ante cualquier error. | **Aborta toda la transacción.** El bloque entra en estado de error y exige `ROLLBACK` (o `ROLLBACK TO SAVEPOINT`). | Cláusula `ON CONFLICT DO NOTHING` (solo para conflictos de clave única en `INSERT`). |
+| **SQL Server (T-SQL)** | **Atómico** para errores de restricción estándar (`CHECK`, `UNIQUE`, `FK`). | La transacción **permanece abierta** (salvo que esté activado `SET XACT_ABORT ON`, que revierte toda la transacción). | No existe un `IGNORE` genérico; se controla mediante `TRY...CATCH` o `MERGE`. |
+| **Oracle Database** | **Atómico.** Garantiza atomicidad estricta a nivel de sentencia mediante segmentos *undo*. | La transacción **permanece abierta**; conserva las sentencias previas válidas. | Cláusula `LOG ERRORS INTO ... REJECT LIMIT UNLIMITED` (guarda las filas fallidas en una tabla de errores y procesa el resto). |
+| **SQLite** | **Atómico.** Revierte la sentencia completa por defecto (`ABORT`). | La transacción **permanece abierta** y conserva las operaciones previas. | Cláusula `OR IGNORE` (`INSERT OR IGNORE`, `UPDATE OR IGNORE`). |
+
+# Limitaciones y restricciones importantes en MySQL
+
+1.  **Prohibido modificar la misma tabla (Error 1442):** Dentro de un trigger no puedes ejecutar una sentencia `INSERT`, `UPDATE` o `DELETE` sobre la **misma tabla** que lo disparó (para evitar bucles infinitos). Si necesitas alterar un valor de la propia fila que se está insertando o actualizando, debes usar `SET NEW.campo = ...` en un trigger `BEFORE`.
+2.  **Sin control de transacciones:** No puedes ejecutar `COMMIT`, `ROLLBACK` ni `START TRANSACTION` dentro de un trigger.
+3.  **Un solo evento por definición:** En MySQL no puedes definir un único trigger para `INSERT OR UPDATE` a la vez; debes crear un trigger por cada evento (aunque ambos pueden llamar a un mismo procedimiento almacenado para reutilizar código).
+4.  **Operaciones que NO disparan triggers:**
+    - `TRUNCATE TABLE`: Vacía la tabla a nivel de estructura sin pasar fila por fila, por lo que **no activa** triggers `DELETE`.
+    - **Borrado o actualización en cascada (`ON DELETE CASCADE` / `ON UPDATE CASCADE`):** Las acciones desencadenadas automáticamente por una clave foránea en tablas hijas **no activan** los triggers de esas tablas hijas en MySQL.
+    - **`REPLACE INTO`:** Internamente ejecuta un `DELETE` seguido de un `INSERT` si hay conflicto de clave, por lo que disparará los triggers de `DELETE` e `INSERT`, pero **nunca** los de `UPDATE`.
 
 # Buenas prácticas
 
-`TRUNCATE` no activa un `DELETE` trigger, por lo tanto un trigger no es una protección eficaz para evitar eliminaciones. 
+- **Permisos y seguridad (`DEFINER`):** Crear triggers requiere el privilegio `TRIGGER`. Además, el código dentro del trigger se ejecuta con los permisos del usuario que lo creó (`DEFINER`), por lo que esa cuenta debe tener privilegios sobre las tablas que el trigger consulte o modifique.
+- **Atomicidad y transacciones:** Las modificaciones que hace un trigger participan en la transacción activa. Si el trigger falla (por un error o un `SIGNAL`), se aborta la sentencia completa; si el usuario o procedimiento hace un `ROLLBACK`, también se deshacen los cambios realizados por el trigger.
+- **Mantenerlos ligeros:** Como se ejecutan una vez por cada fila afectada (`FOR EACH ROW`), evita poner consultas pesadas o lógica excesivamente lenta dentro de un trigger, ya que penalizará el rendimiento de cualquier inserción o actualización masiva.
+- **Comparar con seguridad ante `NULL`:** Cuando verifiques si una columna ha cambiado en un `UPDATE`, utiliza el operador *NULL-safe* (`IF NOT (OLD.campo <=> NEW.campo)`) en lugar de `<>`, ya que `NULL <> NULL` evalúa a desconocido y el trigger ignoraría el cambio.
 
-PERMISOS: crear triggers requiere el permiso `TRIGGER`. Sus modificaciones participan en la transacción activa, si hay un ROLLBACK, también se desacen sus cambios. 
+# Compatibilidad con otros motores de bases de datos
 
+Aunque el concepto de trigger es estándar en SQL, cada motor de base de datos implementa variaciones importantes en su sintaxis, alcance (`FOR EACH ROW` vs `FOR EACH STATEMENT`) y forma de acceder a los datos antiguos y nuevos.
+
+## Tabla comparativa rápida
+
+| Motor | Granularidad soportada | Acceso a datos antiguos / nuevos | Múltiples eventos en un trigger | Estructura del código |
+|:--------------|:--------------|:--------------|:--------------|:--------------|
+| **MySQL** | Solo por fila (`FOR EACH ROW`) | `OLD.col` y `NEW.col` | No (1 evento por trigger) | Bloque `BEGIN ... END` directo |
+| **PostgreSQL** | Por fila (`ROW`) y por sentencia (`STATEMENT`) | `OLD.col` y `NEW.col` | Sí (`INSERT OR UPDATE OR DELETE`) | Invoca a una **Función Trigger** externa |
+| **SQL Server** | Solo por sentencia (opera sobre conjuntos) | Tablas virtuales `DELETED` e `INSERTED` | Sí (`INSERT, UPDATE, DELETE`) | Bloque `AS BEGIN ... END` en T-SQL |
+| **Oracle** | Por fila (`FOR EACH ROW`) y por sentencia | `:OLD.col` y `:NEW.col` (con dos puntos) | Sí (`INSERT OR UPDATE OR DELETE`) | Bloque PL/SQL `BEGIN ... END` |
+| **SQLite** | Solo por fila (`FOR EACH ROW`) | `OLD.col` y `NEW.col` | No (1 evento por trigger) | Bloque `BEGIN ... END` directo |
+
+------------------------------------------------------------------------
+
+## PostgreSQL
+
+PostgreSQL separa la **lógica** (que se escribe dentro de una función especial que devuelve `TRIGGER`) de la **definición del disparador** que la vincula a la tabla. Permite combinar varios eventos y ejecutar código una sola vez por sentencia (`FOR EACH STATEMENT`).
+
+``` sql
+-- Paso 1: Crear la función trigger en PL/pgSQL
+CREATE OR REPLACE FUNCTION fn_alumnos_limpiar_email()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.email := LOWER(TRIM(NEW.email));
+    RETURN NEW; -- Obligatorio devolver NEW en BEFORE INSERT/UPDATE
+END;
+$$ LANGUAGE plpgsql;
+
+-- Paso 2: Asociar la función a la tabla (soporta INSERT OR UPDATE juntos)
+CREATE TRIGGER tr_alumnos_limpiar_email
+BEFORE INSERT OR UPDATE ON alumnos
+FOR EACH ROW
+EXECUTE FUNCTION fn_alumnos_limpiar_email();
+```
+
+------------------------------------------------------------------------
+
+## SQL Server (T-SQL)
+
+SQL Server **no tiene** triggers `BEFORE` (usa `AFTER` o `INSTEAD OF`) ni tiene `FOR EACH ROW` con variables `OLD`/`NEW`. En su lugar, el trigger se ejecuta **una sola vez por sentencia** y expone dos tablas virtuales en memoria: **`INSERTED`** (filas nuevas) y **`DELETED`** (filas antiguas), pensadas para operar con `JOIN` sobre conjuntos de filas.
+
+``` sql
+CREATE TRIGGER tr_alumnos_limpiar_email
+ON alumnos
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Se actualiza haciendo JOIN con la tabla virtual 'inserted'
+    UPDATE a
+    SET a.email = LOWER(TRIM(i.email))
+    FROM alumnos a
+    INNER JOIN inserted i ON a.id_alumno = i.id_alumno;
+END;
+```
+
+------------------------------------------------------------------------
+
+## Oracle Database (PL/SQL)
+
+La sintaxis de Oracle es muy parecida a la de MySQL, pero las referencias a `OLD` y `NEW` llevan **dos puntos delante (`:OLD`, `:NEW`)**, permite agrupar múltiples eventos con `OR`, e incluso permite evaluar qué evento ocurrió dentro del cuerpo mediante predicados booleanos (`INSERTING`, `UPDATING`, `DELETING`).
+
+``` sql
+CREATE OR REPLACE TRIGGER tr_alumnos_limpiar_email
+BEFORE INSERT OR UPDATE ON alumnos
+FOR EACH ROW
+BEGIN
+    :NEW.email := LOWER(TRIM(:NEW.email));
+END;
+/
+```
+
+------------------------------------------------------------------------
+
+## SQLite
+
+SQLite tiene una sintaxis prácticamente idéntica a la de MySQL (sin necesidad de `DELIMITER`) y también trabaja exclusivamente con `FOR EACH ROW`. Para abortar una operación en un trigger `BEFORE`, utiliza la función `RAISE(ABORT, 'mensaje')` en lugar de `SIGNAL`.
+
+``` sql
+CREATE TRIGGER tr_alumnos_activos
+BEFORE DELETE ON alumnos
+FOR EACH ROW
+WHEN OLD.activo = 1
+BEGIN
+    SELECT RAISE(ABORT, 'No se puede eliminar un alumno activo');
+END;
+```

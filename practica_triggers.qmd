@@ -13,45 +13,17 @@ Trabajaremos sobre una copia de laboratorio de la base existente, sin otras sesi
 
 # Objetivos de aprendizaje
 
-- Crear y probar BEFORE y AFTER con INSERT, UPDATE y DELETE.
-- Utilizar OLD y NEW para transformar datos y comparar valores NULL.
-- Distinguir un trigger de CHECK, UNIQUE y las claves foráneas.
+- Crear y probar `BEFORE` y `AFTER` con `INSERT`, `UPDATE` y `DELETE`.
+- Utilizar `OLD` y `NEW` para transformar datos y comparar valores `NULL`.
+- Distinguir un trigger de `CHECK`, `UNIQUE` y las claves foráneas.
 - Mantener cifras derivadas al insertar, modificar y borrar notas.
-- Comprobar la atomicidad de una sentencia y el efecto de COMMIT y ROLLBACK.
-- Integrar los triggers con un procedimiento, un HANDLER y RESIGNAL.
+- Comprobar la atomicidad de una sentencia y el efecto de `COMMIT` y `ROLLBACK`.
+- Integrar los triggers con un procedimiento, un `HANDLER` y `RESIGNAL`.
 - Consultar los objetos creados y retirar únicamente los datos del laboratorio.
 
 # La situación de trabajo
 
 Una secretaría recibe notas desde distintas herramientas y necesita un pequeño panel de resultados. El panel debe cambiar con las notas: si se corrige una calificación, no debería quedar mostrando la suma anterior. Los triggers coordinarán ese mantenimiento dentro de la misma transacción.
-
-# Índice de la práctica
-
-- Entorno de partida y comprobaciones 3
-- Preparar los datos de laboratorio 5
-- BEFORE INSERT para normalizar correos 7
-- BEFORE UPDATE y la restricción UNIQUE 8
-- BEFORE DELETE y las claves foráneas 9
-- BEFORE INSERT para validar notas 11
-- BEFORE UPDATE para proteger cambios 12
-- Entender el resumen automático 13
-- AFTER INSERT para incorporar resultados 14
-- AFTER UPDATE para corregir resultados 16
-- AFTER DELETE para retirar resultados 19
-- Contrastar el resumen con las notas 21
-- Una sentencia que modifica varias filas 22
-- Confirmar y deshacer los cambios 23
-- Un error no siempre deshace lo anterior 24
-- Qué ocurre si falla AFTER 25
-- Integrar un procedimiento transaccional 26
-- Probar el procedimiento y su HANDLER 29
-- Observar otra conexión de forma opcional 31
-- Consultar y mantener los triggers 32
-- Errores comunes y buenas prácticas 33
-- Resumen y comprobación final 34
-- Preguntas de razonamiento y soluciones 35
-- Limpieza controlada del laboratorio 37
-- Referencias y alcance de la verificación 39
 
 # Entorno de partida y comprobaciones
 
@@ -61,27 +33,27 @@ Los nombres se escriben en minúsculas, siguiendo el modelo de las prácticas de
 
 # Archivos auxiliares
 
-1.  [practica_triggers_preparar.sql](practica_triggers_preparar.sql) Ejecutar una vez, en una conexion nueva con autocommit=1 y sin trabajo pendiente. Anade A, B y C, tres matriculas y lab13b_resumen con dos filas. No recrea la base. No instala los triggers. Si detecta objetos previos o datos reservados, detenerse y revisar.
+1.  [practica_triggers_preparar.sql](practica_triggers_preparar.sql) Ejecutar una vez, en una conexion nueva con autocommit=1 y sin trabajo pendiente. Anade A, B y C, tres matriculas y *lab13b_resumen* con dos filas. No recrea la base. No instala los triggers. Si detecta objetos previos o datos reservados, detenerse y revisar.
 
-2.  [practica_triggers_bloques_guiados.sql](practica_triggers_bloques_guiados.sql) NO EJECUTAR TODO EL ARCHIVO. Seleccionar un bloque cada vez. Incluye B01-B48, definiciones y pruebas con errores intencionados. Los errores B06,B09,B12,B15,B25,B26,B31,B36,B39,B43 son previstos. Despues del error, ejecutar la comprobacion y el cierre. B45-B47 son una ampliacion opcional con DOS conexiones reales. No repetir INSERT ni CREATE de bloques ya completados.
+2.  [practica_triggers_bloques_guiados.sql](practica_triggers_bloques_guiados.sql) NO EJECUTAR TODO EL ARCHIVO. Seleccionar un bloque cada vez. Incluye B01-B48, definiciones y pruebas con errores intencionados. Los errores B06,B09,B12,B15,B25,B26,B31,B36,B39,B43 son previstos. Despues del error, ejecutar la comprobacion y el cierre. B45-B47 son una ampliacion opcional con DOS conexiones reales. No repetir `INSERT` ni `CREATE` de bloques ya completados.
 
-3.  [practica_triggers_limpiar.sql](practica_triggers_limpiar.sql) Opcional, al terminar. Revisar antes los marcadores. Elimina solo los datos de laboratorio y los objetos identificados de 13b. Detenerse al primer error. No usar una opcion de continuar forzosamente. Conserva las filas academicas anteriores; no reinicia AUTO_INCREMENT.
+3.  [practica_triggers_limpiar.sql](practica_triggers_limpiar.sql) Opcional, al terminar. Revisar antes los marcadores. Elimina solo los datos de laboratorio y los objetos identificados de 13b. Detenerse al primer error. No usar una opcion de continuar forzosamente. Conserva las filas academicas anteriores; no reinicia `AUTO_INCREMENT`.
 
-Comprobacion realizada con MySQL Community Server 8.4.11 sobre un esquema desechable de referencia, incluyendo UNIQUE y FK utilizados, CHECK de notas, ocho triggers, procedimiento transaccional y limpieza con una fila original que debia conservarse. Se validaron los rechazos esperados y las reversiones. El entorno de prueba no es una copia de los CSV originales del curso.
+Comprobacion realizada con MySQL Community Server 8.4.11 sobre un esquema desechable de referencia, incluyendo `UNIQUE` y FK utilizados, `CHECK` de notas, ocho triggers, procedimiento transaccional y limpieza con una fila original que debía conservarse. Se validaron los rechazos esperados y las reversiones. El entorno de prueba no es una copia de los CSV originales del curso.
 
-La guia explica cada bloque, sus resultados esperados y su motivo.
+La guía explica cada bloque, sus resultados esperados y su motivo.
 
 Los bloques B01 a B48 aparecen con el mismo identificador en el archivo `practica_triggers_bloques_guiados.sql`. Usad el índice de bloques del archivo para seleccionar el código exacto de cada paso.
 
 # Reconocer el modelo que ya existe
 
-El esquema académico tiene alumnos, profesores, asignaturas, cursos, curso_asignatura, matriculas y notas. Una nota pertenece a una matrícula y la matrícula enlaza al alumno con una relación de curso y asignatura. No hay una relación directa notas.id_alumno.
+El esquema académico tiene alumnos, profesores, asignaturas, cursos, curso_asignatura, matriculas y notas. Una nota pertenece a una matrícula y la matrícula enlaza al alumno con una relación de curso y asignatura. No hay una relación directa *notas.id_alumno*.
 
-UNIQUE(id_matricula) permite como máximo una nota final por matrícula. nota es DECIMAL(4,2), admite NULL y conserva su CHECK entre 0 y 10. Las FK, los UNIQUE y el CHECK se mantienen durante toda la práctica.
+`UNIQUE(id_matricula)` permite como máximo una nota final por matrícula. *nota* es `DECIMAL(4,2)`, admite NULL y conserva su `CHECK` entre 0 y 10. Las FK, los `UNIQUE` y el `CHECK` se mantienen durante toda la práctica.
 
 # Abrir una conexión independiente
 
-Usad una conexión nueva, con autocommit = 1 y sin transacciones pendientes. No basta con abrir otra pestaña si utiliza la misma conexión. No ejecutéis SET autocommit = 1 sobre trabajo pendiente: podría confirmarlo.
+Usad una conexión nueva, con *autocommit = 1* y sin transacciones pendientes. No basta con abrir otra pestaña si utiliza la misma conexión. No ejecutéis `SET autocommit = 1` sobre trabajo pendiente: podría confirmarlo.
 
 Bloque B01
 
@@ -162,7 +134,7 @@ Recuperar identificadores y comprobar el estado inicial
 | @ma1 y @ma2 | Las dos matrículas distintas del alumno A.    |
 | @mb1        | La matrícula del alumno B.                    |
 
-Las variables no son columnas ni valores universales. Pertenecen a la conexión. LAST_INSERT_ID() capturó cada identificador inmediatamente después de insertarlo. No se presupone ningún número fijo.
+Las variables no son columnas ni valores universales. Pertenecen a la conexión. `LAST_INSERT_ID()` capturó cada identificador inmediatamente después de insertarlo. No se presupone ningún número fijo.
 
 ## Recuperarlas si se ha abierto otra conexión
 
@@ -326,7 +298,7 @@ SELECT id_alumno,email FROM alumnos
 WHERE id_alumno IN (@a,@b) ORDER BY id_alumno;
 ```
 
-Resultado esperado. B06 falla con 1062 por el correo duplicado. A conserva su correo y B mantiene lab13b.b\@example.com.
+Resultado esperado. B06 falla con 1062 por el correo duplicado. A conserva su correo y B mantiene 'lab13b.b\@example.com'.
 
 ```         
 +-----------+----------------------+
@@ -339,7 +311,7 @@ Resultado esperado. B06 falla con 1062 por el correo duplicado. A conserva su co
 
 `BEFORE` prepara la propuesta, pero `UNIQUE` sigue aplicándose. El correo de B acabaría siendo el mismo que el de A, así que la base rechaza el cambio.
 
-Aquí no usamos SIGNAL. El error lo genera una restricción de la tabla. Poder distinguir el origen de un error es más útil que atribuir cualquier rechazo al trigger.
+Aquí no usamos `SIGNAL`. El error lo genera una restricción de la tabla. Poder distinguir el origen de un error es más útil que atribuir cualquier rechazo al trigger.
 
 # BEFORE DELETE y las claves foráneas
 
@@ -433,7 +405,7 @@ SELECT @enTrigger;
 +-----------------------------------------------+
 ```
 
-El cambio se ha desecho, pero recordemos que los cambios que hagamos a variables no se revierten con un `ROLLBACK`;
+El cambio se ha desecho, pero recordemos que los cambios que hagamos a variables no se revierten con un `ROLLBACK` ([ver capítulo de transacciones](transacciones.qmd#note-mysql-vars)
 
 ## Probar con A y sus relaciones
 
@@ -538,9 +510,9 @@ WHERE id_matricula IN (@ma1,@ma2,@mb1);
 +-----------------+
 ```
 
-Por qué ocurre. 11,00 cabe en DECIMAL(4,2), pero incumple la regla.
+Por qué ocurre. 11,00 cabe en `DECIMAL(4,2)`, pero incumple la regla.
 
-Todavía no insertaremos las notas válidas. Primero instalaremos los AFTER que deben mantener el resumen desde el primer alta. Si cargásemos datos antes, esos triggers no se ejecutarían retrospectivamente sobre las filas ya existentes.
+Todavía no insertaremos las notas válidas. Primero instalaremos los `AFTER` que deben mantener el resumen desde el primer alta. Si cargásemos datos antes, esos triggers no se ejecutarían retrospectivamente sobre las filas ya existentes.
 
 # BEFORE UPDATE para proteger cambios
 
@@ -724,7 +696,7 @@ A2 tiene un registro de notas con calificación NULL. Eso aumenta registradas, p
 
 `UNIQUE(id_matricula)` impide insertar otra nota final para A1 o A2. Cuando la evaluación pendiente reciba una calificación, usaremos `UPDATE` sobre su fila existente.
 
-Hasta aquí cada sentencia correcta se ha confirmado automáticamente porque trabajamos con autocommit = 1 y sin una transacción explícita abierta. Los cambios de notas y resumen se confirman juntos.
+Hasta aquí cada sentencia correcta se ha confirmado automáticamente porque trabajamos con *autocommit = 1* y sin una transacción explícita abierta. Los cambios de notas y resumen se confirman juntos.
 
 # AFTER UPDATE para corregir resultados
 
@@ -830,9 +802,9 @@ SELECT * FROM lab13b_resumen WHERE id_alumno=@a;
 +-----------+-------------+-----------+-----------+-------+
 ```
 
-El trigger `UPDATE` puede activarse aunque la calificación sea la misma. Su IF comprueba qué necesita el panel: como nota no ha cambiado, no altera las cifras. El panel no pretende mantener un contador de ejecuciones del trigger.
+El trigger `UPDATE` puede activarse aunque la calificación sea la misma. Su `IF` comprueba qué necesita el panel: como nota no ha cambiado, no altera las cifras. El panel no pretende mantener un contador de ejecuciones del trigger.
 
-Comprobar los cambios que BEFORE rechaza
+Comprobar los cambios que `BEFORE` rechaza
 
 ## Intentar una calificación negativa
 
@@ -895,7 +867,7 @@ No corregimos la prueba quitando una restricción. Su finalidad es observar el r
 
 # AFTER DELETE para retirar resultados
 
-Objetivo: retirar del resumen la aportación de una nota eliminada. DELETE no tiene una nueva fila: usamos `OLD`.
+Objetivo: retirar del resumen la aportación de una nota eliminada. `DELETE` no tiene una nueva fila: usamos `OLD`.
 
 ## Crear AFTER DELETE
 
@@ -980,7 +952,7 @@ Lo que demuestra esta prueba:
 
 Comprobación adicional opcional
 
-Dentro de una transacción podéis devolver A2 a NULL, borrarla y observar el resumen. La actualización retirará sus 8,00 y el borrado posterior solo reducirá registradas. Terminad con ROLLBACK para recuperar el estado de referencia.
+Dentro de una transacción podéis devolver A2 a NULL, borrarla y observar el resumen. La actualización retirará sus 8,00 y el borrado posterior solo reducirá registradas. Terminad con `ROLLBACK` para recuperar el estado de referencia.
 
 ``` sql
 START TRANSACTION;
@@ -1196,7 +1168,7 @@ SELECT * FROM lab13b_resumen WHERE id_alumno=@a;
 UPDATE notas SET nota=6.00 WHERE id_matricula=@ma1;
 ```
 
-La restauración es una nueva modificación, no un ROLLBACK tardío. COMMIT cerró la transacción anterior. Su trabajo ya confirmado no se deshace con un ROLLBACK posterior.
+La restauración es una nueva modificación, no un `ROLLBACK` tardío. `COMMIT` cerró la transacción anterior. Su trabajo ya confirmado no se deshace con un `ROLLBACK` posterior.
 
 | Acción                             | Nota A1 | Suma de A |
 |------------------------------------|---------|-----------|
@@ -1206,7 +1178,7 @@ La restauración es una nueva modificación, no un ROLLBACK tardío. COMMIT cerr
 | COMMIT del segundo paso            | 7,00    | 15,00     |
 | Restauración explícita             | 6,00    | 14,00     |
 
-En ambos casos, notas y lab13b_resumen siguen el mismo final transaccional. Los triggers no contienen COMMIT ni ROLLBACK: la decisión corresponde a la operación que los provoca.
+En ambos casos, *notas* y *lab13b_resumen* siguen el mismo final transaccional. Los triggers no contienen `COMMIT` ni `ROLLBACK`: la decisión corresponde a la operación que los provoca.
 
 # Un error no siempre deshace lo anterior
 
@@ -1222,7 +1194,7 @@ UPDATE notas SET observaciones='Cambio previo pendiente'
 WHERE id_matricula=@ma1;
 ```
 
-Todavía no hay COMMIT. El comentario de A1 ha cambiado dentro de esta transacción. Como su nota no varía, el resumen no cambia.
+Todavía no hay `COMMIT`. El comentario de A1 ha cambiado dentro de esta transacción. Como su nota no varía, el resumen no cambia.
 
 ## Provocar un error en otra sentencia
 
@@ -1269,7 +1241,7 @@ WHERE id_matricula=@ma1;
 +------+---------------+
 ```
 
-El primer SELECT aún muestra Cambio previo pendiente. Después de ROLLBACK vuelve el comentario anterior, Evaluacion A1.
+El primer `SELECT` aún muestra Cambio previo pendiente. Después de `ROLLBACK` vuelve el comentario anterior, Evaluacion A1.
 
 El error de la segunda sentencia no ha deshecho necesariamente la primera. La transacción seguía abierta y éramos responsables de decidir si confirmábamos el cambio previo o deshacíamos todo.
 
@@ -1291,7 +1263,7 @@ START TRANSACTION;
 UPDATE lab13b_resumen SET suma=0 WHERE id_alumno=@a;
 ```
 
-A tiene notas 6 y 8, pero dentro de la transacción hemos dejado su suma a cero. El `CHECK` permite ese cero porque no conoce las notas de otra tabla. No ejecutéis COMMIT durante esta prueba.
+A tiene notas 6 y 8, pero dentro de la transacción hemos dejado su suma a cero. El `CHECK` permite ese cero porque no conoce las notas de otra tabla. No ejecutéis `COMMIT` durante esta prueba.
 
 ## Intentar eliminar la nota de 8
 
@@ -1345,7 +1317,7 @@ SELECT * FROM lab13b_resumen WHERE id_alumno=@a;
 +-----------+-------------+-----------+-----------+-------+
 ```
 
-La nota A2 sigue siendo 8,00. Antes del ROLLBACK, suma continúa en 0 porque la avería era una sentencia anterior. Después del ROLLBACK se recupera el resumen 2, 2, 2 y 14,00.
+La nota A2 sigue siendo 8,00. Antes del `ROLLBACK`, suma continúa en 0 porque la avería era una sentencia anterior. Después del `ROLLBACK` se recupera el resumen 2, 2, 2 y 14,00.
 
 Falló el `UPDATE` del `AFTER` y con él falló el `DELETE` activador. InnoDB recuperó la nota borrada, pero no deshizo automáticamente la manipulación previa del resumen.
 
@@ -1363,7 +1335,7 @@ Diseño de la operación
 
 Los triggers mantienen sus funciones: `BEFORE` valida las calificaciones y la identidad; `AFTER` ajusta las cifras. El procedimiento coordina la operación completa y decide su final transaccional.
 
-El HANDLER que necesitamos
+El `HANDLER` que necesitamos
 
 ``` sql
 DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1375,7 +1347,7 @@ END;
 
 `SQLEXCEPTION` captura los errores de la operación. `ROLLBACK` deshace el conjunto y `RESIGNAL` conserva y propaga el error original. `EXIT` abandona el bloque. No añadimos un `COMMIT` dentro del `HANDLER` ni ocultamos el rechazo.
 
-Llamad a este procedimiento sin otra transacción abierta. `START TRANSACTION` puede cerrar implícitamente una anterior. El procedimiento es dueño de esta operación y no es una subtransacción que podamos anidar libremente. autocommit = 1 por sí solo no demuestra que no haya trabajo explícito pendiente.
+Llamad a este procedimiento sin otra transacción abierta. `START TRANSACTION` puede cerrar implícitamente una anterior. El procedimiento es dueño de esta operación y no es una subtransacción que podamos anidar libremente. *autocommit = 1* por sí solo no demuestra que no haya trabajo explícito pendiente.
 
 Crear el procedimiento
 
@@ -1425,13 +1397,13 @@ La comprobación de matrículas distintas se hace antes de empezar las actualiza
 
 Aunque aquí no se usan parámetros `OUT`, la ejecución puede dar un error al cliente. Un procedimiento no necesita devolver una tabla de resultados para comunicar un fallo: `RESIGNAL` conserva la condición que lo explica.
 
-El `JOIN` con lab13b_resumen limita la operación a las notas del laboratorio. `COUNT` debe devolver 2; no basta con que exista una de ellas. Los *id_matricula* son únicos en notas, así que no esperamos duplicados de nota final.
+El `JOIN` con *lab13b_resumen* limita la operación a las notas del laboratorio. `COUNT` debe devolver 2; no basta con que exista una de ellas. Los *id_matricula* son únicos en notas, así que no esperamos duplicados de nota final.
 
 Cada `UPDATE` activa sus `BEFORE` y `AFTER`. Solo cuando ambos han terminado se llega a `COMMIT`. Si el segundo genera `SIGNAL`, el control pasa al `HANDLER` y no continúa hacia la confirmación.
 
 `SQL SECURITY INVOKER` utiliza los permisos de la cuenta que llama al procedimiento. Los triggers mantienen su propio contexto de `DEFINER`. En esta práctica una misma cuenta de administración dispone de ambos conjuntos de permisos.
 
-No se llama a este procedimiento desde un trigger: contiene control de transacciones que no está permitido en ese contexto. La dirección de ejecución es cliente → CALL → UPDATE → triggers.
+No se llama a este procedimiento desde un trigger: contiene control de transacciones que no está permitido en ese contexto. La dirección de ejecución es: cliente → CALL → UPDATE → triggers.
 
 # Probar el procedimiento y su HANDLER
 
@@ -1472,7 +1444,9 @@ Bloque B43
 CALL sp13b_evaluar_pareja(@ma1,10.00,@ma2,11.00);
 ```
 
-Resultado esperado. Error 1644: la nota 11,00 es rechazada por BEFORE UPDATE.
+```         
+ERROR 1644 (45000): Indicar dos matriculas distintas
+```
 
 ## Comprobar la reversión y recuperar el estado
 
@@ -1482,13 +1456,28 @@ Bloque B44
 SELECT id_matricula,nota FROM notas
 WHERE id_matricula IN (@ma1,@ma2) ORDER BY id_matricula;
 SELECT * FROM lab13b_resumen WHERE id_alumno=@a;
+```
+
+```         
++--------------+------+
+| id_matricula | nota |
++--------------+------+
+|           51 | 7.00 |
+|           52 | 9.00 |
++--------------+------+
++-----------+-------------+-----------+-----------+-------+
+| id_alumno | registradas | evaluadas | aprobadas | suma  |
++-----------+-------------+-----------+-----------+-------+
+|        22 |           2 |         2 |         2 | 16.00 |
++-----------+-------------+-----------+-----------+-------+
+```
+
+``` sql
 -- Recuperamos el estado de referencia de esta practica.
 CALL sp13b_evaluar_pareja(@ma1,6.00,@ma2,8.00);
 ```
 
-Resultado esperado. Antes de la última llamada siguen 7,00 y 9,00, con suma 16,00. La llamada final recupera 6,00 y 8,00, con suma 14,00.
-
-Aunque el primer UPDATE de la llamada fallida había propuesto 10,00, el HANDLER revirtió toda la transacción y su ajuste del resumen. RESIGNAL permite que el cliente sepa que la operación no terminó correctamente.
+Aunque el primer `UPDATE` de la llamada fallida había propuesto 10,00, el `HANDLER` revirtió toda la transacción y su ajuste del resumen. `RESIGNAL` permite que el cliente sepa que la operación no terminó correctamente.
 
 Seguir el recorrido de la llamada fallida
 
@@ -1499,21 +1488,21 @@ Seguir el recorrido de la llamada fallida
 | Segundo UPDATE propone 11 | Se genera SIGNAL | Sin cambio | No se confirma |
 | HANDLER con ROLLBACK      | 7,00             | 9,00       | 16,00          |
 
-La fila intermedia es una explicación del recorrido; el procedimiento no devuelve una consulta entre los dos UPDATE. No debemos esperar ver 19,00 en la salida de la llamada fallida.
+La fila intermedia es una explicación del recorrido; el procedimiento no devuelve una consulta entre los dos `UPDATE`. No debemos esperar ver 19,00 en la salida de la llamada fallida.
 
-Comparar con el error manual del apartado 15
+Comparar con el error manual del apartado 15: En aquella prueba hubo un cambio previo pendiente y el error de otra sentencia no lo anuló automáticamente. Aquí el `HANDLER` añade una decisión explícita: cualquier excepción de esta operación provoca un `ROLLBACK` del conjunto.
 
-En aquella prueba hubo un cambio previo pendiente y el error de otra sentencia no lo anuló automáticamente. Aquí el HANDLER añade una decisión explícita: cualquier excepción de esta operación provoca un ROLLBACK del conjunto.
+No sería equivalente un `CONTINUE HANDLER` que solo guardase un mensaje y dejase que la ejecución llegara a `COMMIT`. Se podría confirmar el primer cambio aunque el segundo hubiera sido rechazado.
 
-No sería equivalente un CONTINUE HANDLER que solo guardase un mensaje y dejase que la ejecución llegara a COMMIT. Se podría confirmar el primer cambio aunque el segundo hubiera sido rechazado.
+Límite del ejemplo:
 
-Límite del ejemplo
+Esta rutina está pensada para una sesión de laboratorio que trabaja con sus propios registros. En un sistema con operaciones concurrentes habría que ampliar el diseño de los bloqueos, el orden de acceso y los reintentos de interbloqueos.
 
-Esta rutina está pensada para una sesión de laboratorio que trabaja con sus propios registros. En un sistema con operaciones concurrentes habría que ampliar el diseño de los bloqueos, el orden de acceso y los reintentos de interbloqueos. Mantener el panel con UPDATE incrementales no sustituye ese análisis de la operación completa.
+Mantener el panel con `UPDATE` incrementales no sustituye ese análisis de la operación completa.
 
 # Observar otra conexión de forma opcional
 
-Ampliación opcional. Necesitamos dos conexiones reales, A y B. Si ambas pestañas comparten CONNECTION_ID(), no son dos sesiones independientes. Al comenzar A tiene 6 y 8, con suma 14.
+Ampliación opcional. Necesitamos dos conexiones reales, A y B. Si ambas pestañas comparten `CONNECTION_ID()`, no son dos sesiones independientes. Al comenzar A tiene 6 y 8, con suma 14.
 
 ## Cambiar una nota en A sin confirmar
 
@@ -1527,7 +1516,15 @@ SELECT * FROM lab13b_resumen WHERE id_alumno=@a;
 -- No confirmar todavia; pasar a la conexion B.
 ```
 
-Resultado esperado. En A se ve suma 17,00. Dejamos la transacción abierta para que B lea su estado confirmado.
+```         
++-----------+-------------+-----------+-----------+-------+
+| id_alumno | registradas | evaluadas | aprobadas | suma  |
++-----------+-------------+-----------+-----------+-------+
+|        22 |           2 |         2 |         2 | 17.00 |
++-----------+-------------+-----------+-----------+-------+
+```
+
+Dejamos la transacción abierta para que B lea su estado confirmado.
 
 ## Leer desde una conexión B nueva
 
@@ -1539,6 +1536,14 @@ USE academia_it;
 SELECT a.email,r.registradas,r.evaluadas,r.aprobadas,r.suma
 FROM lab13b_resumen r JOIN alumnos a USING(id_alumno)
 WHERE a.email='lab13b.a@example.com';
+```
+
+```         
++----------------------+-------------+-----------+-----------+-------+
+| email                | registradas | evaluadas | aprobadas | suma  |
++----------------------+-------------+-----------+-----------+-------+
+| lab13b.a@example.com |           2 |         2 |         2 | 14.00 |
++----------------------+-------------+-----------+-----------+-------+
 ```
 
 Resultado esperado. B muestra suma 14,00 en una lectura normal. No ve la corrección pendiente de A.
@@ -1554,9 +1559,9 @@ ROLLBACK;
 
 Volved a ejecutar B46 en B. El resumen continúa siendo 14,00. A y B vuelven a coincidir.
 
-Por qué ocurre. Con las opciones habituales de InnoDB, una lectura normal de otra sesión no expone los cambios pendientes. Se presupone que B es nueva, tiene autocommit = 1 y no utiliza READ UNCOMMITTED ni una transacción antigua con una vista de lectura previa.
+Por qué ocurre. Con las opciones habituales de InnoDB, una lectura normal de otra sesión no expone los cambios pendientes. Se presupone que B es nueva, tiene *autocommit = 1* y no utiliza `READ UNCOMMITTED` ni una transacción antigua con una vista de lectura previa.
 
-No hagáis un UPDATE desde B durante esta observación: podría esperar por bloqueos de A y sería una prueba distinta. Cerrad A con ROLLBACK antes de continuar.
+No hagáis un `UPDATE` desde B durante esta observación: podría esperar por bloqueos de A y sería una prueba distinta. Cerrad A con `ROLLBACK` antes de continuar.
 
 # Consultar y mantener los triggers
 
@@ -1576,87 +1581,103 @@ ORDER BY EVENT_OBJECT_TABLE,ACTION_TIMING,EVENT_MANIPULATION;
 SHOW CREATE TRIGGER academia_it.tr13b_notas_au;
 ```
 
-Resultado esperado. Ocho filas: tres triggers sobre alumnos y cinco sobre notas. SHOW CREATE TRIGGER muestra el AFTER UPDATE completo.
+```         
++------------------+--------------------+---------------+--------------------+--------------+
+| TRIGGER_NAME     | EVENT_OBJECT_TABLE | ACTION_TIMING | EVENT_MANIPULATION | ACTION_ORDER |
++------------------+--------------------+---------------+--------------------+--------------+
+| tr13b_alumnos_bi | alumnos            | BEFORE        | INSERT             |            1 |
+| tr13b_alumnos_bu | alumnos            | BEFORE        | UPDATE             |            1 |
+| tr13b_alumnos_bd | alumnos            | BEFORE        | DELETE             |            1 |
+| tr13b_notas_bi   | notas              | BEFORE        | INSERT             |            1 |
+| tr13b_notas_bu   | notas              | BEFORE        | UPDATE             |            1 |
+| tr13b_notas_ai   | notas              | AFTER         | INSERT             |            1 |
+| tr13b_notas_au   | notas              | AFTER         | UPDATE             |            1 |
+| tr13b_notas_ad   | notas              | AFTER         | DELETE             |            1 |
++------------------+--------------------+---------------+--------------------+--------------+
+```
 
-| Objeto           | Evento y momento |
-|------------------|------------------|
-| tr13b_alumnos_bi | BEFORE INSERT    |
-| tr13b_alumnos_bu | BEFORE UPDATE    |
-| tr13b_alumnos_bd | BEFORE DELETE    |
-| tr13b_notas_bi   | BEFORE INSERT    |
-| tr13b_notas_bu   | BEFORE UPDATE    |
-| tr13b_notas_ai   | AFTER INSERT     |
-| tr13b_notas_au   | AFTER UPDATE     |
-| tr13b_notas_ad   | AFTER DELETE     |
+```         
+ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,
+NO_ZERO_IN_DATE,
+NO_ZERO_DATE,
+ERROR_FOR_DIVISION_BY_ZERO,
+NO_ENGINE_SUBSTITUTION  
+CREATE DEFINER=`root`@`localhost` 
+TRIGGER `tr13b_notas_au` AFTER UPDATE ON `notas` 
+    FOR EACH ROW BEGIN
+      DECLARE v_alumno INT UNSIGNED;
+      -- Evitamos recalcular si la nota sigue igual, incluso NULL.
+      IF NOT (OLD.nota <=> NEW.nota) THEN
+        SELECT id_alumno INTO v_alumno FROM matriculas
+        WHERE id_matricula=NEW.id_matricula;
+        -- Quitamos la aportacion anterior y sumamos la nueva.
+        UPDATE lab13b_resumen
+        SET evaluadas=evaluadas-(OLD.nota IS NOT NULL)
+                               +(NEW.nota IS NOT NULL),
+            aprobadas=aprobadas-IFNULL(OLD.nota>=5,0)
+                               +IFNULL(NEW.nota>=5,0),
+            suma=suma-IFNULL(OLD.nota,0)+IFNULL(NEW.nota,0)
+        WHERE id_alumno=v_alumno;
+      END IF;
+    END 
+    | utf8mb4              | utf8mb4_0900_ai_ci   | utf8mb4_0900_ai_ci | 2026-11-17 08:35:17.74 |
+```
 
-Si el árbol de Workbench no se refresca o muestra un objeto en un lugar inesperado, contrastad con el servidor. Una FK no es un trigger. Verificar contra la versión instalada la forma de actualizar el árbol de objetos.
+Si el árbol de Workbench no se refresca o muestra un objeto en un lugar inesperado, contrastad con el servidor.
+
+Una FK no es un trigger. Verificar contra la versión instalada la forma de actualizar el árbol de objetos.
 
 ## Pensar antes de sustituir
 
-MySQL no ofrece ALTER TRIGGER para cambiar su cuerpo. Hay que guardar la definición, retirar el objeto y recrearlo de manera controlada. CREATE y DROP no se hacen en una transacción que queramos proteger con ROLLBACK. No modifiquéis notas si falta un AFTER del panel.
+MySQL no ofrece `ALTER TRIGGER` para cambiar su cuerpo. Hay que guardar la definición, retirar el objeto y recrearlo de manera controlada.
+
+`CREATE` y `DROP` no se hacen en una transacción que queramos proteger con `ROLLBACK`.
+
+No modifiquéis notas si falta un `AFTER` del panel.
 
 # Errores comunes y buenas prácticas
 
-La preparación se detiene
+**La preparación se detiene**
 
-Leed el mensaje: puede haber triggers anteriores, correos reservados, una tabla auxiliar existente o un esquema diferente. No se soluciona volviendo a ejecutar el archivo repetidamente. Si sp13b_preparar se creó pero falló su llamada, revisad el entorno antes de retirar y recrear solo esa rutina auxiliar.
+Leed el mensaje: puede haber triggers anteriores, correos reservados, una tabla auxiliar existente o un esquema diferente. No se soluciona volviendo a ejecutar el archivo repetidamente. Si *sp13b_preparar* se creó pero falló su llamada, revisad el entorno antes de retirar y recrear solo esa rutina auxiliar.
 
-Un identificador aparece como NULL
+**Un identificador aparece como NULL**
 
 Puede haberse abierto otra conexión. Ejecutad B02 y comprobad los marcadores y las tres matrículas. Si los datos faltan, revisad la preparación. No sustituyáis NULL por un número elegido de un alumno anterior.
 
-Un bloque BEGIN o END da error de sintaxis
+**Un bloque `BEGIN` o `END` da error de sintaxis**
 
-Seleccionad la definición completa, incluidos DELIMITER, CREATE y el cierre. Las líneas DELIMITER pertenecen al cliente; no se envían desde un conector de aplicación.
+Seleccionad la definición completa, incluidos `DELIMITER`, `CREATE` y el cierre. Las líneas `DELIMITER` pertenecen al cliente; no se envían desde un conector de aplicación.
 
-Error 1175 de Safe Updates
+**Error 1175 de Safe Updates**
 
-Comprobad el WHERE y las claves que utiliza la sentencia. Los pasos ordinarios filtran por identificadores o claves únicas. En la limpieza puede ser necesario que la cuenta de laboratorio use SET SESSION sql_safe_updates = 0; guardad antes el valor y restauradlo al terminar. No cambiéis opciones globales ni eliminéis WHERE para superar el error.
+Comprobad el `WHERE` y las claves que utiliza la sentencia. Los pasos ordinarios filtran por identificadores o claves únicas. En la limpieza puede ser necesario que la cuenta de laboratorio use `SET SESSION sql_safe_updates = 0;` guardad antes el valor y restauradlo al terminar. No cambiéis opciones globales ni eliminéis `WHERE` para superar el error.
 
-El resumen no coincide
+**El resumen no coincide**
 
-Ejecutad B29. Revisad que se instalaron los AFTER antes de B20 y que no se han ejecutado dos veces los INSERT. No arregléis el síntoma escribiendo cifras inventadas: determinad qué bloque faltó o se repitió.
+Ejecutad B29. Revisad que se instalaron los `AFTER` antes de B20 y que no se han ejecutado dos veces los `INSERT`. No arregléis el síntoma escribiendo cifras inventadas: determinad qué bloque faltó o se repitió.
 
-Un error esperado deja una prueba abierta
+**Un error esperado deja una prueba abierta**
 
-Seguid con el bloque de comprobación y el ROLLBACK indicado. No ejecutéis DDL entre ambos pasos. El error de una sentencia no demuestra que toda la transacción haya terminado.
+Seguid con el bloque de comprobación y el `ROLLBACK` indicado. No ejecutéis DDL entre ambos pasos. El error de una sentencia no demuestra que toda la transacción haya terminado.
 
-Buenas prácticas durante el laboratorio
+**Buenas prácticas durante el laboratorio**
 
 - Leer el objetivo y el resultado antes de ejecutar.
 - Mantener una sola conexión principal y ejecutar cada error de forma aislada.
-- Conservar CHECK, UNIQUE y las FK; no desactivarlas para completar una prueba.
+- Conservar `CHECK`, `UNIQUE` y las FK; no desactivarlas para completar una prueba.
 - No modificar los correos ni los nombres que identifican A, B y C.
 - Comprobar los datos después del error, no solo el mensaje del cliente.
 
-# Resumen y comprobación final
+# Qué hemos aprendido de cada mecanismo
 
-El estado de referencia, después de restaurar las pruebas, debe ser el siguiente.
-
-| Matrícula | Nota | Observaciones relevantes |
-|-----------|------|--------------------------|
-| A1        | 6,00 | Evaluacion A1            |
-| A2        | 8,00 | Comentario actualizado   |
-| B1        | 4,00 | Evaluacion B1            |
-
-| Alumno | Registradas | Evaluadas | Aprobadas | Suma  |
-|--------|-------------|-----------|-----------|-------|
-| A      | 2           | 2         | 2         | 14,00 |
-| B      | 1           | 1         | 0         | 4,00  |
-
-## Hacer la última comprobación
-
-Ejecutad B29 y B48. La consulta de contraste debe mostrar cifras coincidentes y deben existir ocho triggers. A, B y C continúan activos; C sigue sin matrículas.
-
-Qué hemos aprendido de cada mecanismo
-
-- BEFORE prepara una propuesta o la rechaza antes de completar la fila.
-- AFTER mantiene datos relacionados después de la operación sobre esa fila.
-- OLD y NEW describen una fila concreta, no todo el conjunto de la sentencia.
-- FOR EACH ROW puede ejecutar el mismo código varias veces.
-- NULL exige distinguir una nota pendiente de un cero y de una fila inexistente.
-- Los cambios de los AFTER participan en la transacción activadora.
-- Un HANDLER con ROLLBACK y RESIGNAL puede convertir varios pasos en una operación que falla completa.
+- `BEFORE` prepara una propuesta o la rechaza antes de completar la fila.
+- `AFTER` mantiene datos relacionados después de la operación sobre esa fila.
+- `OLD` y `NEW` describen una fila concreta, no todo el conjunto de la sentencia.
+- `FOR EACH ROW` puede ejecutar el mismo código varias veces.
+- `NULL` exige distinguir una nota pendiente de un cero y de una fila inexistente.
+- Los cambios de los `AFTER` participan en la transacción activadora.
+- Un `HANDLER` con `ROLLBACK` y `RESIGNAL` puede convertir varios pasos en una operación que falla completa.
 
 El coste y las dependencias también cuentan: cada fila procesada añade el trabajo de sus triggers. Un resumen guardado facilita lecturas, pero exige mantenerlo y verificarlo. Para esta práctica esa responsabilidad queda acotada al panel de A y B.
 
@@ -1708,7 +1729,7 @@ A conserva 2 registradas y 2 evaluadas. Queda 1 aprobada y la suma baja a 12,00.
 
 ## Activación y necesidad de mantenimiento son distintas
 
-La operación UPDATE procesa la fila, pero la condición NOT (OLD.nota \<=\> NEW.nota) es falsa. El comentario puede cambiar sin que cambien las cifras del panel.
+La operación `UPDATE` procesa la fila, pero la condición `NOT (OLD.nota <=> NEW.nota)` es falsa. El comentario puede cambiar sin que cambien las cifras del panel.
 
 ## La sentencia falla completa
 
@@ -1716,11 +1737,11 @@ Si el error del trigger se propaga, InnoDB revierte los cambios de esa sentencia
 
 ## El HANDLER coordina la reversión
 
-La primera corrección era provisional. El error de la segunda activa el EXIT HANDLER, que ejecuta ROLLBACK y RESIGNAL. Se recuperan ambas notas y el resumen previo, y el cliente recibe el error.
+La primera corrección era provisional. El error de la segunda activa el `EXIT HANDLER`, que ejecuta `ROLLBACK` y `RESIGNAL`. Se recuperan ambas notas y el resumen previo, y el cliente recibe el error.
 
 ## La avería pertenecía a otra sentencia
 
-El fallo del AFTER revierte el DELETE que lo activó, por eso la nota permanece. La puesta a cero fue una sentencia previa dentro de la misma transacción y aún no se había deshecho. El ROLLBACK final recupera también esa cifra.
+El fallo del `AFTER` revierte el `DELETE` que lo activó, por eso la nota permanece. La puesta a cero fue una sentencia previa dentro de la misma transacción y aún no se había deshecho. El `ROLLBACK` final recupera también esa cifra.
 
 ## No hay mantenimiento retrospectivo
 
@@ -1736,29 +1757,29 @@ La limpieza es opcional y se ejecuta al terminar la revisión. Si queréis conse
 
 ## Cerrar las pruebas pendientes
 
-Ejecutad ROLLBACK si queda abierta una de las pruebas. Aseguraos de que B29 vuelve a coincidir y de que no hay otra sesión modificando los datos de prueba. No utilicéis COMMIT para cerrar una avería o un estado provisional que no queráis conservar.
+Ejecutad ROLLBACK si queda abierta una de las pruebas. Aseguraos de que B29 vuelve a coincidir y de que no hay otra sesión modificando los datos de prueba. No utilicéis `COMMIT` para cerrar una avería o un estado provisional que no queráis conservar.
 
-## Abrir 02_limpiar_13b.sql y revisar su alcance
+## Abrir practica_triggers_limpiar.sql y revisar su alcance
 
-El script define sp13b_limpiar. Comprueba los tres alumnos identificables, las dos matrículas de A, la de B, la ausencia de matrículas de C y las dos filas del resumen. También rechaza triggers ajenos al conjunto esperado.
+El script define *sp13b_limpiar*. Comprueba los tres alumnos identificables, las dos matrículas de A, la de B, la ausencia de matrículas de C y las dos filas del resumen. También rechaza triggers ajenos al conjunto esperado.
 
-Si se ha cambiado un marcador o se han añadido otras matrículas, el script se detiene antes de borrar datos. Se revisa la diferencia; no se amplía el WHERE hasta incluir registros desconocidos.
+Si se ha cambiado un marcador o se han añadido otras matrículas, el script se detiene antes de borrar datos. Se revisa la diferencia; no se amplía el `WHERE` hasta incluir registros desconocidos.
 
-## Ejecutar la limpieza una vez
+# Ejecutar la limpieza una vez
 
 Ejecutad el archivo completo y deteneos ante el primer error. No activéis una opción de continuar forzosamente si falla una validación o una eliminación.
 
-La parte de datos se hace en una transacción y en este orden: notas, matrículas, filas del resumen, desactivación de A, B y C y eliminación de esos alumnos. Los AFTER siguen disponibles mientras se eliminan las notas. El HANDLER revierte esos cambios y relanza el error si algo falla.
+La parte de datos se hace en una transacción y en este orden: notas, matrículas, filas del resumen, desactivación de A, B y C y eliminación de esos alumnos. Los `AFTER` siguen disponibles mientras se eliminan las notas. El `HANDLER` revierte esos cambios y relanza el error si algo falla.
 
-Después del COMMIT se retiran por sus nombres los ocho triggers, el procedimiento de evaluación, la tabla auxiliar y las dos rutinas auxiliares de preparación y limpieza. El DDL final no forma parte de la transacción de datos.
+Después del `COMMIT` se retiran por sus nombres los ocho triggers, el procedimiento de evaluación, la tabla auxiliar y las dos rutinas auxiliares de preparación y limpieza. El DDL final no forma parte de la transacción de datos.
 
-Si Safe Updates impide un DELETE de la limpieza, su HANDLER revierte la parte de datos. Revisad el error antes de repetir. Puede utilizarse una opción de sesión controlada como se explica en el apartado de errores; no se desactiva la integridad referencial.
+Si *Safe Updates* impide un `DELETE` de la limpieza, su `HANDLER` revierte la parte de datos. Revisad el error antes de repetir. Puede utilizarse una opción de sesión controlada como se explica en el apartado de errores; no se desactiva la integridad referencial.
 
 Comprobar la retirada y comprender sus límites
 
 ## Revisar el resultado final
 
-Resultado esperado. No quedan correos reservados del laboratorio, ni lab13b_resumen, ni triggers tr13b\_, ni rutinas sp13b\_. Los recuentos de las tablas originales vuelven a los previos si no hubo otras modificaciones ajenas.
+Resultado esperado. No quedan correos reservados del laboratorio, ni *lab13b_resumen*, ni triggers *tr13b\_*, ni rutinas *sp13b\_*. Los recuentos de las tablas originales vuelven a los previos si no hubo otras modificaciones ajenas.
 
 ``` sql
 SELECT COUNT(*) AS alumnos_reservados FROM alumnos
@@ -1774,9 +1795,9 @@ WHERE ROUTINE_SCHEMA='academia_it'
 
 Se esperan 0 alumnos reservados y dos consultas sin filas. El script también muestra los recuentos iniciales capturados si seguimos en la conexión original. En una conexión nueva esas variables serán NULL y no sirven para una comparación histórica.
 
-Qué no se restaura al borrar los datos
+**Qué no se restaura al borrar los datos:**
 
-Los números consumidos de AUTO_INCREMENT no tienen por qué recuperarse. No se reinician contadores ni se intenta hacer que los identificadores sean consecutivos.
+Los números consumidos de `AUTO_INCREMENT` no tienen por qué recuperarse. No se reinician contadores ni se intenta hacer que los identificadores sean consecutivos.
 
 Los ejemplos previos del 13a que se decidiera retirar antes de empezar no se recrean automáticamente. Si deben conservarse, se reponen desde su definición guardada y fuera de cualquier transacción pendiente.
 
@@ -1785,26 +1806,3 @@ Si la práctica se interrumpió a mitad
 La limpieza admite que todavía no existan todos los triggers o que no se hayan insertado las notas. Requiere que la preparación haya terminado y que se conserven los marcadores y las matrículas. Si la propia preparación quedó incompleta, hay que revisar lo que creó antes de usar este archivo.
 
 No ejecutéis la limpieza dos veces sin revisar: la segunda ya no tendrá alumnos ni tabla auxiliar y no constituye una nueva preparación.
-
-# Referencias y alcance de la verificación
-
-Base técnica: documentación oficial de MySQL 8.4. Consulta realizada el 15 de noviembre de 2026. Los ejercicios, los datos de prueba y el diseño del panel son propios.
-
-- Trigger Syntax and Examples
-- CREATE TRIGGER Statement
-- Restrictions on Stored Programs
-- SIGNAL Statement
-- Comparison Functions and Operators
-- DECLARE HANDLER Statement
-- RESIGNAL Statement
-- Statements That Cause an Implicit Commit
-- CHECK Constraints
-- InnoDB Error Handling
-
-Alcance de la comprobación
-
-Las pruebas automatizadas se ejecutaron con MySQL Community Server 8.4.11 sobre un entorno desechable que reproduce los campos y restricciones utilizados del esquema documentado. Se contrastaron la preparación, los rechazos previstos, los ajustes del panel, las reversiones y la conservación de filas originales durante la limpieza.
-
-Esto no sustituye la revisión de SHOW CREATE TABLE en vuestra instalación. No se ha utilizado una copia real de los CSV ni se han supuesto identificadores concretos. Las rutas y los menús del cliente se deben verificar contra la versión instalada.
-
-La ampliación con dos conexiones es una observación guiada para el aula. Su resultado presupone lecturas normales de InnoDB y las condiciones de sesión indicadas. Se separa de las comprobaciones automatizadas de una sola sesión.
