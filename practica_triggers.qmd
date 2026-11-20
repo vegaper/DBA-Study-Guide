@@ -1,9 +1,7 @@
 ---
-title: " "
+title: "Práctica guiada de triggers en MySQL"
 format: html
 ---
-
-Práctica guiada de triggers en MySQL
 
 Preparar datos validar operaciones y mantener un resumen automático
 
@@ -33,27 +31,43 @@ Los nombres se escriben en minúsculas, siguiendo el modelo de las prácticas de
 
 # Archivos auxiliares
 
-1.  [practica_triggers_preparar.sql](practica_triggers_preparar.sql) Ejecutar una vez, en una conexion nueva con autocommit=1 y sin trabajo pendiente. Anade A, B y C, tres matriculas y *lab13b_resumen* con dos filas. No recrea la base. No instala los triggers. Si detecta objetos previos o datos reservados, detenerse y revisar.
+1.  [practica_triggers_preparar.sql](practica_triggers_preparar.sql) Ejecutar una vez, en una conexión nueva con `autocommit=1` y sin trabajo pendiente.
 
-2.  [practica_triggers_bloques_guiados.sql](practica_triggers_bloques_guiados.sql) NO EJECUTAR TODO EL ARCHIVO. Seleccionar un bloque cada vez. Incluye B01-B48, definiciones y pruebas con errores intencionados. Los errores B06,B09,B12,B15,B25,B26,B31,B36,B39,B43 son previstos. Despues del error, ejecutar la comprobacion y el cierre. B45-B47 son una ampliacion opcional con DOS conexiones reales. No repetir `INSERT` ni `CREATE` de bloques ya completados.
+    - Añade A, B y C, tres matriculas y *lab13b_resumen* con dos filas.
 
-3.  [practica_triggers_limpiar.sql](practica_triggers_limpiar.sql) Opcional, al terminar. Revisar antes los marcadores. Elimina solo los datos de laboratorio y los objetos identificados de 13b. Detenerse al primer error. No usar una opcion de continuar forzosamente. Conserva las filas academicas anteriores; no reinicia `AUTO_INCREMENT`.
+    - No recrea la base.
 
-Comprobacion realizada con MySQL Community Server 8.4.11 sobre un esquema desechable de referencia, incluyendo `UNIQUE` y FK utilizados, `CHECK` de notas, ocho triggers, procedimiento transaccional y limpieza con una fila original que debía conservarse. Se validaron los rechazos esperados y las reversiones. El entorno de prueba no es una copia de los CSV originales del curso.
+    - No instala los triggers.
 
-La guía explica cada bloque, sus resultados esperados y su motivo.
+    - Si detecta objetos previos o datos reservados, detenerse y revisar.
 
-Los bloques B01 a B48 aparecen con el mismo identificador en el archivo `practica_triggers_bloques_guiados.sql`. Usad el índice de bloques del archivo para seleccionar el código exacto de cada paso.
+2.  [practica_triggers_bloques_guiados.sql](practica_triggers_bloques_guiados.sql) NO EJECUTAR EL ARCHIVO. Todos los bloques que vienen aquí han sido añadidos a esta página. No repetir `INSERT` ni `CREATE` de bloques ya completados.
+
+3.  [practica_triggers_limpiar.sql](practica_triggers_limpiar.sql) Opcional, al terminar. Revisar antes los marcadores.
+
+    -  Elimina solo los datos de laboratorio y los objetos identificados de 13b.
+
+    -  Detenerse al primer error. No usar una opción de continuar forzosamente.
+
+    - Conserva las filas académicas anteriores; no reinicia `AUTO_INCREMENT`.
 
 # Reconocer el modelo que ya existe
 
-El esquema académico tiene alumnos, profesores, asignaturas, cursos, curso_asignatura, matriculas y notas. Una nota pertenece a una matrícula y la matrícula enlaza al alumno con una relación de curso y asignatura. No hay una relación directa *notas.id_alumno*.
+- El esquema académico tiene alumnos, profesores, asignaturas, cursos, curso_asignatura, matriculas y notas.
 
-`UNIQUE(id_matricula)` permite como máximo una nota final por matrícula. *nota* es `DECIMAL(4,2)`, admite NULL y conserva su `CHECK` entre 0 y 10. Las FK, los `UNIQUE` y el `CHECK` se mantienen durante toda la práctica.
+- Una nota pertenece a una matrícula y la matrícula enlaza al alumno con una relación de curso y asignatura.
+
+- No hay una relación directa *notas.id_alumno*.
+
+- `UNIQUE(id_matricula)` permite como máximo una nota final por matrícula.
+
+- *nota* es `DECIMAL(4,2)`, admite NULL y conserva su `CHECK` entre 0 y 10.
+
+- Las FK, los `UNIQUE` y el `CHECK` se mantienen durante toda la práctica.
 
 # Abrir una conexión independiente
 
-Usad una conexión nueva, con *autocommit = 1* y sin transacciones pendientes. No basta con abrir otra pestaña si utiliza la misma conexión. No ejecutéis `SET autocommit = 1` sobre trabajo pendiente: podría confirmarlo.
+Usad una conexión nueva, con `autocommit = 1` y sin transacciones pendientes. No ejecutéis `SET autocommit = 1` sobre trabajo pendiente: podría confirmarlo.
 
 Bloque B01
 
@@ -69,30 +83,27 @@ SHOW CREATE TABLE matriculas;
 SHOW CREATE TABLE notas;
 ```
 
-Resultado esperado. Versión 8.4.x y base academia_it. Revisad los motores, las columnas, las restricciones y los permisos antes de continuar.
+Resultado esperado: Versión 8.4.x y base *academia_it*.
 
-Comprobaciones que deben quedar resueltas
+Revisad los motores, las columnas, las restricciones y los permisos antes de continuar.
 
 ## Revisar los triggers anteriores
 
-Para que los resultados sean reproducibles no debe haber otros triggers sobre alumnos o notas. El script de preparación se detendrá si los encuentra. Consultad su definición y retirad únicamente los ejemplos que hayáis identificado y decidido sustituir.
-
-Si instalasteis los cuatro ejemplos del 13a, estos son sus nombres. Ejecutad las órdenes siguientes solo después de revisar que son esos ejemplos y que no deben conservarse en esta copia de laboratorio.
-
-``` sql
-DROP TRIGGER IF EXISTS tr_13a_alumnos_bi_email;
-DROP TRIGGER IF EXISTS tr_13a_alumnos_bu_email;
-DROP TRIGGER IF EXISTS tr_13a_notas_bi_validar;
-DROP TRIGGER IF EXISTS tr_13a_alumnos_bd_activo;
-```
-
-Si aparecen otros nombres, no los eliminéis a ciegas. Hay que revisar su finalidad. El 13b tampoco sustituye automáticamente procedimientos ni tablas con nombres coincidentes.
+Para que los resultados sean reproducibles no debe haber otros triggers sobre alumnos o notas. El script de preparación se detendrá si los encuentra. Consultad su definición y retirad únicamente (`DROP TRIGGER`) los ejemplos que hayáis identificado y decidido sustituir.
 
 # Reconocer los permisos necesarios
 
-La cuenta necesita `SELECT`, `INSERT`, `UPDATE` y `DELETE` sobre las tablas de trabajo; `CREATE` y `DROP` para la tabla auxiliar; `CREATE ROUTINE`, `ALTER ROUTINE` y `EXECUTE` para las rutinas; y `TRIGGER` para crear y retirar los disparadores. La cuenta definidora debe conservar los privilegios que use su código.
+- La cuenta necesita `SELECT`, `INSERT`, `UPDATE` y `DELETE` sobre las tablas de trabajo;
 
-En un servidor con registro binario pueden aparecer requisitos adicionales, como el error 1419. El administrador revisará la configuración y los permisos. No cambiéis una variable global como respuesta automática.
+-  `CREATE` y `DROP` para la tabla auxiliar;
+
+- `CREATE ROUTINE`, `ALTER ROUTINE` y `EXECUTE` para las rutinas;
+
+-  y `TRIGGER` para crear y retirar los disparadores.
+
+- La cuenta definidora debe conservar los privilegios que use su código.
+
+En un servidor con registro binario pueden aparecer requisitos adicionales, como el error 1419. El administrador revisará la configuración y los permisos.
 
 # Preparar los datos de laboratorio
 
@@ -100,11 +111,7 @@ Objetivo: obtener registros propios y resultados conocidos sin depender de los i
 
 ## Ejecutar el archivo de preparación
 
-Abrid [practica_triggers_preparar.sql](practica_triggers_preparar.sql) en el editor y ejecutadlo una sola vez.
-
-Verificar contra la versión instalada cómo ejecutar archivos y bloques completos en Workbench.
-
-En el cliente mysql también puede usarse `SOURCE` con la ruta real del archivo; la ruta depende de dónde lo hayáis guardado.
+Ejecutar [practica_triggers_preparar.sql](practica_triggers_preparar.sql). Verificar contra la versión instalada cómo ejecutar archivos y bloques completos en Workbench. En el cliente mysql también puede usarse `SOURCE` con la ruta real del archivo; la ruta depende de dónde lo hayáis guardado.
 
 El archivo selecciona *academia_it* y usa UTF-8 mediante `SET NAMES utf8mb4`. Define el procedimiento `sp13b_preparar` y lo llama. No contiene `DROP DATABASE` ni reconstruye tablas académicas.
 
@@ -176,7 +183,9 @@ SELECT * FROM lab13b_resumen ORDER BY id_alumno;
 
 Resultado esperado. Los seis valores son distintos de NULL donde corresponde; @ma1 y @ma2 son diferentes. El resumen tiene dos filas con registradas, evaluadas, aprobadas y suma a cero.
 
-Al reabrir la conexión se pueden recuperar los identificadores desde los marcadores. Los recuentos iniciales @base13b_alumnos, @base13b_matriculas y @base13b_notas solo se conservan en la conexión donde se preparó el laboratorio. No se utilizan para seleccionar filas que borrar.
+Al reabrir la conexión se pueden recuperar los identificadores desde los marcadores.
+
+**Los recuentos iniciales @base13b_alumnos, @base13b_matriculas y @base13b_notas solo se conservan en la conexión donde se preparó el laboratorio.**
 
 Si una consulta no devuelve lo esperado, deteneos y revisad el paso previo. No rellenéis una variable con un identificador de un alumno existente para poder continuar.
 
@@ -200,13 +209,13 @@ END//
 DELIMITER ;
 ```
 
-`CREATE TRIGGER` crea el objeto.
+- `CREATE TRIGGER` crea el objeto.
 
-`BEFORE INSERT ON alumnos` fija el momento, evento y tabla.
+- `BEFORE INSERT ON alumnos` fija el momento, evento y tabla.
 
-`FOR EACH ROW` indica una ejecución por fila.
+- `FOR EACH ROW` indica una ejecución por fila.
 
-`SET NEW.email` transforma el valor propuesto; no ejecuta un UPDATE adicional.
+- `SET NEW.email` transforma el valor propuesto; no ejecuta un UPDATE adicional.
 
 ## Insertar un cuarto alumno de forma provisional
 

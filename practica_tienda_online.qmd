@@ -77,7 +77,7 @@ Nombre SQL exacto: `productos`.
 Nombre SQL exacto: `pedidos`.
 
 | Columna y tipo | Función y restricciones |
-|------------------------|------------------------------------------------|
+|------------------------|-----------------------------------------------|
 | `id_pedido INT` | PK autoincremental. |
 | `id_cliente INT` | FK que referencia `clientes.id_cliente`. |
 | `fecha_pedido DATETIME` | Fecha y hora. Por defecto, instante de creación. |
@@ -100,7 +100,7 @@ Nombre SQL exacto: `detalle_pedido`.
 Nombre SQL exacto: `preparacion_pedidos`.
 
 | Columna y tipo | Función y restricciones |
-|--------------------------|----------------------------------------------|
+|--------------------------|---------------------------------------------|
 | `id_preparacion INT` | PK autoincremental. |
 | `id_pedido INT` | FK a `pedidos.id_pedido` y valor único. |
 | `fecha_creacion DATETIME` | Momento en que se genera la tarea. |
@@ -112,7 +112,7 @@ Nombre SQL exacto: `preparacion_pedidos`.
 Nombre SQL exacto: `envios`.
 
 | Columna y tipo | Función y restricciones |
-|--------------------------|----------------------------------------------|
+|--------------------------|---------------------------------------------|
 | `id_envio INT` | PK autoincremental. |
 | `id_pedido INT` | FK a `pedidos.id_pedido` y valor único. |
 | `transportista VARCHAR(80)` | Nombre obligatorio y no vacío tras eliminar espacios exteriores. |
@@ -126,7 +126,7 @@ Nombre SQL exacto: `envios`.
 ## Relaciones y límites
 
 | Relación | Cardinalidad |
-|---------------------------|---------------------------------------------|
+|---------------------------|--------------------------------------------|
 | `clientes` con `pedidos` | Un cliente puede tener varios pedidos; cada pedido tiene un cliente. |
 | `pedidos` con `detalle_pedido` | Un pedido puede tener cero o varias líneas; cada línea pertenece a un pedido. |
 | `productos` con `detalle_pedido` | Un producto puede aparecer en varios pedidos. |
@@ -358,7 +358,7 @@ Nombre: `sp_confirmar_pedido`. Recibe un único parámetro de entrada `p_id_pedi
 Realizad las comprobaciones en este orden:
 
 | Orden | Comprobación y mensaje si falla |
-|----------------|--------------------------------------------------------|
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1 | El identificador no puede ser `NULL`, cero ni negativo. Mensaje: `Identificador de pedido no valido.` |
 | 2 | El pedido debe existir. Mensaje: `El pedido no existe.` |
 | 3 | Debe estar en `BORRADOR`. Mensaje: `Solo se pueden confirmar pedidos en BORRADOR.` |
@@ -368,77 +368,77 @@ Si supera las comprobaciones, modificad únicamente el estado del pedido a `PEND
 
 Ayuda: una consulta `COUNT` sin agrupación permite obtener cero para un pedido sin líneas. Usad variables locales para el estado y el número de líneas. No mezcléis una agregación con columnas sin agrupar.
 
-```sql
+``` sql
 DELIMITER //
 
 CREATE PROCEDURE sp_confirmar_pedido (IN p_id_pedido INT)
 SQL SECURITY INVOKER
 MODIFIES SQL DATA
 BEGIN
-	# Declaramos variables locales	
-	DECLARE v_estado VARCHAR(10) DEFAULT NULL;	
-	DECLARE v_lineas INT DEFAULT 0;	
-	DECLARE v_mensaje VARCHAR(255) DEFAULT '';
-	
-	# Declaramos un unico manejador para todos los errores	
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION	
-	BEGIN	
-		GET DIAGNOSTICS CONDITION 1	
-		v_mensaje = MESSAGE_TEXT;	
-		ROLLBACK;	
-		RESIGNAL	
-			SET MESSAGE_TEXT = v_mensaje;	
-	END;	
-	
-	START TRANSACTION;
-		
-	IF p_id_pedido >0	
-	THEN	
-		SELECT	
-			TRIM(UPPER(p.estado))
-			,count(d.id_detalle) AS lineas	
-		INTO v_estado, v_lineas	
-		FROM pedidos p	
-		LEFT JOIN detalle_pedido d	
-		USING (id_pedido)	
-		WHERE	
-			p.id_pedido = p_id_pedido	
-		GROUP BY p.id_pedido	
-		FOR UPDATE; #bloqueamos la fila.	
-	
-		#capturamos los posibles fallos.	
-		IF v_estado IS NULL	
-		THEN	
-			SIGNAL SQLSTATE '45000'	
-			SET MESSAGE_TEXT= 'El pedido no existe.';	
-		ELSEIF v_estado != 'BORRADOR'	
-		THEN	
-			SIGNAL SQLSTATE '45000'		
-			SET MESSAGE_TEXT= 'Solo se pueden confirmar los pedidos en BORRADOR';	
-		ELSEIF v_lineas =0	
-		THEN	
-			SIGNAL SQLSTATE '45000'	
-			SET MESSAGE_TEXT= 'No se puede confirmar un pedido sin productos.';	
-		END IF;
-			
-		UPDATE pedidos	
-			SET estado = 'PENDIENTE'	
-		WHERE id_pedido = p_id_pedido;		
-		# ultima verificacion por si falla todo lo demás
-		IF ROW_COUNT() <>1	
-			THEN	
-			SIGNAL SQLSTATE '45000'	
-			SET MESSAGE_TEXT= 'No se ha podido realizar el cambio de estado';	
-		END IF;
-			
-		SELECT "Pedido actualizado";
-		
-		COMMIT;
-		
-	ELSE	
-		SIGNAL SQLSTATE '45000'	
-		SET MESSAGE_TEXT= 'Identificador de pedido no valido.';	
-	END IF;
+    # Declaramos variables locales  
+    DECLARE v_estado VARCHAR(10) DEFAULT NULL;  
+    DECLARE v_lineas INT DEFAULT 0; 
+    DECLARE v_mensaje VARCHAR(255) DEFAULT '';
+    
+    # Declaramos un unico manejador para todos los errores  
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION   
+    BEGIN   
+        GET DIAGNOSTICS CONDITION 1 
+        v_mensaje = MESSAGE_TEXT;   
+        ROLLBACK;   
+        RESIGNAL    
+            SET MESSAGE_TEXT = v_mensaje;   
+    END;    
+    
+    START TRANSACTION;
+        
+    IF p_id_pedido >0   
+    THEN    
+        SELECT  
+            TRIM(UPPER(p.estado))
+            ,count(d.id_detalle) AS lineas  
+        INTO v_estado, v_lineas 
+        FROM pedidos p  
+        LEFT JOIN detalle_pedido d  
+        USING (id_pedido)   
+        WHERE   
+            p.id_pedido = p_id_pedido   
+        GROUP BY p.id_pedido    
+        FOR UPDATE; #bloqueamos la fila.    
+    
+        #capturamos los posibles fallos.    
+        IF v_estado IS NULL 
+        THEN    
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT= 'El pedido no existe.';   
+        ELSEIF v_estado != 'BORRADOR'   
+        THEN    
+            SIGNAL SQLSTATE '45000'     
+            SET MESSAGE_TEXT= 'Solo se pueden confirmar los pedidos en BORRADOR';   
+        ELSEIF v_lineas =0  
+        THEN    
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT= 'No se puede confirmar un pedido sin productos.'; 
+        END IF;
+            
+        UPDATE pedidos  
+            SET estado = 'PENDIENTE'    
+        WHERE id_pedido = p_id_pedido;      
+        # ultima verificacion por si falla todo lo demás
+        IF ROW_COUNT() <>1  
+            THEN    
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT= 'No se ha podido realizar el cambio de estado';   
+        END IF;
+            
+        SELECT "Pedido actualizado";
+        
+        COMMIT;
+        
+    ELSE    
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT= 'Identificador de pedido no valido.'; 
+    END IF;
 END //
 DELIMITER ;
 ```
@@ -448,7 +448,7 @@ DELIMITER ;
 Nombre: `sp_registrar_envio`. Los tres parámetros serán de entrada y tendrán este orden:
 
 | Parámetro              | Tipo          | Contenido                             |
-|------------------------|------------------------|------------------------|
+|-------------------------------------------------------------------|-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `p_id_pedido`          | `INT`         | Identificador del pedido.             |
 | `p_transportista`      | `VARCHAR(80)` | Nombre de quien transporta el pedido. |
 | `p_codigo_seguimiento` | `VARCHAR(60)` | Código del envío.                     |
@@ -456,7 +456,7 @@ Nombre: `sp_registrar_envio`. Los tres parámetros serán de entrada y tendrán 
 Comprobad, en este orden:
 
 | Orden | Comprobación y mensaje si falla |
-|-------------|-----------------------------------------------------------|
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1 | Identificador no nulo y mayor que cero. Mensaje: `Identificador de pedido no valido.` |
 | 2 | Transportista no `NULL` ni vacío tras quitar espacios exteriores. Mensaje: `El transportista es obligatorio.` |
 | 3 | Seguimiento no `NULL` ni vacío tras quitar espacios exteriores. Mensaje: `El codigo de seguimiento es obligatorio.` |
@@ -472,118 +472,111 @@ El procedimiento no actualizará directamente `pedidos` ni `preparacion_pedidos`
 Ayuda: utilizad `TRIM` y una comprobación explícita de `NULL`. Para la inserción, preparad antes las variables y utilizad `VALUES`. Evitad obtener los datos desde `pedidos` dentro de un `INSERT SELECT` que active un trigger que modifica esa misma tabla: MySQL restringe ese uso y puede generar el error 1442.
 
 ```sql
+
 DELIMITER //
 
-CREATE PROCEDURE sp_registrar_envio (IN p_id_pedido INT, IN p_transportista VARCHAR(80),IN  p_codigo_seguimiento VARCHAR(60))
-SQL SECURITY INVOKER
-MODIFIES SQL DATA
-BEGIN
-	# Declaramos variables locales	
-	DECLARE v_estado VARCHAR(10) DEFAULT NULL;		SP
-	DECLARE v_mensaje VARCHAR(255) DEFAULT '';    
-    DECLARE v_destinatario VARCHAR(150);
-    DECLARE v_direccion VARCHAR(255);
-    DECLARE v_cp VARCHAR(20);
-    DECLARE v_ciudad VARCHAR(100);
-	
-	# Declaramos un unico manejador para todos los errores	
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION	
-	BEGIN	
-		GET DIAGNOSTICS CONDITION 1	
-		v_mensaje = MESSAGE_TEXT;	
-		ROLLBACK;	
-		RESIGNAL	
-			SET MESSAGE_TEXT = v_mensaje;	
-	END;	
-	
-	START TRANSACTION;
-	
-	IF p_transportista IS NULL OR TRIM(p_transportista) = '' THEN 
-		SIGNAL SQLSTATE '45000'
-		SET MESSAGE_TEXT = 'El transportista es obligatorio.' ;
-	ELSEIF  p_codigo_seguimiento IS NULL OR TRIM(p_codigo_seguimiento) = '' THEN 
-		SIGNAL SQLSTATE '45000'
-		SET MESSAGE_TEXT = 'El código de seguimiento es obligatorio.' ;
-	END IF;
-	
-	IF p_id_pedido >0	
-	THEN	
-		SELECT	
-			TRIM(UPPER(p.estado))				
-		INTO v_estado
-		FROM pedidos p			
-		WHERE	
-			p.id_pedido = p_id_pedido;	
-	
-		#capturamos los posibles fallos.	
-		IF v_estado IS NULL	
-		THEN	
-			SIGNAL SQLSTATE '45000'	
-			SET MESSAGE_TEXT= 'El pedido no existe.';	
-		ELSEIF v_estado != 'PENDIENTE'	
-		THEN	
-			SIGNAL SQLSTATE '45000'		
-			SET MESSAGE_TEXT= 'Solo se pueden enviar pedidos pendientes';	
-		ELSEIF EXISTS ( SELECT 1  FROM envios  WHERE id_pedido = p_id_pedido) 
-		THEN
-	   	    SIGNAL SQLSTATE '45000'
-	        SET MESSAGE_TEXT = 'El pedido ya tiene un envio.';		
-		ELSEIF (SELECT count(*) FROM preparacion_pedidos WHERE id_pedido = p_id_pedido AND estado_preparacion ='PENDIENTE') <>1
-		THEN
-			SIGNAL SQLSTATE '45000'		
-			SET MESSAGE_TEXT= 'El pedido no tiene una preparacion pendiente.';	
-		END IF;				
+CREATE PROCEDURE sp_registrar_envio (IN p_id_pedido INT, IN p_transportista VARCHAR(80),IN p_codigo_seguimiento VARCHAR(60)) SQL SECURITY INVOKER MODIFIES SQL DATA BEGIN \# Declaramos variables locales\
+DECLARE v_estado VARCHAR(10) DEFAULT NULL; SP DECLARE v_mensaje VARCHAR(255) DEFAULT '';\
+DECLARE v_destinatario VARCHAR(150); DECLARE v_direccion VARCHAR(255); DECLARE v_cp VARCHAR(20); DECLARE v_ciudad VARCHAR(100);
 
-        SELECT
-            c.nombre,
-            c.direccion,
-            c.codigo_postal,
-            c.ciudad
-        INTO v_destinatario, v_direccion, v_cp, v_ciudad
-        FROM clientes c
-        INNER JOIN pedidos p
-            ON c.id_cliente = p.id_cliente
-        WHERE p.id_pedido = p_id_pedido;
+     
+# Declaramos un unico manejador para todos los errores  
+DECLARE EXIT HANDLER FOR SQLEXCEPTION   
+BEGIN   
+    GET DIAGNOSTICS CONDITION 1 
+    v_mensaje = MESSAGE_TEXT;   
+    ROLLBACK;   
+    RESIGNAL    
+        SET MESSAGE_TEXT = v_mensaje;   
+END;    
 
-        INSERT INTO envios (
-            id_pedido,
-            transportista,
-            codigo_seguimiento,
-            destinatario,
-            direccion_entrega,
-            codigo_postal,
-            ciudad
-        )
-        VALUES (
-            p_id_pedido,
-            p_transportista,
-            p_codigo_seguimiento,
-            v_destinatario,
-            v_direccion,
-            v_cp,
-            v_ciudad
-        );	
-	
-		IF ROW_COUNT() <>1	
-			THEN	
-			SIGNAL SQLSTATE '45000'	
-			SET MESSAGE_TEXT= 'No se ha podido registrar el envío';	
-		END IF;			
-		
-		COMMIT;
-		SELECT "Envio actualizado";
-		
-	ELSE	
-		SIGNAL SQLSTATE '45000'	
-		SET MESSAGE_TEXT= 'Identificador de pedido no valido.';	
-	END IF;
-END //
-DELIMITER ;
- 
+START TRANSACTION;
+
+IF p_transportista IS NULL OR TRIM(p_transportista) = '' THEN 
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El transportista es obligatorio.' ;
+ELSEIF  p_codigo_seguimiento IS NULL OR TRIM(p_codigo_seguimiento) = '' THEN 
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El código de seguimiento es obligatorio.' ;
+END IF;
+
+IF p_id_pedido >0   
+THEN    
+    SELECT  
+        TRIM(UPPER(p.estado))               
+    INTO v_estado
+    FROM pedidos p          
+    WHERE   
+        p.id_pedido = p_id_pedido;  
+
+    #capturamos los posibles fallos.    
+    IF v_estado IS NULL 
+    THEN    
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT= 'El pedido no existe.';   
+    ELSEIF v_estado != 'PENDIENTE'  
+    THEN    
+        SIGNAL SQLSTATE '45000'     
+        SET MESSAGE_TEXT= 'Solo se pueden enviar pedidos pendientes';   
+    ELSEIF EXISTS ( SELECT 1  FROM envios  WHERE id_pedido = p_id_pedido) 
+    THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El pedido ya tiene un envio.';      
+    ELSEIF (SELECT count(*) FROM preparacion_pedidos WHERE id_pedido = p_id_pedido AND estado_preparacion ='PENDIENTE') <>1
+    THEN
+        SIGNAL SQLSTATE '45000'     
+        SET MESSAGE_TEXT= 'El pedido no tiene una preparacion pendiente.';  
+    END IF;             
+
+    SELECT
+        c.nombre,
+        c.direccion,
+        c.codigo_postal,
+        c.ciudad
+    INTO v_destinatario, v_direccion, v_cp, v_ciudad
+    FROM clientes c
+    INNER JOIN pedidos p
+        ON c.id_cliente = p.id_cliente
+    WHERE p.id_pedido = p_id_pedido;
+
+    INSERT INTO envios (
+        id_pedido,
+        transportista,
+        codigo_seguimiento,
+        destinatario,
+        direccion_entrega,
+        codigo_postal,
+        ciudad
+    )
+    VALUES (
+        p_id_pedido,
+        p_transportista,
+        p_codigo_seguimiento,
+        v_destinatario,
+        v_direccion,
+        v_cp,
+        v_ciudad
+    );  
+
+    IF ROW_COUNT() <>1  
+        THEN    
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT= 'No se ha podido registrar el envío'; 
+    END IF;         
+    
+    COMMIT;
+    SELECT "Envio actualizado";
+    
+ELSE    
+    SIGNAL SQLSTATE '45000' 
+    SET MESSAGE_TEXT= 'Identificador de pedido no valido.'; 
+END IF;
+
+
+END // DELIMITER ;
 
 SHOW PROCEDURE STATUS WHERE Db='tienda_online_practica';
-
-
+```
 # Plan obligatorio de pruebas
 
 Partid de los datos iniciales e instalad los cinco objetos. Ejecutad las pruebas P01 a P17 en este orden, una operación cada vez. Un error esperado cuenta como resultado correcto cuando aparece el rechazo y se conservan los datos indicados. No ejecutéis todas las llamadas con error esperado de golpe si el cliente se detiene en la primera.
@@ -592,6 +585,7 @@ Partid de los datos iniciales e instalad los cinco objetos. Ejecutad las pruebas
 
 - **Operación:** Consultar la vista inicial.
 - **Resultado esperado:** 20 filas. Comprobad los cinco pedidos de referencia del apartado 5 y los valores `NULL`.
+
 
 ## P02 Confirmar el pedido 1
 
@@ -687,12 +681,10 @@ Cread expresamente el pedido con `id_pedido` 21 para el cliente 10, fecha actual
 
 Comprobad primero en la vista las dos líneas, las tres unidades y los 54,90 euros. Confirmadlo mediante el procedimiento y registrad su salida con `AulaLogistica` y `AULA-0021`. Comprobad las tres tablas operativas y la vista. Los demás identificadores autoincrementales pueden tener saltos; no supongáis valores concretos para ellos.
 
-
-
 ## Balance final tras P01 a P17
 
 | Dato                             | Resultado final                          |
-|--------------------------------|----------------------------------------|
+|--------------------------------|---------------------------------------|
 | `clientes` / `productos`         | 10 / 15                                  |
 | `pedidos` / `detalle_pedido`     | 21 / 47                                  |
 | `preparacion_pedidos` / `envios` | 14 / 8                                   |

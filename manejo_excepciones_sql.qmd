@@ -553,7 +553,7 @@ END;
 # Cuadro Comparativo Resumen
 
 | Motor | Estructura de Control | Lanzar Error Manualmente | Manejo Genérico de Errores |
-|:----------------|:----------------|:----------------|:----------------------|
+|:----------------|:----------------|:----------------|:--------------------|
 | **MySQL / MariaDB** | `DECLARE {CONTINUE/EXIT} HANDLER FOR ...` | `SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = ...` | `FOR SQLEXCEPTION` |
 | **PostgreSQL** | `BEGIN ... EXCEPTION WHEN ... END` | `RAISE EXCEPTION 'mensaje'` | `WHEN OTHERS THEN` |
 | **SQL Server** | `BEGIN TRY ... END TRY / BEGIN CATCH ... END CATCH` | `THROW 50000, 'mensaje', 1;` | Entra automáticamente al bloque `CATCH` |
@@ -640,6 +640,8 @@ DELIMITER ;
 3.  **Avisa al exterior con `RESIGNAL`:** Una vez hecho el registro interno, el procedimiento **no se traga el error**. Utiliza `RESIGNAL` para lanzarlo hacia arriba. Además, fíjate en la magia: puedes cambiar el texto original del error técnico de MySQL por un mensaje de negocio comprensible (`SET MESSAGE_TEXT = 'No se pudo procesar el pedido...'`).
 
 De esta manera, el script o la aplicación que ejecute el `CALL` sabrá inmediatamente que la transacción falló, mientras que tu base de datos se habrá quedado con el registro interno de qué fue lo que pasó.
+
+![](images/handler.jpg)
 
 # Ejemplos explicativos de manejo de errores y `RESIGNAL`.
 
@@ -1253,7 +1255,7 @@ GET DIAGNOSTICS CONDITION 1
 ## Tabla de Compatibilidad entre Motores SQL
 
 |  |  |  |
-|-----------------|-----------------|--------------------------------------|
+|------------------|------------------|-------------------------------------|
 | **Motor de Base de Datos** | **Soporte para GET DIAGNOSTICS** | **Alternativa o Forma de Uso** |
 | **MySQL / MariaDB** | **Sí** (Desde la versión 5.6) | Soporte completo tanto para `ROW_COUNT` como para `CONDITION n` con atributos como `MYSQL_ERRNO` y `MESSAGE_TEXT`. |
 | **PostgreSQL** | **Sí** (Estándar nativo) | Altamente compatible con el estándar SQL ANSI, permitiendo capturar múltiples métricas de diagnóstico en bloques PL/pgSQL. |

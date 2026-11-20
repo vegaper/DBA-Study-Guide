@@ -208,7 +208,7 @@ Con `IGNORE`, los errores críticos de integridad se degradan a advertencias (wa
 La atomicidad a nivel de sentencia es el comportamiento estándar definido por ANSI SQL para operaciones transaccionales, aunque cada motor implementa matices propios en su gestión de errores y sintaxis de omisión:
 
 |  |  |  |  |
-|-----------------|-------------------|-------------------|-------------------|
+|------------------|------------------|------------------|------------------|
 | **Motor de Base de Datos** | **Comportamiento por defecto (DML multifila)** | **Impacto en transacción abierta (BEGIN / START TRANSACTION)** | **Alternativa para omitir filas con error (equivalente a IGNORE)** |
 | **MySQL (InnoDB)** | **Atómico.** Aborta y revierte toda la sentencia ante el primer error. | La transacción **permanece abierta**; conserva las sentencias previas válidas. | Cláusula `IGNORE` (`INSERT IGNORE`, `UPDATE IGNORE`). |
 | **PostgreSQL** | **Atómico.** Aborta y revierte toda la sentencia ante cualquier error. | **Aborta toda la transacción.** El bloque entra en estado de error y exige `ROLLBACK` (o `ROLLBACK TO SAVEPOINT`). | Cláusula `ON CONFLICT DO NOTHING` (solo para conflictos de clave única en `INSERT`). |
@@ -233,6 +233,10 @@ La atomicidad a nivel de sentencia es el comportamiento estándar definido por A
 - **Mantenerlos ligeros:** Como se ejecutan una vez por cada fila afectada (`FOR EACH ROW`), evita poner consultas pesadas o lógica excesivamente lenta dentro de un trigger, ya que penalizará el rendimiento de cualquier inserción o actualización masiva.
 - **Comparar con seguridad ante `NULL`:** Cuando verifiques si una columna ha cambiado en un `UPDATE`, utiliza el operador *NULL-safe* (`IF NOT (OLD.campo <=> NEW.campo)`) en lugar de `<>`, ya que `NULL <> NULL` evalúa a desconocido y el trigger ignoraría el cambio.
 
+::: nota
+Los triggers añaden lógica implícita y pueden dificultar el mantenimiento si se abusan de ellos. Para tareas sencillas, como actualizar una marca de tiempo o mantener ciertos valores derivados, a veces resulta más claro resolverlo en la capa de aplicación o mediante mecanismos propios del motor, reservando los triggers de columna para auditorías, trazabilidad o reglas de integridad que deban aplicarse de forma obligatoria en la base de datos.
+:::
+
 # Compatibilidad con otros motores de bases de datos
 
 Aunque el concepto de trigger es estándar en SQL, cada motor de base de datos implementa variaciones importantes en su sintaxis, alcance (`FOR EACH ROW` vs `FOR EACH STATEMENT`) y forma de acceder a los datos antiguos y nuevos.
@@ -240,7 +244,7 @@ Aunque el concepto de trigger es estándar en SQL, cada motor de base de datos i
 ## Tabla comparativa rápida
 
 | Motor | Granularidad soportada | Acceso a datos antiguos / nuevos | Múltiples eventos en un trigger | Estructura del código |
-|:--------------|:--------------|:--------------|:--------------|:--------------|
+|:-------|:----------------|:-----------------|:-------------|:--------------|
 | **MySQL** | Solo por fila (`FOR EACH ROW`) | `OLD.col` y `NEW.col` | No (1 evento por trigger) | Bloque `BEGIN ... END` directo |
 | **PostgreSQL** | Por fila (`ROW`) y por sentencia (`STATEMENT`) | `OLD.col` y `NEW.col` | Sí (`INSERT OR UPDATE OR DELETE`) | Invoca a una **Función Trigger** externa |
 | **SQL Server** | Solo por sentencia (opera sobre conjuntos) | Tablas virtuales `DELETED` e `INSERTED` | Sí (`INSERT, UPDATE, DELETE`) | Bloque `AS BEGIN ... END` en T-SQL |
@@ -322,3 +326,51 @@ BEGIN
     SELECT RAISE(ABORT, 'No se puede eliminar un alumno activo');
 END;
 ```
+
+------------------------------------------------------------------------
+
+::: extra
+# Triggers sobre UPDATE en una columna específica
+
+\
+En la mayoría de los sistemas gestores de bases de datos SQL, un trigger de actualización no se define de forma aislada sobre una columna, sino siempre **asociado a una tabla**. Sin embargo, sí es posible conseguir que el trigger reaccione únicamente cuando se actúe sobre una columna concreta, bien indicándolo en la propia definición del trigger si el motor lo permite, o bien comprobando el estado de esa columna dentro del código que ejecuta el trigger.
+
+La forma de lograrlo depende en gran medida del motor de base de datos que estés utilizando.
+
+En sistemas como **PostgreSQL** u **Oracle**, el estándar y su sintaxis permiten especificar `UPDATE OF nombre_columna` al declarar el trigger sobre la tabla, de modo que el motor solo invoque el disparador cuando esa columna forme parte de la operación de actualización.
+
+``` sql
+-- PostgreSQL
+CREATE TRIGGER trg_cambio_estado
+AFTER UPDATE OF estado ON pedidos
+FOR EACH ROW
+EXECUTE FUNCTION fn_registrar_cambio_estado();
+```
+
+Por el contrario, en **MySQL** o **SQLite** no existe esa cláusula en la cabecera del trigger, por lo que este se crea sobre toda la tabla y la comprobación de si la columna ha sido afectada debe hacerse dentro de su cuerpo.
+
+``` sql
+CREATE TRIGGER trg_cambio_estado
+AFTER UPDATE ON pedidos
+FOR EACH ROW
+BEGIN
+  IF NOT (NEW.estado <=> OLD.estado) THEN
+    -- lógica aquí
+  END IF;
+END;
+```
+
+En **SQL Server**, el trigger también se crea sobre la tabla y suele recurrirse a funciones como `UPDATE(nombre_columna)` o a la comparación entre las tablas lógicas `inserted` y `deleted`.
+
+**Un matiz clave: ¿se incluyó en el `UPDATE` o *realmente cambió* su valor?**
+
+Hay una diferencia importante que suele dar sorpresas:
+
+1.  **Incluida en la sentencia `UPDATE`:** En motores como PostgreSQL, `AFTER UPDATE OF estado` se dispara si `estado` aparece en el `SET` del `UPDATE`, **aunque le asignes el mismo valor que ya tenía**.
+
+2.  **Valor modificado de verdad:** Si solo quieres actuar cuando el valor cambia (teniendo en cuenta `NULL`), lo más seguro es comparar el valor anterior y el nuevo:
+
+    - En **PostgreSQL**: `IF OLD.estado IS DISTINCT FROM NEW.estado THEN ...`
+
+    - En **MySQL**: `IF NOT (NEW.estado <=> OLD.estado) THEN ...` (el operador `<=>` maneja `NULL` sin que la comparación dé `UNKNOWN`).
+:::

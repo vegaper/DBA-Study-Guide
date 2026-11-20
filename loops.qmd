@@ -19,8 +19,8 @@ En MySQL, el control de flujo en procedimientos almacenados permite ejecutar blo
 
 Para gestionar el flujo dentro de un bloque etiquetado (`etiqueta: LOOP`):
 
--   **`LEAVE etiqueta`**: Rompe la ejecución del bucle etiquetado y salta a la primera instrucción fuera de él (equivalente a `break` en C/Java).
--   **`ITERATE etiqueta`**: Salta el resto del código en la iteración actual y vuelve al inicio de la siguiente vuelta (equivalente a `continue` en C/Java).
+- **`LEAVE etiqueta`**: Rompe la ejecución del bucle etiquetado y salta a la primera instrucción fuera de él (equivalente a `break` en C/Java).
+- **`ITERATE etiqueta`**: Salta el resto del código en la iteración actual y vuelve al inicio de la siguiente vuelta (equivalente a `continue` en C/Java).
 
 > **Precaución:** Al usar `ITERATE`, las variables de control del bucle deben incrementarse **antes** del salto para evitar bucles infinitos.
 
@@ -121,25 +121,24 @@ Cuidado con el orden en los bucles LOOP. Si incrementas la variable después del
 A diferencia de MySQL, que ofrece tres tipos de bucles (`WHILE`, `REPEAT` y `LOOP`), otros motores suelen simplificar esto basándose principalmente en un bucle genérico y un `WHILE`.
 
 |  |  |  |  |  |
-|------------|---------------|---------------|---------------|---------------|
+|---------------|---------------|---------------|---------------|---------------|
 | **Funcionalidad** | **MySQL** | **SQL Server (T-SQL)** | **PostgreSQL (PL/pgSQL)** | **Oracle (PL/SQL)** |
 | **Pre-evaluación** | `WHILE ... DO ... END WHILE;` | `WHILE ... BEGIN ... END` | `WHILE ... LOOP ... END LOOP;` | `WHILE ... LOOP ... END LOOP;` |
 | **Post-evaluación** | `REPEAT ... UNTIL ... END REPEAT;` | *No existe nativo* (se simula con `WHILE`) | *No existe nativo* (se usa `LOOP ... EXIT WHEN`) | *No existe nativo* (se usa `LOOP ... EXIT WHEN`) |
 | **Bucle Infinito / Controlado** | `LOOP ... LEAVE / ITERATE ... END LOOP;` | `WHILE 1=1` + `BREAK` / `CONTINUE` | `LOOP ... EXIT / CONTINUE ... END LOOP;` | `LOOP ... EXIT / CONTINUE ... END LOOP;` |
 
--   **Nota clave:** PostgreSQL y Oracle resuelven la falta de un `REPEAT` directo utilizando el bucle estándar `LOOP` acompañado de la instrucción `EXIT WHEN condicion;` justo al final del bloque.
-
+- **Nota clave:** PostgreSQL y Oracle resuelven la falta de un `REPEAT` directo utilizando el bucle estándar `LOOP` acompañado de la instrucción `EXIT WHEN condicion;` justo al final del bloque.
 
 ::: practica
 # WHILE REPEAT LOOP LEAVE e ITERATE
 
 | Estructura | Cuándo comprueba la condición                                 |
-|--------------|-----------------------------------------------|
+|------------------|------------------------------------------------------|
 | WHILE      | Antes del cuerpo: puede no ejecutar ninguna vuelta.           |
 | REPEAT     | Al final: ejecuta el cuerpo al menos una vez.                 |
 | LOOP       | No incorpora condición de salida: se programa explícitamente. |
 
-El siguiente procedimiento tiene un bucle de cada tipo, el while y el repeat hacen la suma acumulada de todos los números enteros consecutivos desde el 1 hasta el límite (1+2+3+4...), y el loop omite el 3. 
+El siguiente procedimiento tiene un bucle de cada tipo, el while y el repeat hacen la suma acumulada de todos los números enteros consecutivos desde el 1 hasta el límite (1+2+3+4...), y el loop omite el 3.
 
 ``` sql
 DROP PROCEDURE IF EXISTS sp10_bucles;
@@ -194,8 +193,9 @@ CALL sp10_bucles(1,@w,@r,@l);
 SELECT @w,@r,@l;
 ```
 
-Se esperan 15, 15 y 12 para límite 5, y 1, 1 y 1 para límite 1. 
-Probar por separado el límite 0: la validación debe generar un error. El máximo 1000 mantiene la demostración limitada y evita desbordar los INT con sumas arbitrariamente grandes.
+Se esperan 15, 15 y 12 para límite 5, y 1, 1 y 1 para límite 1. Probar por separado el límite 0: la validación debe generar un error. El máximo 1000 mantiene la demostración limitada y evita desbordar los INT con sumas arbitrariamente grandes.
 
 Pregunta. Modificar una copia para que LOOP omita los pares. ¿Qué condición utilizar y qué resultado esperar con límite 5?
 :::
+
+![](images/paste-53.png)
