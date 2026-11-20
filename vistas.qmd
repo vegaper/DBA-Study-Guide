@@ -24,13 +24,13 @@ Una **vista** (*view*) es una consulta SQL almacenada en la base de datos a la q
 
 # Vista Estándar vs. Vista Materializada vs. Tabla
 
-|------------------|------------------|------------------|------------------|
+
 | **Concepto** | **Almacenamiento en Disco** | **Rendimiento de Lectura** | **Frescura de los Datos** |
 | **Tabla** | **Sí** (Datos persistentes) | Muy rápido (según índices) | Requiere `INSERT/UPDATE` manual o procesado. |
 | **Vista Estándar** | **No** (Solo guarda la consulta) | Depende de la complejidad de la consulta base | **100% en tiempo real** (Refleja datos al instante). |
 | **Vista Materializada** | **Sí** (Almacena el resultado) | Excelente (Como una tabla física) | Requiere refresco periódico (`REFRESH MATERIALIZED VIEW`). |
 
-: *(Nota: MySQL no soporta vistas materializadas de forma nativa como Oracle o PostgreSQL, aunque se pueden simular mediante tablas físicas y eventos programados/triggers).*
+*(Nota: MySQL no soporta vistas materializadas de forma nativa como Oracle o PostgreSQL, aunque se pueden simular mediante tablas físicas y eventos programados/triggers).*
 
 # Sintaxis DDL: Crear, Modificar y Eliminar Vistas
 
@@ -141,8 +141,6 @@ Si el motor de base de datos no puede determinar de forma unívoca a qué fila e
 
 Aunque todos siguen el estándar, cada motor gestiona las vistas actualizables a su manera:
 
-
-|-----------------|-----------------|--------------------------------------|
 | **Motor** | **Soporte de Vistas Actualizables** | **Comportamiento / Particularidades** |
 | **MySQL / MariaDB** | **Nativo (Automático)** | Si la vista cumple las reglas (1:1, sin agregaciones), te deja hacer `INSERT/UPDATE/DELETE` directamente sin configurar nada extra. |
 | **PostgreSQL** | **Nativo + Triggers** | Soporta actualizaciones automáticas en vistas simples. Para vistas complejas (con `JOIN`s o agregaciones), permite usar **Triggers `INSTEAD OF`** para programar tú mismo qué hacer cuando alguien intenta un `UPDATE`. |
@@ -185,7 +183,8 @@ WHERE id = 10;
 
 Su ciudad se actualizará a 'Barcelona'
 
-**¿Qué ocurre en la base de datos?** 1. **Permisos:** Correcto. El usuario tiene permiso de `UPDATE` en la vista `v_madrid_customers`.
+**¿Qué ocurre en la base de datos?** 
+1. **Permisos:** Correcto. El usuario tiene permiso de `UPDATE` en la vista `v_madrid_customers`.
 
 2.  **Columnas:** Correcto. Solo está tocando `id`, `nombre` y `ciudad`.
 
@@ -231,8 +230,6 @@ Como la fila con `id = 11` tiene `ciudad = 'Sevilla'`, **no pasa el filtro de la
 
 Para evitar esta anomalía donde puedes insertar cosas que luego no puedes consultar ni modificar a través de la misma vista, es por lo que se utiliza **`WITH CHECK OPTION`**: detiene el problema desde la raíz bloqueando directamente el `INSERT` inicial de Sevilla.
 
-
-|--------------------|------------------------|----------------------------|
 | **Aspecto** | **Sin WITH CHECK OPTION** | **Con WITH CHECK OPTION** |
 | **Protección de columnas** | ✅ Sí (no se pueden tocar columnas no expuestas) | ✅ Sí |
 | **Protección de tabla base** | ✅ Sí (se bloquea el acceso directo a `customers`) | ✅ Sí |
