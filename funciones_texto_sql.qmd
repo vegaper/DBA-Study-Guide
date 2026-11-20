@@ -68,17 +68,16 @@ El operador `COLLATE` invalida o especifica el cotejo (*collation*) de una caden
 SELECT 'hola' COLLATE utf8mb4_bin = 'Hola' AS comparacion_binaria,      
        'hola' COLLATE utf8mb4_general_ci = 'Hola' AS comparacion_ci;   
 ```
+```
 
-+---------------------+----------------+
-|                     |                |
 +=====================+================+
 | comparacion_binaria | comparacion_ci |
 +---------------------+----------------+
-| ```                 | ```            |
+|                     |                |
 |               0     |          1     |
-| ```                 | ```            |
+|                     |                |
 +---------------------+----------------+
-
+```
 # Concatenación de Cadenas
 
 ## `CONCAT(str1, str2, ...)`
@@ -117,15 +116,13 @@ Significa *Concatenate With Separator*. El primer argumento actúa como delimita
 SELECT CONCAT_WS(', ', 'Ana', 'Luis', NULL, 'Marta') AS con_null_ignorado,
        CONCAT_WS(NULL, 'Ana', 'Luis') AS separador_null;
 ```
-
-+-------------------+----------------+
-|                   |                |
+```
 +===================+================+
 | con_null_ignorado | separador_null |
 +-------------------+----------------+
 | Ana, Luis, Marta  | NULL           |
 +-------------------+----------------+
-
+```
 # Limpieza y Transformación de Caja (Mayúsculas/Minúsculas)
 
 ## `TRIM`, `LTRIM`, `RTRIM`
@@ -143,15 +140,13 @@ SELECT LTRIM('   Hola') AS izquierda,
        TRIM('   Hola   ') AS ambos,
        TRIM(BOTH '-' FROM '---SQL---') AS quitar_guiones;
 ```
-
-+-----------+----------+----------+----------------+
-|           |          |          |                |
+```
 +===========+==========+==========+================+
 | izquierda | derecha  | ambos    | quitar_guiones |
 +-----------+----------+----------+----------------+
 | Hola      | Hola     | Hola     | SQL            |
 +-----------+----------+----------+----------------+
-
+```
 ## `UPPER` y `LOWER`
 
 Convierten todo el texto a mayúsculas o minúsculas respectivamente. (También se conocen como `UCASE` y `LCASE` en MySQL).
@@ -163,14 +158,13 @@ SELECT UPPER('Base de Datos') AS mayusculas,
        LOWER('Base de Datos') AS minusculas;
 ```
 
-+---------------+---------------+
-|               |               |
+```
 +===============+===============+
 | mayusculas    | minusculas    |
 +---------------+---------------+
 | BASE DE DATOS | base de datos |
 +---------------+---------------+
-
+```
 # Medición de Cadenas: Longitud de Caracteres vs. Bytes
 
 Dependiendo de la codificación (ej. UTF-8), un carácter puede ocupar entre 1 y 4 bytes. Por ello, SQL distingue entre contar caracteres y contar bytes.
@@ -195,17 +189,14 @@ SELECT CHAR_LENGTH('España') AS num_caracteres,
        LENGTH('España') AS num_bytes,
        OCTET_LENGTH('España') AS num_octetos;
 ```
-
-+----------------+--------------+--------------+
-|                |              |              |
+```
 +================+==============+==============+
 | num_caracteres | num_bytes    | num_octetos  |
 +----------------+--------------+--------------+
-| ```            | ```          | ```          |
+|                |              |              |
 |          6     |     7        |       7      |
-| ```            | ```          | ```          |
 +----------------+--------------+--------------+
-
+```
 # Extracción e Inspección de Subcadenas
 
 ## `LEFT(str, len)` y `RIGHT(str, len)`
@@ -218,15 +209,13 @@ Extraen los `len` caracteres más a la izquierda o más a la derecha de una cade
 SELECT LEFT('Servidor SQL', 8) AS izquierda,
        RIGHT('Servidor SQL', 3) AS derecha;
 ```
-
-+-----------+---------+
-|           |         |
+```
 +===========+=========+
 | izquierda | derecha |
 +-----------+---------+
 | Servidor  | SQL     |
 +-----------+---------+
-
+```
 ## `SUBSTRING(str, pos [, len])` / `SUBSTR()`
 
 Extrae una porción de texto comenzando en la posición `pos` (basado en índice 1) con una longitud opcional de `len` caracteres. Si `pos` es negativo, cuenta desde el final hacia el principio.
@@ -237,15 +226,13 @@ Extrae una porción de texto comenzando en la posición `pos` (basado en índice
 SELECT SUBSTRING('Base de Datos', 9, 5) AS desde_pos_9,
        SUBSTRING('Base de Datos', -5) AS ultimos_5;
 ```
-
-+-------------+-----------+
-|             |           |
+```
 +=============+===========+
 | desde_pos_9 | ultimos_5 |
 +-------------+-----------+
 | Datos       | Datos     |
 +-------------+-----------+
-
+```
 ## `SUBSTRING_INDEX(str, delim, count)`
 
 Devuelve la subcadena previa a la aparición del delimitador `delim` el número de veces indicado por `count`. Si `count` es positivo, cuenta desde la izquierda; si es negativo, desde la derecha.
@@ -257,15 +244,13 @@ SELECT SUBSTRING_INDEX('usuario@dominio.com', '@', 1) AS usuario,
        SUBSTRING_INDEX('usuario@dominio.com', '@', -1) AS dominio,
        SUBSTRING_INDEX('192.168.1.50', '.', 2) AS primeros_dos_octetos;
 ```
-
-+------------+-------------+----------------------+
-|            |             |                      |
+```
 +============+=============+======================+
 | usuario    | dominio     | primeros_dos_octetos |
 +------------+-------------+----------------------+
 | usuario    | dominio.com | 192.168              |
 +------------+-------------+----------------------+
-
+```
 # Localización y Reemplazo
 
 ## `LOCATE(substr, str [, pos])` e `INSTR(str, substr)`
@@ -283,9 +268,7 @@ SELECT LOCATE('de', 'Base de Datos') AS pos_locate,
        INSTR('Base de Datos', 'de') AS pos_instr,
        LOCATE('xyz', 'Base de Datos') AS no_encontrado;
 ```
-
-+--------------+--------------+---------------+
-|              |              |               |
+```
 +==============+==============+===============+
 | pos_locate   | pos_instr    | no_encontrado |
 +--------------+--------------+---------------+
@@ -293,7 +276,7 @@ SELECT LOCATE('de', 'Base de Datos') AS pos_locate,
 |      6       |     6        |         0     |
 | ```          | ```          | ```           |
 +--------------+--------------+---------------+
-
+```
 ## `REPLACE(str, from_str, to_str)`
 
 Reemplaza todas las apariciones del texto `from_str` por `to_str` dentro de `str`.
@@ -303,15 +286,13 @@ Reemplaza todas las apariciones del texto `from_str` por `to_str` dentro de `str
 ``` sql
 SELECT REPLACE('2026-10-27', '-', '/') AS fecha_formateada;
 ```
-
-+------------------+
-|                  |
+```
 +==================+
 | fecha_formateada |
 +------------------+
 | 2026/10/27       |
 +------------------+
-
+```
 # Relleno y Repetición
 
 ## `LPAD(str, len, padstr)` y `RPAD(str, len, padstr)`
@@ -324,15 +305,13 @@ Rellenan una cadena a la izquierda (`LPAD`) o a la derecha (`RPAD`) con el texto
 SELECT LPAD('45', 5, '0') AS codigo_factura,  -- '00045'
        RPAD('Item', 10, '.') AS alineado_derecha;
 ```
-
-+----------------+------------------+
-|                |                  |
+```
 +================+==================+
 | codigo_factura | alineado_derecha |
 +----------------+------------------+
 | 00045          | Item......       |
 +----------------+------------------+
-
+```
 ## `REPEAT(str, count)`
 
 Repite una cadena de texto el número de veces especificado.
@@ -342,15 +321,13 @@ Repite una cadena de texto el número de veces especificado.
 ``` sql
 SELECT REPEAT('*', 5) AS estrellas;
 ```
-
-+--------------------------------------------------------------------------+
-|                                                                          |
-+==========================================================================+
-| estrellas                                                                |
-+--------------------------------------------------------------------------+
-| ------------------------------------------------------------------------ |
-+--------------------------------------------------------------------------+
-
+```
++-----------+
+| estrellas |
++-----------+
+| *****     |
++-----------+
+```
 ## GROUP_CONCAT
 
 GROUP_CONCAT es una función de agregación que permite fusionar o concatenar los valores de varias filas en una sola cadena de texto, agrupándolos normalmente mediante una cláusula GROUP BY.
@@ -377,9 +354,7 @@ GROUP BY empleado;
 ```
 
 El resultado será
-
-+--------------+---------------------------------------------------------+
-|              |                                                         |
+```
 +==============+=========================================================+
 | **empleado** | **lista_proyectos**                                     |
 +--------------+---------------------------------------------------------+
@@ -387,7 +362,7 @@ El resultado será
 +--------------+---------------------------------------------------------+
 | Carlos       | Frontend                                                |
 +--------------+---------------------------------------------------------+
-
+```
 - **Gestión de Valores Nulos (`NULL`):** Al igual que otras funciones de agregación, `GROUP_CONCAT` **ignora por completo los valores `NULL`** de la columna que está concatenando.
 
 - **El Separador (`SEPARATOR`):** Por defecto, los elementos se unen usando una coma (`,`). Si prefieres otro separador (un guion, un espacio o una barra), puedes indicarlo explícitamente con `SEPARATOR '...'`.
@@ -412,15 +387,13 @@ Convierten una cadena de texto o número a su representación Hexadecimal en for
 SELECT HEX('SQL') AS a_hexadecimal,       
        UNHEX('53514C') AS a_texto;        
 ```
-
-+---------------+----------------+
-|               |                |
+```
 +===============+================+
 | a_hexadecimal | a_texto        |
 +---------------+----------------+
 | 53514C        | 0x53514C       |
 +---------------+----------------+
-
+```
 ## `TO_BASE64(str)` y `FROM_BASE64(str)`
 
 Convierten una cadena a formato codificado en Base64 y viceversa.
@@ -430,31 +403,26 @@ Convierten una cadena a formato codificado en Base64 y viceversa.
 ``` sql
 SELECT TO_BASE64('Texto Secreto') AS en_base64,
        FROM_BASE64('VGV4dG8gU2VjcmV0bw==') AS texto_original;
-```
-
-+----------------------+-------------------------------+
-|                      |                               |
+````
 +======================+===============================+
 | en_base64            | texto_original                |
 +----------------------+-------------------------------+
 | VGV4dG8gU2VjcmV0bw== | 0x546578746F205365637265746F  |
 +----------------------+-------------------------------+
-
+```
 ``` sql
 SELECT HEX('SQL') AS hexadecimal,
        CAST(UNHEX('53514C') AS CHAR) AS desde_hexadecimal,
        TO_BASE64('SQL') AS base64,
        CAST(FROM_BASE64('U1FM') AS CHAR) AS desde_base64;
 ```
-
-+-------------+-------------------+------------+--------------+
-|             |                   |            |              |
+```
 +=============+===================+============+==============+
 | hexadecimal | desde_hexadecimal | base64     | desde_base64 |
 +-------------+-------------------+------------+--------------+
 | 53514C      | SQL               | U1FM       | SQL          |
 +-------------+-------------------+------------+--------------+
-
+```
 # Búsquedas de Texto Completo: `FULLTEXT`
 
 Las búsquedas `FULLTEXT` están diseñadas para buscar palabras o frases dentro de columnas con bloques grandes de texto (tipos `TEXT`, `VARCHAR`), utilizando índices invertidos especiales.

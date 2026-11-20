@@ -45,9 +45,7 @@ SELECT GREATEST(8, 6, 0) AS mayor,
     LEAST(8, 6, 0) AS menor,
     LEAST(8, 6, 0, NULL) AS lista_con_null_2;
 ```
-
-+---------------+----------------+---------------+------------------+
-|               |                |               |                  |
+```
 +===============+================+===============+==================+
 | mayor         | lista_con_null | menor         | lista_con_null_2 |
 +---------------+----------------+---------------+------------------+
@@ -55,7 +53,7 @@ SELECT GREATEST(8, 6, 0) AS mayor,
 | 8             |       NULL     | 0             |         NULL     |
 | ```           | ```            | ```           | ```              |
 +---------------+----------------+---------------+------------------+
-
+```
 ### Funciones de agregación sobre columnas con valores NULL
 
 Las funciones de agregación (SUM, AVG, MIN, MAX) comparten una regla de oro en SQL: ignoran por completo los valores NULL y realizan sus cálculos únicamente con las filas que contienen datos válidos.
@@ -86,22 +84,13 @@ FROM puntuaciones;
 
 ### Resultados y Explicación
 
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|                                |               |                                                                                                                                                                                                     |
-+================================+===============+=====================================================================================================================================================================================================+
-| **Columna**                    | **Resultado** | **Explicación detallada**                                                                                                                                                                           |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **`total_no_nulos`** (`COUNT`) | **`3`**       | Cuenta solo las filas con datos (`10`, `20`, `30`), ignorando el `NULL`.                                                                                                                            |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **`suma_total`** (`SUM`)       | **`60`**      | Suma $10 + 20 + 30$. El `NULL` no suma cero; simplemente no se contempla.                                                                                                                           |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **`promedio`** (`AVG`)         | **`20.0000`** | Divide la suma total (`60`) entre la cantidad de elementos **no nulos** (`3`), dando $60 / 3 = 20$. *(Ojo: si hubiera tomado el `NULL` como cero, habría dividido entre 4 y el promedio sería 15).* |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **`valor_minimo`** (`MIN`)     | **`10`**      | Busca el menor valor entre los datos existentes, ignorando el `NULL`.                                                                                                                               |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **`valor_maximo`** (`MAX`)     | **`30`**      | Busca el mayor valor entre los datos existentes, ignorando el `NULL`.                                                                                                                               |
-+--------------------------------+---------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-
+| **Columna** | **Resultado** | **Explicación detallada** |
+| :--- | :--- | :--- |
+| **`total_no_nulos`** (`COUNT`) | **`3`** | Cuenta solo las filas con datos (`10`, `20`, `30`), ignorando el `NULL`. |
+| **`suma_total`** (`SUM`) | **`60`** | Suma `10 + 20 + 30`. El `NULL` no suma cero; simplemente no se contempla. |
+| **`promedio`** (`AVG`) | **`20.0000`** | Divide la suma total (`60`) entre la cantidad de elementos **no nulos** (`3`), dando `60 / 3 = 20`. *(Ojo: si hubiera tomado el `NULL` como cero, habría dividido entre 4 y el promedio sería 15).* |
+| **`valor_minimo`** (`MIN`) | **`10`** | Busca el menor valor entre los datos existentes, ignorando el `NULL`. |
+| **`valor_maximo`** (`MAX`) | **`30`** | Busca el mayor valor entre los datos existentes, ignorando el `NULL`. |
 ::: nota-importante
 Si **todos** los registros de la columna fueran `NULL`, las funciones `SUM`, `AVG`, `MIN` y `MAX` devolverían `NULL` como resultado general, mientras que `COUNT(columna)` devolvería `0`.
 :::
@@ -162,9 +151,6 @@ Sustituye un valor `NULL` por una alternativa especificada. Si `expr1` no es `NU
 SELECT IFNULL(NULL, 'Sin asignar') AS resultado_1,
        IFNULL('Dato válido', 'Sin asignar') AS resultado_2;
 ```
-
-**Resultado:**
-
 ```         
 +-------------+-------------+
 | resultado_1 | resultado_2 |
@@ -183,9 +169,6 @@ Recorre una lista ordenada de argumentos de izquierda a derecha y devuelve **el 
 -- Devuelve el primer dato disponible en la lista de prioridades
 SELECT COALESCE(NULL, NULL, 'contacto@email.com', 'Telefono por defecto') AS contacto_elegido;
 ```
-
-**Resultado:**
-
 ```         
 +--------------------+
 | contacto_elegido   |
@@ -207,9 +190,6 @@ Resulta útil para **limpiar datos** o convertir valores vacíos/por defecto (co
 SELECT NULLIF('', '') AS texto_vacio,
        NULLIF('Hola', '') AS texto_valido;
 ```
-
-**Resultado:**
-
 ```         
 +-------------+--------------+
 | texto_vacio | texto_valido |
@@ -235,7 +215,6 @@ SQL permite realizar cálculos matemáticos directamente en las consultas median
 SELECT 3 * 2.85 AS importe_multiplicacion,
        14 / 4 AS division_decimal;
 ```
-
 ```         
 +------------------------+------------------+
 | importe_multiplicacion | division_decimal |
@@ -257,7 +236,6 @@ SELECT 10 + 2 * 3 AS sin_parentesis,       -- Se evalúa 2*3=6, luego 10+6 = 16
        (10 + 2) * 3 AS con_parentesis,     -- Se evalúa (10+2)=12, luego 12*3 = 36
        20 / 4 * 2 + 5 AS nivel_combinado; -- 20/4=5 -> 5*2=10 -> 10+5 = 15
 ```
-
 ```         
 +----------------+----------------+-----------------+
 | sin_parentesis | con_parentesis | nivel_combinado |
@@ -275,7 +253,6 @@ SELECT 25.00 AS precio_orig,
        10.00 AS pct_descuento,
        25.00 * (1 - 10.00 / 100.0) AS precio_final;
 ```
-
 ```         
 +-------------+---------------+--------------+
 | precio_orig | pct_descuento | precio_final |
@@ -296,7 +273,6 @@ SELECT ROUND(7.856, 2) AS redondeado,
        TRUNCATE(7.856, 2) AS truncado,
        ROUND(1234, -2) AS redondeo_centenas;
 ```
-
 ```         
 +------------+----------+-------------------+
 | redondeado | truncado | redondeo_centenas |
@@ -327,7 +303,6 @@ SELECT 14 / 4 AS division_exacta,
        MOD(14, 4) AS personas_sobrantes,
        CEIL(14 / 4.0) AS mesas_necesarias;
 ```
-
 ```         
 +-----------------+------------------+--------------------+------------------+
 | division_exacta | grupos_completos | personas_sobrantes | mesas_necesarias |
@@ -370,7 +345,6 @@ SELECT 8 - 10 AS diferencia_real,
        ABS(8 - 10) AS distancia_absoluta,
        SIGN(8 - 10) AS indicador_direccion;
 ```
-
 ```         
 +-----------------+--------------------+---------------------+
 | diferencia_real | distancia_absoluta | indicador_direccion |
@@ -413,7 +387,6 @@ SELECT POWER(2, 10) AS dos_a_la_diez,
        LN(1) AS log_natural_uno,
        LOG10(1000) AS log_base10_mil;
 ```
-
 ```         
 +----------------+------------+------------------+---------------+
 | dos_a_la_diez  | raiz_de_81 | log_natural_uno  | log_base10_mil|
@@ -679,7 +652,6 @@ SELECT YEAR('2026-10-15') AS anio,
        DAY('2026-10-15') AS dia,
        EXTRACT(WEEK FROM DATE '2026-10-15') AS numero_semana;
 ```
-
 ```         
 +------+------+------+---------------+
 | anio | mes  | dia  | numero_semana |
@@ -704,8 +676,11 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY id;
 ```
-
-mysql\>SELECT nombre, fecha_inicio, -\> EXTRACT(YEAR FROM fecha_inicio) AS anio, -\> EXTRACT(MONTH FROM fecha_inicio) AS mes, -\> EXTRACT(DAY FROM fecha_inicio) AS dia -\> FROM cursos -\> ORDER BY id; +--------+--------------+------+------+------+ \| nombre \| fecha_inicio \| anio \| mes \| dia \| +--------+--------------+------+------+------+ \| Redes \| 2026-10-01 \| 2026 \| 10 \| 1 \| \| SQL \| 2026-10-15 \| 2026 \| 10 \| 15 \| \| Linux \| 2026-11-01 \| 2026 \| 11 \| 1 \| +--------+--------------+------+------+------+
+| nombre | fecha_inicio | anio | mes | dia |
+| :--- | :--- | :--- | :--- | :--- |
+| Redes | 2026-10-01 | 2026 | 10 | 1 |
+| SQL | 2026-10-15 | 2026 | 10 | 15 |
+| Linux | 2026-11-01 | 2026 | 11 | 1 |
 
 ## Separar Fecha y Hora: `DATE` y `TIME`
 
@@ -764,43 +739,37 @@ Ejemplos:
 -- Sumar 10 días a una fecha
 SELECT DATE_ADD('2026-01-01', INTERVAL 10 DAY) AS nueva_fecha;
 ```
-
-+-------------+
-|             |
+```
 +=============+
 | nueva_fecha |
 +-------------+
 | 2026-01-11  |
 +-------------+
-
+```
 Sumar un mes a una fecha
 
 ``` sql
 SELECT DATE_ADD(DATE '2026-01-15', INTERVAL 1 MONTH) AS fecha;
 ```
-
-+------------+
-|            |
+```
 +============+
 | fecha      |
 +------------+
 | 2026-02-15 |
 +------------+
-
+```
 Restar 3 meses a una fecha
 
 ``` sql
 SELECT DATE_SUB('2026-06-01', INTERVAL 3 MONTH) AS fecha_anterior;
 ```
-
-+----------------+
-|                |
+```
 +================+
 | fecha_anterior |
 +----------------+
 | 2026-03-01     |
 +----------------+
-
+```
 ::: nota
 Cálculo dependiendo del número de días del mes:
 
@@ -808,7 +777,7 @@ Cálculo dependiendo del número de días del mes:
 SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha;
 ```
 
-mysql\>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha; +------------+ \| fecha \| +------------+ \| 2026-02-28 \| +------------+ Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
+mysql\>SELECT DATE_ADD(DATE '2026-01-31', INTERVAL 1 MONTH) AS fecha; +------------+ | fecha | +------------+ | 2026-02-28 | +------------+ Febrero de 2026 no tiene día treinta y uno. MySQL ajusta el resultado al último día de ese mes. Sumar un mes no significa siempre sumar treinta días.
 :::
 
 B. Aritmética directa con el operador + y - MySQL permite utilizar directamente los operadores matemáticos junto con INTERVAL de una forma muy limpia y legible:
@@ -865,11 +834,13 @@ SELECT TIMESTAMPDIFF(YEAR, '2000-10-19', '2026-10-18') AS edad_un_dia_antes,
 ``` sql
 SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
 ```
-
-mysql\>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-15') AS edad;
-
-+------+ \| edad \| +------+ \| 1 \| +------+
-
+```
++------+ 
+| edad |
++------+ 
+| 1    | 
++------+
+```
 Si hacemos la misma consulta sobre un día antes:
 
 ``` sql
@@ -878,7 +849,7 @@ SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
 
 mysql\>SELECT TIMESTAMPDIFF(YEAR, '1995-05-15', '1996-05-14') AS edad;
 
-+------+ \| edad \| +------+ \| 0 \| +------+
++------+ | edad | +------+ | 0 | +------+
 
 Calcular la diferencia en meses
 
@@ -900,7 +871,7 @@ SELECT TIMESTAMPDIFF(MONTH, '2026-01-01', '2026-10-01') AS meses_totales;
 SELECT TIMESTAMPDIFF(MONTH, '2026-01-30', '2026-10-01') AS meses_totales;
 ```
 
-+---------------+ \| meses_totales \| +---------------+ \| 8 \| +---------------+
++---------------+ | meses_totales | +---------------+ | 8 | +---------------+
 
 \### `TIMEDIFF`, `SEC_TO_TIME`, `TIME_TO_SEC`
 
@@ -992,7 +963,7 @@ SELECT TIMEDIFF('12:30:00', '10:00:00') AS duracion,
 |              |       |           | 02:30:00            | |              |                     |
 |              | ```                                       |              |                     |
 |              |                                           |              |                     |
-|              | 150 \| 9000 \| \| \| \|                   |              |                     |
+|              | 150 | 9000 | | | |                   |              |                     |
 +--------------+-------------------------------------------+--------------+---------------------+
 
 ## Transformación entre Fechas y Cadenas (DATE_FORMAT y STR_TO_DATE)
