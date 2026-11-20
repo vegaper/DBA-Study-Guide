@@ -26,6 +26,7 @@ Una **vista** (*view*) es una consulta SQL almacenada en la base de datos a la q
 
 
 | **Concepto** | **Almacenamiento en Disco** | **Rendimiento de Lectura** | **Frescura de los Datos** |
+| :--- | :--- | :--- | :--- |
 | **Tabla** | **Sí** (Datos persistentes) | Muy rápido (según índices) | Requiere `INSERT/UPDATE` manual o procesado. |
 | **Vista Estándar** | **No** (Solo guarda la consulta) | Depende de la complejidad de la consulta base | **100% en tiempo real** (Refleja datos al instante). |
 | **Vista Materializada** | **Sí** (Almacena el resultado) | Excelente (Como una tabla física) | Requiere refresco periódico (`REFRESH MATERIALIZED VIEW`). |
@@ -142,12 +143,12 @@ Si el motor de base de datos no puede determinar de forma unívoca a qué fila e
 Aunque todos siguen el estándar, cada motor gestiona las vistas actualizables a su manera:
 
 | **Motor** | **Soporte de Vistas Actualizables** | **Comportamiento / Particularidades** |
+| :--- | :--- | :--- |
 | **MySQL / MariaDB** | **Nativo (Automático)** | Si la vista cumple las reglas (1:1, sin agregaciones), te deja hacer `INSERT/UPDATE/DELETE` directamente sin configurar nada extra. |
 | **PostgreSQL** | **Nativo + Triggers** | Soporta actualizaciones automáticas en vistas simples. Para vistas complejas (con `JOIN`s o agregaciones), permite usar **Triggers `INSTEAD OF`** para programar tú mismo qué hacer cuando alguien intenta un `UPDATE`. |
 | **Oracle** | **Nativo + Triggers** | Soporta actualización en "vistas modificables clave" (*key-preserved tables*). También soporta triggers `INSTEAD OF` para casos complejos. |
 | **SQL Server** | **Nativo + Triggers** | Permite actualización directa si afecta a una sola tabla base del `JOIN`. También utiliza triggers `INSTEAD OF`. |
 | **SQLite** | **Vía Triggers únicamente** | Por defecto, las vistas en SQLite son **siempre de solo lectura**, a menos que crees explícitamente un trigger `INSTEAD OF`. |
-
 ## Garantizar integridad con `WITH CHECK OPTION`
 
 Evita que se inserten o modifiquen filas a través de la vista que luego no cumplan con la propia condición del `WHERE` de la vista:
@@ -231,6 +232,7 @@ Como la fila con `id = 11` tiene `ciudad = 'Sevilla'`, **no pasa el filtro de la
 Para evitar esta anomalía donde puedes insertar cosas que luego no puedes consultar ni modificar a través de la misma vista, es por lo que se utiliza **`WITH CHECK OPTION`**: detiene el problema desde la raíz bloqueando directamente el `INSERT` inicial de Sevilla.
 
 | **Aspecto** | **Sin WITH CHECK OPTION** | **Con WITH CHECK OPTION** |
+| :--- | :--- | :--- |
 | **Protección de columnas** | ✅ Sí (no se pueden tocar columnas no expuestas) | ✅ Sí |
 | **Protección de tabla base** | ✅ Sí (se bloquea el acceso directo a `customers`) | ✅ Sí |
 | **Garantía de pertenencia de filas** | ❌ **No.** Puedes modificar/insertar filas con valores que rompan el `WHERE` | ✅ **Sí.** Bloquea cualquier cambio que haga que la fila deje de ser visible en la vista |
