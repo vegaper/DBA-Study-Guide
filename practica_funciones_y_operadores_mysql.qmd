@@ -115,6 +115,7 @@ FROM calificaciones
 WHERE nota IS NULL
 ORDER BY id;
 ```    
+```
 +--------+------+
 | alumno | nota |
 +--------+------+
@@ -122,7 +123,7 @@ ORDER BY id;
 | Sara   | NULL |
 | Diego  | NULL |
 +--------+------+
-
+```
 IS NULL pregunta expresamente si falta el valor. Escribir nota = NULL no realiza esta comprobación: una igualdad ordinaria con NULL produce un resultado desconocido.
        
 ### La lógica cuando aparece un valor desconocido
@@ -140,22 +141,8 @@ IS NULL pregunta expresamente si falta el valor. Escribir nota = NULL no realiza
 Función ISNULL(expr) frente a Operador expr IS NULL
 En la práctica de MySQL, ambas hacen exactamente lo mismo: devuelven 1 si el valor es NULL y 0 si es un valor conocido. La única diferencia es su sintaxis:
 
-ISNULL(nota) (Función): Se escribe como una función tradicional donde el valor va dentro de los paréntesis.
-
-nota IS NULL (Operador): Se escribe como una expresión lógica donde el operador va después del campo.
- 
-+--------+----------------+-----------------+
-| alumno | usando_funcion | usando_operador |
-+--------+----------------+-----------------+
-| Ana    |              0 |               0 |
-| Luis   |              0 |               0 |
-| Marta  |              1 |               1 |
-| Pablo  |              0 |               0 |
-| Elena  |              0 |               0 |
-| Bruno  |              0 |               0 |
-| Sara   |              1 |               1 |
-| Diego  |              1 |               1 |
-+--------+----------------+-----------------+
+`ISNULL(nota)` (Función): Se escribe como una función tradicional donde el valor va dentro de los paréntesis.
+`nota IS NULL `(Operador): Se escribe como una expresión lógica donde el operador va después del campo.
 
 
 ### IFNULL como sustitución sencilla
@@ -170,14 +157,14 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
-
+```
 +--------+-------------------+
 | nombre | telefono_mostrado |
 +--------+-------------------+
 | Ana    | 600111222         |
 | Luis   | No facilitado     |
 +--------+-------------------+
-
+```
 Para Ana, el primer argumento tiene un valor y se conserva. Para Luis, el primer argumento es NULL y se utiliza el segundo. IFNULL no comprueba si un texto está vacío o contiene espacios; solo comprueba si es NULL.
 
 ### COALESCE como lista ordenada de alternativas
@@ -191,6 +178,7 @@ FROM personas
 WHERE id IN (1, 2, 6)
 ORDER BY id;
 ```
+```
 +--------+----------------+
 | nombre | contacto       |
 +--------+----------------+
@@ -198,7 +186,7 @@ ORDER BY id;
 | Luis   | luis@centro.es |
 | Sara   | Sin contacto   |
 +--------+----------------+
-
+```
 COALESCE recorre sus argumentos de izquierda a derecha y devuelve el primero que no sea NULL. No une los argumentos y no devuelve todos ellos: elige uno. Un texto vacío también es un valor de texto y se elegiría si apareciera antes de las demás alternativas.
 
 ### NULLIF para transformar un valor en NULL
@@ -211,6 +199,7 @@ Necesidad: considerar que un teléfono escrito como texto vacío no es un teléf
 SELECT telefono, NULLIF(telefono, '') 
 FROM personas;
 ```
+```
 +-------------+----------------------+
 | telefono    | NULLIF(telefono, '') |
 +-------------+----------------------+
@@ -221,7 +210,7 @@ FROM personas;
 |  611333444  |  611333444           |
 | NULL        | NULL                 |
 +-------------+----------------------+
-
+```
 ## Operadores de comparación
 
 Necesidad: localizar las calificaciones que alcanzan el aprobado. Se aprueba con una nota igual o superior a cinco.
@@ -230,6 +219,7 @@ Necesidad: localizar las calificaciones que alcanzan el aprobado. Se aprueba con
 SELECT id, alumno, nota, nota >= 5 AS alcanza_el_cinco
 FROM calificaciones
 ORDER BY id;
+```
 ```
 +----+--------+------+------------------+
 | id | alumno | nota | alcanza_el_cinco |
@@ -243,7 +233,7 @@ ORDER BY id;
 |  7 | Sara   | NULL |             NULL |
 |  8 | Diego  | NULL |             NULL |
 +----+--------+------+------------------+
-
+```
 
 Ana obtiene 1 porque ocho es mayor o igual que cinco. Pablo obtiene 0 porque cero no alcanza el cinco. Marta obtiene NULL porque se desconoce su nota: no se puede afirmar que apruebe ni que suspenda.
 
@@ -253,6 +243,7 @@ FROM calificaciones
 WHERE nota >= 5
 ORDER BY id;
 ```
+```
 +--------+------+
 | alumno | nota |
 +--------+------+
@@ -261,7 +252,7 @@ ORDER BY id;
 | Elena  | 9.00 |
 | Bruno  | 9.00 |
 +--------+------+
-
+```
 
 El mismo cálculo se utiliza primero para mostrar una comprobación y después para filtrar. En el segundo caso, las notas pendientes quedan fuera del resultado junto con las condiciones falsas, aunque su significado sea distinto.
 
@@ -275,13 +266,14 @@ FROM calificaciones
 WHERE nota BETWEEN 5 AND 8
 ORDER BY id;
 ```
+```
 +--------+------+
 | alumno | nota |
 +--------+------+
 | Ana    | 8.00 |
 | Luis   | 6.00 |
 +--------+------+
-
+```
 BETWEEN 5 AND 8 equivale, en este caso, a nota \>= 5 AND nota \<= 8. Las notas de nueve están por encima del intervalo y el cero está por debajo.
 
 IN permite expresar una lista de alternativas. Por ejemplo, seleccionar el grupo A o el grupo C:
@@ -291,6 +283,7 @@ SELECT alumno, grupo
 FROM calificaciones
 WHERE grupo IN ('A', 'C')
 ORDER BY id;
+```
 ```
 +--------+-------+
 | alumno | grupo |
@@ -302,7 +295,7 @@ ORDER BY id;
 | Sara   | C     |
 | Diego  | C     |
 +--------+-------+
-
+```
 ## Operadores lógicos
 
 | Operador | Significado | Ejemplo SQL | Resultado |
@@ -328,14 +321,14 @@ ORDER BY id;
 ```
 
 Los paréntesis agrupan los dos apellidos como una sola alternativa. Después AND exige, además, que la persona esté activa.
-
+```
 +----+--------+-----------+--------+
 | id | nombre | apellido1 | activo |
 +----+--------+-----------+--------+
 |  1 | Ana    | García    |      1 |
 |  3 | Marta  | López     |      1 |
 +----+--------+-----------+--------+
-
+```
 
 Si no usamos los parentesis sql aplica la lógica de izquierda a derecha, por lo que la siguiente sentencia significa encontrar aquellos que estén activos y tengan como primer apellido García O todos aquellos que tengan como primer apellido López, independientemente de si están activos o no.
 
@@ -346,6 +339,7 @@ WHERE activo = 1 AND apellido1 = 'García'
    OR apellido1 = 'López'
 ORDER BY id;
 ``` 
+```
 +----+--------+-----------+--------+
 | id | nombre | apellido1 | activo |
 +----+--------+-----------+--------+
@@ -353,7 +347,7 @@ ORDER BY id;
 |  2 | Luis   | López     |      0 |
 |  3 | Marta  | López     |      1 |
 +----+--------+-----------+--------+
-
+```
 
 Aparece Luis porque AND tiene prioridad sobre OR. La condición se interpreta como (activo = 1 AND apellido1 = 'García') OR apellido1 = 'López'. La segunda alternativa admite a cualquier López. Los paréntesis deben expresar la intención del filtro.
 
@@ -370,6 +364,7 @@ WHERE EXISTS (
     WHERE c.alumno = p.nombre
 );
 ```
+```
 +--------+-----------+
 | nombre | apellido1 |
 +--------+-----------+
@@ -380,7 +375,7 @@ WHERE EXISTS (
 | Elena  | García    |
 | Sara   | Ruiz      |
 +--------+-----------+
-
+```
 **¿Qué hace?** Recorre la lista de personas una a una. Para cada persona, mira en la subconsulta si hay al menos una fila en calificaciones con su nombre. Si la encuentra, la incluye en el resultado.
 
 EXISTS comprueba si existe alguna fila que cumpla la condición. El número 1 del SELECT interior no es una nota: solo se necesita comprobar la existencia de filas.
@@ -392,6 +387,7 @@ SELECT p.nombre, p.apellido1, c.nota
     FROM personas AS p 
     INNER JOIN calificaciones c ON c.alumno =p.nombre;
 ```
+```
 +--------+-----------+------+
 | nombre | apellido1 | nota |
 +--------+-----------+------+
@@ -402,7 +398,7 @@ SELECT p.nombre, p.apellido1, c.nota
 | Elena  | García    | 9.00 |
 | Sara   | Ruiz      | NULL |
 +--------+-----------+------+
-
+```
 para devolver sólo aquellos alumnos que tengan una fecha conocida en nota tendremos que añadir un filtro a la subquery original
 
 ``` sql
@@ -415,6 +411,7 @@ WHERE EXISTS (
     AND c.nota IS NOT NULL
 );
 ```
+```
 +--------+-----------+
 | nombre | apellido1 |
 +--------+-----------+
@@ -423,7 +420,7 @@ WHERE EXISTS (
 | Pablo  | Soto      |
 | Elena  | García    |
 +--------+-----------+
-
+```
 # Control de flujo 
 
 ## CASE para decidir según una condición
@@ -440,6 +437,7 @@ SELECT alumno, nota,
 FROM calificaciones
 ORDER BY id;
 ```
+```
 +--------+------+-----------+
 | alumno | nota | situacion |
 +--------+------+-----------+
@@ -452,7 +450,7 @@ ORDER BY id;
 | Sara   | NULL | Pendiente |
 | Diego  | NULL | Pendiente |
 +--------+------+-----------+
-
+```
 CASE revisa los casos de arriba abajo. Para Marta, la primera condición es verdadera y se devuelve Pendiente. Para Ana, la primera es falsa y la segunda es verdadera: se devuelve Aprobado. Para Pablo, ninguna de esas dos condiciones se cumple, de modo que ELSE devuelve Suspenso.
 
 Se utiliza solo el primer caso verdadero. END cierra la expresión y AS da nombre a la columna calculada. Si se omite ELSE y no se cumple ningún caso, el resultado es NULL.
@@ -480,7 +478,7 @@ SELECT nombre,
 FROM personas
 ORDER BY id;
 ```
-
+```
 +--------+-----------+
 | nombre | situacion |
 +--------+-----------+
@@ -491,7 +489,7 @@ ORDER BY id;
 | Elena  | Inactivo  |
 | Sara   | Activo    |
 +--------+-----------+
-
+```
 En la primera forma, CASE activo significa que se va a comparar el valor de activo con lo escrito después de cada WHEN. WHEN 1 significa: si activo vale uno. En la segunda forma, CASE no lleva un valor a continuación; cada WHEN contiene una condición completa.
 
 TRUE equivale a 1 en MySQL. Por eso CASE activo WHEN TRUE es una comparación con uno. CASE WHEN activo IS TRUE también es válido para estos datos. Como regla general, IS TRUE admite cualquier número distinto de cero; = TRUE compara con uno. Los ejemplos de activo de este laboratorio utilizan únicamente cero y uno.
@@ -517,6 +515,7 @@ SELECT nombre, telefono,
 FROM personas
 ORDER BY id;
 ```
+```
 +--------+-------------+-------------+
 | nombre | telefono    | espacios    |
 +--------+-------------+-------------+
@@ -527,7 +526,7 @@ ORDER BY id;
 | Elena  |  611333444  | .611333444. |
 | Sara   | NULL        | NULL        |
 +--------+-------------+-------------+
-
+```
 Podemos usar la función TRIM para quitar los espacios al principio y al final del valor, no quitará los espacios intermedios. Pablo pasa de tres espacios a texto vacío. Elena conserva su número, pero pierde el espacio inicial y el final. TRIM aplicado a NULL sigue devolviendo NULL.
 
 ``` sql
@@ -549,6 +548,7 @@ SELECT nombre,
 FROM personas
 ORDER BY id;
 ```
+```
 +--------+-------------------+
 | nombre | telefono_mostrado |
 +--------+-------------------+
@@ -559,7 +559,7 @@ ORDER BY id;
 | Elena  | 611333444         |
 | Sara   | No facilitado     |
 +--------+-------------------+
-
+```
 Caso de Pablo: TRIM(' ') produce ''. NULLIF('', '') produce NULL. COALESCE(NULL, 'No facilitado') produce No facilitado. Caso de Elena: TRIM conserva 611333444; NULLIF lo conserva porque no es texto vacío; y COALESCE lo elige porque no es NULL. La combinación se comprende siguiendo los resultados intermedios, no memorizando la expresión entera.
 
 Este tratamiento solo tiene sentido si los datos presentan estas situaciones. Si todos los teléfonos de una tabla fueran NULL, una sustitución sencilla bastaría para mostrar el mismo aviso; no demostraría el efecto del recorte ni de la limpieza de textos vacíos.
@@ -567,7 +567,7 @@ Este tratamiento solo tiene sentido si los datos presentan estas situaciones. Si
 ## Por qué una nota pendiente no equivale a cero
 
 ### Datos que se van a promediar
-
+```
 | alumno | nota guardada | COALESCE(nota, 0) |
 |--------|---------------|-------------------|
 | Ana    | 8.00          | 8.00              |
@@ -578,13 +578,14 @@ Este tratamiento solo tiene sentido si los datos presentan estas situaciones. Si
 | Bruno  | 9.00          | 9.00              |
 | Sara   | NULL          | 0.00              |
 | Diego  | NULL          | 0.00              |
-
+```
 Las cinco notas conocidas son 8, 6, 0, 9 y 9. Su suma es 32. Las otras tres notas están pendientes. El cero de Pablo sí debe participar en la media porque es su calificación real.
 
 ``` sql
 SELECT AVG(nota) AS media_notas_conocidas,
        AVG(COALESCE(nota, 0)) AS media_pendientes_como_cero
 FROM calificaciones;
+```
 ```
 +-----------------------+----------------------------+
 | media_notas_conocidas | media_pendientes_como_cero |
@@ -596,7 +597,7 @@ FROM calificaciones;
 |------------------------|------------------------|------------------------|
 | AVG(nota) | 32 / 5 = 6.4 | Media de quienes tienen una nota conocida. |
 | AVG(COALESCE(nota, 0)) | 32 / 8 = 4.0 | Media si cada pendiente se contase provisionalmente como cero. |
-
+```
 AVG ignora NULL, pero no ignora el cero. COALESCE convierte cada nota pendiente en un cero antes de que AVG recorra los valores. Esa sustitución incorpora tres personas más al denominador. Elegir una u otra consulta depende de la pregunta que se desea responder, no de una preferencia de formato.
 
 ## NULLIF como protección de un denominador
@@ -613,6 +614,7 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
+```
 +-------+-----------+-----------+
 | grupo | evaluados | aprobados |
 +-------+-----------+-----------+
@@ -620,19 +622,20 @@ ORDER BY grupo;
 | B     |         2 |         2 |
 | C     |         0 |         0 |
 +-------+-----------+-----------+
-
+```
 El grupo C tiene dos personas y ninguna nota conocida. Su denominador es cero. En matemáticas, dividir un número entre cero no está definido, y por lo tanto la operación daría un error. 
 
 COUNT(nota) cuenta solo las notas conocidas. CASE aporta uno para cada aprobado y cero para los demás registros; SUM suma esas aportaciones. Antes de calcular el porcentaje se muestra qué se va a dividir. En ciertos motores de bases de datos o configuraciones estrictas, dividir un número diferente de cero entre 0 (por ejemplo, 5 / 0) puede lanzar una advertencia o un error crítico.
 
 En mysql la división por cero no interrumpe la ejecución con un error fatal, sino que evalúa el resultado como NULL.
 mysql>select 1/0;
+```
 +------+
 | 1/0  |
 +------+
 | NULL |
 +------+
-
+```
 En aquellos casos en los que el denominador pueda ser 0, usar NULLIF se considera una buena práctica de programación defensiva para garantizar la compatibilidad de las queries y deja explícito para cualquier otro desarrollador que estás protegiendo la consulta contra divisiones por cero de manera intencional.
 
 `NULLIF(COUNT(nota), 0)` devuelve NULL si la cuenta de notas es igual a 0. 
@@ -648,16 +651,16 @@ ORDER BY grupo;
 ```
 
 ### Resultado — los decimales pueden mostrarse con distinta longitud
-
+```
 | grupo | porcentaje | Operación                                      |
 |-------|------------|------------------------------------------------|
 | A     | 66.6667…   | 100 × 2 / 3                                    |
 | B     | 100        | 100 × 2 / 2                                    |
 | C     | NULL       | NULLIF(0, 0) convierte el denominador en NULL. |
-
+```
 En A, NULLIF(3, 0) devuelve tres porque son distintos. En B devuelve dos. En C, NULLIF(0, 0) devuelve NULL. La división con ese denominador devuelve NULL: expresa que no existe un porcentaje calculable. No significa que el porcentaje sea cero.
 
-
+```
 +-------+------------+
 | grupo | porcentaje |
 +-------+------------+
@@ -665,16 +668,16 @@ En A, NULLIF(3, 0) devuelve tres porque son distintos. En B devuelve dos. En C, 
 | B     |  100.00000 |
 | C     |       NULL |
 +-------+------------+
-
+```
 ## Nombres parecidos que hacen cosas distintas
-
+```
 | Función | Sentencia SQL | Resultado | Qué hace |
 |------------------|------------------|------------------|------------------|
 | ISNULL | SELECT ISNULL(NULL); | 1 | Pregunta si falta un valor. |
 | IFNULL | SELECT IFNULL(NULL, 'Aviso'); | Aviso | Sustituye un NULL por una alternativa. |
 | NULLIF | SELECT NULLIF('', ''); | NULL | Sustituye un valor por un NULL. |
 | COALESCE | SELECT COALESCE(NULL, 'correo', 'Aviso'); | correo | Elige el primer argumento que no sea NULL. |
-
+```
 La diferencia está en la pregunta que se hace. ISNULL pregunta por un estado; IFNULL ofrece un sustituto; NULLIF reconoce una marca; COALESCE recorre alternativas. 
 
 # Funciones y operadores numéricos
@@ -700,7 +703,7 @@ SELECT producto, unidades, precio,
 FROM pedidos
 ORDER BY id;
 ```
-
+```
 +-------------+----------+--------+---------------+
 | producto    | unidades | precio | importe_bruto |
 +-------------+----------+--------+---------------+
@@ -708,7 +711,7 @@ ORDER BY id;
 | Memoria USB |        2 |  12.50 |         25.00 |
 | Ratón       |        1 |  18.95 |         18.95 |
 +-------------+----------+--------+---------------+
-
+```
 Cuaderno: tres unidades por 2.85 producen 8.55. En esta consulta, \* significa multiplicar. En SELECT \*, el asterisco tendría otro papel: seleccionar todas las columnas. El contexto de la sentencia permite distinguir ambos usos.
 
 ### División
@@ -737,38 +740,39 @@ Cuando mezclas varias operaciones aritméticas en una misma consulta, SQL sigue 
 ```sql
 SELECT 10 + 2 * 3 AS resultado;
 ``` 
-
+```
 +-----------+
 | resultado |
 +-----------+
 |        16 |
 +-----------+
+```
 Como la multiplicación tiene mayor prioridad que la suma, primero calcula 2 * 3 = 6 y luego suma 10 + 6.
 
 2. Alterando el orden con paréntesis:
 ```sql
 SELECT (10 + 2) * 3 AS resultado;
 ```
-
+```
 +-----------+
 | resultado |
 +-----------+
 |        36 |
 +-----------+
-
+```
 3. Mezclando división, multiplicación y sumas (evaluación de izquierda a derecha en operadores de igual nivel)
 
 ```sql
 SELECT 20 / 4 * 2 + 5 AS resultado;
 ```
 Se evalúan la división y la multiplicación de izquierda a derecha: 20 / 4 = 5. Luego la multiplicación restante: 5 * 2 = 10. Finalmente se aplica la suma: 10 + 5 = 15.
-
+```
 +-----------+
 | resultado |
 +-----------+
 |   15.0000 |
 +-----------+
-
+```
 ### Ejemplo con nuestro ejercicio práctico
 Un descuento del diez por ciento deja el noventa por ciento del importe. El factor se calcula como 1 - descuento_pct / 100.0. El literal 100.0 facilita identificar que se trabaja con porcentajes decimales.
 
@@ -780,7 +784,7 @@ SELECT producto,
 FROM pedidos
 ORDER BY id;
 ```
-
+```
 +-------------+---------------+---------------+------------------------+
 | producto    | importe_bruto | descuento_pct | importe_tras_descuento |
 +-------------+---------------+---------------+------------------------+
@@ -788,7 +792,7 @@ ORDER BY id;
 | Memoria USB |         25.00 |         10.00 |            22.50000000 |
 | Ratón       |         18.95 |          5.00 |            18.00250000 |
 +-------------+---------------+---------------+------------------------+
-
+```
 En la memoria USB: 10 / 100 = 0.10; 1 - 0.10 = 0.90; y 25 × 0.90 = 22.50. En el ratón, el resultado tiene más de dos decimales. El redondeo se estudia a continuación para decidir qué cantidad mostrar.
 
 ## ROUND y TRUNCATE no hacen lo mismo
@@ -800,13 +804,13 @@ SELECT ROUND(18.0025, 2) AS redondeado,
 SELECT ROUND(7.856, 2) AS redondeado,
        TRUNCATE(7.856, 2) AS cortado;
 ```
-
+```
 +------------+---------+
 | redondeado | cortado |
 +------------+---------+
 |       7.86 |    7.85 |
 +------------+---------+
-
+```
 ROUND observa los decimales que se descartan para aproximar el valor. TRUNCATE corta sin aproximar. En 18.0025 coinciden; en 7.856 se ve la diferencia. El segundo argumento indica cuántos decimales se conservan.
 
 ``` sql
@@ -815,7 +819,7 @@ SELECT producto,
 FROM pedidos
 ORDER BY id;
 ```
-
+```
 +-------------+---------------+
 | producto    | importe_final |
 +-------------+---------------+
@@ -823,7 +827,7 @@ ORDER BY id;
 | Memoria USB |         22.50 |
 | Ratón       |         18.00 |
 +-------------+---------------+
-
+```
 La función exterior se aplica al importe que ya se había calculado. Se conserva el dato original de precio; solo se devuelve un resultado nuevo. Para cantidades exactas se utiliza DECIMAL en el laboratorio. Con valores aproximados, algunos casos de redondeo pueden depender del tipo y de su representación.
 
 ## DIV, MOD, FLOOR y CEIL 
@@ -854,13 +858,13 @@ SELECT
        MOD(14, 4) AS personas_restantes,
        CEIL(14 / 4) AS mesas_necesarias;
 ```
-
+```
 +-----------------+------------------+--------------------+------------------+
 | division_normal | grupos_completos | personas_restantes | mesas_necesarias |
 +-----------------+------------------+--------------------+------------------+
 |          3.5000 |                3 |                  2 |                4 |
 +-----------------+------------------+--------------------+------------------+
-
+```
 
 # Funciones de fecha y hora
 
@@ -882,7 +886,7 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY id;
 ```
-
+```
 +--------+--------------+------+------+------+
 | nombre | fecha_inicio | anio | mes  | dia  |
 +--------+--------------+------+------+------+
@@ -890,7 +894,7 @@ ORDER BY id;
 | SQL    | 2026-10-15   | 2026 |   10 |   15 |
 | Linux  | 2026-11-01   | 2026 |   11 |    1 |
 +--------+--------------+------+------+------+
-
+```
 YEAR, MONTH y DAY devuelven la parte indicada. DAY y DAYOFMONTH son equivalentes. 
 
 
@@ -903,7 +907,7 @@ SELECT nombre,
 FROM cursos
 ORDER BY id;
 ```
-
+```
 +--------+------------+----------------+
 | nombre | diferencia | dias_incluidos |
 +--------+------------+----------------+
@@ -911,7 +915,7 @@ ORDER BY id;
 | SQL    |          5 |              6 |
 | Linux  |          4 |              5 |
 +--------+------------+----------------+
-
+```
 Para SQL se cuentan 15, 16, 17, 18, 19 y 20: seis fechas. DATEDIFF devuelve fecha final menos fecha inicial en días e ignora las horas. Los días incluidos no son necesariamente días lectivos: un calendario de clases debe considerar fines de semana y festivos.
 
 ## DATE_ADD, DATE_SUB e INTERVAL
@@ -928,7 +932,7 @@ SELECT nombre,
 FROM cursos
 ORDER BY id;
 ```
-
+```
 +--------+--------------+------------+------------+-------------+
 | nombre | fecha_inicio | aviso      | fecha_fin  | seguimiento |
 +--------+--------------+------------+------------+-------------+
@@ -936,7 +940,7 @@ ORDER BY id;
 | SQL    | 2026-10-15   | 2026-10-08 | 2026-10-20 | 2026-10-27  |
 | Linux  | 2026-11-01   | 2026-10-25 | 2026-11-05 | 2026-11-12  |
 +--------+--------------+------------+------------+-------------+
-
+```
 INTERVAL 7 DAY expresa una cantidad y una unidad. También puede escribirse `fecha_inicio - INTERVAL 7 DAY` o `fecha_fin + INTERVAL 7 DAY`. 
 
 
@@ -953,6 +957,7 @@ SELECT nombre, fecha_nacimiento,
 FROM personas
 ORDER BY id;
 ```
+```
 +--------+------------------+------+
 | nombre | fecha_nacimiento | edad |
 +--------+------------------+------+
@@ -963,7 +968,7 @@ ORDER BY id;
 | Elena  | 1995-01-10       |   31 |
 | Sara   | NULL             | NULL |
 +--------+------------------+------+
-
+```
 Pablo nació el 19 de octubre de 2000: todavía tiene veinticinco años, porque cumple veintiséis al día siguiente.
 
 ## Filtrar fechas usando su valor original
@@ -975,13 +980,14 @@ WHERE fecha_inicio >= DATE '2026-10-01'
   AND fecha_inicio < DATE '2026-11-01'
 ORDER BY id;
 ```
+```
 +--------+--------------+
 | nombre | fecha_inicio |
 +--------+--------------+
 | Redes  | 2026-10-01   |
 | SQL    | 2026-10-15   |
 +--------+--------------+
-
+```
 El intervalo utiliza un límite superior exclusivo. Esta forma conserva la columna sin envolverla en YEAR o DATE_FORMAT y permite considerar un acceso por rango si existe un índice adecuado. 
 
 # Funciones y operadores de cadenas
@@ -1024,13 +1030,14 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
+```
 +--------+--------------------+
 | nombre | completo           |
 +--------+--------------------+
 | Ana    | Ana García López   |
 | Luis   | NULL               |
 +--------+--------------------+
-
+```
 CONCAT devuelve NULL si alguno de sus argumentos es NULL. La función no puede suponer qué texto debería sustituir al segundo apellido desconocido de Luis.
 
 ## CONCAT_WS elige un separador y omite partes NULL
@@ -1042,13 +1049,14 @@ FROM personas
 WHERE id IN (1, 2)
 ORDER BY id;
 ```
+```
 +--------+--------------------+
 | nombre | completo           |
 +--------+--------------------+
 | Ana    | Ana García López   |
 | Luis   | Luis López         |
 +--------+--------------------+
-
+```
 El primer argumento de CONCAT_WS es el separador. Los siguientes son las partes del texto. Omite los argumentos NULL posteriores al separador y coloca un espacio entre las partes conservadas. No omite textos vacíos: '' y NULL son distintos.
 
 ## UPPER LOWER y TRIM sobre un correo
@@ -1066,12 +1074,13 @@ SELECT email,
 FROM personas
 WHERE id = 5;
 ```
+```
 +-------------------+-----------------+-----------------+
 | email             | recortado       | normalizado     |
 +-------------------+-----------------+-----------------+
 |  ELENA@CENTRO.ES  | ELENA@CENTRO.ES | elena@centro.es |
 +-------------------+-----------------+-----------------+
-
+```
 TRIM elimina los espacios de los extremos. LOWER pasa el resultado a minúsculas. Se muestra primero la operación interior para entender la combinación. UPPER realiza la transformación contraria:
 
 ## LIKE para buscar un patrón sencillo
@@ -1084,12 +1093,13 @@ FROM personas
 WHERE nombre LIKE 'A%'
 ORDER BY id;
 ```
+```
 +--------+
 | nombre |
 +--------+
 | Ana    |
 +--------+
-
+```
 ### Qué significan los comodines
 
 | Patrón | Interpretación | Ejemplo que coincide |
@@ -1099,8 +1109,6 @@ ORDER BY id;
 | \_na | Un carácter cualquiera seguido de na. | Ana |
 
 El carácter % representa una secuencia de longitud variable y \_ representa exactamente un carácter. 
-
-
 
 # Búsqueda de texto completo
 
@@ -1129,12 +1137,13 @@ WHERE MATCH(titulo, contenido)
       AGAINST('MySQL' IN NATURAL LANGUAGE MODE)
 ORDER BY id;
 ```
+```
 +----+--------------------------+
 | id | titulo                   |
 +----+--------------------------+
 |  3 | Administración de MySQL  |
 +----+--------------------------+
-
+```
 MATCH indica las columnas indexadas. AGAINST contiene los términos de búsqueda y el modo. El documento tres contiene MySQL; los demás no. No es necesario utilizar % como en LIKE.
 
 ``` sql
@@ -1143,6 +1152,7 @@ SELECT id, titulo,
            AGAINST('MySQL' IN NATURAL LANGUAGE MODE) AS relevancia
 FROM documentos
 ORDER BY relevancia DESC, id;
+```
 ```
 +----+--------------------------+--------------------+
 | id | titulo                   | relevancia         |
@@ -1153,7 +1163,7 @@ ORDER BY relevancia DESC, id;
 |  4 | Copias de seguridad      |                  0 |
 |  5 | Hojas de cálculo         |                  0 |
 +----+--------------------------+--------------------+
-
+```
 La relevancia del documento tres será positiva y la de los demás cero con esta colección y configuración. Su cifra concreta depende de las frecuencias y del índice; no es un porcentaje de calidad del documento.
 
 ## Modo booleano para exigir y excluir términos
@@ -1167,13 +1177,14 @@ WHERE MATCH(titulo, contenido)
       AGAINST('+seguridad -redes' IN BOOLEAN MODE)
 ORDER BY id;
 ```
+```
 +----+---------------------+
 | id | titulo              |
 +----+---------------------+
 |  2 | Seguridad en Linux  |
 |  4 | Copias de seguridad |
 +----+---------------------+
-
+```
 +seguridad exige ese término. -redes excluye cualquier documento que contenga redes. El documento uno queda fuera aunque contenga seguridad, porque también contiene redes.
 
 ``` sql
@@ -1183,12 +1194,13 @@ WHERE MATCH(titulo, contenido)
       AGAINST('admin*' IN BOOLEAN MODE)
 ORDER BY id;
 ```
+```
 +----+--------------------------+
 | id | titulo                   |
 +----+--------------------------+
 |  3 | Administración de MySQL  |
 +----+--------------------------+
-
+```
 El asterisco final busca términos que empiezan por admin. Los signos +, - y \* de este ejemplo son parte del lenguaje de búsqueda dentro del texto de AGAINST.
 
 ## Expansión de consulta
@@ -1200,13 +1212,14 @@ WHERE MATCH(titulo, contenido)
       AGAINST('MySQL' WITH QUERY EXPANSION)
 ORDER BY id;
 ```
+```
 +----+--------------------------+
 | id | titulo                   |
 +----+--------------------------+
 |  3 | Administración de MySQL  |
 |  4 | Copias de seguridad      |
 +----+--------------------------+
-
+```
 La función utiliza los primeros documentos relevantes para ampliar la búsqueda con términos relacionados. Por ejemplo, un documento sobre bases de datos puede aportar vocabulario para la segunda búsqueda. No se promete una lista fija: su resultado depende de la colección y de la configuración. Se utiliza cuando interesa ampliar resultados, aceptando una posible pérdida de precisión.
 
 Si un ejemplo no devuelve lo esperado, se comprueba primero que exista el índice, que MATCH use sus columnas y que los términos no estén excluidos por longitud o por la lista de palabras vacías. Con el analizador habitual de InnoDB el mínimo predeterminado es tres caracteres; esa opción puede estar configurada de otra forma.
@@ -1224,7 +1237,7 @@ ORDER BY id;
 ```
 
 ### Primero se convierte la nota
-
+```
 +--------+------+-----------------+
 | alumno | nota | nota_convertida |
 +--------+------+-----------------+
@@ -1232,7 +1245,7 @@ ORDER BY id;
 | Marta  | NULL | NULL            |
 | Pablo  | 0.00 | 0.00            |
 +--------+------+-----------------+
-
+```
 La conversión mantiene NULL como NULL. El siguiente paso puede aprovechar esa ausencia para elegir la etiqueta:
 
 ``` sql
@@ -1242,6 +1255,7 @@ FROM calificaciones
 WHERE id IN (1, 3, 4)
 ORDER BY id;
 ```
+```
 +--------+---------------+
 | alumno | nota_mostrada |
 +--------+---------------+
@@ -1249,7 +1263,7 @@ ORDER BY id;
 | Marta  | Pendiente     |
 | Pablo  | 0.00          |
 +--------+---------------+
-
+```
 Para Ana y Pablo se elige el texto de la nota. Para Marta, la conversión devuelve NULL y COALESCE elige Pendiente. Esta operación prepara la presentación, mientras la columna nota original sigue siendo numérica.
 
 ## Cifrar y recuperar un texto con AES
@@ -1287,12 +1301,13 @@ SELECT @texto_demo AS original,
 
 SET SESSION block_encryption_mode = @modo_anterior;
 ```
+```
 +---------------+------------------------------------+---------------+
 | original      | dato_cifrado                       | recuperado    |
 +---------------+------------------------------------+---------------+
 | Nota de Ana 8 | 0xED9A1E748A60205FC9484BC23314797B | Nota de Ana 8 |
 +---------------+------------------------------------+---------------+
-
+```
 La recuperación funciona porque se conserva la clave, el vector y el modo que se utilizaron al cifrar. Repetir RANDOM_BYTES para generar una nueva clave antes de descifrar no recuperaría esa misma clave. El modo previo se restaura al finalizar.
 
 Este ejemplo enseña la operación. Un sistema real también necesita custodia de claves, transporte protegido e integridad de los mensajes. CBC por sí solo no autentica el contenido. El modo predeterminado del servidor no debe suponerse adecuado para cualquier uso.
@@ -1322,12 +1337,13 @@ SELECT COUNT(*) AS personas,
        COUNT(DISTINCT nota) AS valores_distintos
 FROM calificaciones;
 ```
+```
 +----------+-----------------+-------------------+
 | personas | notas_conocidas | valores_distintos |
 +----------+-----------------+-------------------+
 |        8 |               5 |                 4 |
 +----------+-----------------+-------------------+
-
+```
 COUNT(\*) cuenta las ocho filas. COUNT(nota) solo cuenta cinco valores conocidos. COUNT(DISTINCT nota) cuenta cuatro valores distintos: 0, 6, 8 y 9. El nueve aparece dos veces, pero solo cuenta una en la última columna.
 
 ## SUM AVG MIN y MAX
@@ -1339,11 +1355,13 @@ SELECT SUM(nota) AS suma,
        MAX(nota) AS mayor
 FROM calificaciones;
 ```
+```
 +-------+----------+-------+-------+
 | suma  | media    | menor | mayor |
 +-------+----------+-------+-------+
 | 32.00 | 6.400000 |  0.00 |  9.00 |
 +-------+----------+-------+-------+
+```
 Las notas conocidas son 8, 6, 0, 9 y 9. Suman 32 y se dividen entre cinco para obtener una media de 6.4. MIN devuelve cero y MAX nueve. Los NULL no se convierten automáticamente en ceros.
 
 ## Una fila por grupo con GROUP BY
@@ -1357,6 +1375,7 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
+```
 +-------+----------+-----------+----------+
 | grupo | personas | evaluadas | media    |
 +-------+----------+-----------+----------+
@@ -1364,7 +1383,7 @@ ORDER BY grupo;
 | B     |        2 |         2 | 9.000000 |
 | C     |        2 |         0 |     NULL |
 +-------+----------+-----------+----------+
-
+```
 A contiene cuatro personas, pero solo tres notas conocidas: ocho, seis y cero. Su media es 14 / 3. B tiene dos nueves y su media es nueve. C contiene dos personas sin nota conocida, por lo que todavía no tiene media.
 
 ## WHERE y HAVING responden en momentos diferentes
@@ -1378,12 +1397,13 @@ GROUP BY grupo
 HAVING AVG(nota) >= 7
 ORDER BY grupo;
 ```
+```
 +-------+----------+
 | grupo | media    |
 +-------+----------+
 | B     | 9.000000 |
 +-------+----------+
-
+```
 HAVING comprueba el resultado del grupo ya resumido. WHERE se utiliza para decidir qué filas llegan al grupo. Si se filtrase primero WHERE nota \>= 7, se eliminarían las notas bajas antes de calcular la media y se respondería a otra pregunta.
 
 ## Agregación condicional
@@ -1397,6 +1417,7 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
+```
 +-------+-----------+-----------+------------+
 | grupo | aprobados | suspensos | pendientes |
 +-------+-----------+-----------+------------+
@@ -1404,7 +1425,7 @@ ORDER BY grupo;
 | B     |         2 |         0 |          0 |
 | C     |         0 |         0 |          2 |
 +-------+-----------+-----------+------------+
-
+```
 Cada CASE convierte la pregunta en una aportación de uno o cero. SUM añade esas aportaciones. En A, Ana y Luis aportan uno a aprobados; Pablo aporta uno a suspensos; y Marta aporta uno a pendientes.
 
 ## Qué ocurre con un conjunto vacío
@@ -1416,12 +1437,13 @@ SELECT COUNT(*) AS filas,
 FROM calificaciones
 WHERE grupo = 'Z';
 ```
+```
 +-------+------+-------+
 | filas | suma | media |
 +-------+------+-------+
 |     0 | NULL |  NULL |
 +-------+------+-------+
-
+```
 No existe el grupo Z. COUNT puede afirmar que hay cero filas. SUM y AVG no disponen de valores que resumir y devuelven NULL. COALESCE(SUM(nota), 0) sería una decisión explícita de presentar cero como suma de un conjunto vacío; no debe confundirse con sustituir cada nota pendiente por cero.
 
 ## GROUP_CONCAT como lista legible
@@ -1435,6 +1457,7 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
+```
 +-------+-------------------------+
 | grupo | alumnado                |
 +-------+-------------------------+
@@ -1442,7 +1465,7 @@ ORDER BY grupo;
 | B     | Bruno, Elena            |
 | C     | Diego, Sara             |
 +-------+-------------------------+
-
+```
 GROUP_CONCAT reúne textos de varias filas en una cadena. ORDER BY dentro de sus paréntesis ordena los nombres de la lista. SEPARATOR fija cómo se separan. DISTINCT permitiría eliminar textos repetidos.
 
 ``` sql
@@ -1463,6 +1486,7 @@ FROM calificaciones
 GROUP BY grupo
 ORDER BY grupo;
 ```
+```
 +-------+------------+----------+
 | grupo | desviacion | varianza |
 +-------+------------+----------+
@@ -1470,7 +1494,7 @@ ORDER BY grupo;
 | B     |          0 |        0 |
 | C     |       NULL |     NULL |
 +-------+------------+----------+
-
+```
 STDDEV_POP calcula la desviación típica considerando los valores como población. VAR_POP calcula su varianza. La varianza es el cuadrado de la desviación, antes del redondeo. C no tiene valores conocidos para obtener ninguna de las dos medidas.
 
 ``` sql
@@ -1480,13 +1504,15 @@ SELECT ROUND(STDDEV_POP(nota), 2) AS desviacion_poblacion,
        ROUND(VAR_SAMP(nota), 2) AS varianza_muestra
 FROM calificaciones;
 ```
+```
 +----------------------+--------------------+--------------------+------------------+
 | desviacion_poblacion | desviacion_muestra | varianza_poblacion | varianza_muestra |
 +----------------------+--------------------+--------------------+------------------+
 |                 3.38 |               3.78 |              11.44 |             14.3 |
 +----------------------+--------------------+--------------------+------------------+
-
+```
 Las variantes SAMP se utilizan al tratar los datos como una muestra para estimar la dispersión de una población y ajustan el denominador. Necesitan al menos dos valores. La elección entre POP y SAMP depende del análisis estadístico, no del número de decimales que se desee mostrar.
+
 ## ROLLUP y GROUPING para incluir un total
 
 ``` sql
@@ -1497,6 +1523,7 @@ SELECT
 FROM calificaciones
 GROUP BY grupo WITH ROLLUP;
 ```
+```
 +-----------+----------+
 | categoria | personas |
 +-----------+----------+
@@ -1505,7 +1532,7 @@ GROUP BY grupo WITH ROLLUP;
 | C         |        2 |
 | TOTAL     |        8 |
 +-----------+----------+
-
+```
 ROLLUP añade la fila de total. GROUPING(grupo) devuelve uno para esa fila especial y permite etiquetarla como TOTAL. De esta forma no se confunde el NULL utilizado por el total con un posible NULL procedente de los datos.
 
 Al usar GROUP BY, las columnas seleccionadas deben estar agregadas, agrupadas o cumplir las reglas de dependencia funcional de MySQL. Desactivar ONLY_FULL_GROUP_BY no aclara qué fila se quería representar. Si una consulta incorpora LEFT JOIN, se cuenta la clave de la tabla relacionada para no confundir una fila conservada con una relación existente.
@@ -1522,6 +1549,7 @@ SELECT grupo, alumno, nota,
 FROM calificaciones
 ORDER BY grupo, id;
 ```
+```
 +-------+--------+------+-------------+
 | grupo | alumno | nota | media_grupo |
 +-------+--------+------+-------------+
@@ -1534,7 +1562,7 @@ ORDER BY grupo, id;
 | C     | Sara   | NULL |        NULL |
 | C     | Diego  | NULL |        NULL |
 +-------+--------+------+-------------+
-
+```
 La media de A se repite en sus cuatro filas, incluso en la de Marta, cuya nota está pendiente. La agregación AVG sigue ignorando NULL, pero la consulta conserva a Marta. En C todas las notas son NULL y su media continúa siendo desconocida.
 
 ## ROW_NUMBER RANK y DENSE_RANK con un empate real
@@ -1550,6 +1578,7 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
+```
 +--------+------+--------+--------+------------+
 | alumno | nota | numero | puesto | sin_saltos |
 +--------+------+--------+--------+------------+
@@ -1559,7 +1588,7 @@ ORDER BY nota DESC, id;
 | Luis   | 6.00 |      4 |      4 |          3 |
 | Pablo  | 0.00 |      5 |      5 |          4 |
 +--------+------+--------+--------+------------+
-
+```
 ROW_NUMBER asigna un número diferente a cada fila. RANK da el primer puesto a los dos nueves y continúa en el tercero, porque hay dos personas por delante de Ana. DENSE_RANK también comparte el primer puesto, pero continúa en el segundo valor de nota distinto.
 
 Solo ROW_NUMBER utiliza id como desempate para que Elena y Bruno reciban números reproducibles. Añadir id al ORDER BY de RANK eliminaría el empate, porque las parejas nota e id ya serían diferentes.
@@ -1580,6 +1609,7 @@ FROM clasificadas
 WHERE posicion <= 2
 ORDER BY grupo, posicion;
 ```
+```
 +-------+--------+------+----------+
 | grupo | alumno | nota | posicion |
 +-------+--------+------+----------+
@@ -1588,7 +1618,7 @@ ORDER BY grupo, posicion;
 | B     | Elena  | 9.00 |        1 |
 | B     | Bruno  | 9.00 |        2 |
 +-------+--------+------+----------+
-
+```
 
 PARTITION BY reinicia la numeración para cada grupo. La CTE calcula primero las posiciones y el SELECT exterior filtra después. Las ventanas no se filtran mediante WHERE en el mismo bloque en el que se calculan. Para incluir a todos los empatados en determinados valores de nota se elige RANK o DENSE_RANK según la pregunta.
 
@@ -1607,6 +1637,7 @@ SELECT nombre, fecha_inicio,
 FROM cursos
 ORDER BY fecha_inicio, id;
 ```
+```
 +--------+--------------+----------+-----------+
 | nombre | fecha_inicio | anterior | siguiente |
 +--------+--------------+----------+-----------+
@@ -1614,7 +1645,7 @@ ORDER BY fecha_inicio, id;
 | SQL    | 2026-10-15   | Redes    | Linux     |
 | Linux  | 2026-11-01   | SQL      | NULL      |
 +--------+--------------+----------+-----------+
-
+```
 LAG accede a la fila anterior y LEAD a la posterior según ese orden. Redes no tiene un curso anterior y Linux no tiene uno posterior, de modo que aparecen NULL. Si varias fechas coinciden, id proporciona un desempate estable. El desplazamiento predeterminado es una fila; las funciones admiten indicar otro.
 
 ## SUM como acumulado
@@ -1631,6 +1662,7 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY id;
 ```
+```
 +--------+------+----------------+
 | alumno | nota | suma_acumulada |
 +--------+------+----------------+
@@ -1640,7 +1672,7 @@ ORDER BY id;
 | Elena  | 9.00 |          23.00 |
 | Bruno  | 9.00 |          32.00 |
 +--------+------+----------------+
-
+```
 La primera suma contiene solo el ocho de Ana. La segunda suma ocho y seis. El cero de Pablo no aumenta la suma. El marco ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW significa «desde la primera fila del orden hasta esta fila». El orden por id es el recorrido de este informe; no se afirma que sea una fecha de evaluación.
 
 ## LAST_VALUE y el límite del marco
@@ -1660,6 +1692,7 @@ SELECT nombre,
 FROM cursos
 ORDER BY fecha_inicio, id;
 ```
+```
 +--------+-------------------+-----------------+
 | nombre | ultimo_hasta_aqui | ultimo_de_todos |
 +--------+-------------------+-----------------+
@@ -1667,7 +1700,7 @@ ORDER BY fecha_inicio, id;
 | SQL    | SQL               | Linux           |
 | Linux  | Linux             | Linux           |
 +--------+-------------------+-----------------+
-
+```
 Con este orden único, el marco predeterminado termina en la fila actual y la primera expresión obtiene el último valor alcanzado hasta ella. UNBOUNDED FOLLOWING amplía el marco hasta el final de toda la partición. Por eso la segunda expresión devuelve Linux en las tres filas.
 
 ## FIRST_VALUE y NTH_VALUE sobre todo el calendario
@@ -1684,6 +1717,7 @@ WINDOW calendario AS (
 )
 ORDER BY fecha_inicio, id;
 ```
+```
 +--------+---------+---------+--------+
 | nombre | primero | segundo | ultimo |
 +--------+---------+---------+--------+
@@ -1691,7 +1725,7 @@ ORDER BY fecha_inicio, id;
 | SQL    | Redes   | SQL     | Linux  |
 | Linux  | Redes   | SQL     | Linux  |
 +--------+---------+---------+--------+
-
+```
 FIRST_VALUE toma la primera fila del marco y NTH_VALUE la posición indicada, aquí la segunda. WINDOW calendario asigna un nombre a la ventana para reutilizarla sin repetir toda su definición. Si el marco no tiene una segunda fila, NTH_VALUE devuelve NULL.
 
 ## NTILE para repartir filas en grupos
@@ -1703,6 +1737,7 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
+```
 +--------+------+--------+
 | alumno | nota | bloque |
 +--------+------+--------+
@@ -1712,7 +1747,7 @@ ORDER BY nota DESC, id;
 | Luis   | 6.00 |      2 |
 | Pablo  | 0.00 |      2 |
 +--------+------+--------+
-
+```
 Hay cinco filas y se piden dos bloques de tamaños tan parecidos como sea posible: tres y dos. NTILE reparte personas, no divide el intervalo de notas de cero a diez. En otros datos puede separar valores empatados, porque lo que distribuye son filas.
 
 ## PERCENT_RANK y CUME_DIST
@@ -1725,6 +1760,7 @@ FROM calificaciones
 WHERE nota IS NOT NULL
 ORDER BY nota DESC, id;
 ```
+```
 +--------+------+----------------+------------+
 | alumno | nota | rango_relativo | proporcion |
 +--------+------+----------------+------------+
@@ -1734,7 +1770,7 @@ ORDER BY nota DESC, id;
 | Luis   | 6.00 |           0.75 |        0.8 |
 | Pablo  | 0.00 |              1 |          1 |
 +--------+------+----------------+------------+
-
+```
 PERCENT_RANK utiliza (RANK - 1) / (número de filas - 1). Para Ana es (3 - 1) / (5 - 1) = 0.5. CUME_DIST cuenta la proporción de filas alcanzadas incluyendo todos los empates: los dos nueves son dos de cinco, por eso ambos obtienen 0.4.
 
 Estos valores describen una posición relativa dentro de las filas ordenadas. No significan que la nota de Elena sea cero ni que haya aprobado el cuarenta por ciento del examen. El ORDER BY interior controla el cálculo; el exterior controla cómo se presentan las filas.

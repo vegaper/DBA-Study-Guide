@@ -44,8 +44,6 @@ En InnoDB, un error de una sentencia puede cancelar solo esa sentencia; no siemp
 
 # Transferencia a cuenta inexistente: fallo silencioso
 
-# Entorno de partida y procedimiento
-
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
 ``` sql
@@ -58,11 +56,11 @@ COMMIT;
 SELECT * FROM cuentas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 `ROW_COUNT()` devuelve 0 después del segundo `UPDATE`; A queda con 400 y Z no existe. No hubo error SQL.
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Validar exactamente una fila tras cada UPDATE; SIGNAL y manejador de errores.
 
@@ -113,7 +111,7 @@ DELIMITER ;
 
 # Error de clave duplicada: `COMMIT` puede confirmar cambios previos
 
-# Entorno de partida y procedimiento
+
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -126,11 +124,11 @@ COMMIT;
 SELECT saldo FROM cuentas WHERE id_cuenta='B';
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 El `INSERT` falla por la regla `UNIQUE`. `ERROR 1062 (23000): Duplicate entry 'ana@ejemplo.test' for key 'clientes.email'` Si el cliente continúa y ejecuta `COMMIT`, B queda con 225. **El fallo de la sentencia no cancela automáticamente toda la transacción.**
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Al producirse el error, ejecutar `ROLLBACK` en lugar de `COMMIT`; automatizarlo con `HANDLER`.
 
@@ -172,9 +170,6 @@ DELIMITER ;
 ```
 
 # FOREIGN KEY: pedido con cliente inexistente
-
-# Entorno de partida y procedimiento
-
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
 ``` sql
@@ -186,11 +181,11 @@ COMMIT;
 SELECT precio FROM productos WHERE id_producto=1;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 El INSERT falla por Foreign Key: `ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`laboratorio_transacciones_seguras`.`pedidos`, CONSTRAINT`pedidos_ibfk_1`FOREIGN KEY (`id_cliente`) REFERENCES`clientes`(`id_cliente`))`. Si se hace `COMMIT` después, el precio del teclado sigue con el valor actualizado y cuesta 21.
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Cancelar la transacción al fallar cualquier operación obligatoria.
 
@@ -232,8 +227,6 @@ DELIMITER ;
 
 # CHECK: stock negativo
 
-# Entorno de partida y procedimiento
-
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
 ``` sql
@@ -245,17 +238,15 @@ COMMIT;
 SELECT stock, precio FROM productos WHERE id_producto=1;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 CHECK rechaza el stock negativo: `ERROR 3819 (HY000): Check constraint 'ck_stock' is violated.` Si se continúa hasta `COMMIT`, el precio sí cambia a 25.
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 CHECK evita valores inválidos; Usaremos un `HANDLER` como en los casos anteriores.
 
 # Sin CHECK vulnerado, pero venta inexistente
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -267,11 +258,11 @@ SELECT ROW_COUNT();
 COMMIT;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 `ROW_COUNT()` es 0, pero el sistema no lanza un error; `COMMIT` puede ejecutarse sin error.
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Comprobar filas afectadas y generar SIGNAL si no se cumple el resultado esperado.
 
@@ -315,8 +306,6 @@ DELIMITER ;
 
 # Error en la operación intermedia de tres
 
-# Entorno de partida y procedimiento
-
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
 ``` sql
@@ -329,7 +318,7 @@ COMMIT;
 SELECT * FROM cuentas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 La segunda sentencia falla `ERROR 1062 (23000): Duplicate entry '1' for key 'clientes.PRIMARY'`; si se siguen ejecutando las demás y se hace commit:
 
@@ -343,13 +332,11 @@ La segunda sentencia falla `ERROR 1062 (23000): Duplicate entry '1' for key 'cli
 +-----------+---------+--------+
 ```
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Usar control de errores común y abortar antes de ejecutar operaciones posteriores.
 
 # Restricción UNIQUE en reserva de plaza
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -362,7 +349,7 @@ COMMIT;
 SELECT * FROM plazas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 La segunda operación falla por UNIQUE `ERROR 1062 (23000): Duplicate entry '1' for key 'plazas.ocupada_por'`: el mismo cliente no puede ocupar dos plazas. Si se confirma, queda reservada la primera.
 
@@ -375,13 +362,11 @@ La segunda operación falla por UNIQUE `ERROR 1062 (23000): Duplicate entry '1' 
 +----------+-------------+
 ```
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Rollback automático cuando la reserva debe ser todo o nada.
 
 # Procedimiento con SIGNAL, HANDLER RESIGNAL
-
-# Entorno de partida y procedimiento
 
 Veamos el procedimiento que vamos a llamar usando `SHOW PROCEDURE transferir \G`
 
@@ -395,7 +380,7 @@ CALL transferir('A', 'Z', 100);
 SELECT * FROM cuentas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 Se genera un error de aplicación (SQLSTATE 45000)`ERROR 1644 (45000): Destino inexistente`; `HANDLER` hace `ROLLBACK`;
 
@@ -409,13 +394,11 @@ Se genera un error de aplicación (SQLSTATE 45000)`ERROR 1644 (45000): Destino i
 +-----------+---------+--------+
 ```
 
-# Cómo se ha evitado
+**Cómo se ha evitado**
 
 El procedimiento valida el resultado de cada `UPDATE` y confirma solo si ambos modifican exactamente una fila.
 
 # Transferencia válida
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -425,7 +408,7 @@ CALL transferir('A', 'B', 100);
 SELECT * FROM cuentas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 ```         
 +-----------+---------+--------+
@@ -441,7 +424,7 @@ El procedimiento llega a COMMIT.
 
 # Saldo insuficiente y parámetros inválidos
 
-# Entorno de partida y procedimiento
+
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -452,7 +435,7 @@ SELECT * FROM cuentas;
 CALL transferir('A', 'A', 10);
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 Cada CALL incorrecto genera un error;
 
@@ -462,15 +445,13 @@ Cada CALL incorrecto genera un error;
 
 Los saldos no cambian.
 
-# Cómo se ha evitado
+**Cómo se ha evitado**
 
 Validar antes de confirmar y comprobar saldo en el propio `UPDATE` (ver líneas `IF ROW_COUNT()<>1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT=...`) evitando comprobaciones desactualizadas.
 
 # Venta controlada con stock insuficiente
 
 ![](images/paste-49.png)
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -480,7 +461,7 @@ CALL vender(2,5);
 SELECT * FROM productos WHERE id_producto=2;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 El ratón conserva stock = 2; se devuelve un error por falta de stoc. `ERROR 1644 (45000): Producto inexistente o stock insuficiente`
 
@@ -492,13 +473,11 @@ El ratón conserva stock = 2; se devuelve un error por falta de stoc. `ERROR 164
 +-------------+--------+-------+--------+
 ```
 
-# Cómo se ha evitado
+**Cómo se ha evitado**
 
 UPDATE, condicional, ROW_COUNT(), SIGNAL y HANDLER.
 
 # Venta válida
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -508,7 +487,7 @@ CALL vender(2,2);
 SELECT * FROM productos WHERE id_producto=2;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 El stock del ratón pasa de 2 a 0 y se confirma.
 
@@ -521,8 +500,6 @@ El stock del ratón pasa de 2 a 0 y se confirma.
 ```
 
 # SAVEPOINT: deshacer una parte no equivale a abortar todo
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -537,7 +514,7 @@ COMMIT;
 SELECT * FROM cuentas;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 ``` txt
 +-----------+---------+--------+
@@ -553,8 +530,6 @@ Se deshizo únicamente el tramo posterior al punto de guardado.
 
 # Cien operaciones: comprobar invariantes finales
 
-# Entorno de partida y procedimiento
-
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
 ``` sql
@@ -566,7 +541,7 @@ SELECT SUM(saldo) AS total FROM cuentas;
 ROLLBACK;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 ```         
 +--------+
@@ -578,13 +553,11 @@ ROLLBACK;
 
 El total permanece en 700; no obstante, conservar el total NO basta para demostrar que se transfirió al destinatario correcto.
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Validar cada paso crítico, existencia de filas y reglas globales; la comprobación final complementa, no sustituye, las individuales.
 
 # Dos sesiones y concurrencia: no confiar en una lectura previa
-
-# Entorno de partida y procedimiento
 
 Ejecutar las sentencias en orden. Si aparece un error, leerlo antes de continuar; en estos casos se fuerza la continuación deliberadamente para observar el peligro.
 
@@ -611,11 +584,11 @@ SELECT ROW_COUNT();
 ROLLBACK;
 ```
 
-# Resultado esperado y por qué
+**Resultado esperado y por qué**
 
 La sesión A pudo ver stock = 1 antes; después B lo consumió y el `UPDATE` condicional de A no descuenta otra unidad (ROW_COUNT=0).
 
-# Cómo evitarlo o solucionarlo
+**Cómo evitarlo o solucionarlo**
 
 Validar en el `UPDATE` atómico, no solo con un `SELECT` previo.
 

@@ -12,12 +12,13 @@ SELECT VERSION() AS version_servidor,
        CURRENT_USER() AS cuenta_efectiva,
        CONNECTION_ID() AS conexion;
 ```
+```
 +-------------------------+-----------------+--------------------+-----------------+----------+
 | version_servidor        | base_actual     | identidad_conexion | cuenta_efectiva | conexion |
 +-------------------------+-----------------+--------------------+-----------------+----------+
 | 8.4.11-0ubuntu0.26.04.1 | funciones_mysql | root@localhost     | root@localhost  |        8 |
 +-------------------------+-----------------+--------------------+-----------------+----------+
-
+```
 | Columna | Interpretación |
 |------------------------------------|------------------------------------|
 | version_servidor | La versión que realmente ejecuta el servidor. |
@@ -46,12 +47,13 @@ SELECT CONNECTION_ID() AS conexion,
        PS_CURRENT_THREAD_ID() AS hilo_actual,
        PS_THREAD_ID(CONNECTION_ID()) AS hilo_de_la_conexion;
 ```
+```
 +----------+-------------+---------------------+
 | conexion | hilo_actual | hilo_de_la_conexion |
 +----------+-------------+---------------------+
 |        8 |          43 |                  43 |
 +----------+-------------+---------------------+
-
+```
 | Columna | Qué representa |
 | :--- | :--- |
 | **`conexion`** | Identificador de la conexión actual. |
@@ -103,6 +105,7 @@ ORDER BY SUM_TIMER_WAIT DESC
 LIMIT 5;
 ```
 Nota, hemos cortado el campo DIGEST_TEXT por legibilidad de la tabla
+```
 +------------------------------------------------------------------------------------------------------+------------+--------------+
 | LEFT(DIGEST_TEXT,100)                                                                                | COUNT_STAR | tiempo_total |
 +------------------------------------------------------------------------------------------------------+------------+--------------+
@@ -112,7 +115,7 @@ Nota, hemos cortado el campo DIGEST_TEXT por legibilidad de la tabla
 | SHOW SCHEMAS                                                                                         |          1 | 6.05 ms      |
 | SELECT `nombre` , `fecha_inicio` , LAG ( `nombre` ) OVER ( ORDER BY `fecha_inicio` , `id` ) AS `ante |          1 | 5.27 ms      |
 +------------------------------------------------------------------------------------------------------+------------+--------------+
-
+```
 # Control de Escrituras: `LAST_INSERT_ID` y `ROW_COUNT`
 
 Se crea una tabla temporal solo para esta demostración. Se ejecuta la consulta de comprobación inmediatamente después del INSERT.
@@ -128,12 +131,13 @@ INSERT INTO registro_funciones_demo (mensaje) VALUES ('Prueba');
 SELECT ROW_COUNT() AS filas_insertadas,
        LAST_INSERT_ID() AS identificador_generado;
 ```
+```
 +------------------+------------------------+
 | filas_insertadas | identificador_generado |
 +------------------+------------------------+
 |                1 |                      1 |
 +------------------+------------------------+
-
+```
 ROW_COUNT informa de que la sentencia anterior insertó una fila. LAST_INSERT_ID recupera el identificador AUTO_INCREMENT generado por esa inserción en esta sesión. 
 No obtiene el último identificador insertado por cualquier otra conexión.
 
@@ -173,6 +177,7 @@ FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = 'funciones_mysql'
 ORDER BY TABLE_NAME;
 ```
+```
 +----------------+--------+
 | TABLE_NAME     | ENGINE |
 +----------------+--------+
@@ -182,7 +187,7 @@ ORDER BY TABLE_NAME;
 | pedidos        | InnoDB |
 | personas       | InnoDB |
 +----------------+--------+
-
+```
 ### Consultar columnas, tipos de datos y nulidad (INFORMATION_SCHEMA.COLUMNS)
 Si necesitas conocer la estructura detallada de una tabla (qué tipos de datos tienen sus columnas, si permiten valores NULL o si tienen valores por defecto) sin necesidad de ejecutar un comando interactivo como DESCRIBE, puedes consultar la tabla COLUMNS:
 ```sql
@@ -197,6 +202,7 @@ WHERE TABLE_SCHEMA = 'funciones_mysql'
   AND TABLE_NAME = 'calificaciones'
 ORDER BY ORDINAL_POSITION;
 ```
+```
 +-------------+--------------+-------------+----------------+------------+
 | COLUMN_NAME | COLUMN_TYPE  | IS_NULLABLE | COLUMN_DEFAULT | COLUMN_KEY |
 +-------------+--------------+-------------+----------------+------------+
@@ -205,7 +211,7 @@ ORDER BY ORDINAL_POSITION;
 | grupo       | char(1)      | NO          | NULL           |            |
 | nota        | decimal(4,2) | YES         | NULL           |            |
 +-------------+--------------+-------------+----------------+------------+
-
+```
 ### Consultar el tamaño y número estimado de filas (INFORMATION_SCHEMA.TABLES extendido)
 Aunque SHOW TABLE STATUS muestra información similar, puedes filtrar y ordenar métricas de tamaño de almacenamiento (datos e índices) directamente desde TABLES:
 ```sql
@@ -219,6 +225,7 @@ FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = 'funciones_mysql'
 ORDER BY DATA_LENGTH DESC;
 ```
+```
 +----------------+-----------------+------------------+------------------+--------+
 | TABLE_NAME     | filas_estimadas | tamano_datos_kib | tamano_index_kib | ENGINE |
 +----------------+-----------------+------------------+------------------+--------+
@@ -228,7 +235,7 @@ ORDER BY DATA_LENGTH DESC;
 | pedidos        |               3 |            16.00 |             0.00 | InnoDB |
 | personas       |               6 |            16.00 |             0.00 | InnoDB |
 +----------------+-----------------+------------------+------------------+--------+
-
+```
 Consultar claves primarias y restricciones (INFORMATION_SCHEMA.KEY_COLUMN_USAGE)
 Para auditar rápidamente qué columnas están actuando como claves primarias (PRIMARY KEY) o foráneas en tu esquema:
 
@@ -243,12 +250,13 @@ FROM information_schema.KEY_COLUMN_USAGE
 WHERE TABLE_SCHEMA = 'funciones_mysql'
   AND TABLE_NAME = 'calificaciones';
 ```
+```
 +----------------+-------------+-----------------+-----------------------+------------------------+
 | TABLE_NAME     | COLUMN_NAME | CONSTRAINT_NAME | REFERENCED_TABLE_NAME | REFERENCED_COLUMN_NAME |
 +----------------+-------------+-----------------+-----------------------+------------------------+
 | calificaciones | id          | PRIMARY         | NULL                  | NULL                   |
 +----------------+-------------+-----------------+-----------------------+------------------------+
-
+```
 # Operadores de Bits, Sesión y Utilidades
 
 ## Operadores de Bits
@@ -260,11 +268,13 @@ SELECT (5 & 1) <> 0 AS avisos,
        5 ^ 1 AS cambiar_avisos,
        BIT_COUNT(5) AS opciones_activadas;
 ```
+```
 +--------+---------------------+----------------+--------------------+
 | avisos | activar_exportacion | cambiar_avisos | opciones_activadas |
 +--------+---------------------+----------------+--------------------+
 |      1 |                   7 |              4 |                  2 |
 +--------+---------------------+----------------+--------------------+
+```
 * **`&` (AND)**: Comprueba posiciones compartidas.
 * **`|` (OR)**: Activa posiciones presentes en cualquiera de los valores.
 * **`^` (XOR)**: Cambia posiciones donde los valores difieren.
@@ -281,12 +291,13 @@ SELECT JSON_EXTRACT(@documento, '$.alumno') AS dato_json,
        JSON_UNQUOTE(JSON_EXTRACT(@documento, '$.alumno')) AS texto,
        JSON_SET(@documento, '$.nota', 9) AS documento_modificado;
 ```
+```
 +-----------+-------+------------------------------+
 | dato_json | texto | documento_modificado         |
 +-----------+-------+------------------------------+
 | "Ana"     | Ana   | {"nota": 9, "alumno": "Ana"} |
 +-----------+-------+------------------------------+
-
+```
 Diferencia entre una lista de valores y una asociación de claves con valores.
 
 ``` sql
@@ -294,22 +305,25 @@ SELECT JSON_ARRAYAGG(alumno) AS lista
 FROM calificaciones
 WHERE id IN (1, 2);
 ```
+```
 +-----------------+
 | lista           |
 +-----------------+
 | ["Ana", "Luis"] |
 +-----------------+
+```
 ``` sql
 SELECT JSON_OBJECTAGG(alumno, nota) AS notas_por_nombre
 FROM calificaciones
 WHERE id IN (1, 2);
+```
 ```
 +-----------------------------+
 | notas_por_nombre            |
 +-----------------------------+
 | {"Ana": 8.00, "Luis": 6.00} |
 +-----------------------------+
-
+```
 El orden de JSON_ARRAYAGG no está garantizado por esta consulta. Un objeto JSON es una asociación de claves y valores, por lo que su presentación tampoco debe interpretarse como un orden de filas. Las claves de JSON_OBJECTAGG no pueden ser NULL; si se repiten, puede conservarse un valor según el orden efectivo de procesamiento. En estos datos los dos nombres son diferentes.
 
 

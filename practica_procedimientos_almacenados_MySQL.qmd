@@ -194,15 +194,11 @@ Un procedimiento `INVOKER` también tiene una cuenta definidora registrada. Esa 
 
 Se supone que una cuenta docente define ambos procedimientos y dispone de `SELECT` sobre alumnos y de los permisos de ejecución necesarios. Otra cuenta, utilizada para consultar, dispone de `EXECUTE` sobre ambos procedimientos, pero no tiene `SELECT` sobre alumnos.
 
-+------------------------------------+-------------------------------------------------------------------+
-| Operación de la cuenta de consulta | Resultado                                                         |
-+:===================================+:==================================================================+
-| SELECT * FROM alumnos;            | Falla por falta de SELECT.                                        |
-+------------------------------------+-------------------------------------------------------------------+
-| CALL listar_alumnos_invoker();     | Falla: el SELECT utiliza los permisos de quien llama.             |
-+------------------------------------+-------------------------------------------------------------------+
-| CALL listar_alumnos_definer();     | Funciona: el SELECT utiliza los permisos de la cuenta definidora. |
-+------------------------------------+-------------------------------------------------------------------+
+| Operación de la cuenta de consulta | Resultado |
+| :--- | :--- |
+| `SELECT * FROM alumnos;` | Falla por falta de SELECT. |
+| `CALL listar_alumnos_invoker();` | Falla: el SELECT utiliza los permisos de quien llama. |
+| `CALL listar_alumnos_definer();` | Funciona: el SELECT utiliza los permisos de la cuenta definidora. |
 
 Si se retirara también `EXECUTE` a la cuenta de consulta, no podría llamar a ninguno de los dos procedimientos.
 
@@ -280,7 +276,7 @@ Volvemos a comprobar:
 ``` sql
 SELECT routine_name, routine_type  FROM information_schema.routines  WHERE routine_schema = DATABASE() AND routine_type = 'PROCEDURE';
 ```
-
+```
 +--------------------------------------------------------------------------------------+-----------------------------------------+
 |                                                                                      |                                         |
 +======================================================================================+=========================================+
@@ -288,7 +284,7 @@ SELECT routine_name, routine_type  FROM information_schema.routines  WHERE routi
 +--------------------------------------------------------------------------------------+-----------------------------------------+
 | listar_alumnos listar_alumnos_definer listar_alumnos_invoker listar_y_contar_alumnos | PROCEDURE PROCEDURE PROCEDURE PROCEDURE |
 +--------------------------------------------------------------------------------------+-----------------------------------------+
-
+```
 # Ejecutar y observar los dos resultados
 
 `CALL listar_y_contar_alumnos();` La llamada devuelve dos resultados en orden: 
@@ -864,10 +860,10 @@ Documentación oficial de MySQL 8.4 utilizada para comprobar la sintaxis y el co
 
 - Procedimientos y funciones almacenados: https://dev.mysql.com/doc/refman/8.4/en/create-procedure.html\
 - Definición de programas almacenados y delimitadores: https://dev.mysql.com/doc/refman/8.4/en/stored-programs-defining.html\
-- Instrucción CALL: https://dev.mysql.com/doc/refman/8.4/en/call.html\
-- Variables locales y DECLARE: https://dev.mysql.com/doc/refman/8.4/en/declare-local-variable.html\
+- Instrucción `CALL`: https://dev.mysql.com/doc/refman/8.4/en/call.html\
+- Variables locales y `DECLARE`: https://dev.mysql.com/doc/refman/8.4/en/declare-local-variable.html\
 - Ámbito de las variables locales: https://dev.mysql.com/doc/refman/8.4/en/local-variable-scope.html\
 - Contexto de seguridad de los objetos almacenados: https://dev.mysql.com/doc/refman/8.4/en/stored-objects-security.html\
-- Instrucción IF: https://dev.mysql.com/doc/refman/8.4/en/if.html
+- Instrucción `IF`: https://dev.mysql.com/doc/refman/8.4/en/if.html
 
 Datos de la tabla de referencia: alumnos.csv del proyecto academia_it, con 12 registros y 10 columnas. La marca de importación \\N se representa como NULL.

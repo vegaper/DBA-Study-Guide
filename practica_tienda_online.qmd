@@ -289,7 +289,7 @@ BEGIN
                 estado_preparacion,
                 fecha_completada
             )
-            VALUES (OLD.id_pedido, 'PENDIENTE', NULL);
+            VALUES (NEW.id_pedido, 'PENDIENTE', NULL);
             
         ELSEIF 
             OLD.estado = 'PENDIENTE' AND NEW.estado = 'ENVIADO' 
@@ -297,7 +297,11 @@ BEGIN
             UPDATE preparacion_pedidos 
             SET estado_preparacion = 'COMPLETADA',
                 fecha_completada = CURRENT_TIMESTAMP
-            WHERE id_pedido = OLD.id_pedido;    
+            WHERE id_pedido = NEW.id_pedido;    
+
+            IF ROW_COUNT()<>1 THEN 
+             	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT ='La actualización no se ha realizado con éxito';    
+        	END IF;
     
         END IF; 
 
@@ -331,7 +335,9 @@ BEGIN
         UPDATE pedidos 
         SET estado = 'ENVIADO'
         WHERE id_pedido = NEW.id_pedido ;
-
+        IF ROW_COUNT()<>1 THEN 
+             	SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT ='La actualización no se ha realizado con éxito';    
+        	END IF;
     END IF; 
 
 END //
