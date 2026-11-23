@@ -1,0 +1,381 @@
+---
+title: "Práctica: Aplicación web para crear borradores de pedidos"
+format: html
+---
+Ampliación independiente de la práctica Tienda online | IFCT0310 | PHP y MySQL
+
+Utilizaremos el navegador para seleccionar un cliente y preparar una compra. La aplicación guardará una cabecera en pedidos y una línea por producto en detalle_pedido. El resultado será un pedido en BORRADOR que podremos utilizar después en la práctica de procedimientos y triggers.
+
+# Objetivos de aprendizaje
+
+* Distinguir el formulario del navegador, el programa PHP y la base de datos MySQL.
+* Crear un borrador completo y comprobar su cabecera, sus líneas y su importe.
+* Entender por qué el guardado de ambas tablas se realiza dentro de una transacción.
+* Conectar la aplicación a la misma base existente sin modificar su esquema.
+
+# La hoja de compra y sus líneas
+
+La cabecera de un pedido es como la parte superior de una hoja de compra: identifica al comprador y la fecha. Las líneas son la lista de productos que aparece debajo. La aplicación prepara las dos partes y las guarda juntas. La confirmación del pedido y su envío siguen perteneciendo a la práctica original.
+
+La aplicación está completa en el ZIP. Solo hay que instalar PHP, preparar la cuenta de conexión y configurar el servidor web. No necesita Composer, Node, bibliotecas externas de interfaz ni una base de datos nueva.
+
+Esta guía mantiene la fuente Arial, el tamaño mínimo de 12 puntos y el azul oscuro de la documentación de la práctica.
+
+# Alcance y orden de realización
+
+La aplicación consulta clientes y productos y crea pedidos en estado BORRADOR. 
+No modifica pedidos existentes, no confirma compras y no genera preparaciones ni envíos. 
+Puede utilizarse aunque todavía no hayáis creado la vista, los procedimientos o los triggers de la práctica.
+
+La selección del cliente determina a nombre de quién se crea la compra. El uso previsto es el laboratorio del aula, con sus datos ficticios.
+
+## Compatibilidad con las pruebas originales
+
+Si vais a ejecutar las pruebas P01 a P17 de la práctica original, utilizad esta aplicación después de completar su balance final. En una base recién cargada, el primer borrador de la web puede ocupar el identificador 21, que P17 utiliza expresamente. Además, cada compra cambia los recuentos de pedidos y de líneas.
+
+Para volver a ejecutar el plan original desde el principio, guardad vuestro SQL y pedid al docente restaurar la base inicial y los objetos que correspondan. El script inicial no se vuelve a ejecutar sobre una base que ya existe. No es necesario cambiar los documentos originales para utilizar esta ampliación en ese orden.
+
+## Qué cambia al guardar
+
+| Tabla | Efecto de la aplicación |
+| :--- | :--- |
+| clientes y productos | Se consultan. No se modifican. |
+| pedidos | Se inserta una cabecera con cliente, fecha del servidor y estado BORRADOR. |
+| detalle_pedido | Se inserta una línea por producto con cantidad y precio de compra. |
+| preparacion_pedidos y envios | No se insertan ni se modifican filas. |
+
+# Archivos y entorno de partida
+
+Descargad Ampliacion_App_Borradores_Tienda_online.zip. Al extraerlo aparece la carpeta tienda-borradores. Conservad esa estructura: public, app, config y sql son carpetas hermanas.
+
+| Ruta dentro de la aplicación | Contenido |
+| :--- | :--- |
+| public/index.php | Pantalla principal y formulario. |
+| public/app.js y style.css | Interacción del catálogo, resumen y presentación. |
+| public/api.php | Peticiones de carga del catálogo y guardado. |
+| app/db.php | Conexión PDO a MySQL. |
+| app/pedidos.php | Validaciones y operación transaccional de guardado. |
+| app/bootstrap.php | Sesión, cabeceras y tokens de los formularios. |
+| config/config.example.php | Plantilla de configuración. Se copiará como config.php. |
+| sql | Script inicial, cuenta de aplicación y consultas de comprobación. |
+| README.md | Instalación rápida y comportamiento de la aplicación. |
+
+Partiremos de MySQL 8.4.x con la base tienda_online_practica y sus seis tablas ya alimentadas. La copia del script inicial incluida en sql es la misma de la práctica y solo se ejecutará si la base todavía no existe.
+
+La aplicación necesita PHP 8.2 o superior con PDO y el controlador PDO_MYSQL. El procedimiento principal de esta guía utiliza Ubuntu Server 26.04 y Apache. La versión exacta de PHP dependerá de los paquetes instalados; anotadla y verificad cualquier diferencia contra la versión instalada.
+
+# Dónde se ejecuta cada parte
+
+| Componente | Función y destino |
+| :--- | :--- |
+| Navegador | Muestra la página y envía el formulario al servidor web. |
+| Apache y PHP | Atienden la página, validan los datos y conectan con MySQL. |
+| MySQL | Guarda la cabecera y las líneas en las tablas existentes. |
+
+El navegador utiliza la dirección del servidor web. La configuración de PHP utiliza la dirección del servidor MySQL. Ambos servicios pueden estar en el mismo equipo o en equipos distintos.
+
+| Caso | Dirección para PHP | Dirección del navegador |
+| :--- | :--- | :--- |
+| Apache y MySQL en Ubuntu | host de MySQL: 127.0.0.1 | http://IP_UBUNTU/tienda-borradores/ |
+| Apache en Ubuntu y MySQL en Windows | host de MySQL: IP_WINDOWS | http://IP_UBUNTU/tienda-borradores/ |
+
+IP_UBUNTU e IP_WINDOWS son marcadores: sustituidlos por las direcciones reales. Si abrís el navegador en otro ordenador, localhost se refiere a ese ordenador, no a la VM del servidor.
+
+En VirtualBox, dos VMs de una misma Red NAT pueden comunicarse entre ellas. Eso no permite por sí solo que el anfitrión entre en Apache. Para abrir la página desde el anfitrión, utilizad una red accesible, por ejemplo un adaptador puente, una red solo anfitrión o una redirección de puertos configurada para ese laboratorio.
+
+# Instalar los componentes web en Ubuntu
+
+Realizad estos pasos en el equipo que ejecutará Apache y PHP. Si MySQL ya está instalado en Windows u otra VM, esta ampliación no requiere instalar una segunda MySQL en Ubuntu.
+
+## Actualizar la lista de paquetes
+
+```bash
+sudo apt update
+```
+
+Actualiza el catálogo local de paquetes. No instala por sí mismo una versión nueva de todos los programas.
+
+## Instalar Apache PHP y el controlador MySQL
+
+```bash
+sudo apt install apache2 php php-cli libapache2-mod-php php-mysql unzip
+```
+
+| Paquete | Para qué lo utilizamos |
+| :--- | :--- |
+| apache2 | Servidor que atenderá las peticiones del navegador. |
+| php y php-cli | Intérprete PHP y ejecución de comprobaciones desde la terminal. |
+| libapache2-mod-php | Permite que Apache ejecute los archivos PHP con este despliegue. |
+| php-mysql | Incluye el controlador con el que PDO conecta con MySQL. |
+| unzip | Extrae el paquete de la aplicación. |
+
+## Comprobar PHP y PDO
+
+```bash
+php -v
+php -r 'echo implode(", ", PDO::getAvailableDrivers()), PHP_EOL;'
+```
+
+La primera orden muestra la versión de PHP de terminal. La segunda debe incluir mysql entre los controladores disponibles. PDO significa PHP Data Objects: es la interfaz que utiliza el código para conectar, preparar consultas y gestionar la transacción.
+
+La terminal y Apache pueden cargar configuraciones PHP distintas. Si la terminal muestra mysql pero la web no carga el catálogo, revisad también el módulo y el registro de Apache. La carga correcta del catálogo será la comprobación funcional de la conexión web.
+
+# Copiar la aplicación y preparar la conexión
+
+## Extraer y copiar los archivos
+
+Copiad el ZIP a vuestra carpeta personal de Ubuntu y abrid una terminal en esa carpeta. La instalación propuesta utiliza /opt/tienda-borradores.
+ejemplo: `scp "C:\Users\manana.DESKTOP-BKGO9JU.000\Downloads\Ampliacion_App_Borradores_Tienda_online.zip" sysadmin@10.0.20.101:/home/sysadmin/`
+
+```bash
+unzip Ampliacion_App_Borradores_Tienda_online.zip
+sudo mkdir -p /opt/tienda-borradores
+sudo cp -r tienda-web/. /opt/tienda-borradores/
+sudo chown -R root:root /opt/tienda-borradores
+sudo chmod -R u=rwX,go=rX /opt/tienda-borradores
+```
+
+unzip extrae la carpeta. mkdir crea el destino. cp copia su contenido conservando la estructura. chown asigna los archivos a root y chmod permite leerlos al servicio web. La aplicación no necesita escribir dentro de su carpeta; los datos se guardan en MySQL.
+
+## Preparar la cuenta MySQL
+
+Abrid ./opt/tienda-borradores/sql/01_usuario_app.sql, revisadlo y cambiad la contraseña de ejemplo. El script crea la cuenta tienda_app para localhost y le concede únicamente las lecturas e inserciones que necesita la aplicación.
+
+```sql
+CREATE USER 'tienda_app'@'localhost'
+  IDENTIFIED BY 'Aula_Tienda_2026!Cambiar';
+GRANT SELECT ON tienda_online_practica.clientes
+  TO 'tienda_app'@'localhost';
+GRANT SELECT ON tienda_online_practica.productos
+  TO 'tienda_app'@'localhost';
+GRANT SELECT, INSERT ON tienda_online_practica.pedidos
+  TO 'tienda_app'@'localhost';
+GRANT INSERT ON tienda_online_practica.detalle_pedido
+  TO 'tienda_app'@'localhost';
+SHOW GRANTS FOR 'tienda_app'@'localhost';
+```
+
+
+Si PHP y MySQL están en equipos diferentes, sustituid localhost en todas las referencias a la cuenta por la IP del servidor PHP. 
+Si la cuenta ya existe, revisadla y adaptadla expresamente antes de continuar: el script no elimina ni sustituye cuentas existentes.
+
+`sudo mysql < 01_usuario_app.sql`
+
+| Permiso | Tabla |
+| :--- | :--- |
+| SELECT | clientes y productos |
+| SELECT e INSERT | pedidos |
+| INSERT | detalle_pedido |
+
+La cuenta de la web no necesita UPDATE ni DELETE, ni permisos para crear rutinas o triggers. 
+Las consultas de comprobación de las otras tablas se realizarán con vuestra cuenta habitual de prácticas.
+
+## Crear el archivo de configuración
+
+```bash
+sudo cp /opt/tienda-borradores/config/config.example.php \
+  /opt/tienda-borradores/config/config.php
+sudo nano /opt/tienda-borradores/config/config.php
+```
+<figure>
+  <figcaption>config.example.php</figcaption>
+```php
+<?php
+declare(strict_types=1);
+// Copiad este archivo como config.php y completad los datos de vuestra MySQL.
+// La carpeta config está fuera del directorio público del servidor web.
+return [
+    'host' => '127.0.0.1',       // IP del SERVIDOR MySQL vista desde PHP.
+    'port' => 3306,
+    'database' => 'tienda_online_practica',
+    'username' => 'tienda_app',
+    'password' => 'CAMBIAR_POR_LA_CLAVE_DEL_USUARIO',
+];
+```
+</figure>
+
+En el archivo nuevo, ajustad los cinco valores de conexión. La barra invertida al final de la primera línea permite continuar la misma orden en la siguiente.
+
+| Campo | Valor que debéis indicar |
+| :--- | :--- |
+| host | 127.0.0.1 si MySQL está en este equipo; su IP real si está en otro. |
+| port | Puerto donde escucha MySQL; normalmente 3306. |
+| database | tienda_online_practica. |
+| username | La cuenta de aplicación que habéis preparado, por ejemplo tienda_app. |
+| password | La misma contraseña que habéis establecido para esa cuenta. |
+
+```bash
+sudo chown root:www-data /opt/tienda-borradores/config/config.php
+sudo chmod 640 /opt/tienda-borradores/config/config.php
+```
+El archivo de configuración queda legible por root y por el grupo del servicio web. Los ejemplos utilizan www-data, que es el usuario y grupo habituales de Apache en Ubuntu con esta instalación.
+
+# Publicar únicamente la carpeta pública
+
+Crearemos un alias de Apache para abrir la aplicación en /tienda-borradores/. La carpeta que se publica será publica; la configuración y los archivos SQL quedan fuera de esa URL.
+
+```bash
+sudo nano /etc/apache2/conf-available/tienda-borradores.conf
+```
+
+Introducid este contenido:
+
+```apache
+Alias /tienda-borradores /opt/tienda-borradores/public
+<Directory /opt/tienda-borradores/public>
+    Options -Indexes
+    AllowOverride None
+    DirectoryIndex index.php
+    Require all granted
+</Directory>
+```
+
+| Directiva | Significado |
+| :--- | :--- |
+| Alias | Relaciona la dirección web con la carpeta public del disco. |
+| Directory | Aplica las opciones a esa carpeta. |
+| Options -Indexes | Evita listar el contenido de directorios sin página principal. |
+| AllowOverride None | No necesita reglas adicionales mediante archivos .htaccess. |
+| DirectoryIndex index.php | Abre index.php al solicitar la carpeta. |
+| Require all granted | Permite acceder al directorio publicado. |
+
+```bash
+sudo a2enconf tienda-borradores
+sudo apache2ctl configtest
+sudo systemctl restart apache2
+```
+
+a2enconf activa la configuración. configtest debe devolver Syntax OK. Reiniciar Apache carga el alias y los componentes PHP instalados. Si hay un error de configuración, corregidlo antes de reiniciar.
+
+Abrid en el navegador http://IP_DEL_SERVIDOR_WEB/tienda-borradores/ sustituyendo el marcador por la IP real. Deben aparecer el título de la aplicación, el selector de clientes, el catálogo y el resumen del borrador.
+
+Si hay un cortafuegos activo en Ubuntu, permitid el acceso HTTP del laboratorio conforme a vuestra red. Comprobad antes sus reglas con sudo ufw status. En un equipo dedicado del laboratorio podéis habilitar el perfil Apache con sudo ufw allow Apache, sin activar ni modificar otros perfiles por este motivo.
+
+# Utilizar el formulario y comprobar el resultado
+
+## Preparar una compra de ejemplo
+
+1. Seleccionad Hugo Díaz, cliente 10. Comprobad la dirección mostrada debajo del selector.
+2. Buscad Teclado USB y pulsad Añadir una vez.
+3. Buscad Memoria USB 64 GB y pulsad Añadir dos veces. Debe quedar una sola línea de ese producto con cantidad 2.
+4. Revisad el resumen. Con los precios iniciales habrá dos productos diferentes, tres unidades y 54,90 euros.
+5. Pulsad Guardar borrador una sola vez y esperad la respuesta. El botón se desactiva durante la operación.
+6. Anotad el identificador del recibo. MySQL lo genera automáticamente; no tiene por qué ser 21.
+
+| Producto | Cantidad | Precio | Importe |
+| :--- | :--- | :--- | :--- |
+| Teclado USB | 1 | 29,90 | 29,90 |
+| Memoria USB 64 GB | 2 | 12,50 | 25,00 |
+| Total | 3 | | 54,90 |
+
+El recibo confirma el guardado y muestra el identificador, el cliente, la fecha de MySQL, las líneas y el total. Nuevo borrador abre otro formulario para otra compra. Imprimir resumen permite obtener una copia desde el navegador.
+
+## Comprobar en Workbench
+
+Abrid sql/02_comprobar_borrador.sql con vuestra cuenta de prácticas. Sustituid el 0 de la variable id_borrador por el identificador que aparece en el recibo y ejecutad las consultas.
+
+| Comprobación | Resultado esperado |
+| :--- | :--- |
+| pedidos | Una cabecera del cliente elegido y estado BORRADOR. |
+| detalle_pedido | Dos filas: producto 2 con cantidad 1 y producto 5 con cantidad 2. |
+| Resumen de líneas | 2 líneas, 3 unidades y 54,90 euros. |
+| preparacion_pedidos | Cero tareas para ese identificador. |
+| envios | Cero envíos para ese identificador. |
+
+Desde ese punto, continuaremos con el procedimiento de confirmación de la práctica original, utilizando el identificador real del nuevo pedido. La aplicación no proporciona ni ejecuta las soluciones de la vista, los procedimientos o los triggers solicitados al grupo.
+
+## Qué ocurre antes y después de guardar
+
+Antes de guardar, el carrito está en la memoria de la página. Añadir o quitar productos no inserta filas en MySQL. Recargar la página descarta esa selección. Actualizar catálogo conserva las cantidades de los productos que siguen existiendo y actualiza sus precios.
+
+El servidor vuelve a leer los precios al guardar. Si alguno ha cambiado respecto al resumen, rechaza la operación antes de insertar la cabecera y pide actualizar el catálogo. Así revisaremos el nuevo importe antes de volver a guardar.
+
+# MySQL en Windows u otro servidor
+
+Si Apache está en Ubuntu y MySQL en Windows Server, mantened ambos servicios separados. Adaptad estos tres elementos: host de config.php, host permitido en la cuenta MySQL y conectividad entre las dos máquinas.
+
+| Dato | Qué identifica |
+| :--- | :--- |
+| host de config.php | El servidor MySQL al que conectará PHP. |
+| Host de la cuenta tienda_app | El origen desde el que MySQL aceptará esa cuenta: el servidor PHP. |
+| URL que abre el navegador | El servidor Apache que atiende la aplicación. |
+
+MySQL debe escuchar en una interfaz accesible desde Ubuntu y el cortafuegos del servidor debe permitir TCP al puerto MySQL desde la IP del servidor PHP. Las rutas de configuración y el servicio exacto deben verificarse contra la versión instalada. No hace falta habilitar acceso MySQL desde todos los ordenadores que utilicen el navegador.
+
+Comprobad en Workbench la IP y el puerto usados por vuestra conexión. Esa IP solo sirve como host de PHP si también es accesible desde Ubuntu. Una conexión local de Workbench a localhost no demuestra que la VM de PHP pueda llegar al servidor.
+
+## Prueba local alternativa sin Apache
+
+En un equipo que ya tenga PHP con PDO_MYSQL y config.php configurado, podéis iniciar una prueba local desde la carpeta raíz de la aplicación:
+
+```bash
+php -S 127.0.0.1:8000 -t public
+```
+
+Abrid http://127.0.0.1:8000/ en el navegador de ese mismo equipo. En Windows también puede utilizarse esta orden si php.exe está instalado y accesible desde la terminal. No se detallan aquí la instalación de PHP para Windows ni otro despliegue IIS o Apache. La terminal debe permanecer abierta; se detiene con Ctrl+C. Para acceder desde otros equipos utilizaremos el despliegue Apache explicado anteriormente.
+
+# Pruebas funcionales y tratamiento de errores
+
+| Prueba | Resultado esperado |
+| :--- | :--- |
+| Sin cliente o sin productos | El botón Guardar borrador permanece desactivado. |
+| Añadir dos veces un producto | Una línea con cantidad 2. |
+| Cambiar la cantidad a cero o un decimal | Se rechaza el valor y se mantiene la cantidad anterior. |
+| Quitar un producto | Desaparece de la selección y se recalculan unidades e importe. |
+| Vaciar selección | No quedan productos; el botón de guardado se desactiva. |
+| Guardar el ejemplo | Cabecera y dos líneas; total 54,90 con los precios iniciales. |
+| Cambiar un precio desde MySQL después de cargar la página | El guardado se rechaza; Actualizar catálogo permite revisar el precio vigente. |
+| Error durante la inserción de una línea | La transacción revierte la cabecera y las líneas insertadas en esa operación. |
+
+La última prueba puede realizarla el docente en una copia desechable del laboratorio provocando un error de inserción. No es necesario introducir datos incoherentes en la base de trabajo del grupo para utilizar la aplicación.
+
+Las consultas se preparan con parámetros. Los identificadores y cantidades se validan en el servidor, además de los controles del navegador. Los importes se calculan con céntimos enteros y el precio real procede de MySQL. El identificador de cabecera se recupera antes de insertar sus líneas y antes de confirmar la transacción.
+
+## Repetir una petición o perder la respuesta
+
+El formulario dispone de un token asociado a la sesión PHP. Una repetición del mismo guardado y contenido puede recuperar su recibo sin insertar otro pedido. Esta protección se limita a la misma sesión y a los últimos 30 recibos; no compara compras realizadas desde navegadores distintos.
+
+Si no recibís confirmación por un corte de conexión, reintentad sin cambiar la selección o comprobad el último pedido en MySQL antes de abrir otro formulario. Existe un intervalo entre la confirmación de MySQL y la conservación del recibo de sesión: una interrupción en ese punto exige verificar qué llegó a guardarse.
+
+# Errores comunes y buenas prácticas
+
+| Síntoma | Qué revisar |
+| :--- | :--- |
+| No carga el catálogo | Base inicial cargada, config.php, cuenta y extensión pdo_mysql. |
+| Access denied en el registro | Usuario, contraseña y host de origen permitido en MySQL. |
+| Connection refused o tiempo agotado | IP y puerto, servicio MySQL, interfaz de escucha y cortafuegos. |
+| Se muestra o se descarga código PHP | Apache no interpreta PHP. Revisad el módulo o servicio instalado. |
+| Página no encontrada | Alias, ruta public y activación con a2enconf. |
+| El servidor informa de precios cambiados | Actualizar catálogo y revisar el resumen antes de guardar. |
+| Formulario caducado | Comprobar primero si el pedido llegó a guardarse; después recargar. |
+| Los recuentos originales dejan de coincidir | La app ha añadido compras. Ejecutar el plan original antes de esta ampliación o restaurar el punto inicial. |
+| La fecha difiere de la del navegador | Procede del servidor MySQL. Revisad su configuración horaria. |
+
+Los errores técnicos se registran en PHP. En el despliegue Apache propuesto, revisad el registro con sudo tail -n 50 /var/log/apache2/error.log. El navegador recibe un mensaje controlado y no muestra la contraseña de conexión.
+
+# Puntos clave y verificación de la entrega
+
+* Una cabecera identifica el pedido; sus líneas identifican los productos comprados.
+* Añadir al carrito prepara datos en la página; Guardar borrador los inserta conjuntamente en MySQL.
+* Repetir un producto aumenta su cantidad y conserva una única línea por pedido y producto.
+* El precio guardado es el precio de compra validado contra el catálogo del servidor.
+* El borrador no activa los dos triggers de la práctica: uno actúa al actualizar pedidos y el otro al insertar envios.
+* Las credenciales de MySQL pertenecen a PHP; el cliente seleccionado es un dato comercial.
+
+## Comprobaciones realizadas antes de la entrega
+
+Se ha revisado la sintaxis con PHP 8.4.27 y la de JavaScript. Se han superado 24 comprobaciones del código PHP de validación, importes y reversión con PDO y una base SQLite de prueba. Solo el adaptador de comprobación retira FOR SHARE; ese adaptador no se incluye en la aplicación.
+
+Las consultas preparadas y los permisos incluidos se han ejecutado sobre MySQL 8.4.7 con el esquema original. También se ha comprobado el recorrido del navegador con datos ficticios y almacenamiento de prueba: selección de cliente, repetición de productos, importe y guardado completo.
+
+La conexión PDO_MYSQL a vuestra instancia y el servicio Apache se comprueban al instalar. No se ha accedido a vuestro servidor. Esta entrega contiene la aplicación para MySQL, no el adaptador ni la base de pruebas utilizados para verificarla.
+
+# Referencias técnicas
+
+* Instalación de PHP en Ubuntu Server. <https://ubuntu.com/server/docs/how-to-install-and-configure-php/>
+* Controlador PDO para MySQL. <https://www.php.net/manual/es/ref.pdo-mysql.php>
+* Consultas preparadas con PDO. <https://www.php.net/manual/es/pdo.prepared-statements.php>
+* Transacciones con PDO. <https://www.php.net/manual/es/pdo.transactions.php>
+* Recuperación del identificador insertado. <https://www.php.net/manual/es/pdo.lastinsertid.php>
+* Servidor web de prueba incluido en PHP. <https://www.php.net/manual/en/features.commandline.webserver.php>
+* Lecturas con bloqueo en MySQL 8.4. <https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html>[cite: 1]
