@@ -2,16 +2,17 @@
 title: "Práctica: Aplicación web para crear borradores de pedidos"
 format: html
 ---
-Ampliación independiente de la práctica Tienda online | IFCT0310 | PHP y MySQL
+
+Ampliación independiente de la práctica Tienda online \| IFCT0310 \| PHP y MySQL
 
 Utilizaremos el navegador para seleccionar un cliente y preparar una compra. La aplicación guardará una cabecera en pedidos y una línea por producto en detalle_pedido. El resultado será un pedido en BORRADOR que podremos utilizar después en la práctica de procedimientos y triggers.
 
 # Objetivos de aprendizaje
 
-* Distinguir el formulario del navegador, el programa PHP y la base de datos MySQL.
-* Crear un borrador completo y comprobar su cabecera, sus líneas y su importe.
-* Entender por qué el guardado de ambas tablas se realiza dentro de una transacción.
-* Conectar la aplicación a la misma base existente sin modificar su esquema.
+- Distinguir el formulario del navegador, el programa PHP y la base de datos MySQL.
+- Crear un borrador completo y comprobar su cabecera, sus líneas y su importe.
+- Entender por qué el guardado de ambas tablas se realiza dentro de una transacción.
+- Conectar la aplicación a la misma base existente sin modificar su esquema.
 
 # La hoja de compra y sus líneas
 
@@ -23,9 +24,7 @@ Esta guía mantiene la fuente Arial, el tamaño mínimo de 12 puntos y el azul o
 
 # Alcance y orden de realización
 
-La aplicación consulta clientes y productos y crea pedidos en estado BORRADOR. 
-No modifica pedidos existentes, no confirma compras y no genera preparaciones ni envíos. 
-Puede utilizarse aunque todavía no hayáis creado la vista, los procedimientos o los triggers de la práctica.
+La aplicación consulta clientes y productos y crea pedidos en estado BORRADOR. No modifica pedidos existentes, no confirma compras y no genera preparaciones ni envíos. Puede utilizarse aunque todavía no hayáis creado la vista, los procedimientos o los triggers de la práctica.
 
 La selección del cliente determina a nombre de quién se crea la compra. El uso previsto es el laboratorio del aula, con sus datos ficticios.
 
@@ -38,7 +37,7 @@ Para volver a ejecutar el plan original desde el principio, guardad vuestro SQL 
 ## Qué cambia al guardar
 
 | Tabla | Efecto de la aplicación |
-| :--- | :--- |
+|:---------------------|:-------------------------------------------------|
 | clientes y productos | Se consultan. No se modifican. |
 | pedidos | Se inserta una cabecera con cliente, fecha del servidor y estado BORRADOR. |
 | detalle_pedido | Se inserta una línea por producto con cantidad y precio de compra. |
@@ -46,10 +45,10 @@ Para volver a ejecutar el plan original desde el principio, guardad vuestro SQL 
 
 # Archivos y entorno de partida
 
-Descargad Ampliacion_App_Borradores_Tienda_online.zip. Al extraerlo aparece la carpeta tienda-borradores. Conservad esa estructura: public, app, config y sql son carpetas hermanas.
+Descargad [Ampliacion_App_Borradores_Tienda_online.zip](Ampliacion_App_Borradores_Tienda_online.zip). Al extraerlo aparece la carpeta tienda-borradores. Conservad esa estructura: public, app, config y sql son carpetas hermanas.
 
 | Ruta dentro de la aplicación | Contenido |
-| :--- | :--- |
+|:-------------------|:---------------------------------------------------|
 | public/index.php | Pantalla principal y formulario. |
 | public/app.js y style.css | Interacción del catálogo, resumen y presentación. |
 | public/api.php | Peticiones de carga del catálogo y guardado. |
@@ -66,16 +65,16 @@ La aplicación necesita PHP 8.2 o superior con PDO y el controlador PDO_MYSQL. E
 
 # Dónde se ejecuta cada parte
 
-| Componente | Función y destino |
-| :--- | :--- |
-| Navegador | Muestra la página y envía el formulario al servidor web. |
+| Componente   | Función y destino                                           |
+|:-----------------------------------|:-----------------------------------|
+| Navegador    | Muestra la página y envía el formulario al servidor web.    |
 | Apache y PHP | Atienden la página, validan los datos y conectan con MySQL. |
-| MySQL | Guarda la cabecera y las líneas en las tablas existentes. |
+| MySQL        | Guarda la cabecera y las líneas en las tablas existentes.   |
 
 El navegador utiliza la dirección del servidor web. La configuración de PHP utiliza la dirección del servidor MySQL. Ambos servicios pueden estar en el mismo equipo o en equipos distintos.
 
 | Caso | Dirección para PHP | Dirección del navegador |
-| :--- | :--- | :--- |
+|:-----------------------|:-----------------------|:-----------------------|
 | Apache y MySQL en Ubuntu | host de MySQL: 127.0.0.1 | http://IP_UBUNTU/tienda-borradores/ |
 | Apache en Ubuntu y MySQL en Windows | host de MySQL: IP_WINDOWS | http://IP_UBUNTU/tienda-borradores/ |
 
@@ -89,7 +88,7 @@ Realizad estos pasos en el equipo que ejecutará Apache y PHP. Si MySQL ya está
 
 ## Actualizar la lista de paquetes
 
-```bash
+``` bash
 sudo apt update
 ```
 
@@ -97,12 +96,12 @@ Actualiza el catálogo local de paquetes. No instala por sí mismo una versión 
 
 ## Instalar Apache PHP y el controlador MySQL
 
-```bash
+``` bash
 sudo apt install apache2 php php-cli libapache2-mod-php php-mysql unzip
 ```
 
 | Paquete | Para qué lo utilizamos |
-| :--- | :--- |
+|:-----------------------------------|:-----------------------------------|
 | apache2 | Servidor que atenderá las peticiones del navegador. |
 | php y php-cli | Intérprete PHP y ejecución de comprobaciones desde la terminal. |
 | libapache2-mod-php | Permite que Apache ejecute los archivos PHP con este despliegue. |
@@ -111,7 +110,7 @@ sudo apt install apache2 php php-cli libapache2-mod-php php-mysql unzip
 
 ## Comprobar PHP y PDO
 
-```bash
+``` bash
 php -v
 php -r 'echo implode(", ", PDO::getAvailableDrivers()), PHP_EOL;'
 ```
@@ -124,10 +123,9 @@ La terminal y Apache pueden cargar configuraciones PHP distintas. Si la terminal
 
 ## Extraer y copiar los archivos
 
-Copiad el ZIP a vuestra carpeta personal de Ubuntu y abrid una terminal en esa carpeta. La instalación propuesta utiliza /opt/tienda-borradores.
-ejemplo: `scp "C:\Users\manana.DESKTOP-BKGO9JU.000\Downloads\Ampliacion_App_Borradores_Tienda_online.zip" sysadmin@10.0.20.101:/home/sysadmin/`
+Copiad el ZIP a vuestra carpeta personal de Ubuntu y abrid una terminal en esa carpeta. La instalación propuesta utiliza /opt/tienda-borradores. ejemplo: `scp "C:\Users\manana.DESKTOP-BKGO9JU.000\Downloads\Ampliacion_App_Borradores_Tienda_online.zip" sysadmin@10.0.20.101:/home/sysadmin/`
 
-```bash
+``` bash
 unzip Ampliacion_App_Borradores_Tienda_online.zip
 sudo mkdir -p /opt/tienda-borradores
 sudo cp -r tienda-web/. /opt/tienda-borradores/
@@ -141,7 +139,7 @@ unzip extrae la carpeta. mkdir crea el destino. cp copia su contenido conservand
 
 Abrid ./opt/tienda-borradores/sql/01_usuario_app.sql, revisadlo y cambiad la contraseña de ejemplo. El script crea la cuenta tienda_app para localhost y le concede únicamente las lecturas e inserciones que necesita la aplicación.
 
-```sql
+``` sql
 CREATE USER 'tienda_app'@'localhost'
   IDENTIFIED BY 'Aula_Tienda_2026!Cambiar';
 GRANT SELECT ON tienda_online_practica.clientes
@@ -155,31 +153,31 @@ GRANT INSERT ON tienda_online_practica.detalle_pedido
 SHOW GRANTS FOR 'tienda_app'@'localhost';
 ```
 
-
-Si PHP y MySQL están en equipos diferentes, sustituid localhost en todas las referencias a la cuenta por la IP del servidor PHP. 
-Si la cuenta ya existe, revisadla y adaptadla expresamente antes de continuar: el script no elimina ni sustituye cuentas existentes.
+Si PHP y MySQL están en equipos diferentes, sustituid localhost en todas las referencias a la cuenta por la IP del servidor PHP. Si la cuenta ya existe, revisadla y adaptadla expresamente antes de continuar: el script no elimina ni sustituye cuentas existentes.
 
 `sudo mysql < 01_usuario_app.sql`
 
-| Permiso | Tabla |
-| :--- | :--- |
-| SELECT | clientes y productos |
-| SELECT e INSERT | pedidos |
-| INSERT | detalle_pedido |
+| Permiso         | Tabla                |
+|:----------------|:---------------------|
+| SELECT          | clientes y productos |
+| SELECT e INSERT | pedidos              |
+| INSERT          | detalle_pedido       |
 
-La cuenta de la web no necesita UPDATE ni DELETE, ni permisos para crear rutinas o triggers. 
-Las consultas de comprobación de las otras tablas se realizarán con vuestra cuenta habitual de prácticas.
+La cuenta de la web no necesita UPDATE ni DELETE, ni permisos para crear rutinas o triggers. Las consultas de comprobación de las otras tablas se realizarán con vuestra cuenta habitual de prácticas.
 
 ## Crear el archivo de configuración
 
-```bash
+``` bash
 sudo cp /opt/tienda-borradores/config/config.example.php \
   /opt/tienda-borradores/config/config.php
 sudo nano /opt/tienda-borradores/config/config.php
 ```
+
 <figure>
-  <figcaption>config.example.php</figcaption>
-```php
+
+<figcaption>config.example.php</figcaption>
+
+``` php
 <?php
 declare(strict_types=1);
 // Copiad este archivo como config.php y completad los datos de vuestra MySQL.
@@ -192,35 +190,37 @@ return [
     'password' => 'CAMBIAR_POR_LA_CLAVE_DEL_USUARIO',
 ];
 ```
+
 </figure>
 
 En el archivo nuevo, ajustad los cinco valores de conexión. La barra invertida al final de la primera línea permite continuar la misma orden en la siguiente.
 
 | Campo | Valor que debéis indicar |
-| :--- | :--- |
+|:------------------|:----------------------------------------------------|
 | host | 127.0.0.1 si MySQL está en este equipo; su IP real si está en otro. |
 | port | Puerto donde escucha MySQL; normalmente 3306. |
 | database | tienda_online_practica. |
 | username | La cuenta de aplicación que habéis preparado, por ejemplo tienda_app. |
 | password | La misma contraseña que habéis establecido para esa cuenta. |
 
-```bash
+``` bash
 sudo chown root:www-data /opt/tienda-borradores/config/config.php
 sudo chmod 640 /opt/tienda-borradores/config/config.php
 ```
-El archivo de configuración queda legible por root y por el grupo del servicio web. Los ejemplos utilizan www-data, que es el usuario y grupo habituales de Apache en Ubuntu con esta instalación.
+
+El archivo de configuración queda legible por root y por el grupo del servicio web *www-data,* que es el usuario y grupo habituales de Apache en Ubuntu con esta instalación.
 
 # Publicar únicamente la carpeta pública
 
-Crearemos un alias de Apache para abrir la aplicación en /tienda-borradores/. La carpeta que se publica será publica; la configuración y los archivos SQL quedan fuera de esa URL.
+Crearemos un alias de Apache para abrir la aplicación en */tienda-borradores/*. La carpeta que se publica será publica; la configuración y los archivos SQL quedan fuera de esa URL.
 
-```bash
+``` bash
 sudo nano /etc/apache2/conf-available/tienda-borradores.conf
 ```
 
 Introducid este contenido:
 
-```apache
+``` apache
 Alias /tienda-borradores /opt/tienda-borradores/public
 <Directory /opt/tienda-borradores/public>
     Options -Indexes
@@ -231,7 +231,7 @@ Alias /tienda-borradores /opt/tienda-borradores/public
 ```
 
 | Directiva | Significado |
-| :--- | :--- |
+|:-----------------------------------|:-----------------------------------|
 | Alias | Relaciona la dirección web con la carpeta public del disco. |
 | Directory | Aplica las opciones a esa carpeta. |
 | Options -Indexes | Evita listar el contenido de directorios sin página principal. |
@@ -239,15 +239,204 @@ Alias /tienda-borradores /opt/tienda-borradores/public
 | DirectoryIndex index.php | Abre index.php al solicitar la carpeta. |
 | Require all granted | Permite acceder al directorio publicado. |
 
-```bash
+``` bash
 sudo a2enconf tienda-borradores
+```
+
+`a2enconf` activa la configuración.
+
+```         
+Enabling conf tienda-borradores.
+To activate the new configuration, you need to run:  systemctl reload apache2
+```
+
+``` bash
 sudo apache2ctl configtest
+```
+
+`configtest` debe devolver Syntax OK.
+
+```         
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+Syntax OK
+```
+
+``` bash
 sudo systemctl restart apache2
 ```
 
-a2enconf activa la configuración. configtest debe devolver Syntax OK. Reiniciar Apache carga el alias y los componentes PHP instalados. Si hay un error de configuración, corregidlo antes de reiniciar.
+Reiniciar Apache carga el alias y los componentes PHP instalados. Si hay un error de configuración, corregidlo antes de reiniciar.
 
-Abrid en el navegador http://IP_DEL_SERVIDOR_WEB/tienda-borradores/ sustituyendo el marcador por la IP real. Deben aparecer el título de la aplicación, el selector de clientes, el catálogo y el resumen del borrador.
+::: extra
+En nuestro caso, como instalamos en el mismo servidor el contenedor para monitorización Percona, está usando el puerto 80 que intenta usar Apache, así que apache no se está inicializando, vamos a aprovechar esto para ver cómo cambiar la configuración de puertos en Apache para que no haya colisión. Primero, cómo hemos identificado el problema: Al intentar iniciar apache:
+
+``` bash
+sudo systemctl restart apache2
+```
+
+recibimos la respuesta :
+
+```         
+Job for apache2.service failed because the control process exited with error code.
+See "systemctl status apache2.service" and "journalctl -xeu apache2.service" for details.`
+```
+
+``` bash
+systemctl status apache2
+```
+
+```         
+× apache2.service - The Apache HTTP Server
+     Loaded: loaded (/usr/lib/systemd/system/apache2.service; disabled; preset: enabled)
+     Active: failed (Result: exit-code) since Mon 2026-11-23 09:44:29 UTC; 2min 13s ago
+ Invocation: d07dccc6e6ed4f198ba7b5b9c044726f
+       Docs: https://httpd.apache.org/docs/2.4/
+    Process: 99167 ExecStart=/usr/sbin/apachectl start (code=exited, status=1/FAILURE)
+   Main PID: 99167 (code=exited, status=1/FAILURE)
+     Status: "Reading configuration..."
+   Mem peak: 3.8M
+        CPU: 86ms
+
+nov 23 09:44:29 myserver systemd[1]: Starting apache2.service - The Apache HTTP Server...
+nov 23 09:44:29 myserver apachectl[99167]: AH00558: apache2: Could not reliably determine the server's fully qualified >
+nov 23 09:44:29 myserver apachectl[99167]: (98)Address already in use: AH00072: make_sock: could not bind to address [:>
+nov 23 09:44:29 myserver apachectl[99167]: (98)Address already in use: AH00072: make_sock: could not bind to address 0.>
+nov 23 09:44:29 myserver apachectl[99167]: no listening sockets available, shutting down
+```
+
+al ver el mensaje de que la dirección ya está en uso miramos quién está usando el puerto 80:
+
+``` bash
+sudo ss -tulpn | grep :80
+```
+
+```         
+tcp   LISTEN 0      4096         0.0.0.0:80         0.0.0.0:*    users:(("docker-proxy",pid=1712,fd=8))                 
+tcp   LISTEN 0      4096            [::]:80            [::]:*    users:(("docker-proxy",pid=1724,fd=8))   
+```
+
+``` bash
+docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Ports}}"
+```
+
+```         
+CONTAINER ID   NAMES                           IMAGE                  PORTS
+3a2c1e6a7744   pmm-server                      percona/pmm-server:3
+57668c764553   pmm-server-2026-11-12-094131n   percona/pmm-server:2   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+```
+
+y vemos que es el container de Percona.
+
+Vamos a cambiar el puerto de Apache.
+
+``` bash
+sudo nano /etc/apache2/ports.conf
+```
+
+```         
+# If you just change the port or add more ports here, you will likely also
+# have to change the VirtualHost statement in
+# /etc/apache2/sites-enabled/000-default.conf
+
+Listen 80
+
+<IfModule ssl_module>
+        Listen 443
+</IfModule>
+
+<IfModule mod_gnutls.c>
+        Listen 443
+</IfModule>
+```
+
+Cambiamos la línea *Listen 80* por *Listen 8080*
+
+Verificamos
+
+``` bash
+grep -n "Listen" /etc/apache2/ports.conf
+```
+
+```         
+5:Listen 8080
+8:      Listen 443
+12:     Listen 443
+```
+
+Nos vamos al directorio /etc/apache2/sites-enabled/
+
+``` bash
+sudo nano /etc/apache2/sites-enabled/000-default.conf
+```
+
+muestra:
+
+```         
+<VirtualHost *:80>
+        # The ServerName directive sets the request scheme, hostname and port that
+        # the server uses to identify itself. This is used when creating
+        # redirection URLs. In the context of virtual hosts, the ServerName
+        # specifies what hostname must appear in the request's Host: header to
+        # match this virtual host. For the default virtual host (this file) this
+        # value is not decisive as it is used as a last resort host regardless.
+        # However, you must set it for any further virtual host explicitly.
+        #ServerName www.example.com
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+
+        # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+        # error, crit, alert, emerg.
+        # It is also possible to configure the loglevel for particular
+        # modules, e.g.
+        #LogLevel info ssl:warn
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+        # For most configuration files from conf-available/, which are
+        # enabled or disabled at a global level, it is possible to
+        # include a line for only one particular virtual host. For example the
+        # following line enables the CGI configuration for this host only
+        # after it has been globally disabled with "a2disconf".
+        #Include conf-available/serve-cgi-bin.conf
+</VirtualHost>
+```
+
+Cambiamos en la primera linea *\<VirtualHost* :80\>\* por *\<VirtualHost* :8080\>\*
+
+Revisa los archivos habilitados en /etc/apache2/sites-enabled/ Si tienes más archivos .conf en sites-enabled/ que usen \*:80, actualízalos también.
+
+Verification: Ejecuta `grep -rn "VirtualHost" /etc/apache2/sites-enabled/` y confirma que no queda ningún \*:80 apuntando al puerto conflictivo.
+
+Checkear la sintaxis: `sudo apache2ctl configtest` `AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message Syntax OK`
+
+Iniciar el servidor:
+
+``` bash
+sudo systemctl start apache2
+```
+
+Verificamos el estado:
+
+``` bash
+systemctl status apache2
+```
+
+debe mostrasr Active: active(running)
+
+```         
+apache2.service - The Apache HTTP Server
+     Loaded: loaded (/usr/lib/systemd/system/apache2.service; disabled; preset: enabled)
+     Active: active (running) since Mon 2026-11-23 11:00:53 UTC; 19s ago
+ Invocation: 604f0f76d6b84564bb19589e7fa23cfd
+       Docs: https://httpd.apache.org/docs/2.4/
+   Main PID: 174443 (apache2)
+     Status: "Processing requests..."
+```
+:::
+
+Abrid en el navegador http://IP_DEL_SERVIDOR_WEB:8080/tienda-borradores/ sustituyendo el marcador por la IP real. Deben aparecer el título de la aplicación, el selector de clientes, el catálogo y el resumen del borrador. Nota: hemos añadido `:8080` después de la ip del servidor porque cambiamos el puerto en el paso anterior, si tú no lo has cambiado usa simplemente http://IP_DEL_SERVIDOR_WEB/tienda-borradores/
 
 Si hay un cortafuegos activo en Ubuntu, permitid el acceso HTTP del laboratorio conforme a vuestra red. Comprobad antes sus reglas con sudo ufw status. En un equipo dedicado del laboratorio podéis habilitar el perfil Apache con sudo ufw allow Apache, sin activar ni modificar otros perfiles por este motivo.
 
@@ -255,32 +444,74 @@ Si hay un cortafuegos activo en Ubuntu, permitid el acceso HTTP del laboratorio 
 
 ## Preparar una compra de ejemplo
 
-1. Seleccionad Hugo Díaz, cliente 10. Comprobad la dirección mostrada debajo del selector.
-2. Buscad Teclado USB y pulsad Añadir una vez.
-3. Buscad Memoria USB 64 GB y pulsad Añadir dos veces. Debe quedar una sola línea de ese producto con cantidad 2.
-4. Revisad el resumen. Con los precios iniciales habrá dos productos diferentes, tres unidades y 54,90 euros.
-5. Pulsad Guardar borrador una sola vez y esperad la respuesta. El botón se desactiva durante la operación.
-6. Anotad el identificador del recibo. MySQL lo genera automáticamente; no tiene por qué ser 21.
+1.  Seleccionad Hugo Díaz, cliente 10. Comprobad la dirección mostrada debajo del selector.
+2.  Buscad Teclado USB y pulsad Añadir una vez.
+3.  Buscad Memoria USB 64 GB y pulsad Añadir dos veces. Debe quedar una sola línea de ese producto con cantidad 2.
+4.  Revisad el resumen. Con los precios iniciales habrá dos productos diferentes, tres unidades y 54,90 euros.
+5.  Pulsad Guardar borrador una sola vez y esperad la respuesta. El botón se desactiva durante la operación.
+6.  Anotad el identificador del recibo. MySQL lo genera automáticamente; no tiene por qué ser 21.
 
-| Producto | Cantidad | Precio | Importe |
-| :--- | :--- | :--- | :--- |
-| Teclado USB | 1 | 29,90 | 29,90 |
-| Memoria USB 64 GB | 2 | 12,50 | 25,00 |
-| Total | 3 | | 54,90 |
+| Producto          | Cantidad | Precio | Importe |
+|:------------------|:---------|:-------|:--------|
+| Teclado USB       | 1        | 29,90  | 29,90   |
+| Memoria USB 64 GB | 2        | 12,50  | 25,00   |
+| Total             | 3        |        | 54,90   |
 
-El recibo confirma el guardado y muestra el identificador, el cliente, la fecha de MySQL, las líneas y el total. Nuevo borrador abre otro formulario para otra compra. Imprimir resumen permite obtener una copia desde el navegador.
+El recibo confirma el guardado y muestra el identificador, el cliente, la fecha de MySQL, las líneas y el total.
 
-## Comprobar en Workbench
+![](images/paste-54.png)
+
+Nuevo borrador abre otro formulario para otra compra. Imprimir resumen permite obtener una copia desde el navegador.
+
+## Comprobar en la base de datos
 
 Abrid sql/02_comprobar_borrador.sql con vuestra cuenta de prácticas. Sustituid el 0 de la variable id_borrador por el identificador que aparece en el recibo y ejecutad las consultas.
 
-| Comprobación | Resultado esperado |
-| :--- | :--- |
-| pedidos | Una cabecera del cliente elegido y estado BORRADOR. |
-| detalle_pedido | Dos filas: producto 2 con cantidad 1 y producto 5 con cantidad 2. |
-| Resumen de líneas | 2 líneas, 3 unidades y 54,90 euros. |
-| preparacion_pedidos | Cero tareas para ese identificador. |
-| envios | Cero envíos para ese identificador. |
+``` sql
+USE tienda_online_practica;
+SET @id_borrador = 0;
+
+SELECT id_pedido, id_cliente, fecha_pedido, estado
+FROM pedidos WHERE id_pedido = @id_borrador;
+
+SELECT id_detalle, id_pedido, id_producto, cantidad, precio_unitario,
+       cantidad * precio_unitario AS importe_linea
+FROM detalle_pedido WHERE id_pedido = @id_borrador
+ORDER BY id_producto;
+
+SELECT COUNT(*) AS numero_lineas,
+       COALESCE(SUM(cantidad), 0) AS total_unidades,
+       COALESCE(SUM(cantidad * precio_unitario), 0.00) AS importe_total
+FROM detalle_pedido WHERE id_pedido = @id_borrador;
+
+SELECT COUNT(*) AS tareas_de_preparacion
+FROM preparacion_pedidos WHERE id_pedido = @id_borrador;
+SELECT COUNT(*) AS envios_del_pedido
+FROM envios WHERE id_pedido = @id_borrador;
+```
+
+```         
+id_pedido|id_cliente|fecha_pedido       |estado  |
+---------+----------+-------------------+--------+
+       21|        10|2026-11-23 11:09:17|BORRADOR|
+
+id_detalle|id_pedido|id_producto|cantidad|precio_unitario|importe_linea|
+----------+---------+-----------+--------+---------------+-------------+
+        46|       21|          2|       1|          29.90|        29.90|
+        47|       21|          5|       2|          12.50|        25.00|
+
+numero_lineas|total_unidades|importe_total|
+-------------+--------------+-------------+
+            2|             3|        54.90|
+
+tareas_de_preparacion|
+---------------------+
+                    0|
+
+envios_del_pedido|
+-----------------+
+                0|
+```
 
 Desde ese punto, continuaremos con el procedimiento de confirmación de la práctica original, utilizando el identificador real del nuevo pedido. La aplicación no proporciona ni ejecuta las soluciones de la vista, los procedimientos o los triggers solicitados al grupo.
 
@@ -292,10 +523,10 @@ El servidor vuelve a leer los precios al guardar. Si alguno ha cambiado respecto
 
 # MySQL en Windows u otro servidor
 
-Si Apache está en Ubuntu y MySQL en Windows Server, mantened ambos servicios separados. Adaptad estos tres elementos: host de config.php, host permitido en la cuenta MySQL y conectividad entre las dos máquinas.
+Si Apache está en Ubuntu y MySQL en Windows Server, mantened ambos servicios separados. Adaptad estos tres elementos: - host de config.php, - host permitido en la cuenta MySQL - conectividad entre las dos máquinas.
 
 | Dato | Qué identifica |
-| :--- | :--- |
+|:-----------------------------------|:-----------------------------------|
 | host de config.php | El servidor MySQL al que conectará PHP. |
 | Host de la cuenta tienda_app | El origen desde el que MySQL aceptará esa cuenta: el servidor PHP. |
 | URL que abre el navegador | El servidor Apache que atiende la aplicación. |
@@ -308,16 +539,16 @@ Comprobad en Workbench la IP y el puerto usados por vuestra conexión. Esa IP so
 
 En un equipo que ya tenga PHP con PDO_MYSQL y config.php configurado, podéis iniciar una prueba local desde la carpeta raíz de la aplicación:
 
-```bash
+``` bash
 php -S 127.0.0.1:8000 -t public
 ```
 
-Abrid http://127.0.0.1:8000/ en el navegador de ese mismo equipo. En Windows también puede utilizarse esta orden si php.exe está instalado y accesible desde la terminal. No se detallan aquí la instalación de PHP para Windows ni otro despliegue IIS o Apache. La terminal debe permanecer abierta; se detiene con Ctrl+C. Para acceder desde otros equipos utilizaremos el despliegue Apache explicado anteriormente.
+Abrid http://127.0.0.1:8000/ (o 8080 si cambiasteis el puerto) en el navegador de ese mismo equipo. En Windows también puede utilizarse esta orden si php.exe está instalado y accesible desde la terminal. No se detallan aquí la instalación de PHP para Windows ni otro despliegue IIS o Apache. La terminal debe permanecer abierta; se detiene con Ctrl+C. Para acceder desde otros equipos utilizaremos el despliegue Apache explicado anteriormente.
 
 # Pruebas funcionales y tratamiento de errores
 
 | Prueba | Resultado esperado |
-| :--- | :--- |
+|:-----------------------------------|:-----------------------------------|
 | Sin cliente o sin productos | El botón Guardar borrador permanece desactivado. |
 | Añadir dos veces un producto | Una línea con cantidad 2. |
 | Cambiar la cantidad a cero o un decimal | Se rechaza el valor y se mantiene la cantidad anterior. |
@@ -340,7 +571,7 @@ Si no recibís confirmación por un corte de conexión, reintentad sin cambiar l
 # Errores comunes y buenas prácticas
 
 | Síntoma | Qué revisar |
-| :--- | :--- |
+|:-----------------------------------|:-----------------------------------|
 | No carga el catálogo | Base inicial cargada, config.php, cuenta y extensión pdo_mysql. |
 | Access denied en el registro | Usuario, contraseña y host de origen permitido en MySQL. |
 | Connection refused o tiempo agotado | IP y puerto, servicio MySQL, interfaz de escucha y cortafuegos. |
@@ -355,12 +586,12 @@ Los errores técnicos se registran en PHP. En el despliegue Apache propuesto, re
 
 # Puntos clave y verificación de la entrega
 
-* Una cabecera identifica el pedido; sus líneas identifican los productos comprados.
-* Añadir al carrito prepara datos en la página; Guardar borrador los inserta conjuntamente en MySQL.
-* Repetir un producto aumenta su cantidad y conserva una única línea por pedido y producto.
-* El precio guardado es el precio de compra validado contra el catálogo del servidor.
-* El borrador no activa los dos triggers de la práctica: uno actúa al actualizar pedidos y el otro al insertar envios.
-* Las credenciales de MySQL pertenecen a PHP; el cliente seleccionado es un dato comercial.
+- Una cabecera identifica el pedido; sus líneas identifican los productos comprados.
+- Añadir al carrito prepara datos en la página; Guardar borrador los inserta conjuntamente en MySQL.
+- Repetir un producto aumenta su cantidad y conserva una única línea por pedido y producto.
+- El precio guardado es el precio de compra validado contra el catálogo del servidor.
+- El borrador no activa los dos triggers de la práctica: uno actúa al actualizar pedidos y el otro al insertar envios.
+- Las credenciales de MySQL pertenecen a PHP; el cliente seleccionado es un dato comercial.
 
 ## Comprobaciones realizadas antes de la entrega
 
@@ -372,10 +603,10 @@ La conexión PDO_MYSQL a vuestra instancia y el servicio Apache se comprueban al
 
 # Referencias técnicas
 
-* Instalación de PHP en Ubuntu Server. <https://ubuntu.com/server/docs/how-to-install-and-configure-php/>
-* Controlador PDO para MySQL. <https://www.php.net/manual/es/ref.pdo-mysql.php>
-* Consultas preparadas con PDO. <https://www.php.net/manual/es/pdo.prepared-statements.php>
-* Transacciones con PDO. <https://www.php.net/manual/es/pdo.transactions.php>
-* Recuperación del identificador insertado. <https://www.php.net/manual/es/pdo.lastinsertid.php>
-* Servidor web de prueba incluido en PHP. <https://www.php.net/manual/en/features.commandline.webserver.php>
-* Lecturas con bloqueo en MySQL 8.4. <https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html>[cite: 1]
+- Instalación de PHP en Ubuntu Server. <https://ubuntu.com/server/docs/how-to-install-and-configure-php/>
+- Controlador PDO para MySQL. <https://www.php.net/manual/es/ref.pdo-mysql.php>
+- Consultas preparadas con PDO. <https://www.php.net/manual/es/pdo.prepared-statements.php>
+- Transacciones con PDO. <https://www.php.net/manual/es/pdo.transactions.php>
+- Recuperación del identificador insertado. <https://www.php.net/manual/es/pdo.lastinsertid.php>
+- Servidor web de prueba incluido en PHP. <https://www.php.net/manual/en/features.commandline.webserver.php>
+- Lecturas con bloqueo en MySQL 8.4. <https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html>\[cite: 1\]
