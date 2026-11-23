@@ -1,0 +1,195 @@
+---
+title: "Confirmar pedidos y registrar envíos desde la web"
+format: html
+---
+
+Tienda del aula versión 2 | Ampliación independiente | IFCT0310
+
+Esta ampliación completa el recorrido desde el navegador. Crearemos un borrador, confirmaremos la compra y registraremos su salida del almacén. La web consultará la vista y ejecutará los procedimientos que habéis preparado en MySQL; los triggers realizarán los cambios asociados.
+
+# Objetivos de aprendizaje
+
+- Relacionar cada botón con un procedimiento y observar sus efectos en las tablas.
+- Distinguir el estado comercial del pedido y el estado de su preparación.
+- Aplicar los permisos necesarios y comprobar errores sin duplicar operaciones.
+
+# Entorno de partida
+
+Partimos de la base `tienda_online_practica` con sus seis tablas y datos, y de la aplicación de borradores ya instalada. Necesitamos PHP 8.2 o superior con PDO_MYSQL y MySQL 8.4.x. La instalación principal sigue usando Apache en Ubuntu. Si aún no habéis instalado la aplicación, el README del ZIP incluye el procedimiento completo.
+
+Antes de usar la gestión web, cread y probad los siguientes objetos como se pide en la práctica SQL. Esta ampliación no proporciona sus soluciones ni sustituye sus definiciones.
+
+| Objeto existente | Contrato que utiliza la aplicación |
+| :--- | :--- |
+| `vista_resumen_pedidos` | Una fila por pedido, con las columnas originales de resumen, preparación y envío. |
+| `sp_confirmar_pedido` | Recibe un identificador `INT`. Confirma únicamente un `BORRADOR` con productos. |
+| `sp_registrar_envio` | Recibe identificador `INT`, transportista `VARCHAR(80)` y seguimiento `VARCHAR(60)`. |
+| `trg_pedidos_au` y `trg_envios_ai` | Crean y completan la preparación y actualizan el pedido al registrar el envío. |
+
+Realizad esta ampliación después de P01 a P17 y de su balance final, o en una copia aparte. Los nuevos pedidos pueden ocupar el ID 21 y las acciones cambian los estados y recuentos de aquellas pruebas. Utilizad siempre el ID real del recibo.
+
+# Actualizar la aplicación existente
+
+Descargad [tienda-web-v2.zip](tienda-web-v2.zip). El ZIP contiene la aplicación completa dentro de `tienda-borradores`. Extraedlo en una carpeta distinta de la instalación actual. No ejecutéis el script inicial sobre la base que ya utilizáis.
+
+## Paso 1 Conservar la versión anterior
+
+En el servidor Ubuntu, haced una copia fuera de la carpeta pública. Este ejemplo añade fecha y hora al nombre del respaldo para distinguir las copias.
+
+```bash
+sudo cp -a /opt/tienda-borradores \
+  /opt/tienda-borradores-respaldo-$(date +%Y%m%d-%H%M%S)
+```
+
+`cp -a` conserva permisos y estructura, incluido `config/config.php`. Ese archivo contiene vuestra conexión y debe mantenerse fuera de la carpeta pública. Si vuestra ruta de instalación es distinta, adaptad las rutas de esta página.
+
+## Paso 2 Copiar el código nuevo
+
+Con el ZIP en vuestra carpeta personal, ejecutad desde esa carpeta:
+
+```bash
+unzip tienda-web-v2.zip
+sudo cp -r tienda-web-v2/app/. /opt/tienda-borradores/app/
+sudo cp -r tienda-web-v2/public/. /opt/tienda-borradores/public/
+sudo cp tienda-web-v2/sql/03_permisos_gestion.sql \
+  /opt/tienda-borradores/sql/
+sudo cp tienda-web-v2/sql/04_comprobar_ciclo.sql \
+  /opt/tienda-borradores/sql/
+```
+
+Copiamos el código y las consultas nuevas. No copiamos ninguna configuración sobre `config/config.php`. Conservad el host, usuario y contraseña que ya funcionan; tampoco volváis a crear la cuenta `tienda_app`.
+
+## Paso 3 Activar y abrir
+
+Aplicad los permisos MySQL de la página siguiente. El alias de Apache continúa apuntando exclusivamente a `/opt/tienda-borradores/public`. No publiquéis la carpeta completa. Si PHP conserva código en caché, reiniciad Apache:
+
+```bash
+sudo systemctl restart apache2
+```
+
+Abrid `http://IP_UBUNTU/tienda-borradores/` y recargad con Ctrl+F5. Si cambiasteis el puerto, añadirlo a la url como hicimios en la práctica anterior Deben aparecer las secciones Nuevo borrador y Confirmar y enviar. Sustituid `IP_UBUNTU` por la IP real del servidor web.
+
+# Permisos de la cuenta de PHP
+
+Abrid `sql/03_permisos_gestion.sql` con una cuenta administradora. Revisad el host de la cuenta antes de ejecutarlo. 
+```sql
+GRANT SELECT ON tienda_online_practica.vista_resumen_pedidos TO 'tienda_app'@'localhost';
+-- La vista es SQL SECURITY INVOKER: requiere lectura de sus tablas.
+GRANT SELECT ON tienda_online_practica.detalle_pedido TO 'tienda_app'@'localhost';
+GRANT SELECT ON tienda_online_practica.preparacion_pedidos TO 'tienda_app'@'localhost';
+GRANT SELECT ON tienda_online_practica.envios TO 'tienda_app'@'localhost';
+-- Los procedimientos de referencia son SQL SECURITY INVOKER.
+-- EXECUTE no basta: necesitan las operaciones que realizan sus cuerpos.
+GRANT UPDATE (estado) ON tienda_online_practica.pedidos TO 'tienda_app'@'localhost';
+GRANT INSERT ON tienda_online_practica.envios TO 'tienda_app'@'localhost';
+GRANT EXECUTE ON PROCEDURE tienda_online_practica.sp_confirmar_pedido TO 'tienda_app'@'localhost';
+GRANT EXECUTE ON PROCEDURE tienda_online_practica.sp_registrar_envio TO 'tienda_app'@'localhost';
+SHOW GRANTS FOR 'tienda_app'@'localhost';
+```
+
+Para PHP y MySQL en el mismo equipo se usa `tienda_app@localhost`; si están separados, sustituid `localhost` en todas las cuentas del script por la IP del servidor PHP.
+
+`sudo mysql < /opt/tienda-borradores/sql/03_permisos_gestion.sql`
+El script amplía los permisos de una cuenta existente. Requiere que la vista y los dos procedimientos ya existan. No crea tablas, rutinas ni triggers y no modifica datos de pedidos.
+
+| Permiso adicional | Objeto | Motivo |
+| :--- | :--- | :--- |
+| `SELECT` | `vista_resumen_pedidos` | Listado y resumen. |
+| `SELECT` | `detalle_pedido`, `preparacion_pedidos` y `envios` | Detalle y lectura de las tablas de la vista. |
+| `UPDATE` de estado | `pedidos` | Cambio realizado por los procedimientos. |
+| `INSERT` | `envios` | Registro realizado por `sp_registrar_envio`. |
+| `EXECUTE` | Los dos procedimientos | Permitir las llamadas desde PHP. |
+
+Los permisos anteriores de lectura de clientes, productos y pedidos y de inserción de borradores se mantienen. El script termina con `SHOW GRANTS` para revisar el resultado.
+
+## Por qué EXECUTE no basta
+
+Las rutinas de referencia y la vista usan `SQL SECURITY INVOKER`: se comprueban los permisos de quien las ejecuta. Por eso `tienda_app` necesita también las operaciones que realiza el cuerpo de cada procedimiento. Si habéis utilizado otra política de seguridad, verificadla contra vuestra definición real antes de adaptar los permisos.
+
+La aplicación usa `CALL` para confirmar y enviar. Sin embargo, alguien que conozca las credenciales MySQL también dispondrá de los permisos de tablas concedidos. Esta configuración no pretende impedir toda escritura directa mediante una cuenta con acceso exclusivo a procedimientos.
+
+Los triggers se ejecutan con los permisos de su `DEFINER`. Esa cuenta debe existir y poder crear o completar preparaciones. No se concede `TRIGGER` a la cuenta de la web. Si elimináis y recreáis las rutinas, revisad y volved a aplicar sus permisos `EXECUTE`.
+
+Los nombres y las columnas deben coincidir con la práctica original. Si habéis elegido otros nombres, adaptad las lecturas y los `CALL` fijos en `app/gestion.php`, revisando también las dependencias de vuestros objetos.
+
+# Recorrido completo desde el navegador
+
+## Paso 1 Crear el borrador
+
+En Nuevo borrador, seleccionad Hugo Díaz, cliente 10. Añadid un Teclado USB y dos Memorias USB 64 GB. Con los precios iniciales obtendremos dos líneas, tres unidades y 54,90 euros. Guardad el borrador y anotad su identificador real. Pulsad Confirmar este pedido en el recibo.
+
+El enlace abre la ficha; todavía no confirma la compra. La cabecera y las líneas ya existen en MySQL. Aún no hay preparación ni envío para ese pedido.
+
+## Paso 2 Confirmar la compra
+
+Revisad cliente, productos, cantidades e importe. Pulsad Confirmar pedido una sola vez. PHP ejecutará `sp_confirmar_pedido` con el identificador de esa ficha. El procedimiento cambiará el pedido a `PENDIENTE` y `trg_pedidos_au` creará la preparación `PENDIENTE`.
+
+La web volverá a consultar la base. El botón de confirmación desaparecerá y aparecerá el formulario de salida. Un borrador vacío se podrá consultar, pero su confirmación estará desactivada.
+
+## Paso 3 Registrar la salida del almacén
+
+Cuando simuléis que el pedido sale del almacén, escribid Aula Express como transportista y un seguimiento único, por ejemplo AULA-WEB seguido del identificador real del pedido. Pulsad Registrar envío una sola vez. No se contrata ningún transporte real.
+
+PHP ejecutará `sp_registrar_envio` con los tres parámetros. El procedimiento insertará el envío; `trg_envios_ai` actualizará el pedido a `ENVIADO` y `trg_pedidos_au` completará su preparación. Las operaciones pertenecen a la transacción del procedimiento.
+
+| Momento | Pedido | Preparación | Envío |
+| :--- | :--- | :--- | :--- |
+| Tras guardar | `BORRADOR` | No existe | No existe |
+| Tras confirmar | `PENDIENTE` | `PENDIENTE` | No existe |
+| Tras registrar la salida | `ENVIADO` | `COMPLETADA` | Existe uno |
+
+La ficha final muestra transportista, seguimiento, fecha de salida, destinatario y dirección guardados en `envios`. Imprimir ficha del pedido prepara una copia desde el navegador. Si cambia después la dirección del cliente, la ficha conserva la dirección capturada al enviar.
+
+# Comprobar y razonar el resultado
+
+En Confirmar y enviar podéis filtrar por estado, abrir un identificador concreto o recorrer el listado, con un máximo de 50 pedidos por página. La ficha abierta puede quedar fuera del filtro seleccionado: el filtro solo afecta al listado.
+
+Para comprobar cada fase desde Workbench, abrid `sql/04_comprobar_ciclo.sql` con vuestra cuenta de prácticas. Sustituid el 0 por el ID del recibo. El archivo solo realiza lecturas de la vista, las líneas, la preparación y el envío. Repetid las lecturas antes de confirmar, después de confirmar y después de registrar la salida.
+
+## Pruebas adicionales
+
+| Prueba | Qué debe ocurrir |
+| :--- | :--- |
+| Abrir el borrador vacío 2 en una carga inicial | Se ven cero líneas; Confirmar pedido está desactivado. |
+| Abrir un pedido ya enviado | Se muestra su ficha de transporte, sin formulario de envío. |
+| Dejar transportista o seguimiento vacío | El formulario impide enviarlo. El servidor también valida los campos. |
+| Reutilizar transportista y seguimiento de otro envío | MySQL rechaza el duplicado. El pedido sigue `PENDIENTE` y no se completa su preparación. |
+| Otra sesión confirma antes el mismo borrador | El procedimiento rechaza la segunda confirmación y no crea otra preparación. |
+| Se corta la conexión durante una operación | No se reintenta automáticamente. Consultad su estado real antes de repetir. |
+
+Las pruebas con cambios simultáneos o errores se realizarán sobre datos ficticios. La web muestra los mensajes de `SIGNAL` y avisa de fallos de permisos u objetos ausentes. El orden de validación del procedimiento determina el mensaje: un pedido ya enviado puede rechazarse primero por no estar `PENDIENTE`.
+
+## Preguntas para explicar lo observado
+
+- ¿Qué diferencia hay entre pulsar Confirmar este pedido y pulsar Confirmar pedido?
+- ¿Qué trigger crea la preparación y cuál inicia el cambio a ENVIADO?
+- ¿Por qué la preparación completada se conserva en su tabla?
+- ¿Por qué debemos consultar el pedido si perdemos la respuesta del navegador?
+
+# Errores comunes y funcionamiento interno
+
+Si una ficha presenta una combinación incoherente de pedido, preparación y envío, se bloquean sus acciones y se pide revisar MySQL. La web detecta la incoherencia, pero no repara los datos. Si faltaba un trigger al confirmar, no basta con instalarlo y repetir: el pedido podría estar ya `PENDIENTE` y necesitar una corrección controlada en una copia del laboratorio.
+
+| Síntoma | Comprobación |
+| :--- | :--- |
+| No se abre el listado | Revisad `vista_resumen_pedidos`, sus columnas y los `SELECT` de la cuenta. |
+| Falta un procedimiento | Revisad nombre, esquema, parámetros y permiso `EXECUTE`. |
+| No aparece la preparación | Revisad `trg_pedidos_au` y sus permisos de `DEFINER`. |
+| Falla el envío o no se completan los estados | Revisad ambos triggers y la preparación pendiente. |
+| La web conserva una ficha anterior | Pulsad Actualizar pedidos. Si se perdió una respuesta, comprobad antes de repetir. |
+| No conecta con 127.0.0.1 y sí con localhost | Con PDO_MYSQL en Ubuntu, `localhost` usa socket local; `127.0.0.1` usa TCP/IP. Conservad la conexión que ya funciona. |
+
+La IP que abre el navegador identifica al servidor Apache. El host configurado para PHP identifica a MySQL. Si MySQL está en otra máquina, usad su IP accesible desde PHP y una cuenta que acepte al servidor PHP. No cambiéis el host de la cuenta MySQL por la IP del navegador.
+
+PHP utiliza consultas preparadas y parámetros. Cada `CALL` se hace sin una transacción PHP previa porque los procedimientos controlan su propio `START TRANSACTION`, `COMMIT` y `ROLLBACK`. Después se consumen los resultados del `CALL` y se libera el cursor para permitir nuevas consultas.
+
+# Puntos clave y límites de verificación
+
+Los botones representan decisiones de trabajo; las reglas y los cambios asociados siguen residiendo en MySQL. Se conserva el código de borradores y se añaden `app/gestion.php`, `public/gestion.php` y `public/gestion.js`, además de los cambios de API, navegación y estilos. El ZIP no incluye `config.php` ni credenciales reales.
+
+Se han comprobado rutinas, vista, triggers y permisos en MySQL 8.4.7, con contexto de `tienda_app`, incluyendo duplicados y rollback. Han pasado 19 comprobaciones PHP del módulo nuevo y 24 de regresión del borrador. La interfaz se ha recorrido con datos ficticios y un adaptador SQLite solo para pruebas, que no se distribuye. La conexión PDO_MYSQL a vuestra instancia y Apache se verifican al instalar; no se ha accedido a vuestro servidor.
+
+# Referencias técnicas
+
+- MySQL 8.4 sobre seguridad de objetos almacenados <https://dev.mysql.com/doc/refman/8.4/en/stored-objects-security.html>
+- PHP sobre liberación de resultados y conexión PDO_MYSQL <https://www.php.net/manual/es/pdostatement.closecursor.php> <https://www.php.net/manual/es/ref.pdo-mysql.connection.php>

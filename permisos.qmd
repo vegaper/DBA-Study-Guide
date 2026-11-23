@@ -413,9 +413,7 @@ REVOKE SELECT ON empresa.empleados FROM 'ana'@'10.0.20.%';
 
 MySQL evalúa los permisos siguiendo una estructura jerárquica de arriba hacia abajo:
 
-$$
-\text{Global (*.*)} \longrightarrow \text{Base de Datos (bd.*)} \longrightarrow \text{Tabla (bd.tabla)} \longrightarrow \text{Columna (bd.tabla(col))}
-$$
+$$\text{Global (*.*)} \longrightarrow \text{Base de Datos (bd.*)} \longrightarrow \text{Tabla (bd.tabla)} \longrightarrow \text{Columna (bd.tabla(col))}$$
 
 - **Concesión en Nivel Superior:** Si un usuario o rol recibe un permiso a nivel global (`ON *.*`) o de base de datos (`ON empresa.*`), ese permiso se aplica implícitamente a todas las tablas y columnas contenidas.
 
@@ -494,3 +492,178 @@ El privilegio de delegación `WITH GRANT OPTION` también sigue las reglas de la
 ------------------------------------------------------------------------
 
 ![](images/permisos_fig1.jpg)
+
+------------------------------------------------------------------------
+
+:::: extra
+# RLS (Row-Level Security / Seguridad a nivel de fila)
+
+Es una característica de bases de datos que permite restringir qué filas específicas de una tabla puede leer, insertar, actualizar o borrar un usuario o rol determinado.
+
+A diferencia de los permisos tradicionales (que operan a nivel de tabla o columna, como `SELECT` o `UPDATE` sobre toda la tabla), RLS evalúa una política (policy) —una expresión booleana, similar a un WHERE automático— para cada fila involucrada en la consulta.
+
+**Se habilita RLS en la tabla:** Por defecto, si activas RLS y no hay políticas creadas, nadie (excepto el propietario de la tabla o roles con privilegios de bypass, salvo que se configure lo contrario) puede ver o modificar filas (en PostgreSQL, la política por defecto es denegar todo).
+
+**Se crean políticas (CREATE POLICY):** Definen cuándo aplica la regla (para SELECT, INSERT, UPDATE, DELETE o ALL), a qué roles afecta y qué condición debe cumplirse (USING para lectura/filas existentes, WITH CHECK para escritura/nuevas filas).
+
+**El motor inyecta el filtro:** Cada vez que se ejecuta una consulta, la base de datos evalúa las políticas aplicables de forma transparente para la aplicación.
+
+RLS suele usarse cuando varios usuarios distintos se conectan a una misma tabla a través de una aplicación y queremos limitar que un usuario pueda leer o modificar lineas de otro usuario.
+
+Ejemplo práctico (PostgreSQL)
+
+Imagina una tabla pedidos donde cada fila tiene id, usuario_id y total, donde usuario_id es el usuario que ha creado el pedido.
+
+``` sql
+-- 1. Activar Row-Level Security en la tabla
+ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
+
+-- 2. Permitir que cada usuario vea solo sus propios pedidos
+CREATE POLICY pedidos_propios_select            -- 1. Nombre de la política 
+ON pedidos                                      -- 2. Tabla a la que aplica
+FOR SELECT                                      -- 3. Operación SQL (SELECT, INSERT, UPDATE, DELETE o ALL)
+TO app_user, soporte_role                       -- 4. Rol(es) al que afecta esta regla  
+USING (                                         -- 5. Condición sobre filas existentes
+    usuario_id = current_setting('app.current_user_id')::int
+    );
+
+-- 3. Evitar que inserten pedidos a nombre de otro usuario
+CREATE POLICY pedidos_propios_insert
+ON pedidos
+FOR INSERT
+TO app_user
+WITH CHECK (usuario_id = current_setting('app.current_user_id')::int);
+```
+
+USING (...): filtra las filas existentes que el usuario puede leer, actualizar o borrar.
+
+TO (...): **`TO app_user`**: Especifica el rol objetivo. Puedes poner varios separados por comas (`TO app_user, soporte_role`) o usar `PUBLIC` si quieres que aplique a todos.
+
+WITH CHECK (...): valida las filas nuevas o modificadas que el usuario intenta insertar o guardar.
+
+### Ventajas y precauciones clave
+
+- **Ventajas:**
+
+  - **Seguridad centralizada:** la regla vive en la base de datos, no duplicada en distintos microservicios o consultas.
+
+  - **Ideal para multi-tenant:** aísla datos entre clientes/organizaciones con menor riesgo de olvidar un `WHERE tenant_id = ...`.
+
+  - **Muy usado en plataformas BaaS:** como Supabase o bases de datos en la nube con autenticación integrada.
+
+- **Precauciones:**
+
+  - **Rendimiento:** si la expresión de la política no está indexada o llama a funciones costosas por fila, las consultas pueden volverse lentas.
+
+  - **Complejidad de depuración:** si una consulta devuelve vacío, a veces cuesta notar si es por los datos o por una política RLS restrictiva.
+
+  - **Conexiones / pooling:** si pasas el identificador de usuario mediante variables de sesión (`SET`), asegúrate de limpiarlas o establecerlas en cada transacción/petición cuando uses *connection pooling*.
+
+Compatibilidad entre motores.
+
+El soporte de **Row-Level Security (RLS)** varía mucho entre motores: algunos lo tienen **de forma nativa y declarativa**, otros lo implementan mediante **paquetes/funciones** y otros **no lo traen nativo** (hay que simularlo con vistas, procedimientos o en la aplicación).
+
+| Motor | Soporte RLS | Desde | Cómo funciona / Notas clave |
+|----------|----------|-------|----------------------------------------------|
+| **PostgreSQL** | **Nativo** | 9.5 | `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + `CREATE POLICY` (`USING` y `WITH CHECK`). Soporta políticas permisivas (`OR`) y restrictivas (`AND`). Los superusuarios y dueños de tabla pueden saltárselo salvo que uses `FORCE ROW LEVEL SECURITY`. |
+| **SQL Server** | **Nativo** | 2016 | `CREATE SECURITY POLICY` apoyándose en funciones *inline table-valued* para **predicados de filtro** (`FILTER`, oculta filas) y **predicados de bloqueo** (`BLOCK`, impide escrituras inválidas). |
+| **Oracle** | **Nativo (VPD)** | 8i | Conocido como *Virtual Private Database* (VPD), gestionado mediante el paquete `DBMS_RLS` en PL/SQL; una función devuelve dinámicamente la condición `WHERE` que se añade a la consulta. |
+| **MySQL** | **No nativo** | — | No tiene `CREATE POLICY` nativo. Se suele simular restringiendo el acceso directo a tablas y exponiendo **vistas** con `WHERE` (a veces combinadas con variables de sesión o triggers), o filtrando en la capa de aplicación. |
+| **MariaDB** | **No nativo** | — | Tampoco cuenta con políticas RLS declarativas equivalentes a PostgreSQL; se recurre a patrones similares con vistas, `DEFINER` y funciones/variables de control. |
+| **SQLite** | **No nativo** | — | No dispone de RLS ni de un modelo multiusuario de permisos en la base de datos. |
+
+### Diferencias prácticas que conviene tener en cuenta
+
+- **Sintaxis y modelo mental:** PostgreSQL es muy directo y declarativo en SQL puro (`CREATE POLICY`); SQL Server separa claramente filtrar lecturas de bloquear escrituras mediante políticas y funciones de tabla; Oracle lleva décadas haciéndolo vía PL/SQL (`DBMS_RLS`).
+
+- **Excepciones por rol o dueño:** En PostgreSQL, el dueño de la tabla no está sujeto a RLS por defecto a menos que apliques `FORCE ROW LEVEL SECURITY`. En motores donde se simula con vistas, el truco suele ser quitar permisos directos sobre la tabla base y dar permisos solo sobre la vista.
+
+- **Portabilidad:** Si tu aplicación debe correr en varios motores (por ejemplo, PostgreSQL y MySQL), depender de políticas RLS nativas te ata a las capacidades y matices de cada motor.
+
+Ejemplo completo de creación y so de RLS en postgres:
+
+::: practica
+Vamos a ver un ejemplo de punta a punta en **PostgreSQL**: desde crear el rol y darle permisos hasta establecer `app.current_user_id` dentro de una transacción y comprobar qué filas devuelve.
+
+### Preparación: rol, tabla, permisos y políticas
+
+``` sql
+-- 1. Crear el rol de aplicación (sin privilegios de superusuario)
+CREATE ROLE app_user LOGIN PASSWORD 'una_clave_segura';
+
+-- 2. Crear la tabla de ejemplo
+CREATE TABLE pedidos (
+  id SERIAL PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  total NUMERIC(10, 2) NOT NULL
+);
+
+INSERT INTO pedidos (usuario_id, total) VALUES
+  (1, 45.00),
+  (1, 120.50),
+  (2, 80.00);
+
+-- 3. Dar permisos básicos de tabla al rol (necesarios además de RLS)
+GRANT CONNECT ON DATABASE CURRENT_DATABASE() TO app_user;
+GRANT USAGE ON SCHEMA public TO app_user;
+GRANT SELECT, INSERT ON TABLE pedidos TO app_user;
+GRANT USAGE, SELECT ON SEQUENCE pedidos_id_seq TO app_user;
+
+-- 4. Activar RLS y crear políticas
+ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY pedidos_propios_select
+ON pedidos
+FOR SELECT
+TO app_user
+USING (
+  nullif(current_setting('app.current_user_id', true), '')::int = usuario_id
+);
+
+CREATE POLICY pedidos_propios_insert
+ON pedidos
+FOR INSERT
+TO app_user
+WITH CHECK (
+  nullif(current_setting('app.current_user_id', true), '')::int = usuario_id
+);
+```
+
+**Detalle clave:** `current_setting('app.current_user_id', true)` con el segundo argumento `true` evita que PostgreSQL lance un error si la variable aún no se ha definido en la sesión (devuelve `NULL` en lugar de fallar), y `nullif(..., '')` evita errores al convertir a `::int` si alguien la dejó vacía.
+
+### Establecer `app.current_user_id` y consultar
+
+En aplicaciones reales con *connection pooling*, lo más seguro es usar **`SET LOCAL`** dentro de una **transacción** (`BEGIN ... COMMIT`), porque el valor desaparece automáticamente al terminar la transacción y no contamina la conexión para el siguiente cliente.
+
+``` sql
+-- Cambiar a la sesión del rol de aplicación
+SET ROLE app_user;
+
+-- Transacción actuando como usuario_id = 1
+BEGIN;
+  SELECT set_config('app.current_user_id', '1', true); -- equivale a SET LOCAL app.current_user_id = '1'
+
+  -- Solo devuelve los pedidos del usuario 1 (id 1 y 2)
+  SELECT id, usuario_id, total FROM pedidos;
+
+  -- Inserta un pedido válido para el usuario 1
+  INSERT INTO pedidos (usuario_id, total) VALUES (1, 30.00);
+COMMIT;
+
+-- Volver al rol anterior
+RESET ROLE;
+```
+
+Si en otra transacción pasas `'2'`, `SELECT * FROM pedidos` solo devolverá el pedido del usuario `2`. Si intentas hacer `INSERT INTO pedidos (usuario_id, total) VALUES (2, 99.00)` estando configurado como usuario `1`, PostgreSQL rechazará la fila por `WITH CHECK`.
+
+### Nota importante sobre el dueño de la tabla
+
+Si ejecutas las consultas conectado como el **dueño de la tabla** o un **superuser**, PostgreSQL **no aplica RLS** a menos que ejecutes:
+
+``` sql
+ALTER TABLE pedidos FORCE ROW LEVEL SECURITY;
+```
+
+Aun así, lo habitual en producción es que el dueño de la tabla sea un rol de migraciones/administración y que la aplicación se conecte siempre con un rol como `app_user`
+:::
+::::
