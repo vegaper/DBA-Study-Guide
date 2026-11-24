@@ -27,20 +27,33 @@ SELECT VERSION() AS version_servidor,
 
 SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
 ```
+```
++-------------------------+----------------+
+| version_servidor        | cuenta_mysql   |
++-------------------------+----------------+
+| 8.4.13-0ubuntu0.26.04.2 | root@localhost |
++-------------------------+----------------+
++-----------------+-------+
+| Variable_name   | Value |
++-----------------+-------+
+| event_scheduler | ON    |
++-----------------+-------+
+```
 
-Esperad una versión 8.4.x. CURRENT_USER() identifica la cuenta que MySQL ha asociado a vuestra conexión. Necesitaréis CREATE sobre el esquema de aula, EVENT para gestionar sus eventos y SELECT, INSERT y UPDATE sobre las tablas que usaréis.
+Esperad una versión 8.4.x. CURRENT_USER() identifica la cuenta que MySQL ha asociado a vuestra conexión. Necesitaréis permiso `CREATE` sobre el esquema de aula, `EVENT` para gestionar sus eventos y `SELECT`, `INSERT` y `UPDATE` sobre las tablas que usaréis.
 
 # Paso 2 Confirmar que el programador está activo
 
-Anotad el valor original. Con ON podéis continuar. Si veis OFF, la cuenta administradora puede activarlo con el comando siguiente. Con DISABLED, hace falta que el docente revise la configuración de arranque y reinicie la instancia de aula.
-
+Anotad el valor original. Con `ON` podéis continuar. Si veis `OFF`, la cuenta administradora puede activarlo con el comando siguiente. 
 ```sql
 -- Solo si el valor inicial es OFF y gestionáis la instancia.
 SET GLOBAL event_scheduler = ON;
 SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
 ```
+Con `DISABLED`, hace falta que el docente revise la configuración de arranque y reinicie la instancia de aula.
 
-El valor esperado es ON. SET GLOBAL afecta a toda la instancia. Requiere el privilegio SYSTEM_VARIABLES_ADMIN o SUPER. En un servidor compartido, pedid al docente que gestione este ajuste.
+El valor esperado es `ON`. 
+SET GLOBAL afecta a toda la instancia. Requiere el privilegio `SYSTEM_VARIABLES_ADMIN` o `SUPER`. En un servidor compartido, pedid al docente que gestione este ajuste.
 
 # Paso 3 Fijar la zona horaria de la conexión
 
@@ -50,8 +63,15 @@ SELECT @@SESSION.time_zone AS zona_horaria,
        @@SESSION.autocommit AS autocommit,
        CURRENT_TIMESTAMP AS ahora_utc;
 ```
-
-Esperad +00:00 y autocommit igual a 1. Si devuelve 0, activadlo con SET SESSION autocommit = 1; en esta conexión recién abierta. Usaremos UTC en todos los horarios. Si reconectáis, repetid este ajuste de sesión y seleccionad de nuevo el esquema.
+```
++--------------+------------+---------------------+
+| zona_horaria | autocommit | ahora_utc           |
++--------------+------------+---------------------+
+| +00:00       |          1 | 2026-11-24 09:49:13 |
++--------------+------------+---------------------+
+```
+Esperad +00:00 y autocommit igual a 1. Si devuelve 0, activadlo con `SET SESSION autocommit = 1;` en esta conexión recién abierta. 
+Usaremos UTC en todos los horarios. Si reconectáis, repetid este ajuste de sesión y seleccionad de nuevo el esquema.
 
 # Crear los datos de partida
 
