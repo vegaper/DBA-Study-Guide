@@ -1,0 +1,439 @@
+---
+title: "Eventos programados"
+format: html
+---
+
+Los **Eventos Programados** son tareas o bloques de código SQL que se ejecutan automáticamente según una planificación temporal definida (de forma similar a `cron` en Linux o el Programador de Tareas en Windows), pero gestionados directamente por el motor de la base de datos.
+
+------------------------------------------------------------------------
+
+# Conceptos Fundamentales y Arquitectura
+
+- **Programador integrado:** MySQL Server cuenta con su propio hilo demonio (*thread*) interno llamado *Event Scheduler* encargado de vigilar y ejecutar las tareas programadas.
+- **Ámbito (Scope):** Los eventos son objetos que pertenecen a una **base de datos (esquema)**, no a una tabla específica.
+- **Tipos de ejecución:** Se pueden programar para ejecutarse **una sola vez** (en una fecha/hora exacta o relativa) o de forma **recurrente/repetitiva** (cada cierto intervalo de tiempo).
+- **Diferencia con Triggers (Disparadores):** Mientras que un *Trigger* reacciona ante un evento de manipulación de datos (`INSERT`, `UPDATE`, `DELETE`), un *Event* reacciona exclusivamente al paso del tiempo.
+
+------------------------------------------------------------------------
+
+# Configuración y Estado del Event Scheduler
+
+Por defecto, dependiendo de la versión de MySQL o MariaDB, el planificador puede venir activado o desactivado.
+
+## Consultar el estado actual
+
+``` sql
+-- Sintaxis
+SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
+```
+
+**Posibles estados:** \* `ON`: El planificador está activo y ejecutando eventos. \* `OFF`: El planificador está detenido. Se puede activar en caliente. \* `DISABLED`: El planificador fue deshabilitado al arrancar el servidor (mediante configuración `--event-scheduler=DISABLED`). **No** se puede activar en caliente; requiere reiniciar el servicio de MySQL modificando su archivo de configuración (`my.cnf` o `my.ini`).
+
+## Activar o desactivar en caliente
+
+Requiere tener los privilegios `SYSTEM_VARIABLES_ADMIN` o `SUPER`.
+
+``` sql
+-- Sintaxis
+SET GLOBAL event_scheduler = {ON | OFF};
+```
+
+``` sql
+-- Ejemplo
+SET GLOBAL event_scheduler = ON;
+```
+
+> **Nota para DBAs:** Cambiar esta variable con `SET GLOBAL` no persiste tras un reinicio del servidor a menos que se utilice `SET PERSIST event_scheduler = ON;` (MySQL 8.0+) o se añada `event_scheduler=ON` bajo la sección `[mysqld]` en el archivo `my.cnf`.
+
+------------------------------------------------------------------------
+
+# Gestión de Zonas Horarias (Time Zones)
+
+Un error crítico en administración de bases de datos ocurre por la desincronización de husos horarios. **La zona horaria de la sesión en la que se crea el evento queda asociada permanentemente a dicho evento.**
+
+## Comprobar la configuración horaria en MySQL
+
+``` sql
+-- Sintaxis y Ejemplo
+SELECT 
+    @@GLOBAL.time_zone AS zona_global,
+    @@SESSION.time_zone AS zona_sesion,
+    @@system_time_zone AS zona_sistema,
+    NOW() AS fecha_hora_mysql;
+```
+
+*Por defecto, MySQL utiliza `SYSTEM`, heredando la hora del sistema operativo anfitrión, la cual puede estar en UTC y no coincidir con la hora local.*
+
+## Ajustar la zona horaria en la sesión (antes de crear el evento)
+
+Si deseas que el evento se ejecute según la hora peninsular española, debes fijarlo en tu sesión antes de lanzar el `CREATE EVENT`:
+
+``` sql
+-- Sintaxis
+SET SESSION time_zone = 'Region/Ciudad';
+```
+
+``` sql
+-- Ejemplo
+SET SESSION time_zone = 'Europe/Madrid';
+```
+
+## Ajustar la zona horaria a nivel de Sistema Operativo (Linux)
+
+Si el servidor entero tiene mal la hora, se debe corregir en el sistema operativo y reiniciar MySQL para que recargue la variable `@@system_time_zone`:
+
+``` bash
+# 1. Ver el estado actual de fecha y zona horaria en Linux
+timedatectl
+
+# 2. Cambiar la zona horaria del sistema
+sudo timedatectl set-timezone Europe/Madrid
+
+# 3. Reiniciar MySQL para que aplique la nueva hora del sistema
+sudo systemctl restart mysql
+```
+
+------------------------------------------------------------------------
+
+# Creación de Eventos
+
+Para crear un evento se requiere el privilegio `EVENT` sobre el esquema correspondiente. Si el cuerpo del evento contiene más de una sentencia SQL, es obligatorio cambiar el delimitador (`DELIMITER`).
+
+## Eventos de una sola ejecución (`AT`)
+
+Se ejecutan una única vez en un momento determinado.
+
+``` sql
+-- Sintaxis
+DELIMITER $$
+
+CREATE [DEFINER = usuario] EVENT [IF NOT EXISTS] nombre_bd.nombre_evento
+ON SCHEDULE AT timestamp [+ INTERVAL valor unidad]
+[ON COMPLETION [NOT] PRESERVE]
+[ENABLE | DISABLE | DISABLE ON SLAVE]
+[COMMENT 'comentario']
+DO
+BEGIN
+    -- Sentencias SQL a ejecutar
+END$$
+
+DELIMITER ;
+```
+
+- **`ON COMPLETION PRESERVE`:** Por defecto, cuando un evento de una sola ejecución termina, **MySQL lo borra automáticamente** (`NOT PRESERVE`). Si deseas conservarlo en el sistema (quedará en estado `DISABLED`) para auditoría o para reactivarlo manualmente en el futuro, debes especificar `ON COMPLETION PRESERVE`.
+
+``` sql
+-- Ejemplo: Realizar una copia de seguridad de una tabla dentro de 2 minutos y conservar el evento
+DELIMITER $$
+
+CREATE EVENT tienda.ev_backup_puntual_clientes
+ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 2 MINUTE
+ON COMPLETION PRESERVE
+DO
+BEGIN
+    CREATE TABLE tienda.clientes_backup_temp AS SELECT * FROM tienda.clientes;
+END$$
+
+DELIMITER ;
+```
+
+## Eventos recurrentes o repetitivos (`EVERY`)
+
+Se ejecutan periódicamente según un intervalo. Pueden tener una fecha de inicio (`STARTS`) y una fecha de fin (`ENDS`).
+
+``` sql
+-- Sintaxis
+DELIMITER $$
+
+CREATE [DEFINER = usuario] EVENT [IF NOT EXISTS] nombre_bd.nombre_evento
+ON SCHEDULE EVERY valor unidad
+[STARTS timestamp [+ INTERVAL valor unidad]]
+[ENDS timestamp [+ INTERVAL valor unidad]]
+[ON COMPLETION [NOT] PRESERVE]
+[ENABLE | DISABLE | DISABLE ON SLAVE]
+[COMMENT 'comentario']
+DO
+BEGIN
+    -- Sentencias SQL a ejecutar
+END$$
+
+DELIMITER ;
+```
+
+*Unidades de tiempo válidas:* `YEAR`, `QUARTER`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `WEEK`, `SECOND` (y combinaciones como `DAY_HOUR`, `MINUTE_SECOND`, etc.).
+
+``` sql
+-- Ejemplo: Evento que se ejecuta cada minuto, empezando en 1 minuto y finalizando a los 210 segundos
+DELIMITER $$
+
+CREATE EVENT tienda.ev_monitor_sesiones
+ON SCHEDULE EVERY 1 MINUTE
+STARTS CURRENT_TIMESTAMP + INTERVAL 1 MINUTE
+ENDS CURRENT_TIMESTAMP + INTERVAL 210 SECOND
+ON COMPLETION PRESERVE
+DO
+BEGIN
+    INSERT INTO tienda.log_actividad (fecha, usuarios_activos)
+    VALUES (NOW(), (SELECT COUNT(*) FROM information_schema.processlist));
+END$$
+
+DELIMITER ;
+```
+
+------------------------------------------------------------------------
+
+# Seguridad, Permisos y Mantenimiento
+
+## Contexto de ejecución (`DEFINER`)
+
+A diferencia de los procedimientos almacenados, los eventos **no tienen cláusula `SQL SECURITY INVOKER`**, ya que no hay ningún usuario conectado invocándolos en el momento de su ejecución. \* Todo evento se ejecuta siempre con los privilegios del usuario especificado en la cláusula **`DEFINER`**. \* Si se omite `DEFINER`, MySQL asigna automáticamente al usuario que ejecutó la sentencia `CREATE EVENT` (`CURRENT_USER`). \* **Peligro DBA:** Si el usuario que creó el evento es eliminado de la base de datos en el futuro, el evento fallará al intentar ejecutarse.
+
+## Consultar eventos existentes
+
+``` sql
+-- Sintaxis básica
+SHOW EVENTS FROM nombre_bd;
+
+-- Sintaxis para ver el código exacto con el que se creó (incluye zona horaria y definer)
+SHOW CREATE EVENT nombre_bd.nombre_evento;
+
+-- Sintaxis consultando el diccionario de datos (INFORMATION_SCHEMA)
+SELECT 
+    EVENT_SCHEMA,
+    EVENT_NAME,
+    DEFINER,
+    TIME_ZONE,
+    EVENT_TYPE,
+    EXECUTE_AT,
+    INTERVAL_VALUE,
+    INTERVAL_FIELD,
+    STATUS,
+    LAST_EXECUTED
+FROM INFORMATION_SCHEMA.EVENTS
+WHERE EVENT_SCHEMA = 'nombre_bd';
+```
+
+``` sql
+-- Ejemplo
+SHOW EVENTS FROM tienda;
+
+SELECT EVENT_NAME, STATUS, EXECUTE_AT, LAST_EXECUTED 
+FROM INFORMATION_SCHEMA.EVENTS 
+WHERE EVENT_SCHEMA = 'tienda';
+```
+
+## Modificar, Pausar y Reanudar eventos (`ALTER EVENT`)
+
+Permite cambiar la programación, el código `DO`, o simplemente desactivar temporalmente un evento sin borrarlo.
+
+``` sql
+-- Sintaxis
+ALTER EVENT nombre_bd.nombre_evento
+[ON SCHEDULE ...]
+[RENAME TO nuevo_nombre_bd.nuevo_nombre]
+[ON COMPLETION [NOT] PRESERVE]
+[ENABLE | DISABLE | DISABLE ON SLAVE]
+[DO nuevo_cuerpo];
+```
+
+``` sql
+-- Ejemplos de pausar y reanudar
+ALTER EVENT tienda.ev_monitor_sesiones DISABLE; -- Pausar
+ALTER EVENT tienda.ev_monitor_sesiones ENABLE;  -- Reanudar
+
+-- Ejemplo de cambio de frecuencia
+ALTER EVENT tienda.ev_monitor_sesiones 
+ON SCHEDULE EVERY 5 MINUTE;
+```
+
+## Eliminar eventos (`DROP EVENT`)
+
+``` sql
+-- Sintaxis
+DROP EVENT [IF EXISTS] nombre_bd.nombre_evento;
+```
+
+``` sql
+-- Ejemplo
+DROP EVENT IF EXISTS tienda.ev_monitor_sesiones;
+```
+
+------------------------------------------------------------------------
+
+# Casos de Uso Más Comunes en Producción
+
+En entornos empresariales, los eventos se utilizan para tareas de mantenimiento y lógica de negocio diferida:
+
+## Purgado y archivado de datos históricos (Tablas de Logs)
+
+Evita que las tablas de auditoría o sesiones crezcan indefinidamente degradando el rendimiento.
+
+``` sql
+DELIMITER $$
+
+CREATE EVENT mantenimiento.ev_purgar_logs_antiguos
+ON SCHEDULE EVERY 1 DAY
+STARTS '2026-11-25 03:00:00' -- Ejecutar de madrugada (horas valle)
+DO
+BEGIN
+    -- Borrar en lotes (LIMIT) para evitar bloqueos largos en tablas InnoDB
+    DELETE FROM app.logs_acceso 
+    WHERE fecha_creacion < NOW() - INTERVAL 90 DAY 
+    LIMIT 10000;
+END$$
+
+DELIMITER ;
+```
+
+## Expiración automática de estados (Carritos, Reservas, Tokens)
+
+Libera stock retenido o invalida tokens de recuperación de contraseña caducados.
+
+``` sql
+DELIMITER $$
+
+CREATE EVENT ecommerce.ev_liberar_carritos_abandonados
+ON SCHEDULE EVERY 15 MINUTE
+DO
+BEGIN
+    UPDATE ecommerce.reservas_stock
+    SET estado = 'EXPIRADO'
+    WHERE estado = 'PENDIENTE' 
+      AND fecha_reserva < NOW() - INTERVAL 30 MINUTE;
+END$$
+
+DELIMITER ;
+```
+
+## Generación de tablas resumen / Data Marts (Pre-agregación)
+
+Calcula métricas pesadas durante la noche para que los dashboards de BI carguen al instante por la mañana.
+
+``` sql
+DELIMITER $$
+
+CREATE EVENT bi.ev_resumen_ventas_diarias
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_DATE + INTERVAL 1 DAY + INTERVAL 1 HOUR -- 01:00 AM
+DO
+BEGIN
+    INSERT INTO bi.ventas_consolidadas (fecha, total_pedidos, ingresos_totales)
+    SELECT DATE(fecha_pedido), COUNT(*), SUM(total)
+    FROM ecommerce.pedidos
+    WHERE DATE(fecha_pedido) = CURDATE() - INTERVAL 1 DAY
+      AND estado = 'COMPLETADO';
+END$$
+
+DELIMITER ;
+```
+
+------------------------------------------------------------------------
+
+# Compatibilidad con Otros Motores de Bases de Datos
+
+No todos los Sistemas Gestores de Bases de Datos (SGBD) implementan el estándar de eventos de la misma manera.
+
+## MariaDB
+
+Al ser un *fork* de MySQL, la sintaxis y funcionamiento son **prácticamente idénticos al 100%**. Utiliza `event_scheduler`, `CREATE EVENT`, `INFORMATION_SCHEMA.EVENTS` y las mismas reglas de `DEFINER`.
+
+## PostgreSQL
+
+PostgreSQL **no tiene un programador de eventos integrado de forma nativa** en su núcleo estándar. Para lograr esto en producción se utilizan dos enfoques: \* **Opción recomendada (Extensión `pg_cron`):** Permite programar tareas SQL directamente dentro de la base de datos usando sintaxis *cron* de Linux. \* **Opción clásica:** Usar el `cron` del sistema operativo llamando al cliente de consola `psql -c "CALL mi_procedimiento();"`.
+
+``` sql
+-- Sintaxis en PostgreSQL (usando la extensión pg_cron)
+SELECT cron.schedule('nombre_tarea', 'formato_cron', 'sentencia_sql');
+```
+
+``` sql
+-- Ejemplo en PostgreSQL (ejecutar todos los días a las 03:30 AM)
+SELECT cron.schedule(
+    'purgar-sesiones', 
+    '30 3 * * *', 
+    $$DELETE FROM sesiones WHERE expiracion < NOW()$$
+);
+
+-- Eliminar tarea en pg_cron
+SELECT cron.unschedule('purgar-sesiones');
+```
+
+## Oracle Database
+
+Oracle no usa `CREATE EVENT`. Dispone de un paquete interno muy potente llamado **`DBMS_SCHEDULER`** (que sustituyó al antiguo `DBMS_JOB`).
+
+``` sql
+-- Sintaxis en Oracle
+BEGIN
+    DBMS_SCHEDULER.CREATE_JOB (
+        job_name        => 'nombre_trabajo',
+        job_type        => 'PLSQL_BLOCK',
+        job_action      => 'BEGIN sentencia; END;',
+        start_date      => SYSTIMESTAMP,
+        repeat_interval => 'FREQ=HOURLY; INTERVAL=1',
+        enabled         => TRUE
+    );
+END;
+/
+```
+
+``` sql
+-- Ejemplo en Oracle (ejecutar procedimiento cada día a las 02:00)
+BEGIN
+    DBMS_SCHEDULER.CREATE_JOB (
+        job_name        => 'JOB_LIMPIEZA_DIARIA',
+        job_type        => 'STORED_PROCEDURE',
+        job_action      => 'SP_PURGAR_HISTORICO',
+        start_date      => SYSTIMESTAMP,
+        repeat_interval => 'FREQ=DAILY; BYHOUR=2; BYMINUTE=0; BYSECOND=0',
+        enabled         => TRUE,
+        comments        => 'Limpieza diaria de logs'
+    );
+END;
+/
+```
+
+## Microsoft SQL Server
+
+SQL Server delega esta función en un servicio externo al motor principal llamado **SQL Server Agent** (no disponible en la edición gratuita *Express*). Se gestiona mediante interfaz gráfica (SSMS) o mediante procedimientos almacenados del sistema en la base de datos `msdb`.
+
+``` sql
+-- Ejemplo simplificado en SQL Server (T-SQL)
+USE msdb;
+GO
+EXEC dbo.sp_add_job @job_name = N'Limpieza_Logs_Diaria';
+EXEC dbo.sp_add_jobstep 
+    @job_name = N'Limpieza_Logs_Diaria',
+    @step_name = N'Ejecutar_Delete',
+    @subsystem = N'TSQL',
+    @command = N'DELETE FROM MiBD.dbo.Logs WHERE Fecha < DATEADD(day, -30, GETDATE());';
+EXEC dbo.sp_add_schedule 
+    @schedule_name = N'Diario_Madrugada',
+    @freq_type = 4, -- Diario
+    @freq_interval = 1,
+    @active_start_time = 030000; -- 03:00:00
+EXEC dbo.sp_attach_schedule @job_name = N'Limpieza_Logs_Diaria', @schedule_name = N'Diario_Madrugada';
+EXEC dbo.sp_add_jobserver @job_name = N'Limpieza_Logs_Diaria';
+GO
+```
+
+------------------------------------------------------------------------
+
+# Recomendaciones y Buenas Prácticas para DBAs
+
+1.  **Encapsula la lógica en Procedimientos Almacenados:** No escribas cientos de líneas de código dentro de un `CREATE EVENT`. Crea un `PROCEDURE` bien probado y haz que el evento simplemente lo invoque (`DO CALL sp_mi_tarea();`). Esto facilita el mantenimiento, la depuración y permite ejecutar la tarea manualmente si falla.
+2.  **Usa cuentas de servicio como `DEFINER`:** Nunca dejes como `DEFINER` el usuario personal de un desarrollador o administrador (`'juan'@'%'`). Crea un usuario dedicado sin acceso interactivo (ej. `'event_executor'@'localhost'`) con los mínimos privilegios necesarios (Principio de Mínimo Privilegio) para evitar que los eventos se rompan cuando alguien abandone la empresa.
+3.  **Implementa tablas de auditoría y manejo de errores:** Los eventos se ejecutan en segundo plano; si fallan, el error solo quedará registrado en el *Error Log* de MySQL (`mysqld.log`), el cual nadie mira constantemente. Añade un manejador `DECLARE EXIT HANDLER FOR SQLEXCEPTION` dentro de tus procedimientos para registrar cualquier fallo en una tabla `errores_eventos` y así poder monitorizarlo.
+4.  **Cuidado con la replicación (Master-Slave / Primary-Replica):** En arquitecturas con réplicas, si un evento modifica datos en el nodo primario, esos cambios viajarán por el *Binary Log* hacia las réplicas. Por defecto, MySQL marca los eventos creados en el primario como `DISABLE ON SLAVE` en las réplicas para evitar que el evento se ejecute dos veces (una en el primario y otra en la réplica). **No lo cambies a `ENABLE`** a menos que estés realizando un *failover* (promoción de réplica a primario).
+5.  **Controla el solapamiento de ejecuciones:** Si programas un evento `EVERY 1 MINUTE`, pero la consulta `DO` tarda 3 minutos en ejecutarse, MySQL lanzará una segunda instancia mientras la primera sigue corriendo, pudiendo provocar cuellos de botella o bloqueos (*deadlocks*). Si existe riesgo de solapamiento, utiliza funciones de bloqueo lógico como `GET_LOCK('mi_evento', 0)` al inicio del bloque para asegurar exclusión mutua.
+6.  **Planifica en horas valle y borra por lotes:** Las tareas pesadas (`DELETE`, `OPTIMIZE`, agregaciones) deben programarse en horas de baja carga (ej. 03:00 AM). Si vas a borrar millones de filas, hazlo en bucles con `LIMIT` (ej. de 5.000 en 5.000) para no saturar el *Undo Log* ni bloquear las transacciones de los usuarios.
+
+# Errores comunes
+
+| Qué observáis | **Qué puede haber pasado** | **Qué conviene revisar** |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--|--|
+| El evento existe y sigue sin arrancar. | Programador parado, evento pausado o fecha futura. | Contrastad event_scheduler, STATUS y el horario con la hora del servidor. |
+| La tarea se inicia a una hora inesperada. | La zona del evento difiere de la que estáis usando para interpretar la hora. | Consultad TIME_ZONE y la fecha prevista. Si procede, reprogramad con la zona de sesión elegida. |
+| El evento ha desaparecido del listado. | Su horario venció con la opción predeterminada de conservación. | Revisad ON COMPLETION. Usad PRESERVE si necesitáis consultar después la definición y su último inicio. |
+| Hay hora de inicio, pero falta el efecto esperado. | Falló una sentencia o su condición no encontró filas. | Comprobad el efecto, el registro de errores, el filtro SQL y los permisos de DEFINER. |
+| Hay ejecuciones simultáneas. | Una tarea ocupa más tiempo que el intervalo entre turnos. | Medid la duración, ajustad el intervalo y, si hace falta, coordinad las ejecuciones con un bloqueo. |

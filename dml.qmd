@@ -183,8 +183,8 @@ Aunque esto es genial durante la fase de preparación de la base de datos, debes
 ## Resumen Comparativo de Inserciones
 
 
-|----------------------------|--------------------------------------------|
-| **Escenario** | **Comportamiento en la Base de Datos** |
+| Escenario | Comportamiento en la Base de Datos |
+| :--- | :--- |
 | **Columna omitida con `AUTO_INCREMENT`** | Genera automáticamente el siguiente ID entero. |
 | **Columna omitida con `DEFAULT`** | Inserta el valor predefinido en la definición del campo. |
 | **Columna omitida sin `DEFAULT` (Permite `NULL`)** | Asigna `NULL` automáticamente. |
@@ -337,8 +337,8 @@ SELECT * FROM prueba_insert_con_fallo;
 ## Resumen de Buenas Prácticas
 
 
-|--------------------------|----------------------------------------------|
-| **Acción** | **Recomendación** |
+| Acción | Recomendación |
+| :--- | :--- |
 | **Antes de ejecutar un `UPDATE`** | Ejecuta un `SELECT * FROM tabla WHERE ...` con el mismo filtro para verificar las filas afectadas. |
 | **Modificar Claves Primarias** | **Evitar.** Las claves primarias autoincrementales (`id_objeto`) no deben modificarse salvo casos excepcionales. |
 | **Uso de Cláusula `LIMIT`** | En MySQL puedes añadir `LIMIT n` al final del `UPDATE` para asegurarte de no modificar más de $n$ filas por accidente. |
@@ -362,8 +362,8 @@ VALUES(columna): Puedes usar la función especial VALUES() dentro de la sección
 ## Motores Compatibles y Equivalencias
 
 
-|------------------|------------------------------------------------------|
-| **Motor de Base de Datos** | **Comando / Equivalente** |
+| Motor de Base de Datos | Comando / Equivalente |
+| :--- | :--- |
 | **MySQL / MariaDB** | `INSERT INTO ... ON DUPLICATE KEY UPDATE ...` |
 | **PostgreSQL** (v9.5+) | `INSERT INTO ... ON CONFLICT (columna) DO UPDATE SET ...` |
 | **SQLite** (v3.24+) | `INSERT INTO ... ON CONFLICT (columna) DO UPDATE SET ...` o `INSERT OR REPLACE INTO ...` |
@@ -546,10 +546,10 @@ WHERE ubicacion_actual IS NOT NULL;
 
 ## Comprativa de Errores Comunes con `NULL`
 
-|-------------------|---------------------------|---------------------------| 
-| **Consulta SQL** | **Resultado en MySQL** | **Causa Técnica** | 
-| `DELETE FROM objetos WHERE ubicacion_actual = NULL;` | **0 filas afectadas** (Incorrecto) | `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. | 
-| `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. | 
+| Consulta SQL | Resultado en MySQL | Causa Técnica |
+| :--- | :--- | :--- |
+| `DELETE FROM objetos WHERE ubicacion_actual = NULL;` | **0 filas afectadas** (Incorrecto) | `=` compara valores concretos; con `NULL` evalúa como `UNKNOWN`. |
+| `DELETE FROM objetos WHERE ubicacion_actual != NULL;` | **0 filas afectadas** (Incorrecto) | `!=` o `<>` tampoco funcionan con `NULL`. |
 | `DELETE FROM objetos WHERE ubicacion_actual IS NULL;` | **Elimina las filas de forma correcta** | `IS NULL` es el operador estándar en SQL para evaluar la ausencia de valor. |
 
 ### El Riesgo de `DELETE` sin `WHERE`
@@ -636,13 +636,13 @@ Cuando hay filas asociadas en la tabla secundaria, la regla `ON DELETE` determin
 
 #### Tabla Resumen de Comportamiento
 
-|-------------------|-------------------|----------------------------------| 
-| Regla ON DELETE | **¿Tiene registros relacionados?** | **Acción al hacer DELETE FROM padre WHERE id = X** | 
-| RESTRICT / NO ACTION | **No** | Se elimina el registro del padre sin problemas. | 
-| RESTRICT / NO ACTION | **Sí** | **Error (Bloqueado).** No se elimina nada. | 
-| CASCADE | **No** | Se elimina el registro del padre. | 
-| CASCADE | **Sí** | Se elimina el padre **y todas sus filas asociadas en la tabla hija**. | 
-| SET NULL | **No** | Se elimina el registro del padre. | 
+| Regla ON DELETE | **¿Tiene registros relacionados?** | **Acción al hacer DELETE FROM padre WHERE id = X** |
+| :--- | :--- | :--- |
+| RESTRICT / NO ACTION | **No** | Se elimina el registro del padre sin problemas. |
+| RESTRICT / NO ACTION | **Sí** | **Error (Bloqueado).** No se elimina nada. |
+| CASCADE | **No** | Se elimina el registro del padre. |
+| CASCADE | **Sí** | Se elimina el padre **y todas sus filas asociadas en la tabla hija**. |
+| SET NULL | **No** | Se elimina el registro del padre. |
 | SET NULL | **Sí** | Se elimina el padre y la clave foránea en la tabla hija **pasa a ser `NULL`**. |
 
 ------------------------------------------------------------------------

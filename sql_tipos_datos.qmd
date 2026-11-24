@@ -28,11 +28,9 @@ SELECT nombre, encendido FROM dispositivos WHERE encendido = 1;
 ```
 
 ## Motores SQL donde existe
-
-
-|---------------------|---------------------|------------------------------|
-| **Motor SQL** | **Soporte** | **Observaciones** |
-| **SQL Server** | Sí | Se utiliza comunmente en lugar del tipo `BOOLEAN`. |
+| Motor SQL | Soporte | Observaciones |
+| :--- | :--- | :--- |
+| **SQL Server** | Sí | Se utiliza comúnmente en lugar del tipo `BOOLEAN`. |
 | **MySQL / MariaDB** | Sí | Permite definir `BIT(M)` de 1 a 64 bits. |
 | **PostgreSQL** | Sí | Permite cadenas de bits de longitud fija `BIT(n)` o variable `BIT VARYING(n)`. |
 | **Oracle** | No nativo | Se suelen usar tipos numéricos `NUMBER(1)` o tipos RAW. |
@@ -125,13 +123,11 @@ Consultas rapidísimas: La base de datos lee esa tira de bits de golpe sin tener
 ## El tipo de dato `BIT` y los operadores `&`
 
 El tipo de dato `BIT` y las operaciones a nivel de bit (`&`, `|`, `~`) **están permitidos en casi todos los SGBD principales**, aunque con diferencias en cómo lo manejan:
-
-  |
-|------------------|------------------|------------------|------------------|
-| **Motor SQL** | **¿Soporta BIT?** | **¿Soporta cadenas como BIT(7) o b'1111111'?** | **¿Soporta el operador &?** |
-| **Microsoft SQL Server** | **Sí**, pero es solo `BIT` (1 bit: `0` o `1`). | No admite longitud `BIT(M)` ni literales `b'111'`. | **Sí**, soporta `&`, \` |
-| **MySQL / MariaDB** | **Sí**, soporta `BIT(M)` de 1 a 64 bits. | **Sí**, admite `b'1010101'`. | **Sí**, soporta `&`, \` |
-| **PostgreSQL** | **Sí**, soporta `BIT(n)` y `BIT VARYING(n)`. | **Sí**, pero la sintaxis es `B'1010101'` (con **B** mayúscula). | **Sí**, soporta `&`, \` |
+| Motor SQL | ¿Soporta BIT? | ¿Soporta cadenas como BIT(7) o b'1111111'? | ¿Soporta el operador &? |
+| :--- | :--- | :--- | :--- |
+| **Microsoft SQL Server** | **Sí**, pero es solo `BIT` (1 bit: `0` o `1`). | No admite longitud `BIT(M)` ni literales `b'111'`. | **Sí**, soporta `&`, `\|` y `^` a nivel de bit. |
+| **MySQL / MariaDB** | **Sí**, soporta `BIT(M)` de 1 a 64 bits. | **Sí**, admite `b'1010101'`. | **Sí**, soporta `&`, `\|` y `^` a nivel de bit. |
+| **PostgreSQL** | **Sí**, soporta `BIT(n)` y `BIT VARYING(n)`. | **Sí**, pero la sintaxis es `B'1010101'` (con **B** mayúscula). | **Sí**, soporta `&`, `\|` y `^` sobre cadenas de bits. |
 | **SQLite** | **No** existe el tipo `BIT` explícito (usa enteros). | No admite sintaxis `BIT(M)`. | **Sí**, el operador `&` funciona con enteros (`INTEGER`). |
 | **Oracle** | **No** existe el tipo `BIT` explícito (usa `NUMBER(1)` o `RAW`). | No admite sintaxis `BIT(M)`. | Usa funciones como `BITAND(a, b)` en lugar de `&`. |
 
@@ -178,17 +174,15 @@ En SQL Server usas el tipo **`TINYINT`** (que es un entero pequeño de 1 byte = 
 **Traduces los días a su equivalente en número entero**
 
 Cada día de la semana corresponde a una potencia de 2 en binario:
-
-  |
-|------------------|------------------|------------------|------------------|
-| **Día** | **Posición binaria** | **Valor en Binario** | **Valor Decimal a guardar** |
+| Día | Posición binaria | Valor en Binario | Valor Decimal a guardar |
+| :--- | :--- | :--- | :--- |
 | **Domingo** | Posición 1 | `0000001` | **1** |
 | **Sábado** | Posición 2 | `0000010` | **2** |
 | **Viernes** | Posición 3 | `0000100` | **4** |
-| **Jueves** | Posición 4 | `0000000` | **8** |
-| **Miércoles** | Posición 5 | `0001000` | **16** |
-| **Martes** | Posición 6 | `0010000` | **32** |
-| **Lunes** | Posición 7 | `0100000` | **64** |
+| **Jueves** | Posición 4 | `0001000` | **8** |
+| **Miércoles** | Posición 5 | `0010000` | **16** |
+| **Martes** | Posición 6 | `0100000` | **32** |
+| **Lunes** | Posición 7 | `1000000` | **64** |
 
 **Insertar registros usando números enteros**
 
@@ -272,10 +266,8 @@ En el estándar SQL y en lógica de tres valores (3VL), puede almacenar tres est
 - **SQL Server:** No tiene tipo `BOOLEAN`. Utiliza `BIT` para cumplir esta función (ocupa de 1 a 8 bits por grupo en disco).
 
 ## Motores SQL donde existe
-
-
-|---------------------|----------------------|-----------------------------|
-| **Motor SQL** | **Soporte** | **Tipo Interno / Nota** |
+| Motor SQL | Soporte | Tipo Interno / Nota |
+| :--- | :--- | :--- |
 | **PostgreSQL** | Sí (Nativo) | `BOOLEAN` o `BOOL` |
 | **MySQL / MariaDB** | Sí (Como alias) | Se convierte a `TINYINT(1)` |
 | **SQLite** | No nativo | Usa enteros (`1` para TRUE, `0` para FALSE) |
@@ -317,14 +309,12 @@ Existen varios subtipos que varían principalmente en la **cantidad de bytes que
 ## Clasificación y Rangos (Con signo / *Signed*)
 
 Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*).
-
-  |
-|------------------|------------------|------------------|------------------|
-| **Tipo de Dato** | **Espacio** | **Rango con Signo (Signed)** | **Caso de Uso Típico** |
+| Tipo de Dato | Espacio | Rango con Signo (Signed) | Caso de Uso Típico |
+| :--- | :--- | :--- | :--- |
 | **`TINYINT`** | **1 Byte** (8 bits) | -128 a 127 | Estados, meses (1-12), edades, días de la semana. |
 | **`SMALLINT`** | **2 Bytes** (16 bits) | -32.768 a 32.767 | Años, recuentos pequeños, códigos postales cortos. |
-| **`INT` / `INTEGER`** | **4 Bytes** (32 bits) | -2.147.483.648 a 2.147.483.647 ($\approx \pm 2,14$ mil millones) | IDs estándar de tablas, contadores de usuarios, stocks. |
-| **`BIGINT`** | **8 Bytes** (64 bits) | -9.223.372.036.854.775.808 a 9.223.372.036.854.775.807 | Transacciones financieras, clicks de la web, datos masivos (*Big Data*). |
+| **`INT` / `INTEGER`** | **4 Bytes** (32 bits) | -2.147.483.648 a 2.147.483.647 (≈ ±2,14 mil millones) | IDs estándar de tablas, contadores de usuarios, stocks. |
+| **`BIGINT`** | **8 Bytes** (64 bits) | -9.223.372.036.854.775.808 a 9.223.372.036.854.775.807 | Grandes volúmenes de eventos, métricas de tráfico o identificadores de alto crecimiento. |
 
 *(Nota: En MySQL/MariaDB existe también `MEDIUMINT` de 3 Bytes, de -8.388.608 a 8.388.607).*
 
@@ -334,13 +324,12 @@ Por defecto, los enteros en SQL permiten valores positivos y negativos (*Signed*
 
 Al no tener que reservar un bit para el signo +/- (el bit más significativo o *sign bit*), **duplica el valor máximo positivo** que cabe en el mismo espacio físico de bytes.
 
-
-|------------------------|------------------------|------------------------|
-| **Tipo de Dato** | **Rango Con Signo (Signed)** | **Rango Sin Signo (UNSIGNED)** |
+| Tipo de Dato | Rango Con Signo (Signed) | Rango Sin Signo (UNSIGNED) |
+| :--- | :--- | :--- |
 | **`TINYINT`** | -128 a 127 | **0 a 255** |
 | **`SMALLINT`** | -32.768 a 32.767 | **0 a 65.535** |
-| **`INT`** | -2.147.483.648 a 2.147.483.647 | **0 a 4.294.967.295** ($\approx 4,29$ mil millones) |
-| **`BIGINT`** | $-9,22 \times 10^{18}$ a $9,22 \times 10^{18}$ | **0 a 18.446.744.073.709.551.615** ($\approx 18,4$ quintillones) |
+| **`INT`** | -2.147.483.648 a 2.147.483.647 | **0 a 4.294.967.295** (≈ 4,29 mil millones) |
+| **`BIGINT`** | -9,22 × 10¹⁸ a 9,22 × 10¹⁸ | **0 a 18.446.744.073.709.551.615** (≈ 18,4 quintillones) |
 
 ::: nota
 **¿Cuándo usar `UNSIGNED`?**
@@ -349,10 +338,8 @@ Es ideal para columnas que por su naturaleza **jamás pueden ser negativas**, co
 :::
 
 ## Motores SQL donde existe
-
-
-|------------------------|------------------------|------------------------|
-| **Motor SQL** | **Soporte de TINYINT, SMALLINT, INT, BIGINT** | **Soporte de la opción UNSIGNED** |
+| Motor SQL | Soporte de TINYINT, SMALLINT, INT, BIGINT | Soporte de la opción UNSIGNED |
+| :--- | :--- | :--- |
 | **MySQL / MariaDB** | **Sí**, soporta todos los tipos. | **Sí**, soporte completo para todos los enteros. |
 | **PostgreSQL** | Soporta `SMALLINT`, `INT`, `BIGINT`. **No** tiene `TINYINT` nativo. | **No** soporta la palabra clave `UNSIGNED` (se usan restricciones `CHECK (col >= 0)`). |
 | **SQL Server** | Soporta `BIGINT`, `INT`, `SMALLINT` y `TINYINT`. | **No** soporta la palabra clave `UNSIGNED`. *(Curiosidad: en SQL Server, `TINYINT` es `UNSIGNED` por defecto, de 0 a 255)*. |
@@ -459,12 +446,11 @@ SELECT 0.1 + 0.2;
 ## Exactos vs aproximados ¿Cuándo elegir cada uno?
 
 | Criterio | Exactos (`DECIMAL` / `NUMERIC`) | Aproximados (`FLOAT` / `DOUBLE`) |
-|:-----------------------|:-----------------------|:-----------------------|
+| :--- | :--- | :--- |
 | **Precisión** | **100% exacta.** Sin pérdidas ni redondeos impredecibles. | **Aproximada.** Puede acumular errores al sumar o multiplicar. |
 | **Rendimiento** | **Más lento.** Las operaciones aritméticas se procesan por software en la CPU. | **Extremadamente rápido.** La CPU/FPU procesa punto flotante por hardware. |
 | **Almacenamiento** | Variable y superior (de 5 a 17+ bytes). | Fijo y compacto (4 u 8 bytes). |
-| **Uso Recomendado** | Dinero, impuestos, transacciones bancarias, inventarios. | Lecturas de sensores (temperatura, velocidad), física, astronomía, coordenadas GPS. |
-
+| **Uso Recomendado** | Cantidades exactas, métricas contables, porcentajes o pesos controlados. | Lecturas de sensores (temperatura, velocidad), física, astronomía, coordenadas GPS. |
 ``` sql
 CREATE TABLE mediciones (
     id INT PRIMARY KEY,
@@ -533,14 +519,12 @@ Si sumas millones de transacciones pequeñas guardadas en `FLOAT` (como `0.01` �
 Diseñado para almacenar grandes volúmenes de texto no estructurado donde la longitud máxima no se conoce de antemano o supera los límites de un `VARCHAR`.
 
 ### Subtipos en MySQL / MariaDB
-
-
-|------------------------|------------------------|------------------------|
-| **Tipo** | **Longitud Máxima en Bytes / Caracteres** | **Espacio Real Consumido** |
+| Tipo | Longitud Máxima en Bytes / Caracteres | Espacio Real Consumido |
+| :--- | :--- | :--- |
 | **`TINYTEXT`** | Hasta 255 bytes | Longitud real + 1 byte |
-| **`TEXT`** | Hasta 65.535 bytes ($\approx 65$ KB) | Longitud real + 2 bytes |
-| **`MEDIUMTEXT`** | Hasta 16.777.215 bytes ($\approx 16$ MB) | Longitud real + 3 bytes |
-| **`LONGTEXT`** | Hasta 4.294.967.295 bytes ($\approx 4$ GB) | Longitud real + 4 bytes |
+| **`TEXT`** | Hasta 65.535 bytes (≈ 65 KB) | Longitud real + 2 bytes |
+| **`MEDIUMTEXT`** | Hasta 16.777.215 bytes (≈ 16 MB) | Longitud real + 3 bytes |
+| **`LONGTEXT`** | Hasta 4.294.967.295 bytes (≈ 4 GB) | Longitud real + 4 bytes |
 
 *(Nota: En SQL Server se utiliza `VARCHAR(MAX)` y en PostgreSQL se usa `TEXT` de longitud ilimitada dinámicamente).*
 
@@ -558,10 +542,10 @@ En motores como **SQL Server** o **Oracle**, las variantes que empiezan por `N` 
 
 - `NVARCHAR`: Usa codificación UTF-16 (**2 bytes por carácter**), permitiendo guardar cualquier alfabeto del mundo (chino, cirílico, árabe) y emojis.
 
-| **Tipo** | **Almacenamiento** | **Capacidad** | **Ejemplo** |
-|------------------|------------------|------------------|------------------|
-| **`VARCHAR(n)`** | 1 byte por carácter\* | Hasta **`n`** bytes | **`"Hola"`** → 4 bytes |
-| **`NVARCHAR(n)`** | 2 bytes por carácter\* | Hasta **`n`** caracteres | **`"Hola"`** → 8 bytes |
+| Tipo | Almacenamiento | Capacidad | Ejemplo |
+| :--- | :--- | :--- | :--- |
+| **`VARCHAR(n)`** | 1 byte por carácter* | Hasta **`n`** bytes | **`"Hola"`** → 4 bytes |
+| **`NVARCHAR(n)`** | 2 bytes por carácter* | Hasta **`n`** caracteres | **`"Hola"`** → 8 bytes |
 
 ### Ejemplo en SQL
 
@@ -584,10 +568,8 @@ VALUES (
 ```
 
 # Tipos de Datos de Fecha y Hora en SQL (`DATE`, `TIME`, `DATETIME` y `TIMESTAMP`)
-
-  |  |
-|---------|---------------|---------------|----------|-------------------------|
-| **Tipo de Dato** | **Formato** | **Rango Típico (ej. MySQL/MariaDB)** | **Tamaño en Disco** | **Caso de Uso Principal** |
+| Tipo de Dato | Formato | Rango Típico (ej. MySQL/MariaDB) | Tamaño en Disco | Caso de Uso Principal |
+| :--- | :--- | :--- | :--- | :--- |
 | **`DATE`** | `YYYY-MM-DD` | `1000-01-01` a `9999-12-31` | **3 bytes** | Fechas de nacimiento, fechas de contratación, vencimientos sin hora. |
 | **`TIME`** | `HH:MM:SS` (o `HH:MM:SS.p`) | `-838:59:59` a `838:59:59` | **3 bytes** | Horarios fijados (ej. inicio de turno), intervalos de tiempo transcurrido. |
 | **`DATETIME`** | `YYYY-MM-DD HH:MM:SS` | `1000-01-01 00:00:00` a `9999-12-31 23:59:59` | **5 a 8 bytes** | Reservas de hotel, eventos del calendario, citas programadas. |
@@ -678,10 +660,8 @@ Usar `TIMESTAMP` garantiza que **todas las transacciones queden alineadas en un 
 ## Manipulación de Fechas en MySQL
 
 En MySQL, los principales tipos de datos para almacenar información temporal son:
-
-
-|------------------|------------------|------------------------------------|
-| **Tipo** | **Formato Estándar** | **Descripción** |
+| Tipo | Formato Estándar | Descripción |
+| :--- | :--- | :--- |
 | `DATE` | `YYYY-MM-DD` | Solo fecha (año, mes, día). |
 | `TIME` | `HH:MM:SS` | Solo hora (horas, minutos, segundos). |
 | `DATETIME` | `YYYY-MM-DD HH:MM:SS` | Fecha y hora combinadas (fijo, sin zona horaria). |
@@ -788,19 +768,17 @@ SELECT TIMESTAMPDIFF(HOUR, '2026-10-07 08:00:00', '2026-10-07 14:30:00'); -- 6
 #### Dar formato de texto a una fecha (`DATE_FORMAT`)
 
 Convierte un tipo fecha en una cadena de texto personalizada según especificadores de formato:
-
-|                   |                        |             |
-|-------------------|------------------------|-------------|
-| **Especificador** | **Descripción**        | **Ejemplo** |
-| `%Y`              | Año (4 dígitos)        | `2026`      |
-| `%y`              | Año (2 dígitos)        | `26`        |
-| `%m`              | Mes numérico (01 a 12) | `10`        |
-| `%d`              | Día del mes (01 a 31)  | `07`        |
-| `%H`              | Hora (00 a 23)         | `14`        |
-| `%i`              | Minutos (00 a 59)      | `30`        |
-| `%s`              | Segundos (00 a 59)     | `45`        |
-| `%W`              | Nombre del día         | `Wednesday` |
-| `%M`              | Nombre del mes         | `October`   |
+| Especificador | Descripción | Ejemplo |
+| :--- | :--- | :--- |
+| `%Y` | Año (4 dígitos) | `2026` |
+| `%y` | Año (2 dígitos) | `26` |
+| `%m` | Mes numérico (01 a 12) | `10` |
+| `%d` | Día del mes (01 a 31) | `07` |
+| `%H` | Hora (00 a 23) | `14` |
+| `%i` | Minutos (00 a 59) | `30` |
+| `%s` | Segundos (00 a 59) | `45` |
+| `%W` | Nombre del día | `Wednesday` |
+| `%M` | Nombre del mes | `October` |
 
 ``` sql
 
@@ -866,26 +844,22 @@ Se dividen en dos categorías principales:
 ## Tipos `BLOB` (Datos Binarios)
 
 Almacenan información en formato binario crudo. Son ideales para archivos como imágenes, audios, documentos PDF, ejecutables o claves cifradas.
-
-
-|------------------------|------------------------|------------------------|
-| **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Tamaño Típico de Ejemplo** |
+| Subtipo (MySQL / MariaDB) | Capacidad Máxima | Tamaño Típico de Ejemplo |
+| :--- | :--- | :--- |
 | **`TINYBLOB`** | 255 bytes | Pequeños iconos, firmas digitales cortas |
-| **`BLOB`** | 65.535 bytes ($\approx 65$ KB) | Miniaturas (*thumbnails*), archivos de configuración |
-| **`MEDIUMBLOB`** | 16.777.215 bytes ($\approx 16$ MB) | Fotografías en alta resolución, canciones MP3 |
-| **`LONGBLOB`** | 4.294.967.295 bytes ($\approx 4$ GB) | Vídeos, instaladores de software, bases de datos integradas |
+| **`BLOB`** | 65.535 bytes (≈ 65 KB) | Miniaturas (*thumbnails*), archivos de configuración |
+| **`MEDIUMBLOB`** | 16.777.215 bytes (≈ 16 MB) | Fotografías en alta resolución, canciones MP3 |
+| **`LONGBLOB`** | 4.294.967.295 bytes (≈ 4 GB) | Vídeos, instaladores de software, bases de datos integradas |
 
 *(Nota: En PostgreSQL el equivalente binario estándar se denomina `BYTEA` o `LARGE OBJECT`, mientras que en SQL Server se usa `VARBINARY(MAX)`).*
 
 ## Tipos `TEXT` / `CLOB` (Texto Largo)
 
 Almacenan texto plano o marcado (HTML, XML, JSON en texto, código fuente) de gran extensión.
-
-
-|------------------------|------------------------|------------------------|
-| **Subtipo (MySQL / MariaDB)** | **Capacidad Máxima** | **Casos de Uso** |
+| Subtipo (MySQL / MariaDB) | Capacidad Máxima | Casos de Uso |
+| :--- | :--- | :--- |
 | **`TINYTEXT`** | 255 bytes | Resúmenes breves, notas de una línea |
-| **`TEXT`** | 65.535 bytes ($\approx 65$ KB) | Artículos de blog, descripciones de productos |
+| **`TEXT`** | 65.535 bytes (≈ 65 KB) | Artículos de blog, descripciones de productos |
 | **`MEDIUMTEXT`** | 16,7 MB | Capítulos de libros, documentos HTML complejos |
 | **`LONGTEXT`** | 4 GB | Transcripciones completas, logs de sistema extensos |
 
@@ -902,10 +876,8 @@ A diferencia de los enteros, fechas o `VARCHAR` pequeños, los datos de tipo `BL
 ## Ventajas e Inconvenientes: ¿Cuándo usar `BLOB` y cuándo guardar la ruta en disco?
 
 Esta es una de las preguntas de arquitectura más habituales en la administración de bases de datos.
-
-
-|---------------------|------------------------|---------------------------|
-| **Criterio** | **Guardar el archivo en la BD (BLOB)** | **Guardar en servidor/S3 y la ruta en la BD (VARCHAR)** |
+| Criterio | Guardar el archivo en la BD (BLOB) | Guardar en servidor/S3 y la ruta en la BD (VARCHAR) |
+| :--- | :--- | :--- |
 | **Integridad Transaccional (ACID)** | **Excelente.** Si haces un `ROLLBACK`, el archivo se borra o restaura junto con el registro. | **Riesgo.** El archivo puede borrarse del disco y dejar un puntero "huérfano" en la base de datos. |
 | **Copias de Seguridad (*Backups*)** | **Cómodo pero pesado.** Todo el sistema se respalda en un único archivo de base de datos. | **Rápido.** La base de datos ocupa pocos megabytes; los archivos se respaldan por separado. |
 | **Rendimiento de la Base de Datos** | **Degradado.** Aumenta el consumo de RAM (memoria de búfer) e I/O de disco. | **Óptimo.** La base de datos gestiona solo texto corto (`VARCHAR(255)`) con las rutas. |
@@ -1094,10 +1066,8 @@ WHERE notificaciones & 2; -- Busca los usuarios con 'SMS' activo
 ```
 
 ## Comparativa: `ENUM` vs `SET`
-
-
-|-------------------|---------------------------|---------------------------|
-| **Criterio** | **ENUM** | **SET** |
+| Criterio | ENUM | SET |
+| :--- | :--- | :--- |
 | **Selección** | Exclusiva (**Exactamente 1 valor** del conjunto). | Inclusiva (**Cero, 1 o múltiples valores** combinados). |
 | **Almacenamiento Interno** | Índice entero consecutivo (`1, 2, 3...`). | Máscara de bits (*Bitmask*: `1, 2, 4, 8, 16...`). |
 | **Límite de Miembros** | Hasta 65.535 elementos. | Hasta 64 elementos. |

@@ -1,0 +1,52 @@
+---
+title: "Práctica guiada de eventos programados en MySQL"
+format: html
+---
+
+# Scheduled Events | MySQL 8.4 LTS | IFCT0310
+
+La academia deja una reserva de aula pendiente hasta que vence su plazo de confirmación. Vamos a programar MySQL para contar las reservas pendientes y marcar las vencidas como caducadas. Cada tarea dejará una pista que podremos contrastar con los datos.
+
+# Objetivos de aprendizaje
+
+* Crear un evento de una sola ejecución y otro que se repita con un horario definido.
+* Comprobar el estado, la hora programada y el efecto de cada ejecución sobre las tablas.
+* Pausar un evento, cambiar su horario y observar qué ocurre cuando vence o falla.
+
+**Entorno de trabajo.** MySQL Server 8.4 en una instancia de aula. Usaréis el editor SQL de MySQL Workbench o la consola mysql. La práctica crea el esquema de laboratorio lab_eventos_academia. Tiempo orientativo de 45 a 60 minutos.
+
+# Contenido
+
+[1  Preparar la conexión y el programador](#bookmark=id.2slrf63z2282)	2
+
+[2  Crear los datos de partida](#bookmark=id.kc06hivcy0qf)	3
+
+[3  Ejecutar un recuento una sola vez](#bookmark=id.zhdmy62zmu3l)	4
+
+[4  Comprobar la eliminación automática](#bookmark=id.b1hgx9vrdd79)	5
+
+[5  Programar la caducidad de reservas](#bookmark=id.3yuwxc4flfox)	6
+
+[6  Verificar y pausar el evento periódico](#bookmark=id.r717pvc9pe4y)	7
+
+[7  Reanudar con un horario nuevo](#bookmark=id.y6fccliqyx0k)	8
+
+[8  Provocar un fallo controlado](#bookmark=id.4f7gtnicczpx)	9
+
+[9  Diagnosticar problemas](#bookmark=id.5vbwahpfczcx)	10
+
+[10  Cerrar el laboratorio](#bookmark=id.uge8xamu3xpr)	11
+
+[11  Preguntas de razonamiento](#bookmark=id.rid3qezicvgm)	12
+
+# Preparar la conexión y el programador
+
+# Paso 1 Comprobar la versión y la cuenta
+
+Abrid una conexión nueva a vuestra instancia. Ejecutad cada bloque cuando se indique. Incluid las dos líneas DELIMITER cuando aparezcan. Usad la misma cuenta para crear y modificar los eventos.
+
+```sql
+SELECT VERSION() AS version_servidor,
+       CURRENT_USER() AS cuenta_mysql;
+
+SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
