@@ -1,5 +1,5 @@
 ---
-title: "Práctica guiada de eventos programados en MySQL"
+title: "Práctica: eventos programados en MySQL"
 format: html
 ---
 
@@ -17,7 +17,7 @@ La academia deja una reserva de aula pendiente hasta que vence su plazo de confi
 
 # Preparar la conexión y el programador
 
-# Paso 1 Comprobar la versión y la cuenta
+## Paso  1 Comprobar la versión y la cuenta
 
 Abrid una conexión nueva a vuestra instancia. Ejecutad cada bloque cuando se indique. Incluid las dos líneas DELIMITER cuando aparezcan. Usad la misma cuenta para crear y modificar los eventos.
 
@@ -42,7 +42,7 @@ SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
 
 Esperad una versión 8.4.x. CURRENT_USER() identifica la cuenta que MySQL ha asociado a vuestra conexión. Necesitaréis permiso `CREATE` sobre el esquema de aula, `EVENT` para gestionar sus eventos y `SELECT`, `INSERT` y `UPDATE` sobre las tablas que usaréis.
 
-# Paso 2 Confirmar que el programador está activo
+## Paso  2 Confirmar que el programador está activo
 
 Anotad el valor original. Con `ON` podéis continuar. Si veis `OFF`, la cuenta administradora puede activarlo con el comando siguiente. 
 ```sql
@@ -55,7 +55,7 @@ Con `DISABLED`, hace falta que el docente revise la configuración de arranque y
 El valor esperado es `ON`. 
 SET GLOBAL afecta a toda la instancia. Requiere el privilegio `SYSTEM_VARIABLES_ADMIN` o `SUPER`. En un servidor compartido, pedid al docente que gestione este ajuste.
 
-# Paso 3 Fijar la zona horaria de la conexión
+## Paso  3 Fijar la zona horaria de la conexión
 
 ```sql
 SET SESSION time_zone = '+00:00';
@@ -75,7 +75,7 @@ Usaremos UTC en todos los horarios. Si reconectáis, repetid este ajuste de sesi
 
 # Crear los datos de partida
 
-# Paso 4 Crear el esquema y las tablas
+## Paso  4 Crear el esquema y las tablas
 
 Partimos de un esquema nuevo. Ejecutad primero este bloque por separado.
 
@@ -107,7 +107,7 @@ CREATE TABLE registro_eventos (
 *reservas_aula* guarda el plazo de confirmación y el estado de cada reserva. 
 *registro_eventos* es la bitácora de la práctica. En ella quedarán el nombre de la tarea, su hora y una cantidad que interpretaremos según el evento. Usamos InnoDB para poder confirmar o revertir cambios.
 
-# Paso 5 Insertar cinco reservas ficticias
+## Paso  5 Insertar cinco reservas ficticias
 
 ```sql
 INSERT INTO reservas_aula
@@ -124,7 +124,7 @@ Las fechas son relativas al momento de la carga. Las reservas 1 y 2 ya están ve
 
 # Ejecutar un recuento una sola vez
 
-# Paso 6 Verificar los datos antes de programar
+## Paso  6 Verificar los datos antes de programar
 
 ```sql
 SELECT id_reserva, estado, limite_utc,
@@ -153,7 +153,7 @@ SELECT COUNT(*) AS filas_bitacora FROM registro_eventos;
 
  
 
-# Paso 7 Programar un recuento dentro de treinta segundos
+## Paso  7 Programar un recuento dentro de treinta segundos
 
 ```sql
 CREATE EVENT lab_eventos_academia.ev_foto_pendientes
@@ -168,7 +168,7 @@ DO
 
 `AT` fija un solo turno. `INSERT` … `SELECT` guarda el recuento y `PRESERVE` mantiene la definición después de la ejecución.
 
-# Paso 8 Contrastar la programación con la fila escrita
+## Paso  8 Contrastar la programación con la fila escrita
 
 ```sql
 SELECT STATUS, TIME_ZONE, EXECUTE_AT, LAST_EXECUTED
@@ -197,7 +197,7 @@ WHERE evento = 'ev_foto_pendientes';
 ```
 # Comprobar la eliminación automática
 
-# Paso 9 Crear un evento que se elimine al terminar
+## Paso  9 Crear un evento que se elimine al terminar
 
 Ahora programaremos una marca sencilla en la bitácora. La cantidad 1 representa una marca. Así podemos distinguir la desaparición de la definición de la permanencia de su efecto.
 
@@ -248,7 +248,7 @@ collation_connection: utf8mb4_0900_ai_ci
 Si consultáis el listado dentro de los primeros 30 segundos, veréis la marca temporal pendiente de ejecución. Podéis cerrar la pestaña o el cliente después de crearla. El servidor MySQL debe seguir en marcha. Si reconectáis, aplicad el ajuste de UTC del paso 3 y ejecutad USE lab_eventos_academia; antes de seguir.
 
 
-# Paso 10 Comparar la definición con el resultado
+## Paso  10 Comparar la definición con el resultado
 
 Pasados unos 35 segundos desde la creación, volved a ejecutar `SHOW EVENTS `y consultad las dos marcas de la bitácora.
 Pasados 30 segundos:
@@ -292,7 +292,7 @@ ORDER BY id_registro;
 
 # Programar la caducidad de reservas
 
-# Paso 11 Crear el evento periódico
+## Paso  11 Crear el evento periódico
 
 Cada 15 segundos se revisarán los plazos. Solo cambian las reservas pendientes cuyo límite ya se ha alcanzado. La bitácora indicará cuántas cambió cada ejecución.
 
@@ -336,7 +336,7 @@ DELIMITER ;
 
 # Verificar y pausar el evento periódico
 
-# Paso 12 Observar dos ejecuciones
+## Paso  12 Observar dos ejecuciones
 
 Pasados unos 35 segundos desde la creación, ejecutad estas consultas.
 
@@ -372,7 +372,7 @@ ORDER BY id_registro;
 
 Las reservas 1, 2 y 5 deben figurar como CADUCADA. La 3 y la 4 siguen PENDIENTE. En la bitácora veréis cantidad 2 en el primer turno y 0 en los siguientes mientras los datos sigan igual. El 0 registra una ejecución correcta que no tuvo que cambiar filas.
 
-# Paso 13 Pausar el evento y anotar su última marca
+## Paso  13 Pausar el evento y anotar su última marca
 
 ```sql
 ALTER EVENT lab_eventos_academia.ev_caducar_reservas DISABLE;
@@ -428,7 +428,7 @@ Repetid el `SELECT` unos 20 segundos después. Si había un turno en marcha, dej
 +--------------------+--------------+
 ```
 
-# Paso 14 Vencer una reserva mientras el evento está pausado
+## Paso  14 Vencer una reserva mientras el evento está pausado
 
 ```sql
 UPDATE reservas_aula
@@ -451,7 +451,7 @@ Hemos cambiado la fecha en la fila. El evento está pausado y la reserva seguir�
 
 # Reanudar con un horario nuevo
 
-# Paso 15 Cambiar el horario y habilitar el evento
+## Paso  15 Cambiar el horario y habilitar el evento
 
 Seguimos con la misma cuenta y con la zona +00:00. Antes de ejecutar este bloque, tened a mano la ultima_marca que anotasteis en el paso 13.
 
@@ -465,7 +465,7 @@ ENABLE;
 
 Conservamos el cuerpo y cambiamos el horario. El primer turno queda previsto a los 20 segundos y el siguiente a los 32. `ENDS` cierra la ventana a los 38 segundos, antes de que llegue el siguiente turno.
 
-# Paso 16 Comprobar los dos nuevos turnos y el cierre
+## Paso  16 Comprobar los dos nuevos turnos y el cierre
 
 Pasados unos 45 segundos desde la reprogramación, repetid las consultas del paso 12 y comprobad los metadatos del evento.
 ```sql
@@ -563,7 +563,7 @@ Si otra cuenta usa `ALTER EVENT` sin indicar `DEFINER`, esa cuenta pasa a ser la
 
 # Provocar un fallo controlado
 
-# Paso 17 Programar una transacción que fallará
+## Paso  17 Programar una transacción que fallará
 
 En este ensayo forzaremos un error después de intentar dos escrituras. Afectaría a la reserva 4 si se confirmara. Esa reserva debe seguir PENDIENTE al terminar la prueba.
 
@@ -605,7 +605,7 @@ El manejador ejecuta `ROLLBACK`, que deshace tanto el cambio de estado como la i
 
 # Diagnosticar problemas
 
-# Paso 18 Contrastar inicio, datos y error
+## Paso  18 Contrastar inicio, datos y error
 
 Dejad pasar unos 35 segundos desde la creación del evento de fallo y ejecutad estas consultas.
 
@@ -670,7 +670,7 @@ LIMIT 5;
 
 # Cerrar el laboratorio
 
-# Paso 19 Verificar el resultado final
+## Paso  19 Verificar el resultado final
 
 ```sql
 SELECT id_reserva, estado
@@ -688,7 +688,7 @@ ORDER BY id_registro;
 | **Reserva 4** | PENDIENTE. El cambio intentado se revirtió. |
 | **Bitácora** | Una marca del recuento (4), una temporal (1) y varias del evento periódico. El fallo dejó 0 filas confirmadas. |
 
-# Paso 20 Retirar las definiciones de la práctica
+## Paso  20 Retirar las definiciones de la práctica
 
 ```sql
 DROP EVENT IF EXISTS lab_eventos_academia.ev_foto_pendientes;
