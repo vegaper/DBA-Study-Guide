@@ -510,18 +510,18 @@ Ejecutad esta llamada por separado.  Si volvéis a consultar el historial, segui
 
 | Objeto | Qué lo pone en marcha | Resultado en la práctica |
 | :---- | :---- | :---- |
-| **VIEW** | Una consulta SELECT sobre la vista. | Muestra los datos actuales y señala plazos vencidos por revisar. |
-| **PROCEDURE** | Un CALL desde la consola o el evento. | Registra una devolución o marca los préstamos vencidos. |
-| **TRIGGER** | Un UPDATE sobre una fila de prestamos. | Guarda el cambio de estado en el historial. |
+| **VIEW** | Una consulta `SELECT` sobre la vista. | Muestra los datos actuales y señala plazos vencidos por revisar. |
+| **PROCEDURE** | Un `CALL` desde la consola o el evento. | Registra una devolución o marca los préstamos vencidos. |
+| **TRIGGER** | Un `UPDATE` sobre una fila de prestamos. | Guarda el cambio de estado en el historial. |
 | **EVENT** | La llegada de un turno previsto. | Llama al procedimiento de revisión y guarda su recuento. |
 
 Seguid el préstamo 101 para comprobar el conjunto. La vista lo señaló como pendiente de marcar. El evento llamó a *sp_marcar_vencidos* y el `UPDATE` activó el trigger. Después, la vista mostró VENCIDO y, tras la devolución manual, DEVUELTO.
 
 # Preguntas para razonar
 
-**1. ¿Qué ocurre si actualizamos solo la fecha límite?** El trigger se activa por el UPDATE. Como OLD.estado y NEW.estado coinciden, su IF no escribe en el historial.
+**1. ¿Qué ocurre si actualizamos solo la fecha límite?** El trigger se activa por el `UPDATE`. Como `OLD.estado` y `NEW.estado` coinciden, su `IF` no escribe en el historial.
 
-**2. ¿Por qué hay un 0 en la segunda revisión?** El evento volvió a llamar al procedimiento. Los préstamos 101 y 102 ya estaban marcados y el UPDATE descartó esas filas.
+**2. ¿Por qué hay un 0 en la segunda revisión?** El evento volvió a llamar al procedimiento. Los préstamos 101 y 102 ya estaban marcados y el `UPDATE` descartó esas filas.
 
 **3. ¿Por qué el historial tiene cuatro filas y las revisiones solo dos?** El historial guarda cambios por préstamo. La tabla de revisiones guarda una fila por ejecución automática confirmada.
 
