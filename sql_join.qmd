@@ -509,15 +509,14 @@ LEFT JOIN empleados j             -- 'j' representa la vista de Jefes (misma tab
 2.  **Comparación entre filas:** Comparar las ventas de un cliente hoy con sus ventas de ayer dentro del mismo historial.
 
 # Resumen
-
-|------------------|------------------|------------------------------------| 
-| **Tipo de JOIN** | **¿Lleva cláusula ON?** | **¿Qué devuelve?** | 
-| **`INNER JOIN`** | **SÍ** | Solo filas con coincidencia en ambas tablas. | 
-| **`LEFT JOIN`** | **SÍ** | Todo lo de la izquierda + coincidencias de la derecha. | 
-| **`RIGHT JOIN`** | **SÍ** | Todo lo de la derecha + coincidencias de la izquierda. | 
-| **`FULL JOIN`** | **SÍ** | Absolutamente todo lo de ambas tablas. | 
-| **`CROSS JOIN`** | **NO** | **Todas las combinaciones posibles** (Producto cartesiano). | 
-| `SELF JOIN` | **SÍ** | Relaciones de una tabla consigo misma. |
+| Tipo de JOIN | ¿Lleva cláusula `ON`? | ¿Qué devuelve? |
+| :--- | :--- | :--- |
+| **`INNER JOIN`** | **SÍ** *(o `USING`)* | Solo filas con coincidencia en ambas tablas. |
+| **`LEFT JOIN`** | **SÍ** *(o `USING`)* | Todo lo de la tabla izquierda + coincidencias de la derecha (`NULL` si no hay match). |
+| **`RIGHT JOIN`** | **SÍ** *(o `USING`)* | Todo lo de la tabla derecha + coincidencias de la izquierda (`NULL` si no hay match). |
+| **`FULL JOIN`** | **SÍ** *(o `USING`)* | Todas las filas de ambas tablas (rellenando con `NULL` donde no haya coincidencia). |
+| **`CROSS JOIN`** | **NO** *(salvo que se filtre con `WHERE`)* | Todas las combinaciones posibles de filas entre ambas tablas (producto cartesiano). |
+| **`SELF JOIN`** | **SÍ** *(o `USING`)* | Relaciona una tabla consigo misma usando alias distintos para cada instancia. |
 
 # Operadores de Conjuntos en SQL
 
@@ -577,13 +576,13 @@ Funciona principalmente con INNER JOIN: Aunque técnicamente algunos motores la 
 
 ## Tabla de Compatibilidad de la Cláusula `USING` en SQL
 
-|---------------|-----------|----------------------------------------------|
-| **Motor de Base de Datos** | **¿Soporta USING?** | **Notas de Sintaxis y Comportamiento** |
+| Motor de Base de Datos | ¿Soporta USING? | Notas de Sintaxis y Comportamiento |
+| :--- | :--- | :--- |
 | **MySQL / MariaDB** | **Sí** (Nativo) | Totalmente compatible. Fusiona conceptualmente las columnas con el mismo nombre en una sola al usar `SELECT *`. |
-| **PostgreSQL** | **Sí** (Nativo) | Totalmente compatible con los estándares del lenguaje SQL para `INNER JOIN` y algunos `OUTER JOIN`. |
-| **SQLite** | **Sí** (Nativo) | Soportado desde versiones modernas para simplificar la unión de columnas idénticas. |
-| **Oracle Database** | **Sí** (Nativo) | Compatible, pero con una restricción estricta: **no puedes anteponer un alias** (como `m.id_matricula`) a la columna dentro del `USING`, de lo contrario lanzará un error de sintaxis. |
-| **SQL Server (T-SQL)** | **No** | SQL Server **no reconoce** la cláusula `USING`. Es obligatorio utilizar la cláusula tradicional `ON` especificando la igualdad completa (ej. `ON t1.id = t2.id`). |
+| **PostgreSQL** | **Sí** (Nativo) | Totalmente compatible con el estándar SQL para `INNER JOIN` y `OUTER JOIN`. |
+| **SQLite** | **Sí** (Nativo) | Soportado en versiones modernas para simplificar uniones por columnas con el mismo nombre. |
+| **Oracle Database** | **Sí** (Nativo) | Compatible, pero con una restricción estricta: **no puedes anteponer un alias** (como `m.id_matricula`) a la columna dentro de `USING`, o lanzará error de sintaxis. |
+| **SQL Server (T-SQL)** | **No** | SQL Server **no reconoce** la cláusula `USING`. Es obligatorio usar `ON` con la igualdad explícita (ej. `ON t1.id = t2.id`). |
 
 ------------------------------------------------------------------------
 
@@ -629,10 +628,9 @@ FROM Empleados_Barcelona;
 
 ## Resumen de diferencias clave
 
-|------------------|---------------------------|---------------------------| 
-| **Característica** | **UNION** | **UNION ALL** | 
-| **Tratamiento de duplicados** | Los elimina (muestra valores únicos). | Los conserva (muestra todos los registros). | 
-| **Rendimiento** | Más lento (requiere procesar y filtrar duplicados). | Más rápido (simplemente concatena los resultados). | 
-| **Cuándo usarlo** | Cuando necesites una lista limpia de valores distintos procedentes de varias tablas. | Cuando necesites el volumen total de datos o estés seguro de que no hay duplicados entre las tablas. |
-
+| Característica | `UNION` | `UNION ALL` |
+| :--- | :--- | :--- |
+| **Tratamiento de duplicados** | Los elimina (muestra valores únicos). | Los conserva (muestra todos los registros). |
+| **Rendimiento** | Más lento (requiere ordenar/hashear y filtrar duplicados). | Más rápido (simplemente concatena los conjuntos de resultados). |
+| **Cuándo usarlo** | Cuando necesites una lista limpia de valores distintos procedentes de varias consultas. | Cuando necesites el volumen total de datos, haya duplicados válidos o ya sepas que no se solapan. |
 > **Nota sobre el ordenamiento (ORDER BY):** Si necesitas ordenar los resultados combinados, la cláusula `ORDER BY` solo se debe escribir una vez, al final de la última consulta `SELECT`. Se aplicará a todo el conjunto de resultados unido.
