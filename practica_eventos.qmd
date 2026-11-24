@@ -104,7 +104,8 @@ CREATE TABLE registro_eventos (
 ) ENGINE = InnoDB;
 ```
 
-reservas_aula guarda el plazo de confirmación y el estado de cada reserva. registro_eventos es la bitácora de la práctica. En ella quedarán el nombre de la tarea, su hora y una cantidad que interpretaremos según el evento. Usamos InnoDB para poder confirmar o revertir cambios.
+*reservas_aula* guarda el plazo de confirmación y el estado de cada reserva. 
+*registro_eventos* es la bitácora de la práctica. En ella quedarán el nombre de la tarea, su hora y una cantidad que interpretaremos según el evento. Usamos InnoDB para poder confirmar o revertir cambios.
 
 # Paso 5 Insertar cinco reservas ficticias
 
@@ -133,8 +134,24 @@ ORDER BY id_reserva;
 
 SELECT COUNT(*) AS filas_bitacora FROM registro_eventos;
 ```
+```
++------------+-----------+---------------------+---------------+
+| id_reserva | estado    | limite_utc          | plazo_vencido |
++------------+-----------+---------------------+---------------+
+|          1 | PENDIENTE | 2026-11-23 10:40:23 |             1 |
+|          2 | PENDIENTE | 2026-11-24 09:40:23 |             1 |
+|          3 | PENDIENTE | 2026-11-25 10:40:23 |             0 |
+|          4 | PENDIENTE | 2026-11-26 10:40:23 |             0 |
+|          5 | CADUCADA  | 2026-11-22 10:40:23 |             1 |
++------------+-----------+---------------------+---------------+
++----------------+
+| filas_bitacora |
++----------------+
+|              0 |
++----------------+
+``` 
 
-Esperad cinco reservas y una bitácora vacía. La columna calculada plazo_vencido muestra 1 para las reservas 1, 2 y 5, y 0 para la 3 y la 4. Aún hay cuatro reservas en estado PENDIENTE.
+ 
 
 # Paso 7 Programar un recuento dentro de treinta segundos
 
@@ -149,7 +166,7 @@ DO
     WHERE estado = 'PENDIENTE';
 ```
 
-AT fija un solo turno. INSERT … SELECT guarda el recuento y PRESERVE mantiene la definición después de la ejecución.
+`AT` fija un solo turno. `INSERT` … `SELECT` guarda el recuento y `PRESERVE` mantiene la definición después de la ejecución.
 
 # Paso 8 Contrastar la programación con la fila escrita
 
@@ -159,17 +176,25 @@ FROM INFORMATION_SCHEMA.EVENTS
 WHERE EVENT_SCHEMA = 'lab_eventos_academia'
   AND EVENT_NAME = 'ev_foto_pendientes';
 ```
-
-Si la consulta llega a tiempo, EXECUTE_AT tendrá la fecha prevista y LAST_EXECUTED será NULL. Pasados unos 35 segundos desde la creación, repetid la consulta anterior y ejecutad la siguiente para comprobar la escritura.
-
+```
++----------+-----------+---------------------+---------------------+
+| STATUS   | TIME_ZONE | EXECUTE_AT          | LAST_EXECUTED       |
++----------+-----------+---------------------+---------------------+
+| DISABLED | +00:00    | 2026-11-24 10:42:35 | 2026-11-24 10:42:35 |
++----------+-----------+---------------------+---------------------+
+```
 ```sql
 SELECT ejecutado_utc, cantidad
 FROM registro_eventos
 WHERE evento = 'ev_foto_pendientes';
 ```
-
-Esperad una sola fila con cantidad 4. LAST_EXECUTED indica cuándo empezó el evento. La fila de la bitácora confirma que guardó el recuento.
-
+```
++---------------------+----------+
+| ejecutado_utc       | cantidad |
++---------------------+----------+
+| 2026-11-24 10:42:36 |        4 |
++---------------------+----------+
+```
 # Comprobar la eliminación automática
 
 # Paso 9 Crear un evento que se elimine al terminar
@@ -184,14 +209,70 @@ DO
     INSERT INTO registro_eventos (evento, ejecutado_utc, cantidad)
     VALUES ('ev_marca_temporal', UTC_TIMESTAMP(), 1);
 
-SHOW EVENTS FROM lab_eventos_academia;
+SHOW EVENTS FROM lab_eventos_academia\G;
 ```
-
+```
+*************************** 1. row ***************************
+                  Db: lab_eventos_academia
+                Name: ev_foto_pendientes
+             Definer: root@localhost
+           Time zone: +00:00
+                Type: ONE TIME
+          Execute at: 2026-11-24 10:42:35
+      Interval value: NULL
+      Interval field: NULL
+              Starts: NULL
+                Ends: NULL
+              Status: DISABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+*************************** 2. row ***************************
+                  Db: lab_eventos_academia
+                Name: ev_marca_temporal
+             Definer: root@localhost
+           Time zone: +00:00
+                Type: ONE TIME
+          Execute at: 2026-11-24 10:47:44
+      Interval value: NULL
+      Interval field: NULL
+              Starts: NULL
+                Ends: NULL
+              Status: ENABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+```
 Si consultáis el listado dentro de los primeros 30 segundos, veréis la marca temporal pendiente de ejecución. Podéis cerrar la pestaña o el cliente después de crearla. El servidor MySQL debe seguir en marcha. Si reconectáis, aplicad el ajuste de UTC del paso 3 y ejecutad USE lab_eventos_academia; antes de seguir.
+
 
 # Paso 10 Comparar la definición con el resultado
 
-Pasados unos 35 segundos desde la creación, volved a ejecutar SHOW EVENTS y consultad las dos marcas de la bitácora.
+Pasados unos 35 segundos desde la creación, volved a ejecutar `SHOW EVENTS `y consultad las dos marcas de la bitácora.
+Pasados 30 segundos:
+```sql
+SHOW EVENTS FROM lab_eventos_academia\G;
+```
+```
+*************************** 1. row ***************************
+                  Db: lab_eventos_academia
+                Name: ev_foto_pendientes
+             Definer: root@localhost
+           Time zone: +00:00
+                Type: ONE TIME
+          Execute at: 2026-11-24 10:42:35
+      Interval value: NULL
+      Interval field: NULL
+              Starts: NULL
+                Ends: NULL
+              Status: DISABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+```
 
 ```sql
 SELECT evento, ejecutado_utc, cantidad
@@ -199,13 +280,15 @@ FROM registro_eventos
 WHERE evento IN ('ev_foto_pendientes', 'ev_marca_temporal')
 ORDER BY id_registro;
 ```
-
-| Evento | Definición tras el turno | Fila en la bitácora |
-| :---- | :---- | :---- |
-| **ev_foto_pendientes** | Se conserva con PRESERVE. | Una fila con cantidad 4. |
-| **ev_marca_temporal** | Se retira con NOT PRESERVE. | Una fila con cantidad 1. |
-
-NOT PRESERVE es la opción por defecto. Cuando desaparece un evento, la bitácora puede seguir mostrando lo que hizo si el cuerpo guardó el resultado.
+```
++--------------------+---------------------+----------+
+| evento             | ejecutado_utc       | cantidad |
++--------------------+---------------------+----------+
+| ev_foto_pendientes | 2026-11-24 10:42:36 |        4 |
+| ev_marca_temporal  | 2026-11-24 10:47:44 |        1 |
++--------------------+---------------------+----------+
+```
+`NOT PRESERVE` es la opción por defecto. Cuando desaparece un evento, la bitácora puede seguir mostrando lo que hizo si el cuerpo guardó el resultado.
 
 # Programar la caducidad de reservas
 
@@ -225,10 +308,10 @@ DO
 BEGIN
     DECLARE v_filas INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
+        BEGIN
+            ROLLBACK;
+            RESIGNAL;
+        END;
 
     START TRANSACTION;
     UPDATE reservas_aula
@@ -245,11 +328,11 @@ END//
 DELIMITER ;
 ```
 
-**Horario.** EVERY fija la repetición. STARTS retrasa el primer turno 15 segundos y ENDS limita la prueba a ocho minutos desde la creación. Las horas se calculan al guardar el evento.
+**Horario.** `EVERY` fija la repetición. `STARTS` retrasa el primer turno 15 segundos y `ENDS` limita la prueba a ocho minutos desde la creación. Las horas se calculan al guardar el evento.
 
-**Acción.** El WHERE protege las reservas futuras y las ya caducadas. Tomamos ROW_COUNT() justo después del UPDATE para anotar las filas modificadas.
+**Acción.** El `WHERE` protege las reservas futuras y las ya caducadas. Tomamos `ROW_COUNT()` justo después del `UPDATE` para anotar las filas modificadas.
 
-**Transacción.** COMMIT confirma juntos el cambio y su registro. Ante una excepción, el manejador revierte los cambios y RESIGNAL devuelve el error al programador.
+**Transacción.** `COMMIT` confirma juntos el cambio y su registro. Ante una excepción, el manejador revierte los cambios y `RESIGNAL` devuelve el error al programador.
 
 # Verificar y pausar el evento periódico
 
@@ -267,6 +350,25 @@ FROM registro_eventos
 WHERE evento = 'ev_caducar_reservas'
 ORDER BY id_registro;
 ```
+```
++------------+-----------+
+| id_reserva | estado    |
++------------+-----------+
+|          1 | CADUCADA  |
+|          2 | CADUCADA  |
+|          3 | PENDIENTE |
+|          4 | PENDIENTE |
+|          5 | CADUCADA  |
++------------+-----------+
++-------------+---------------------+----------+
+| id_registro | ejecutado_utc       | cantidad |
++-------------+---------------------+----------+
+|           4 | 2026-11-24 10:54:44 |        2 |
+|           5 | 2026-11-24 10:54:59 |        0 |
+|           6 | 2026-11-24 10:55:14 |        0 |
++-------------+---------------------+----------+
+
+```
 
 Las reservas 1, 2 y 5 deben figurar como CADUCADA. La 3 y la 4 siguen PENDIENTE. En la bitácora veréis cantidad 2 en el primer turno y 0 en los siguientes mientras los datos sigan igual. El 0 registra una ejecución correcta que no tuvo que cambiar filas.
 
@@ -274,14 +376,57 @@ Las reservas 1, 2 y 5 deben figurar como CADUCADA. La 3 y la 4 siguen PENDIENTE.
 
 ```sql
 ALTER EVENT lab_eventos_academia.ev_caducar_reservas DISABLE;
-SHOW EVENTS FROM lab_eventos_academia;
+SHOW EVENTS FROM lab_eventos_academia\G;
+```
+```
+*************************** 1. row ***************************
+                  Db: lab_eventos_academia
+                Name: ev_caducar_reservas
+             Definer: root@localhost
+           Time zone: +00:00
+                Type: RECURRING
+          Execute at: NULL
+      Interval value: 15
+      Interval field: SECOND
+              Starts: 2026-11-24 10:54:44
+                Ends: 2026-11-24 11:02:29
+              Status: DISABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+*************************** 2. row ***************************
+                  Db: lab_eventos_academia
+                Name: ev_foto_pendientes
+             Definer: root@localhost
+           Time zone: +00:00
+                Type: ONE TIME
+          Execute at: 2026-11-24 10:42:35
+      Interval value: NULL
+      Interval field: NULL
+              Starts: NULL
+                Ends: NULL
+              Status: DISABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+```
+El estado esperado es `DISABLED`. 
 
+```sql
 SELECT COUNT(*) AS turnos_registrados, MAX(id_registro) AS ultima_marca
 FROM registro_eventos
 WHERE evento = 'ev_caducar_reservas';
 ```
-
-El estado esperado es DISABLED. Repetid el SELECT unos 20 segundos después. Si había un turno en marcha, dejad que termine. Cuando el resultado se estabilice, anotad ultima_marca.
+Repetid el `SELECT` unos 20 segundos después. Si había un turno en marcha, dejad que termine. Cuando el resultado se estabilice, anotad ultima_marca.
+```
++--------------------+--------------+
+| turnos_registrados | ultima_marca |
++--------------------+--------------+
+|                 11 |           14 |
++--------------------+--------------+
+```
 
 # Paso 14 Vencer una reserva mientras el evento está pausado
 
@@ -295,8 +440,14 @@ SELECT id_reserva, estado,
 FROM reservas_aula
 WHERE id_reserva = 3;
 ```
-
-Esperad PENDIENTE y plazo_vencido 1. Hemos cambiado la fecha en la fila. El evento está pausado y la reserva seguirá pendiente hasta que una nueva ejecución la procese.
+```
++------------+-----------+---------------+
+| id_reserva | estado    | plazo_vencido |
++------------+-----------+---------------+
+|          3 | PENDIENTE |             1 |
++------------+-----------+---------------+
+```
+Hemos cambiado la fecha en la fila. El evento está pausado y la reserva seguirá pendiente hasta que una nueva ejecución la procese.
 
 # Reanudar con un horario nuevo
 
@@ -312,11 +463,50 @@ ON SCHEDULE EVERY 12 SECOND
 ENABLE;
 ```
 
-Conservamos el cuerpo y cambiamos el horario. El primer turno queda previsto a los 20 segundos y el siguiente a los 32. ENDS cierra la ventana a los 38 segundos, antes de que llegue el siguiente turno.
+Conservamos el cuerpo y cambiamos el horario. El primer turno queda previsto a los 20 segundos y el siguiente a los 32. `ENDS` cierra la ventana a los 38 segundos, antes de que llegue el siguiente turno.
 
 # Paso 16 Comprobar los dos nuevos turnos y el cierre
 
 Pasados unos 45 segundos desde la reprogramación, repetid las consultas del paso 12 y comprobad los metadatos del evento.
+```sql
+SELECT id_reserva, estado
+FROM reservas_aula
+ORDER BY id_reserva;
+
+SELECT id_registro, ejecutado_utc, cantidad
+FROM registro_eventos
+WHERE evento = 'ev_caducar_reservas'
+ORDER BY id_registro;
+```
+```
++------------+-----------+
+| id_reserva | estado    |
++------------+-----------+
+|          1 | CADUCADA  |
+|          2 | CADUCADA  |
+|          3 | CADUCADA  |
+|          4 | PENDIENTE |
+|          5 | CADUCADA  |
++------------+-----------+
++-------------+---------------------+----------+
+| id_registro | ejecutado_utc       | cantidad |
++-------------+---------------------+----------+
+|           4 | 2026-11-24 10:54:44 |        2 |
+|           5 | 2026-11-24 10:54:59 |        0 |
+|           6 | 2026-11-24 10:55:14 |        0 |
+|           7 | 2026-11-24 10:55:29 |        0 |
+|           8 | 2026-11-24 10:55:44 |        0 |
+|           9 | 2026-11-24 10:55:59 |        0 |
+|          10 | 2026-11-24 10:56:14 |        0 |
+|          11 | 2026-11-24 10:56:29 |        0 |
+|          12 | 2026-11-24 10:56:44 |        0 |
+|          13 | 2026-11-24 10:56:59 |        0 |
+|          14 | 2026-11-24 10:57:14 |        0 |
+|          15 | 2026-11-24 11:01:43 |        1 |
+|          16 | 2026-11-24 11:01:55 |        0 |
++-------------+---------------------+----------+
+```
+En condiciones normales, a la bitácora se añaden dos filas, primero con cantidad 1 y después con 0. Sus identificadores son mayores que ultima_marca. La reserva 3 pasa a CADUCADA y la 4 sigue PENDIENTE. La definición se conserva por `PRESERVE` y aparece como `DISABLED` cuando finaliza su programación.
 
 ```sql
 SELECT DEFINER, STATUS, TIME_ZONE, INTERVAL_VALUE,
@@ -325,14 +515,51 @@ FROM INFORMATION_SCHEMA.EVENTS
 WHERE EVENT_SCHEMA = 'lab_eventos_academia'
   AND EVENT_NAME = 'ev_caducar_reservas';
 ```
-
-En condiciones normales, a la bitácora se añaden dos filas, primero con cantidad 1 y después con 0. Sus identificadores son mayores que ultima_marca. La reserva 3 pasa a CADUCADA y la 4 sigue PENDIENTE. La definición se conserva por PRESERVE y aparece como DISABLED cuando finaliza su programación.
-
-```sql
-SHOW CREATE EVENT lab_eventos_academia.ev_caducar_reservas;
+```
++----------------+----------+-----------+----------------+----------------+---------------------+---------------------+---------------------+
+| DEFINER        | STATUS   | TIME_ZONE | INTERVAL_VALUE | INTERVAL_FIELD | STARTS              | ENDS                | LAST_EXECUTED       |
++----------------+----------+-----------+----------------+----------------+---------------------+---------------------+---------------------+
+| root@localhost | DISABLED | +00:00    | 12             | SECOND         | 2026-11-24 11:01:43 | 2026-11-24 11:02:01 | 2026-11-24 11:01:55 |
++----------------+----------+-----------+----------------+----------------+---------------------+---------------------+---------------------+
 ```
 
-Comparad la definición con el CREATE EVENT inicial. Veréis el nuevo intervalo, el cuerpo original y la cuenta definidora. Si otra cuenta usa ALTER EVENT sin indicar DEFINER, esa cuenta pasa a ser la definidora. Revisad sus permisos.
+
+```sql
+SHOW CREATE EVENT lab_eventos_academia.ev_caducar_reservas\G;
+```
+```
+*************************** 1. row ***************************
+               Event: ev_caducar_reservas
+            sql_mode: ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+           time_zone: +00:00
+        Create Event: CREATE DEFINER=`root`@`localhost` EVENT `ev_caducar_reservas` ON SCHEDULE EVERY 12 SECOND STARTS '2026-11-24 11:01:43' ENDS '2026-11-24 11:02:01' ON COMPLETION PRESERVE DISABLE DO BEGIN
+    DECLARE v_filas INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            ROLLBACK;
+            RESIGNAL;
+        END;
+
+    START TRANSACTION;
+    UPDATE reservas_aula
+    SET estado = 'CADUCADA'
+    WHERE estado = 'PENDIENTE'
+      AND limite_utc <= UTC_TIMESTAMP();
+
+    SET v_filas = ROW_COUNT();
+    INSERT INTO registro_eventos (evento, ejecutado_utc, cantidad)
+    VALUES ('ev_caducar_reservas', UTC_TIMESTAMP(), v_filas);
+    COMMIT;
+END
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+```
+
+Comparad la definición con el `CREATE EVENT` inicial. Veréis el nuevo intervalo, el cuerpo original y la cuenta definidora. 
+::: nota
+Si otra cuenta usa `ALTER EVENT` sin indicar `DEFINER`, esa cuenta pasa a ser la definidora. Revisad sus permisos.
+::: 
 
 # Provocar un fallo controlado
 
@@ -370,7 +597,9 @@ END//
 DELIMITER ;
 ```
 
-**Qué hace MySQL.** SIGNAL genera la excepción. El manejador ejecuta ROLLBACK, que deshace tanto el cambio de estado como la inserción en la bitácora. RESIGNAL conserva el mensaje del error para que MySQL lo registre.
+**Qué hace MySQL.** `SIGNAL` genera la excepción. 
+El manejador ejecuta `ROLLBACK`, que deshace tanto el cambio de estado como la inserción en la bitácora. 
+`RESIGNAL` conserva el mensaje del error para que MySQL lo registre.
 
 **Qué esperamos observar.** El evento empieza y su definición queda visible. Para saber qué se confirmó, tendréis que consultar los datos tras el turno previsto.
 
@@ -381,16 +610,37 @@ DELIMITER ;
 Dejad pasar unos 35 segundos desde la creación del evento de fallo y ejecutad estas consultas.
 
 ```sql
-SELECT LAST_EXECUTED
+SELECT DEFINER, STATUS, TIME_ZONE, INTERVAL_VALUE,
+       INTERVAL_FIELD, STARTS, ENDS, LAST_EXECUTED
 FROM INFORMATION_SCHEMA.EVENTS
 WHERE EVENT_SCHEMA = 'lab_eventos_academia'
   AND EVENT_NAME = 'ev_fallo_controlado';
+```
++----------------+----------+-----------+----------------+----------------+--------+------+---------------------+
+| DEFINER        | STATUS   | TIME_ZONE | INTERVAL_VALUE | INTERVAL_FIELD | STARTS | ENDS | LAST_EXECUTED       |
++----------------+----------+-----------+----------------+----------------+--------+------+---------------------+
+| root@localhost | DISABLED | +00:00    | NULL           | NULL           | NULL   | NULL | 2026-11-24 11:08:33 |
++----------------+----------+-----------+----------------+----------------+--------+------+---------------------+
 
+
+```sql
 SELECT estado FROM reservas_aula WHERE id_reserva = 4;
 
 SELECT COUNT(*) AS filas_confirmadas
 FROM registro_eventos
 WHERE evento = 'ev_fallo_controlado';
+```
+```
++-----------+
+| estado    |
++-----------+
+| PENDIENTE |
++-----------+
++-------------------+
+| filas_confirmadas |
++-------------------+
+|                 0 |
++-------------------+
 ```
 
 Esperad una fecha de inicio, la reserva 4 en PENDIENTE y 0 filas confirmadas para ese evento. Si la cuenta docente tiene acceso y la configuración alimenta esa tabla, podéis consultar el registro de errores reciente con el bloque siguiente.
@@ -402,8 +652,13 @@ WHERE DATA LIKE '%Fallo controlado del laboratorio%'
 ORDER BY LOGGED DESC
 LIMIT 5;
 ```
-
-El mensaje esperado es «Fallo controlado del laboratorio». Si esa consulta está vacía o no se puede ejecutar, revisad con el docente el registro de errores de la instalación.
+```
++----------------------------+--------------------------------------------------------------------------------------------------------------+
+| LOGGED                     | DATA                                                                                                         |
++----------------------------+--------------------------------------------------------------------------------------------------------------+
+| 2026-11-24 11:08:33.753441 | Event Scheduler: [root@localhost][lab_eventos_academia.ev_fallo_controlado] Fallo controlado del laboratorio |
++----------------------------+--------------------------------------------------------------------------------------------------------------+
+```
 
 # Errores comunes
 
@@ -443,8 +698,10 @@ DROP EVENT IF EXISTS lab_eventos_academia.ev_fallo_controlado;
 
 SHOW EVENTS FROM lab_eventos_academia;
 ```
-
-Esperad un listado vacío. Las dos tablas pueden mantenerse como evidencia. Si al comenzar encontrasteis OFF y activasteis el programador en vuestra propia instancia aislada, restableced OFF con el bloque siguiente.
+```
+Empty set (0,00 sec)
+```
+Esperad un listado vacío. Las dos tablas pueden mantenerse como evidencia. Si al comenzar encontrasteis `OFF` y activasteis el programador en vuestra propia instancia aislada, restableced `OFF` con el bloque siguiente.
 
 ```sql
 SET GLOBAL event_scheduler = OFF;
