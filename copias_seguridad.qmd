@@ -1,0 +1,132 @@
+---
+title: "Copias de Seguridad y recuperación ante desastres"
+format: html
+---
+
+La importancia de las copias de seguridad
+Fallos de hardware, fallos de software, errores humanos, elimiinación accidental de información, ciberataques y ransomware, corrupción de la base de datos, desastres naturales. 
+
+El objetivo no es simplemente disponer de una copia de los datos, sino garantizar que podamos recuperarlos cuando sea necesario. 
+
+Clasificación de las copias de seguridad.
+criterio | tipos de logica
+segun que copiamos | logica o fisica.
+seguna la cantidad de información | completa, incremental, y diferencial
+según el estado del servicio | en frio y en caliente. 
+
+Diferencia entre copia completa, copia incremental y copia diferenical. 
+
+Copia de seguridad logica. 
+Consiste en extraer el contenido y las definiciones de los objetos de una base de datos para poder reconstruirla posteriormente. 
+No se copian directamente los archivos internos del gestor de bases de datos. 
+
+Que podemos incluir
+estructura de las tablas
+Registros
+indices y restricciones
+vistas 
+procedimientos almacenados
+funciones
+disparadores 
+eventos programados 
+
+Los usuarios, roles y permisos no se incluyen en la copia de seguridad lógica. 
+
+Para hacer esto se usa la herramienta interna mysqldump 
+mysqldump -u root -p --single-transaction --routines --triggers --events --databases nombre_basedatos > nombre_copia.sql
+
+Restaurar la copia mysql -u root -p < nombre_copia.sql
+
+Limites de datos que se pueden copiar usando un INSERT INTO...
+SHOW VARIABLES LIKE 'max_allowed_packet';
+Aumentarlo temporalmente en sesión o globalmente (requiere privilegios):
+SET GLOBAL max_allowed_packet = 67108864; -- 64 MB
+
+Hacerlo permanente: Añade max_allowed_packet=64M (o el valor deseado) bajo la sección [mysqld] en el archivo de configuración de MySQL.
+Al usar mysqldump, la herramienta sí se ve afectada por max_allowed_packet, aunque el comportamiento y el riesgo de error cambian entre el momento de exportar (crear) y el de importar (restaurar).
+
+1. Al crear la copia (mysqldump)
+
+• Riesgo bajo de error: Por defecto, mysqldump agrupa muchas filas en un solo INSERT INTO ... VALUES (...), (...); para que la restauración sea rápida.
+• Control automático: mysqldump tiene un parámetro interno llamado --net_buffer_length (por defecto suele ser de 1 MB) que controla cuándo corta un INSERT y empieza otro nuevo, manteniendo cada sentencia por debajo de su propio límite max_allowed_packet (que en el cliente mysqldump suele ser de 24 MB por defecto).
+• ¿Cuándo puede fallar al exportar?: Únicamente si tienes una sola fila que pesa más que el max_allowed_packet configurado en mysqldump o en el servidor (por ejemplo, una fila con un LONGBLOB o LONGTEXT gigante de cientos de megas).
+
+2. Al restaurar la copia (mysql < backup.sql)
+
+• Aquí es donde suelen ocurrir los errores: El cliente mysql (que lee el archivo .sql) y el servidor destino tienen sus propios valores de max_allowed_packet (que a veces son más bajos que los del servidor origen, por ejemplo 4 MB o 16 MB).
+• Si mysqldump generó sentencias INSERT de 20 MB porque el origen lo permitía, y el servidor destino solo acepta 16 MB, la restauración fallará con el error ERROR 1153 (08S01): Got a packet bigger than 'max_allowed_packet' bytes o MySQL server has gone away.
+
+Copia fisica
+show variables like 'datadir'
+consiste en copiar los archivos tal y como están almacenados en mysql que en linux y mysql será en /var/lib/mysql
+
+
+En frio
+crear un directorio para almacenar ls copias
+detener mysql (No cebemos copiar directamente los archivos mysql mediante cp mientras el servicio está funcionando)
+comprobar que el servicio esta detenido
+copiar el directorio de datos
+volver a inicial mysql
+verificar el funcionamiento del servicio. 
+
+Restauracion de una copia fisica
+Detener mysql
+mover el directorio de datos actual para conservarlo por si la copia falla. 
+Restaurar los archivos de la copia de seguridad simplemente copiandolo al directorio original.
+iniciar mysql 
+comprobar y si es necesario corregir propietarios y permisos. 
+
+Cuidado con los archivos y claves externas. 
+
+Tabla comparativa en tre los elementos que se copian en un a copia logica de una BBDD, una lógica de toda la instancia, o una copia fisica completa.
+
+Copia fisica en caliente.
+la version gratuita de mysql no permite hacer copias en caliente.  dos ejemplos son Percona XtraBackup (open software),  mySql Enterprise Backup (solucion comercial de oracle)
+
+Que ocurre con los usuarios roles y privilegios. 
+Mysql almacena la información de seguridad en una base de datos interna denominada mysql 
+Principales tablas del sistema:
+mysql.user, mysql.db ....
+Se incluyen en la copia de seguridad? 
+En una lógica de una base de datos concreta, no. 
+en una copia lógica completa de todo el sistema con las opciones adecuadas, si
+
+mysqldump -u root -p --single-transaction --routines --triggers --events --all-databases > backup_completo.sql
+
+mysql shell permite exportar cuentas, roles y privilegios mediante util.dumpInstance().
+
+RTO Recovery Time Objective.
+
+Es un tiempo definido por el usuario (la empresa), cuanto tiempo están dispuestos a estar sin servicio. 
+El RTO incluye:
+- detección de la incidencia
+- preparación de la infraestructura
+- restauración de las copias
+- verificación de la información
+- puesta en funcionamiento del servicio.
+Las copias fisicas pueden contribuir a reducir el RTO gracias a su velocidad de restauración. 
+
+RPO Recovery Point Objective
+define la cantidad de datos que el usuario esté dispuesto a perder, expresada en unidades de tiempo. 
+Por ejemplo, si hacemos copias de seguridad cada dos horas, podemos perder un máximo de dos horas de datos. 
+
+
+Binary Logs
+Archivos de registro binarios en los que mysql almacena eventos relacionados con las modificaciones realizadas en las bases de datos. 
+representan el historia de cambios de la información.
+
+Operaciones que registran habitualmente: insert, update....
+Principales aplicaciones: Recuperación de datos a un putnto concreto en el tiempo PITR
+Replicación en tre servidores mysql. 
+
+Tienen que estar activos en mysql para que se guarden, y por defecto se guardarán durante 30 días desde la última escritura y cada fichero guardará 30 días de operaciones. 
+estas variables se pueden consultar con los siguientes comandos
+
+show variables like 'binlog_expire_logs_seconds';
+.... 
+
+Los formatos que suelen usar son STATEMENT, ROW, MIXED. Por defecto mysql usa ROW. 
+
+Point in Time Recovery.
+
+Diseño de un plan de copias de seguridad. 
