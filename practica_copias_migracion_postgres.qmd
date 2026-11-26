@@ -159,27 +159,48 @@ Los volcados SQL, CSV, binlogs y copias físicas contienen datos de trabajo. Gua
 umask 077
 LAB="$HOME/ifct0310-copias"
 mkdir -p "$LAB"
+$LAB
 chmod 700 "$LAB"
 sudo du -sh /var/lib/mysql
 df -h /var/lib/mysql "$LAB"
 sudo find /var/lib/mysql -type l -print
 ```
 
-| Comando en Bash | Qué hace y por qué se usa |
-|:-----------------------------------|:-----------------------------------|
-| `umask 077` | Limita los permisos de lo que se cree desde esta sesión de Bash. El primer 0 deja los permisos del propietario tal como se soliciten. Cada 7 quita lectura, escritura y ejecución al grupo y a otros usuarios. Con los permisos habituales, un fichero nuevo queda en 600 y un directorio, en 700. Los permisos anteriores se conservan. |
-| `LAB="$HOME/ifct0310-copias"` | Guarda la ruta en la variable LAB. Si HOME vale `/home/ana`, LAB vale `/home/ana/ifct0310-copias`. Así usamos la misma ruta en todo el laboratorio. Las comillas mantienen la ruta como un único argumento al usar `"$LAB"`. |
-| `mkdir -p "$LAB"` | Crea la carpeta que indica LAB. La opción `-p` crea los directorios padre que falten y permite repetir la orden si la carpeta ya existe. |
-| `chmod 700 "$LAB"` | Da lectura, escritura y acceso al propietario de la carpeta. El grupo y los demás usuarios quedan con 0 permisos. Es útil cuando la carpeta ya existía, porque umask actúa al crear elementos nuevos. chmod, tal como está escrito, solo cambia la carpeta indicada. |
-| `sudo du -sh /var/lib/mysql` | Calcula el espacio que ocupa el directorio de datos. `-s` da un único total y `-h` lo presenta en unidades como M o G. sudo permite recorrer el directorio de MySQL aunque la cuenta de trabajo carezca de acceso. |
-| `df -h /var/lib/mysql "$LAB"` | Muestra el espacio disponible en los sistemas de archivos que contienen ambas rutas. Mirad la columna Avail o Disp. Si ambas rutas están en el mismo sistema de archivos, comparten el espacio disponible. |
-| `sudo find /var/lib/mysql -type l -print` | Busca enlaces simbólicos dentro del directorio de MySQL. Un enlace simbólico apunta a otra ruta. `-type l` usa la letra ele minúscula y `-print` muestra los enlaces encontrados. Si aparece uno, comprobad su destino y si queda cubierto por la copia. Una salida vacía sin errores indica que no se han encontrado enlaces. |
+A continuación se resume qué hace cada comando y por qué se utiliza en el laboratorio para preparar el directorio de copias y revisar el espacio y los enlaces antes de respaldar los datos de MySQL:
+
+`umask 077`: Limita los permisos de lo que se cree desde esta sesión de Bash. El primer 0 deja los permisos del propietario tal como se soliciten. Cada 7 quita lectura, escritura y ejecución al grupo y a otros usuarios. Con los permisos habituales, un fichero nuevo queda en 600 (6 da lectura y escritura solo al propietario; 0 y 0 bloquean por completo a grupo y otros.) y un directorio, en 700 (7 da lectura, escritura y acceso (x) al propietario; 0 y 0 cierran el paso a grupo y otros). Los permisos anteriores se conservan.
+
+`LAB="$HOME/ifct0310-copias"`: Guarda la ruta en la variable LAB. Si *HOME* vale */home/ana*, *LAB* vale */home/ana/ifct0310-copias*. Así usamos la misma ruta en todo el laboratorio. Las comillas mantienen la ruta como un único argumento al usar `$LAB`.
+
+`mkdir -p "$LAB"`: Crea la carpeta que indica LAB. La opción `-p` crea los directorios padre que falten y permite repetir la orden si la carpeta ya existe.
+
+`chmod 700 "$LAB"`: Da lectura, escritura y acceso al propietario de la carpeta. El grupo y los demás usuarios quedan con 0 permisos. Es útil cuando la carpeta ya existía, porque `umask 077` actúa al crear elementos nuevos. `chmod`, tal como está escrito, solo cambia la carpeta indicada.
+
+`sudo du -sh /var/lib/mysql`: Calcula el espacio que ocupa el directorio de datos. `-s` da un único total y `-h` lo presenta en unidades como M o G. `sudo` permite recorrer el directorio de MySQL aunque la cuenta de trabajo carezca de acceso.
+
+```         
+216M    /var/lib/mysql
+```
+
+`df -h /var/lib/mysql "$LAB"`: Muestra el espacio disponible en los sistemas de archivos que contienen ambas rutas. Mirad la columna Avail o Disp. Si ambas rutas están en el mismo sistema de archivos, comparten el espacio disponible.
+
+```         
+Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
+/dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
+```
+
+`sudo find /var/lib/mysql -type l -print`: Busca enlaces simbólicos dentro del directorio de MySQL. Un enlace simbólico apunta a otra ruta. `-type l` usa la letra ele minúscula y `-print` muestra los enlaces encontrados. Si aparece uno, comprobad su destino y si queda cubierto por la copia. Una salida vacía sin errores indica que no se han encontrado enlaces.
 
 Por ejemplo, si `du` muestra `1,2 G`, ese es el espacio que ocupa el directorio de datos. Usad el espacio libre de `df` para comprobar si caben el archivo de copia, la copia extraída, el volcado y los binlogs en los sistemas de archivos correspondientes.
 
 El último comando busca enlaces simbólicos. Comprobad también las rutas en la configuración de MySQL, tal como indica el apartado anterior. Un espacio de tablas externo puede existir aunque `find` no encuentre enlaces simbólicos.
 
 Comprobación. Ejecutad `ls -ld "$LAB"`. `-l` muestra el formato largo con los permisos y `-d` describe la carpeta en sí. Si la carpeta es del usuario y tiene el modo 700, veréis `drwx------`. Si abrís otra terminal, repetid `umask 077` y la asignación de `LAB` en esa sesión.
+
+```         
+drwx------ 2 sysadmin sysadmin 4096 Nov 26 09:38 /home/sysadmin/ifct0310-copias
+```
 
 # Distinguir qué estamos copiando
 
@@ -200,7 +221,13 @@ Un volcado es la exportación que genera un programa como `mysqldump`. En este l
 
 # Crear el esquema de prueba
 
-Abrid `sudo mysql` en Ubuntu. Usamos los nombres de tablas en minúsculas para mantener las mismas referencias en ambos sistemas operativos. Conservad esa conexión para los pasos 4 a 7. Antes de insertar las notas, deben existir las filas de cursos, profesores, asignaturas y alumnos a las que hacen referencia.
+Abrid `sudo mysql` en Ubuntu.
+
+Usamos los nombres de tablas en minúsculas para mantener las mismas referencias en ambos sistemas operativos.
+
+Conservad esa conexión para los pasos 4 a 7.
+
+Antes de insertar las notas, deben existir las filas de cursos, profesores, asignaturas y alumnos a las que hacen referencia.
 
 **Cliente mysql de Ubuntu · Crear y seleccionar la base**
 
@@ -310,7 +337,22 @@ SELECT COUNT(*) AS filas, COUNT(nota) AS calificadas,
        SUM(nota) AS suma FROM notas;
 ```
 
-`ORDER BY id_nota` presenta las filas en el orden de sus identificadores. `COUNT(*)` cuenta filas, `COUNT(nota)` cuenta las filas con nota y `SUM(nota)` suma los valores presentes. Los nombres detrás de `AS` son los encabezados de este resultado. Esperad 5 filas, 4 calificadas y suma 31,00, con `NULL` en la nota 2. La consola mostrará el punto como separador decimal.
+```         
++---------+-----------+---------------+------+
+| id_nota | id_alumno | id_asignatura | nota |
++---------+-----------+---------------+------+
+|       1 |         1 |             1 | 7.00 |
+|       2 |         1 |             3 | NULL |
+|       3 |         2 |             1 | 8.50 |
+|       4 |         3 |             2 | 6.50 |
+|       5 |         2 |             3 | 9.00 |
++---------+-----------+---------------+------+
++-------+-------------+-------+
+| filas | calificadas | suma  |
++-------+-------------+-------+
+|     5 |           4 | 31.00 |
++-------+-------------+-------+
+```
 
 # Crear objetos que podamos comprobar al restaurar
 
@@ -332,6 +374,14 @@ JOIN asignaturas AS s ON s.id_asignatura = n.id_asignatura;
 ```
 
 `CREATE … VIEW` guarda una consulta con el nombre `v_notas`. Los alias `n`, `a` y `s` abrevian los nombres de tablas. Los dos `JOIN … ON` cruzan cada nota con su alumno y asignatura mediante sus identificadores. Así la vista muestra nombres donde las filas de notas guardan claves.
+
+```         
++----------------+
+| CURRENT_USER() |
++----------------+
+| root@localhost |
++----------------+
+```
 
 **Cliente mysql de Ubuntu · Crear el procedimiento**
 
@@ -372,10 +422,29 @@ DO SET @notas_del_evento = (SELECT COUNT(*) FROM notas);
 CALL consultar_notas(1);
 SELECT * FROM v_notas ORDER BY id_nota;
 SHOW TRIGGERS;
-SHOW EVENTS;
+SHOW EVENTS\G;
 ```
 
 `CALL` llama al procedimiento con el alumno 1 y debe devolver dos filas. La consulta directa de la vista devuelve cinco. `SHOW TRIGGERS` y `SHOW EVENTS` enumeran esos objetos del esquema seleccionado. Comprobad el nombre de cada uno y el estado `DISABLED` del evento.
+
+```         
+*************************** 1. row ***************************
+                  Db: academia_copias
+                Name: ev_recuento_notas
+             Definer: root@localhost
+           Time zone: SYSTEM
+                Type: RECURRING
+          Execute at: NULL
+      Interval value: 1
+      Interval field: DAY
+              Starts: 2026-11-26 09:49:07
+                Ends: NULL
+              Status: DISABLED
+          Originator: 1
+character_set_client: utf8mb4
+collation_connection: utf8mb4_0900_ai_ci
+  Database Collation: utf8mb4_0900_ai_ci
+```
 
 # Crear una cuenta y un rol en MySQL
 
