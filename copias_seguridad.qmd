@@ -3,130 +3,381 @@ title: "Copias de Seguridad y recuperación ante desastres"
 format: html
 ---
 
-La importancia de las copias de seguridad
-Fallos de hardware, fallos de software, errores humanos, elimiinación accidental de información, ciberataques y ransomware, corrupción de la base de datos, desastres naturales. 
+# Fundamentos e Importancia de las Copias de Seguridad
 
-El objetivo no es simplemente disponer de una copia de los datos, sino garantizar que podamos recuperarlos cuando sea necesario. 
+Una **copia de seguridad** (*backup*) es un duplicado de los datos y metadatos de un sistema gestor de bases de datos (SGBD) que permite restaurar la información a un estado íntegro tras un evento de pérdida, corrupción o destrucción.
 
-Clasificación de las copias de seguridad.
-criterio | tipos de logica
-segun que copiamos | logica o fisica.
-seguna la cantidad de información | completa, incremental, y diferencial
-según el estado del servicio | en frio y en caliente. 
+## Amenazas frente a las que nos protege
+Un plan de respaldo robusto mitiga el impacto de diversos incidentes críticos:
+*   **Fallos de hardware:** Averías en discos duros, controladoras RAID, memoria RAM o placas base.
+*   **Fallos de software:** *Bugs* en el motor de la base de datos, actualizaciones fallidas del sistema operativo o errores en aplicaciones que corrompen registros.
+*   **Errores humanos:** Ejecución accidental de sentencias destructivas sin cláusula `WHERE` (`DELETE`, `UPDATE`), o borrado de objetos (`DROP TABLE`, `TRUNCATE`).
+*   **Ciberataques y Ransomware:** Secuestro o cifrado malicioso de los archivos del servidor y destrucción deliberada de información.
+*   **Corrupción de bases de datos:** Inconsistencias en las páginas de datos o índices provocadas por cortes de suministro eléctrico abruptos.
+*   **Desastres naturales:** Incendios, inundaciones o fallos masivos en el centro de datos (*Data Center*).
 
-Diferencia entre copia completa, copia incremental y copia diferenical. 
+> **Regla de oro de la administración de bases de datos:** El objetivo final no es almacenar copias de seguridad, sino **garantizar la capacidad de recuperación**. Una copia de seguridad cuya restauración nunca ha sido probada en un entorno aislado no ofrece ninguna garantía real.
 
-Copia de seguridad logica. 
-Consiste en extraer el contenido y las definiciones de los objetos de una base de datos para poder reconstruirla posteriormente. 
-No se copian directamente los archivos internos del gestor de bases de datos. 
 
-Que podemos incluir
-estructura de las tablas
-Registros
-indices y restricciones
-vistas 
-procedimientos almacenados
-funciones
-disparadores 
-eventos programados 
+# Clasificación de las Copias de Seguridad
 
-Los usuarios, roles y permisos no se incluyen en la copia de seguridad lógica. 
+Las estrategias de respaldo se clasifican atendiendo a **tres criterios ortogonales (independientes)** que pueden combinarse entre sí según las necesidades del negocio:
 
-Para hacer esto se usa la herramienta interna mysqldump 
-mysqldump -u root -p --single-transaction --routines --triggers --events --databases nombre_basedatos > nombre_copia.sql
+| Criterio | Categorías | Descripción |
+| :--- | :--- | :--- |
+| **Según qué copiamos** (Naturaleza) | **Lógica** / **Física** | Extrae sentencias SQL/datos estructurados frente a copiar los archivos binarios del sistema de archivos. |
+| **Según la cantidad de información** | **Completa** / **Incremental** / **Diferencial** | Abarca la totalidad de los datos o únicamente las variaciones producidas desde un punto de referencia. |
+| **Según el estado del servicio** | **En frío** (*Cold*) / **En caliente** (*Hot*) | Requiere detener el SGBD o permite operar mientras los usuarios siguen realizando transacciones. |
 
-Restaurar la copia mysql -u root -p < nombre_copia.sql
+## Diferencias según el volumen de datos (Completa, Incremental y Diferencial)
 
-Limites de datos que se pueden copiar usando un INSERT INTO...
+1.  **Copia Completa (*Full Backup*):**
+    *   **Funcionamiento:** Almacena la totalidad de los datos y estructuras incluidas en el alcance definido, independientemente de si han cambiado o no.
+    *   **Ventaja:** La restauración es rápida y directa, ya que solo se necesita un conjunto de archivos.
+    *   **Inconveniente:** Consume mucho espacio de almacenamiento y tiempo de ejecución/red.
+2.  **Copia Incremental (*Incremental Backup*):**
+    *   **Funcionamiento:** Almacena únicamente los bloques de datos o transacciones modificadas **desde la última copia realizada** (ya sea esta completa o una incremental anterior).
+    *   **Ventaja:** Muy rápida de ejecutar y ocupa el mínimo espacio posible.
+    *   **Inconveniente:** La restauración es lenta y compleja, pues requiere restaurar la última copia completa más **todas** las copias incrementales posteriores en estricto orden cronológico. Si una incremental intermedia se corrompe, se pierden las siguientes.
+3.  **Copia Diferencial (*Differential Backup*):**
+    *   **Funcionamiento:** Almacena todos los cambios realizados **desde la última copia completa**, acumulando las modificaciones día tras día hasta la siguiente copia completa.
+    *   **Ventaja:** Equilibrio entre espacio y velocidad de recuperación: solo se necesita la última copia completa y la última copia diferencial.
+    *   **Inconveniente:** Su tamaño crece progresivamente hasta que se vuelve a ejecutar un respaldo completo.
+
+*Nota: Estas dimensiones se combinan en entornos reales; por ejemplo, un entorno de alta disponibilidad suele emplear copias **físicas, incrementales y en caliente**.*
+
+---
+
+# Copia de Seguridad Lógica (*Logical Backup*)
+
+Una copia lógica consiste en interrogar al motor de bases de datos para extraer las definiciones de los objetos (DDL) y los datos almacenados (DML) en un formato portable (generalmente texto plano con instrucciones SQL). No accede directamente a los archivos del disco duro.
+
+## Elementos que puede incluir
+*   Estructura de tablas (`CREATE TABLE`), índices y restricciones (`PRIMARY KEY`, `FOREIGN KEY`, `CHECK`).
+*   Registros de datos (`INSERT INTO`).
+*   Vistas (`CREATE VIEW`).
+*   Rutinas almacenadas: Procedimientos (`PROCEDURE`) y Funciones (`FUNCTION`).
+*   Disparadores (`TRIGGER`).
+*   Eventos programados (`EVENT`).
+
+*(Nota: Por defecto, una copia lógica de una base de datos específica **no** incluye los usuarios, roles ni privilegios globales del servidor).*
+
+## Sintaxis y Ejemplos en MySQL (`mysqldump`)
+
+La herramienta estándar en MySQL/MariaDB es `mysqldump`, ejecutada desde la terminal del sistema operativo:
+
+```bash
+# Exportación completa y consistente de una base de datos específica
+mysqldump -u root -p --single-transaction --routines --triggers --events --databases academia_it > academia_it.sql
+```
+
+### Desglose de parámetros clave:
+*   `-u root -p`: Especifica el usuario y solicita la contraseña de forma interactiva.
+*   `--single-transaction`: Inicia una transacción antes de volcar los datos. Garantiza una "foto" consistente (aislamiento *Repeatable Read*) en motores transaccionales como **InnoDB** sin bloquear las lecturas ni escrituras de los usuarios.
+*   `--routines`: Incluye procedimientos almacenados y funciones (no se incluyen por defecto).
+*   `--triggers`: Incluye los disparadores (activado por defecto, buena práctica explicitarlo).
+*   `--events`: Incluye los eventos del planificador de tareas (no se incluyen por defecto).
+*   `--databases`: Añade las sentencias `CREATE DATABASE` y `USE` al inicio del archivo.
+*   `>`: Redirige la salida estándar hacia el fichero `.sql`.
+
+### Restauración de una copia lógica:
+```bash
+# Reconstrucción de la base de datos ejecutando el script SQL
+mysql -u root -p < academia_it.sql
+```
+> **Advertencia:** Si la base de datos ya existe en el destino, `mysqldump` incluye por defecto instrucciones `DROP TABLE IF EXISTS`, lo que sobrescribirá los datos actuales.
+
+## El límite de `max_allowed_packet` en copias lógicas
+Al trabajar con volúmenes grandes o campos binarios (`LONGBLOB`, `LONGTEXT`), el parámetro `max_allowed_packet` (tamaño máximo de un paquete de comunicación cliente-servidor) juega un papel crítico:
+
+1.  **Durante la exportación (`mysqldump`):** El riesgo de fallo es bajo. `mysqldump` agrupa múltiples filas en un solo `INSERT INTO ... VALUES (...), (...);` para acelerar la futura importación, pero utiliza `--net_buffer_length` (por defecto 1 MB) para trocear las sentencias y no superar su propio límite (24 MB por defecto). Solo fallará si una *única fila* excede dicho límite.
+2.  **Durante la restauración (`mysql < backup.sql`):** Es el punto habitual de fallo. Si el servidor origen permitió generar sentencias `INSERT` de 20 MB, pero el servidor destino tiene configurado `max_allowed_packet` en 4 MB o 16 MB, la importación abortará con el error:
+    `ERROR 1153 (08S01): Got a packet bigger than 'max_allowed_packet' bytes` o `MySQL server has gone away`.
+
+**Solución:**
+```sql
+-- Consultar el límite actual
 SHOW VARIABLES LIKE 'max_allowed_packet';
-Aumentarlo temporalmente en sesión o globalmente (requiere privilegios):
-SET GLOBAL max_allowed_packet = 67108864; -- 64 MB
 
-Hacerlo permanente: Añade max_allowed_packet=64M (o el valor deseado) bajo la sección [mysqld] en el archivo de configuración de MySQL.
-Al usar mysqldump, la herramienta sí se ve afectada por max_allowed_packet, aunque el comportamiento y el riesgo de error cambian entre el momento de exportar (crear) y el de importar (restaurar).
+-- Aumentarlo dinámicamente en el servidor destino (ej. a 64 MB)
+SET GLOBAL max_allowed_packet = 67108864;
+```
+Para hacerlo permanente, se debe añadir `max_allowed_packet = 64M` bajo la sección `[mysqld]` en el archivo de configuración (`my.cnf` o `my.ini`).
 
-1. Al crear la copia (mysqldump)
+# Copia de Seguridad Física (*Physical Backup*)
 
-• Riesgo bajo de error: Por defecto, mysqldump agrupa muchas filas en un solo INSERT INTO ... VALUES (...), (...); para que la restauración sea rápida.
-• Control automático: mysqldump tiene un parámetro interno llamado --net_buffer_length (por defecto suele ser de 1 MB) que controla cuándo corta un INSERT y empieza otro nuevo, manteniendo cada sentencia por debajo de su propio límite max_allowed_packet (que en el cliente mysqldump suele ser de 24 MB por defecto).
-• ¿Cuándo puede fallar al exportar?: Únicamente si tienes una sola fila que pesa más que el max_allowed_packet configurado en mysqldump o en el servidor (por ejemplo, una fila con un LONGBLOB o LONGTEXT gigante de cientos de megas).
+Una copia física consiste en duplicar directamente los directorios y archivos binarios donde el SGBD almacena los datos, índices, metadatos y registros de transacciones en el sistema operativo.
 
-2. Al restaurar la copia (mysql < backup.sql)
+En sistemas Linux (como Ubuntu Server), la ruta por defecto se consulta mediante:
+```sql
+SHOW VARIABLES LIKE 'datadir';
+-- Resultado habitual: /var/lib/mysql/
+```
 
-• Aquí es donde suelen ocurrir los errores: El cliente mysql (que lee el archivo .sql) y el servidor destino tienen sus propios valores de max_allowed_packet (que a veces son más bajos que los del servidor origen, por ejemplo 4 MB o 16 MB).
-• Si mysqldump generó sentencias INSERT de 20 MB porque el origen lo permitía, y el servidor destino solo acepta 16 MB, la restauración fallará con el error ERROR 1153 (08S01): Got a packet bigger than 'max_allowed_packet' bytes o MySQL server has gone away.
+Dentro de este directorio encontramos estructuras internas del motor InnoDB como:
+*   Subdirectorios por cada esquema (ej. `academia_it/`, `mysql/`).
+*   Archivos de espacios de tablas por archivo: `alumnos.ibd`, `cursos.ibd`.
+*   Espacio de tablas del sistema y diccionarios: `ibdata1`, `mysql.ibd`.
+*   Registros de deshacer y rehacer: `undo_001`, `#innodb_redo/`.
 
-Copia fisica
-show variables like 'datadir'
-consiste en copiar los archivos tal y como están almacenados en mysql que en linux y mysql será en /var/lib/mysql
+## Copia Física en Frío (*Cold Backup*)
+Se realiza deteniendo por completo el servicio de base de datos. Esto garantiza que ningún proceso esté escribiendo en disco y que todos los *buffers* en memoria hayan sido volcados (*flushed*), asegurando una consistencia total.
+
+### Procedimiento paso a paso (Ubuntu Server):
+```bash
+# 1. Crear directorio seguro para respaldos
+sudo mkdir -p /backup/mysql
+
+# 2. Detener el servicio MySQL
+sudo systemctl stop mysql
+
+# 3. Verificar que el servicio está completamente detenido
+sudo systemctl status mysql
+
+# 4. Copiar el directorio de datos preservando permisos, propietarios y marcas de tiempo (-a)
+sudo cp -a /var/lib/mysql /backup/mysql/mysql_completo_$(date +%F)
+
+# 5. Iniciar nuevamente el servicio
+sudo systemctl start mysql
+
+# 6. Comprobar que el motor arranca sin errores
+sudo systemctl status mysql
+```
+*   **Ventaja:** Sencillez absoluta; utiliza herramientas nativas del sistema operativo (`cp`, `tar`, `rsync`).
+*   **Inconveniente:** Indisponibilidad total del servicio durante el tiempo que dure la copia.
+*   **Peligro crítico:** **Jamás** se debe ejecutar `cp` sobre `/var/lib/mysql` con el servicio activo, ya que los archivos en disco estarán en un estado inconsistente respecto a la memoria RAM (*Buffer Pool*), generando copias corruptas e irrecuperables.
+
+### Restauración de una copia física:
+```bash
+# 1. Detener el servicio
+sudo systemctl stop mysql
+
+# 2. Respaldar el directorio actual (por seguridad ante fallos en la restauración)
+sudo mv /var/lib/mysql /var/lib/mysql_anterior
+
+# 3. Restaurar los archivos desde la copia de seguridad
+sudo cp -a /backup/mysql/mysql_completo_2026-11-26 /var/lib/mysql
+
+# 4. Asegurar que el usuario y grupo del sistema 'mysql' sea propietario de todo
+sudo chown -R mysql:mysql /var/lib/mysql
+
+# 5. Iniciar el servicio y verificar integridad
+sudo systemctl start mysql
+```
+*Nota importante:* En entornos con cifrado de datos en reposo (*TDE - Transparent Data Encryption*), es imprescindible respaldar y restaurar también el archivo *keyring* o las claves externas correspondientes, o los archivos `.ibd` serán ilegibles.
+
+## Copia Física en Caliente (*Hot Backup*)
+Permite copiar los archivos físicos mientras el servidor continúa procesando transacciones en producción (entornos 24/7). La edición gratuita de MySQL (*Community Edition*) no incluye una herramienta nativa para copias físicas en caliente, por lo que se recurre a soluciones especializadas:
+*   **Percona XtraBackup:** Estándar de la industria de código abierto.
+*   **MySQL Enterprise Backup:** Herramienta comercial oficial de Oracle.
+
+Estas herramientas copian los archivos `.ibd` y, simultáneamente, monitorizan en segundo plano los *Redo Logs* de InnoDB para capturar todas las transacciones que ocurren durante el proceso de copia.
+
+### Fases de trabajo con Percona XtraBackup:
+1.  **Backup:** Copia los datos en caliente.
+    ```bash
+    xtrabackup --backup --target-dir=/backup/completa
+    ```
+2.  **Prepare:** Aplica los *Redo Logs* capturados sobre los archivos copiados para dejarlos en un estado transaccionalmente consistente (equivale a la recuperación tras caída de InnoDB).
+    ```bash
+    xtrabackup --prepare --target-dir=/backup/completa
+    ```
+3.  **Restore:** Con el servicio MySQL detenido y `/var/lib/mysql` vacío, devuelve los archivos preparados a su ubicación original y corrige permisos (`chown -R mysql:mysql`).
+    ```bash
+    sudo systemctl stop mysql
+    xtrabackup --copy-back --target-dir=/backup/completa
+    sudo chown -R mysql:mysql /var/lib/mysql
+    sudo systemctl start mysql
+    ```
+
+# Comparativa: Copia Lógica vs. Copia Física
+
+| Característica | Copia Lógica | Copia Física |
+| :--- | :--- | :--- |
+| **Contenido copiado** | Definiciones SQL (DDL) y registros (DML). | Archivos binarios internos del SGBD. |
+| **Formato** | Texto plano (`.sql`, `.csv`, `.json`). | Binario propietario del motor. |
+| **Legibilidad humana** | Alta (editable con herramientas de texto). | Nula directamente. |
+| **Velocidad de restauración** | **Lenta** (debe re-ejecutar `INSERT` y reconstruir índices). | **Muy rápida** (velocidad de transferencia de disco/red). |
+| **Portabilidad** | **Alta** (entre versiones, S.O. e incluso motores distintos). | **Baja** (exige misma arquitectura, S.O. y versión compatible). |
+| **Granularidad (Recuperación selectiva)** | Sencilla (extraer una tabla o fila concreta). | Compleja (requiere restaurar toda la instancia o usar *Transportable Tablespaces*). |
+| **Escalabilidad (Bases de datos grandes)** | Poco eficiente a partir de decenas/cientos de GB. | Óptima para bases de datos de cientos de GB o TB. |
+
+## Analogía de la Biblioteca
+*   **Copia Lógica:** Es tener un inventario escrito con el texto de todos los libros y los planos para construir las estanterías. Si la biblioteca arde, tendrás que comprar madera, construir las estanterías y volver a imprimir cada libro (lento, pero puedes hacerlo en otro edificio de otro país).
+*   **Copia Física:** Es hacer una clonación exacta de todo el edificio con los libros ya colocados en sus estanterías. Si ocurre un desastre, simplemente abres las puertas del edificio clonado (instantáneo, pero requiere el mismo terreno y estructura).
 
 
-En frio
-crear un directorio para almacenar ls copias
-detener mysql (No cebemos copiar directamente los archivos mysql mediante cp mientras el servicio está funcionando)
-comprobar que el servicio esta detenido
-copiar el directorio de datos
-volver a inicial mysql
-verificar el funcionamiento del servicio. 
+# Gestión de Usuarios, Roles y Privilegios
 
-Restauracion de una copia fisica
-Detener mysql
-mover el directorio de datos actual para conservarlo por si la copia falla. 
-Restaurar los archivos de la copia de seguridad simplemente copiandolo al directorio original.
-iniciar mysql 
-comprobar y si es necesario corregir propietarios y permisos. 
+En MySQL, toda la información de seguridad se almacena en la base de datos del sistema llamada `mysql` (tablas `mysql.user`, `mysql.db`, `mysql.tables_priv`, `mysql.columns_priv`, `mysql.procs_priv`, `mysql.role_edges`, `mysql.default_roles`, `mysql.global_grants`).
 
-Cuidado con los archivos y claves externas. 
+## Alcance según el tipo de copia
 
-Tabla comparativa en tre los elementos que se copian en un a copia logica de una BBDD, una lógica de toda la instancia, o una copia fisica completa.
+| Elemento Copiado | Copia Lógica (1 BBDD) | Copia Lógica (`--all-databases`) | Copia Física Completa |
+| :--- | :---: | :---: | :---: |
+| **Datos y estructura de la BBDD** | Sí | Sí | Sí |
+| **Rutinas, Triggers y Eventos** | Con flags (`--routines`, etc.) | Con flags (`--routines`, etc.) | Sí |
+| **Usuarios, Roles y Privilegios** | **No** | **Sí** | **Sí** |
+| **Configuración del servidor (`my.cnf`)** | **No** | **No** | **No** (Copia manual) |
 
-Copia fisica en caliente.
-la version gratuita de mysql no permite hacer copias en caliente.  dos ejemplos son Percona XtraBackup (open software),  mySql Enterprise Backup (solucion comercial de oracle)
+## Comandos para respaldar y auditar seguridad
+1.  **Volcado lógico de toda la instancia:**
+    ```bash
+    mysqldump -u root -p --single-transaction --routines --triggers --events --all-databases > backup_instancia_completa.sql
+    ```
+2.  **Uso de MySQL Shell (Recomendado en MySQL 8.x):**
+    La utilidad moderna `mysqlsh` permite exportar instancias o solo usuarios de forma paralela y segura:
+    ```javascript
+    // Dentro de MySQL Shell (modo JS)
+    util.dumpInstance("/backup/instancia_shell", {threads: 4})
+    ```
+3.  **Extracción manual de DDL de cuentas:**
+    ```sql
+    SHOW CREATE USER 'profesor'@'localhost';
+    SHOW GRANTS FOR 'profesor'@'localhost';
+    ```
+> **Precaución entre versiones:** Nunca restaures tablas internas de la base de datos `mysql` (como `mysql.user`) mediante volcados físicos o SQL directos entre versiones mayores distintas (ej. de MySQL 5.7 a MySQL 8.4), ya que la estructura de las tablas del diccionario de datos cambia y corromperás el sistema de autenticación. Usa `mysqlpump`, `MySQL Shell` o sentencias `CREATE USER`/`GRANT`.
 
-Que ocurre con los usuarios roles y privilegios. 
-Mysql almacena la información de seguridad en una base de datos interna denominada mysql 
-Principales tablas del sistema:
-mysql.user, mysql.db ....
-Se incluyen en la copia de seguridad? 
-En una lógica de una base de datos concreta, no. 
-en una copia lógica completa de todo el sistema con las opciones adecuadas, si
+# Métricas de Continuidad de Negocio: RTO y RPO
 
-mysqldump -u root -p --single-transaction --routines --triggers --events --all-databases > backup_completo.sql
+El diseño técnico de las copias de seguridad responde directamente a dos indicadores financieros y operativos definidos por la dirección de la empresa:
 
-mysql shell permite exportar cuentas, roles y privilegios mediante util.dumpInstance().
+```
+   [Último Backup]          [Fallo / Incidente]          [Servicio Restaurado]
+----------|--------------------------|-----------------------------|------------> Tiempo
+          |<--------- RPO ---------->|<----------- RTO ----------->|
+             (Pérdida máxima de         (Tiempo máximo de caída
+              datos aceptable)           del servicio aceptable)
+```
 
-RTO Recovery Time Objective.
+## RTO (*Recovery Time Objective* - Objetivo de Tiempo de Recuperación)
+*   **Pregunta clave:** *¿Cuánto tiempo máximo puede estar detenido el servicio sin causar un daño inaceptable al negocio?*
+*   **Qué abarca:** No es solo el tiempo de ejecutar el comando de restauración. Incluye la detección del fallo, el diagnóstico, el aprovisionamiento de hardware/servidor, la transferencia y restauración de la copia, la verificación de integridad y la reconexión de las aplicaciones.
+*   **Impacto técnico:** Un RTO bajo (ej. 15 minutos) descarta las copias lógicas en bases de datos grandes y exige copias físicas o réplicas en espera (*Failover*).
 
-Es un tiempo definido por el usuario (la empresa), cuanto tiempo están dispuestos a estar sin servicio. 
-El RTO incluye:
-- detección de la incidencia
-- preparación de la infraestructura
-- restauración de las copias
-- verificación de la información
-- puesta en funcionamiento del servicio.
-Las copias fisicas pueden contribuir a reducir el RTO gracias a su velocidad de restauración. 
+## RPO (*Recovery Point Objective* - Objetivo de Punto de Recuperación)
+*   **Pregunta clave:** *¿Cuánta información (medida en tiempo de operaciones) estamos dispuestos a perder tras un desastre?*
+*   **Relación con la frecuencia de respaldo:**
 
-RPO Recovery Point Objective
-define la cantidad de datos que el usuario esté dispuesto a perder, expresada en unidades de tiempo. 
-Por ejemplo, si hacemos copias de seguridad cada dos horas, podemos perder un máximo de dos horas de datos. 
+| RPO Objetivo | Estrategia Técnica Requerida |
+| :--- | :--- |
+| **24 horas** | 1 copia completa diaria (ej. a medianoche). |
+| **1 hora** | Copias incrementales/diferenciales horarias o archivado horario de logs. |
+| **5 minutos** | Envío continuo/frecuente de *Binary Logs* hacia almacenamiento externo. |
+| **0 segundos (Cero pérdida)** | Replicación síncrona o semisíncrona (ej. *MySQL InnoDB Cluster* / *Group Replication*). |
 
+# Binary Logs (Binlogs) y Recuperación a un Punto en el Tiempo (PITR)
 
-Binary Logs
-Archivos de registro binarios en los que mysql almacena eventos relacionados con las modificaciones realizadas en las bases de datos. 
-representan el historia de cambios de la información.
+## ¿Qué son los Binary Logs?
+Los **Binary Logs** son archivos secuenciales donde MySQL registra todos los eventos que modifican los datos o la estructura de las bases de datos (`INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `DROP`, `TRUNCATE`). Las consultas de lectura (`SELECT`) no se registran.
 
-Operaciones que registran habitualmente: insert, update....
-Principales aplicaciones: Recuperación de datos a un putnto concreto en el tiempo PITR
-Replicación en tre servidores mysql. 
+*   **Diferencia clave:** No deben confundirse con los *Redo Logs* (`#innodb_redo/`). Los *Redo Logs* son internos del motor InnoDB para garantizar las propiedades ACID ante un corte de luz; los *Binary Logs* operan a nivel de servidor MySQL y sirven para **replicación** y **recuperación PITR**.
 
-Tienen que estar activos en mysql para que se guarden, y por defecto se guardarán durante 30 días desde la última escritura y cada fichero guardará 30 días de operaciones. 
-estas variables se pueden consultar con los siguientes comandos
+## Administración y Formatos de Binlogs
+Por defecto, en MySQL 8.x los *Binary Logs* vienen activados y tienen un periodo de retención de **30 días** (`2592000` segundos) desde su rotación/escritura.
 
-show variables like 'binlog_expire_logs_seconds';
-.... 
+```sql
+-- Verificar si están activos
+SHOW VARIABLES LIKE 'log_bin';
 
-Los formatos que suelen usar son STATEMENT, ROW, MIXED. Por defecto mysql usa ROW. 
+-- Ver ruta base y prefijo de archivos
+SHOW VARIABLES LIKE 'log_bin_basename';
 
-Point in Time Recovery.
+-- Consultar el tiempo de retención en segundos (por defecto 2592000 = 30 días)
+SHOW VARIABLES LIKE 'binlog_expire_logs_seconds';
 
-Diseño de un plan de copias de seguridad. 
+-- Listar todos los archivos binlog existentes y su tamaño
+SHOW BINARY LOGS;
+
+-- Ver el archivo activo actual y la posición exacta de escritura (MySQL 8.4+)
+SHOW BINARY LOG STATUS;
+-- Nota: En MySQL 8.0 y anteriores el comando es: SHOW MASTER STATUS;
+
+-- Forzar el cierre del archivo actual y abrir uno nuevo (rotación manual)
+FLUSH BINARY LOGS;
+```
+
+### Formatos de registro (`binlog_format`):
+1.  **`STATEMENT`:** Registra la sentencia SQL literal (ej. `UPDATE precios SET valor = valor * 1.1;`). Ocupa poco espacio, pero puede causar inconsistencias si la consulta usa funciones no deterministas (`NOW()`, `UUID()`, `RAND()`).
+2.  **`ROW` (Predeterminado en MySQL 8.x):** Registra el estado exacto de cada fila antes y después de la modificación. Es el formato más seguro y preciso para replicación y PITR, aunque genera archivos más grandes.
+3.  **`MIXED`:** Utiliza `STATEMENT` por defecto y cambia automáticamente a `ROW` cuando detecta operaciones no deterministas.
+
+### Inspección desde la terminal (`mysqlbinlog`):
+```bash
+# Leer contenido general
+sudo mysqlbinlog /var/lib/mysql/binlog.000001
+
+# Decodificar eventos en formato ROW para hacerlos legibles mediante comentarios SQL
+sudo mysqlbinlog --base64-output=DECODE-ROWS -vv /var/lib/mysql/binlog.000001
+```
+
+## PITR (*Point-In-Time Recovery*)
+El **PITR** es la técnica que permite restaurar una base de datos al estado exacto en el que se encontraba en un segundo determinado del pasado, combinando una **copia de seguridad base** con la reproducción selectiva de los **Binary Logs** posteriores.
+
+### Caso de Uso Práctico: Eliminación accidental de tabla
+*   **00:00:** Se realiza copia completa (`--single-transaction --master-data=2` o `--source-data=2` en MySQL 8.4, que anota en el archivo SQL la posición exacta del binlog en ese instante, ej. `binlog.000005`, posición `154`).
+*   **08:00 - 10:29:** Operación normal (matrículas, notas, altas).
+*   **10:30:** Un administrador ejecuta por error `DROP TABLE matriculas;`.
+
+### Procedimiento de recuperación PITR:
+1.  **Localizar el instante del desastre en el Binlog:**
+    ```bash
+    sudo mysqlbinlog --base64-output=DECODE-ROWS -vv /var/lib/mysql/binlog.000005 | grep -C 5 -i "DROP TABLE"
+    ```
+    *Supongamos que detectamos que la sentencia destructiva comienza en la posición `89420` (o a las `10:30:02`).*
+
+2.  **Restaurar la copia completa de las 00:00:**
+    ```bash
+    mysql -u root -p < backup_0000.sql
+    ```
+
+3.  **Reproducir los eventos desde la copia hasta justo antes del error:**
+    ```bash
+    # Utilizando posiciones exactas (método más preciso)
+    sudo mysqlbinlog --start-position=154 --stop-position=89420 /var/lib/mysql/binlog.000005 | mysql -u root -p
+
+    # Alternativa utilizando marcas de tiempo
+    sudo mysqlbinlog --start-datetime="2026-11-26 00:00:00" --stop-datetime="2026-11-26 10:29:59" /var/lib/mysql/binlog.000005 | mysql -u root -p
+    ```
+    *(Nota: Si hubo rotación de logs, se pasan todos los archivos secuencialmente: `binlog.000005 binlog.000006 ...`).*
+
+4.  **Verificación y nuevo respaldo:** Comprobar que la tabla `matriculas` está intacta con los datos de las 10:29 y realizar una copia de seguridad inmediata.
+
+---
+
+# Diseño de un Plan de Copias de Seguridad Empresarial
+
+Un plan de copias de seguridad profesional debe documentar el **qué, cuándo, dónde, cómo y quién** de los respaldos, apoyándose en estándares de la industria:
+
+## La Regla 3-2-1-1-0
+Evolución moderna de la clásica regla 3-2-1 para protegerse frente a fallos físicos y *ransomware*:
+*   **3 copias** de los datos (1 original en producción + 2 copias de seguridad).
+*   **2 medios** o tecnologías de almacenamiento distintas (ej. almacenamiento NVMe local + servidor NAS/SAN).
+*   **1 copia externa (*Off-site*)** ubicada geográficamente fuera del centro de datos principal (ej. nube pública AWS S3, Azure Blob Storage o sede remota).
+*   **1 copia inmutable o desconectada (*Air-gapped* / WORM):** Configurada con políticas *Write Once, Read Many* (como S3 Object Lock) para que ni siquiera un atacante con credenciales de administrador pueda borrarla o cifrarla.
+*   **0 errores** verificados mediante pruebas periódicas de restauración automatizadas.
+
+## Ejemplo de Planificación Semanal (RPO < 5 min, RTO < 1 hora)
+*   **Domingos (02:00):** Copia física completa en caliente (`xtrabackup --backup`).
+*   **Lunes a Sábado (02:00):** Copia física incremental en caliente basada en la copia anterior.
+*   **Diariamente (04:00):** Copia lógica (`mysqldump` o `mysqlsh`) de esquemas críticos para facilitar recuperaciones granulares rápidas de tablas individuales.
+*   **Continuamente (Tiempo real / cada 5 min):** Sincronización de los *Binary Logs* hacia almacenamiento externo inmutable.
+*   **Mensualmente:** Simulacro de desastre en servidor de preproducción para medir el RTO real y validar la integridad de las copias.
+
+---
+
+# Compatibilidad y Herramientas entre Motores SQL
+
+Aunque los conceptos teóricos (copia lógica/física, completa/incremental, RTO/RPO y PITR) son universales en el mundo de las bases de datos relacionales, cada SGBD implementa sus propias herramientas y nomenclaturas:
+
+| Característica / Concepto | MySQL / MariaDB | PostgreSQL | Microsoft SQL Server | Oracle Database |
+| :--- | :--- | :--- | :--- | :--- |
+| **Copia Lógica** | `mysqldump`, `mariadb-dump`, `mysqlsh` (`util.dumpInstance`) | `pg_dump` (1 BBDD), `pg_dumpall` (instancia completa) | `sqlpackage` (`.bacpac`), Generación de scripts SSMS | **Oracle Data Pump** (`expdp` / `impdp`) |
+| **Copia Física en Caliente (Nativa/Estándar)** | **Percona XtraBackup**, `mariadb-backup`, MySQL Enterprise Backup | `pg_basebackup`, **pgBackRest**, **Barman** | Comando nativo `BACKUP DATABASE ... TO DISK` (soporta Full, Differential, Log) | **RMAN** (*Recovery Manager*) |
+| **Registros de Transacciones para PITR** | **Binary Logs** (`binlog.00000x`) | **WAL** (*Write-Ahead Logging* - archivos en `pg_wal/`) | **Transaction Log** (`.ldf` / backups `.trn`) | **Archived Redo Logs** |
+| **Soporte Nativo PITR** | Sí (`mysqlbinlog` + copia base) | Sí (`recovery.signal` + `restore_command` en `postgresql.conf`) | Sí (`RESTORE LOG ... WITH STOPAT = 'fecha'`) | Sí (`RMAN> RECOVER DATABASE UNTIL TIME ...`) |
+| **Copia Física en Frío** | Detener servicio + copiar `datadir` (`/var/lib/mysql`) | Detener servicio + copiar `PGDATA` (`/var/lib/postgresql/...`) | Detener servicio + copiar archivos `.mdf` y `.ldf` | `SHUTDOWN IMMEDIATE` + copiar Datafiles, Controlfiles y Redo Logs |
+
+## Notas clave de compatibilidad entre motores:
+*   **Portabilidad entre distintos motores (ej. migrar de MySQL a PostgreSQL):** Las copias físicas son **100% incompatibles** entre distintos fabricantes (e incluso entre MySQL 8.x y MariaDB 10.x/11.x debido a divergencias en el formato interno de InnoDB). Para migrar entre motores distintos se debe utilizar obligatoriamente una **copia lógica** en formato estándar (CSV o SQL compatible ANSI) o herramientas ETL/migración especializadas (como *pgLoader* o *AWS DMS*).
+*   **Diferencias en licenciamiento:** Mientras que **PostgreSQL** incluye de forma gratuita y nativa herramientas empresariales para copias físicas en caliente (`pg_basebackup`) y archivado continuo de WAL, **MySQL** delega la copia física en caliente gratuita a terceros de código abierto como *Percona XtraBackup* (aunque MariaDB sí incluye `mariadb-backup` de serie).

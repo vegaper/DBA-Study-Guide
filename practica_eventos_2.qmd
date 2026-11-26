@@ -7,11 +7,11 @@ En el aula se prestan equipos y se asigna una fecha límite de devolución. El p
 
 # Objetivos de aprendizaje
 
-* Construir una vista que reúna los datos del préstamo y del equipo y calcule si el plazo ha vencido.
+- Construir una vista que reúna los datos del préstamo y del equipo y calcule si el plazo ha vencido.
 
-* Registrar una devolución mediante un procedimiento y comprobar la traza que deja su disparador.
+- Registrar una devolución mediante un procedimiento y comprobar la traza que deja su disparador.
 
-* Programar un evento que invoque un procedimiento y conservar el resultado de cada ejecución.
+- Programar un evento que invoque un procedimiento y conservar el resultado de cada ejecución.
 
 **Entorno de trabajo.** MySQL 8.4 en una instancia de aula, con MySQL Workbench o la consola mysql. Usaremos el esquema nuevo lab_prestamos_tic. Tiempo orientativo de 50 a 65 minutos.
 
@@ -24,15 +24,17 @@ En el aula se prestan equipos y se asigna una fecha límite de devolución. El p
 Abrid una conexión nueva a MySQL 8.4 y ejecutad [practica_eventos_2.sql](practica_eventos_2.sql) completo una vez. Si *lab_prestamos_tic* ya existe, comprobad su origen antes de seguir. Usad una cuenta autorizada para crear y ejecutar los objetos del laboratorio.
 
 | Tabla | Qué guarda | Filas iniciales |
-| :---- | :---- | :---- |
+|:-----------------------|:-----------------------|:-----------------------|
 | **equipos** | El catálogo del material que se presta. | 5 |
 | **prestamos** | Quién lo tiene, cuándo vence y en qué estado está. | 5 |
 | **historial_prestamos** | Un registro por cada cambio de estado. | 0 |
 | **revisiones_prestamos** | Un registro por cada ejecución automática confirmada. | 0 |
 
+![](images/paste-57.png)
+
 # Comprobar el punto de partida
 
-```sql
+``` sql
 USE lab_prestamos_tic;
 SET SESSION time_zone = '+00:00';
 SET SESSION autocommit = 1;
@@ -41,7 +43,8 @@ SELECT id_prestamo, estado, vence_utc
 FROM prestamos
 ORDER BY id_prestamo;
 ```
-```
+
+```         
 +-------------+----------+---------------------+
 | id_prestamo | estado   | vence_utc           |
 +-------------+----------+---------------------+
@@ -55,7 +58,7 @@ ORDER BY id_prestamo;
 
 **Resultado esperado.** 101 y 102 están ABIERTOS con plazo pasado. 103 y 104 están ABIERTOS con plazo futuro. 105 ya figura como DEVUELTO. Los plazos son relativos a la carga. Haced la práctica en la misma jornada para reproducir los resultados.
 
-UTC nos da una referencia común para los horarios. Autocommit permite confirmar la devolución manual al ejecutar CALL en esta conexión. Si reconectáis, repetid este bloque. 
+UTC nos da una referencia común para los horarios. Autocommit permite confirmar la devolución manual al ejecutar CALL en esta conexión. Si reconectáis, repetid este bloque.
 
 # Consultar los préstamos con una vista
 
@@ -63,7 +66,7 @@ UTC nos da una referencia común para los horarios. Autocommit permite confirmar
 
 ## Crear la vista
 
-```sql
+``` sql
 CREATE VIEW v_prestamos AS
 SELECT p.id_prestamo,
        e.nombre AS equipo,
@@ -80,19 +83,18 @@ FROM prestamos AS p
 INNER JOIN equipos AS e ON e.id_equipo = p.id_equipo;
 ```
 
-`INNER JOIN` incorpora el nombre del equipo. 
-`CASE` devuelve 1 si el préstamo sigue abierto y su fecha límite ya se ha alcanzado. La vista calcula esa columna cuando se consulta. 
-El estado que aparece en la vista procede de la tabla prestamos.
+`INNER JOIN` incorpora el nombre del equipo. `CASE` devuelve 1 si el préstamo sigue abierto y su fecha límite ya se ha alcanzado. La vista calcula esa columna cuando se consulta. El estado que aparece en la vista procede de la tabla prestamos.
 
 ## Consultar qué préstamos requieren revisión
 
-```sql
+``` sql
 SELECT id_prestamo, equipo, estado, pendiente_de_marcar
 FROM v_prestamos
 WHERE pendiente_de_marcar = 1
 ORDER BY id_prestamo;
 ```
-```
+
+```         
 +-------------+---------------------+---------+---------------------+
 | id_prestamo | equipo              | estado  | pendiente_de_marcar |
 +-------------+---------------------+---------+---------------------+
@@ -109,7 +111,7 @@ ORDER BY id_prestamo;
 
 ## Crear el disparador
 
-```sql
+``` sql
 DELIMITER //
 
 CREATE TRIGGER tr_prestamos_historial
@@ -127,20 +129,18 @@ END//
 DELIMITER ;
 ```
 
-`AFTER UPDATE` hace que el trigger se ejecute después de actualizar cada fila de prestamos. 
-`OLD.estado` contiene el estado anterior y `NEW.estado` el nuevo. 
-La condición registra solo cambios de estado. 
-Si se modifica únicamente la fecha límite, este disparador no añade una fila al historial.
+`AFTER UPDATE` hace que el trigger se ejecute después de actualizar cada fila de prestamos. `OLD.estado` contiene el estado anterior y `NEW.estado` el nuevo. La condición registra solo cambios de estado. Si se modifica únicamente la fecha límite, este disparador no añade una fila al historial.
 
 ## Comprobar la definición
 
-```sql
+``` sql
 SHOW TRIGGERS FROM lab_prestamos_tic\G;
 
 SELECT COUNT(*) AS cambios_guardados
 FROM historial_prestamos;
 ```
-```
+
+```         
 *************************** 1. row ***************************
              Trigger: tr_prestamos_historial
                Event: UPDATE
@@ -181,7 +181,7 @@ Si `CREATE TRIGGER` da un error de permisos relacionado con el registro binario,
 
 ## Crear el procedimiento de devolución
 
-```sql
+``` sql
 DELIMITER //
 
 CREATE PROCEDURE sp_devolver_prestamo(IN p_id INT UNSIGNED)
@@ -204,10 +204,11 @@ DELIMITER ;
 
 El parámetro `IN` recibe el identificador. `UPDATE` busca esa fila y solo admite la devolución si está abierta o vencida. Si ninguna fila cambia, `SIGNAL` comunica el motivo posible a la sesión que hizo `CALL`.
 
-```sql
+``` sql
 SHOW PROCEDURE STATUS WHERE db = 'lab_prestamos_tic'\G;
 ```
-```
+
+```         
 *************************** 1. row ***************************
                   Db: lab_prestamos_tic
                 Name: sp_devolver_prestamo
@@ -225,7 +226,7 @@ collation_connection: utf8mb4_0900_ai_ci
 
 ## Devolver el préstamo 103
 
-```sql
+``` sql
 CALL sp_devolver_prestamo(103);
 
 SELECT id_prestamo, estado, devuelto_utc
@@ -236,7 +237,8 @@ SELECT id_prestamo, estado_anterior, estado_nuevo
 FROM historial_prestamos
 WHERE id_prestamo = 103;
 ```
-```
+
+```         
 +-------------+----------+---------------------+
 | id_prestamo | estado   | devuelto_utc        |
 +-------------+----------+---------------------+
@@ -249,14 +251,13 @@ WHERE id_prestamo = 103;
 +-------------+-----------------+--------------+
 ```
 
-
 # Preparar el procedimiento de vencimientos
 
 **Objetivo.** Encapsular la revisión masiva de préstamos y devolver al llamador cuántas filas cambiaron.
 
 ## Crear el procedimiento que marcará los vencimientos
 
-```sql
+``` sql
 DELIMITER //
 
 CREATE PROCEDURE sp_marcar_vencidos(OUT p_marcados INT UNSIGNED)
@@ -273,17 +274,15 @@ END//
 DELIMITER ;
 ```
 
-El `WHERE` limita la actualización a los préstamos que siguen abiertos y ya han superado su plazo o lo alcanzan en ese momento.
-`ROW_COUNT()` se lee justo después del `UPDATE`. 
-`OUT` permite que quien ejecute CALL reciba el número de préstamos marcados.
+El `WHERE` limita la actualización a los préstamos que siguen abiertos y ya han superado su plazo o lo alcanzan en ese momento. `ROW_COUNT()` se lee justo después del `UPDATE`. `OUT` permite que quien ejecute CALL reciba el número de préstamos marcados.
 
-El procedimiento deja que quien lo llama decida cuándo confirmar la transacción. 
-En el paso siguiente el evento confirmará juntos la actualización, el historial y el resumen.
+El procedimiento deja que quien lo llama decida cuándo confirmar la transacción. En el paso siguiente el evento confirmará juntos la actualización, el historial y el resumen.
 
-```sql
+``` sql
 SHOW PROCEDURE STATUS WHERE db = 'lab_prestamos_tic'\G;
 ```
-```
+
+```         
 *************************** 1. row ***************************
                   Db: lab_prestamos_tic
                 Name: sp_devolver_prestamo
@@ -316,14 +315,15 @@ collation_connection: utf8mb4_0900_ai_ci
 
 Repetid la consulta de la vista del apartado 2. Después comprobad las dos tablas de registro.
 
-```sql
+``` sql
 SELECT COUNT(*) AS cambios_en_historial
 FROM historial_prestamos;
 
 SELECT COUNT(*) AS revisiones_registradas
 FROM revisiones_prestamos;
 ```
-```
+
+```         
 +----------------------+
 | cambios_en_historial |
 +----------------------+
@@ -342,10 +342,11 @@ FROM revisiones_prestamos;
 
 ## Comprobar el programador
 
-```sql
+``` sql
 SHOW GLOBAL VARIABLES LIKE 'event_scheduler';
 ```
-```
+
+```         
 +-----------------+-------+
 | Variable_name   | Value |
 +-----------------+-------+
@@ -357,7 +358,7 @@ El valor debe ser `ON`. Si aparece `OFF`, el administrador puede ejecutar `SET G
 
 # Crear el evento y dejar que llegue su turno
 
-```sql
+``` sql
 DELIMITER //
 
 CREATE EVENT ev_revisar_prestamos
@@ -395,22 +396,24 @@ DELIMITER ;
 
 ### Consultar después de unos 45 segundos
 
-```sql
+``` sql
 SELECT EVENT_NAME, STATUS, STARTS, ENDS, LAST_EXECUTED
 FROM INFORMATION_SCHEMA.EVENTS
 WHERE EVENT_SCHEMA = 'lab_prestamos_tic'
   AND EVENT_NAME = 'ev_revisar_prestamos';
 ```
-```
+
+```         
 +----------------------+----------+---------------------+---------------------+---------------------+
 | EVENT_NAME           | STATUS   | STARTS              | ENDS                | LAST_EXECUTED       |
 +----------------------+----------+---------------------+---------------------+---------------------+
 | ev_revisar_prestamos | DISABLED | 2026-11-24 11:57:42 | 2026-11-24 11:58:05 | 2026-11-24 11:57:57 |
 +----------------------+----------+---------------------+---------------------+---------------------+
 ```
+
 Esperad `DISABLED` tras el fin del horario y una fecha en `LAST_EXECUTED`. Este campo indica cuándo arrancó el último turno. Para comprobar qué hizo, consultad la tabla donde el evento guarda su resultado.
 
-```sql
+``` sql
 SELECT id_revision, ejecutado_utc, prestamos_marcados
 FROM revisiones_prestamos
 ORDER BY id_revision;
@@ -419,7 +422,8 @@ SELECT id_prestamo, estado_anterior, estado_nuevo
 FROM historial_prestamos
 ORDER BY id_cambio;
 ```
-```
+
+```         
 +-------------+---------------------+--------------------+
 | id_revision | ejecutado_utc       | prestamos_marcados |
 +-------------+---------------------+--------------------+
@@ -433,22 +437,24 @@ ORDER BY id_cambio;
 |         101 | ABIERTO         | VENCIDO      |
 |         102 | ABIERTO         | VENCIDO      |
 +-------------+-----------------+--------------+
-``` 
+```
 
-```sql
+``` sql
 SELECT id_prestamo, equipo, estado, pendiente_de_marcar
 FROM v_prestamos
 WHERE pendiente_de_marcar = 1
 ORDER BY id_prestamo;
 ```
+
 `Empty set (0,01 sec)`
 
-```sql
+``` sql
 SELECT id_prestamo, equipo, estado, pendiente_de_marcar
 FROM v_prestamos
 ORDER BY id_prestamo;
 ```
-```
+
+```         
 +-------------+---------------------+----------+---------------------+
 | id_prestamo | equipo              | estado   | pendiente_de_marcar |
 +-------------+---------------------+----------+---------------------+
@@ -468,14 +474,15 @@ La revisión que dejó un 0 se ejecutó correctamente. Al encontrar los préstam
 
 ## Devolver el préstamo 101
 
-```sql
+``` sql
 CALL sp_devolver_prestamo(101);
 
 SELECT id_prestamo, estado, devuelto_utc
 FROM v_prestamos
 ORDER BY id_prestamo;
 ```
-```
+
+```         
 +-------------+----------+---------------------+
 | id_prestamo | estado   | devuelto_utc        |
 +-------------+----------+---------------------+
@@ -491,22 +498,24 @@ ORDER BY id_prestamo;
 
 # Probar una devolución duplicada
 
-```sql
+``` sql
 CALL sp_devolver_prestamo(101);
 ```
-```
+
+```         
 ERROR 1644 (45000): Prestamo inexistente o ya devuelto
 ```
-Ejecutad esta llamada por separado.  Si volvéis a consultar el historial, seguirá con cuatro cambios.
 
-**Al terminar.** El evento ya debería figurar como `DISABLED`. Si empezasteis con `event_scheduler` en `OFF` y lo activasteis para la práctica, el administrador puede restablecerlo con `SET GLOBAL event_scheduler = OFF; `cuando corresponda. El ajuste afecta a toda la instancia.
+Ejecutad esta llamada por separado. Si volvéis a consultar el historial, seguirá con cuatro cambios.
+
+**Al terminar.** El evento ya debería figurar como `DISABLED`. Si empezasteis con `event_scheduler` en `OFF` y lo activasteis para la práctica, el administrador puede restablecerlo con `SET GLOBAL event_scheduler = OFF;`cuando corresponda. El ajuste afecta a toda la instancia.
 
 # Relacionar los cuatro objetos
 
 # Qué hizo cada objeto
 
 | Objeto | Qué lo pone en marcha | Resultado en la práctica |
-| :---- | :---- | :---- |
+|:-----------------------|:-----------------------|:-----------------------|
 | **VIEW** | Una consulta `SELECT` sobre la vista. | Muestra los datos actuales y señala plazos vencidos por revisar. |
 | **PROCEDURE** | Un `CALL` desde la consola o el evento. | Registra una devolución o marca los préstamos vencidos. |
 | **TRIGGER** | Un `UPDATE` sobre una fila de prestamos. | Guarda el cambio de estado en el historial. |
