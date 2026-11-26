@@ -466,22 +466,64 @@ SET DEFAULT ROLE 'lab_rol_copias'@'%'
 
 `CREATE ROLE` crea un conjunto de permisos reutilizable. `GRANT SELECT ON academia_copias.*` concede al rol lectura de las tablas y la vista del esquema. El asterisco aplica la concesión a todo el esquema.
 
-`CREATE USER … IDENTIFIED BY RANDOM PASSWORD` crea `lab_lector_copias@localhost` y muestra la contraseña generada. Guardadla antes de ejecutar las consultas de comprobación. MySQL identifica las cuentas por usuario y host. `localhost` corresponde a la conexión local de la prueba. El signo `%` forma parte del nombre completo del rol y lo usaremos de la misma manera al concederlo.
+`CREATE USER … IDENTIFIED BY RANDOM PASSWORD` crea `lab_lector_copias@localhost` y muestra la contraseña generada. Guardadla antes de ejecutar las consultas de comprobación.
+
+```         
++-------------------+-----------+----------------------+-------------+
+| user              | host      | generated password   | auth_factor |
++-------------------+-----------+----------------------+-------------+
+| lab_lector_copias | localhost | HF5aB!bAh]M_wbEpS<uz |           1 |
++-------------------+-----------+----------------------+-------------+
+```
+
+MySQL identifica las cuentas por usuario y host. `localhost` corresponde a la conexión local de la prueba. El signo `%` forma parte del nombre completo del rol y lo usaremos de la misma manera al concederlo.
 
 El segundo `GRANT` asigna el rol al lector. `SET DEFAULT ROLE` hace que ese rol se active al iniciar una nueva sesión.
 
 **Cliente mysql de Ubuntu · Ver qué se ha concedido**
 
 ``` sql
-SHOW CREATE USER 'lab_lector_copias'@'localhost';
+SHOW CREATE USER 'lab_lector_copias'@'localhost'\G;
 SHOW GRANTS FOR 'lab_rol_copias'@'%';
 SHOW GRANTS FOR 'lab_lector_copias'@'localhost'
   USING 'lab_rol_copias'@'%';
 ```
 
-Guardad temporalmente la contraseña en un lugar privado. `SHOW CREATE USER` muestra cómo está definida la cuenta, incluido el método de autenticación. Su salida administrativa puede incluir el hash de autenticación. `SHOW GRANTS` permite revisar la concesión al rol y la pertenencia del usuario. `USING` permite ver los permisos que aporta ese rol. Omitid contraseña y hash en las evidencias.
+```         
+*************************** 1. row ***************************
+CREATE USER for lab_lector_copias@localhost: 
+CREATE USER `lab_lector_copias`@`localhost` 
+IDENTIFIED WITH 'caching_sha2_password' 
+AS '$A$005$)D|w@~I|P}-v%pOt2ost8jFMNXAtUWGu.6K4nrQ9zteX0ODDEnT1f1fVA' 
+DEFAULT ROLE `lab_rol_copias`@`%`
+REQUIRE NONE
+PASSWORD EXPIRE DEFAULT
+ACCOUNT UNLOCK
+PASSWORD HISTORY DEFAULT
+PASSWORD REUSE INTERVAL DEFAULT
+PASSWORD REQUIRE CURRENT DEFAULT;
 
-En otra terminal de Ubuntu, conectad con el lector. Conservad la consola original para volver a la sesión administrativa.
++-------------------------------------------------------------+
+| Grants for lab_rol_copias@%                                 |
++-------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `lab_rol_copias`@`%`                  |
+| GRANT SELECT ON `academia_copias`.* TO `lab_rol_copias`@`%` |
++-------------------------------------------------------------+
+
++------------------------------------------------------------------------+
+| Grants for lab_lector_copias@localhost                                 |
++------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `lab_lector_copias`@`localhost`                  |
+| GRANT SELECT ON `academia_copias`.* TO `lab_lector_copias`@`localhost` |
+| GRANT `lab_rol_copias`@`%` TO `lab_lector_copias`@`localhost`          |
++------------------------------------------------------------------------+
+```
+
+Guardad temporalmente la contraseña en un lugar privado. `SHOW CREATE USER` muestra cómo está definida la cuenta, incluido el método de autenticación. Su salida administrativa puede incluir el hash de autenticación.
+
+`SHOW GRANTS` permite revisar la concesión al rol y la pertenencia del usuario. `USING` permite ver los permisos que aporta ese rol. Omitid contraseña y hash en las evidencias.
+
+En otra terminal de Ubuntu, conectad como usuario *lab_lector_copias*. Conservad la consola original para volver a la sesión administrativa.
 
 **Bash de Ubuntu**
 
@@ -489,7 +531,11 @@ En otra terminal de Ubuntu, conectad con el lector. Conservad la consola origina
 mysql --protocol=SOCKET -u lab_lector_copias -p academia_copias
 ```
 
-`--protocol=SOCKET` selecciona el socket de Unix. `-u` indica el usuario de MySQL, `-p` pide su contraseña en pantalla sin mostrarla al escribir y `academia_copias` selecciona la base al entrar.
+`--protocol=SOCKET` selecciona el socket de Unix.
+
+`-u` indica el usuario de MySQL,
+
+`-p` pide su contraseña en pantalla sin mostrarla al escribir y `academia_copias` selecciona la base al entrar.
 
 **Cliente mysql · Sesión del lector**
 
@@ -501,7 +547,21 @@ UPDATE notas SET nota = 1.00 WHERE id_nota = -1;
 
 `CURRENT_USER()` verifica la cuenta y `CURRENT_ROLE()` comprueba si el rol está activo. La consulta de la vista prueba el permiso de lectura. El `UPDATE` prueba el de escritura con un identificador que no existe. MySQL verifica el permiso antes de buscar y actualizar filas.
 
-Resultado esperado. Rol activo, 5 filas visibles y `UPDATE` denegado. Si el `UPDATE` devuelve «0 filas afectadas», la cuenta sí tenía permiso de escritura y hay que corregir la concesión. Cerrad la sesión del lector con `exit`. Volved a la sesión administrativa y salid también antes de ejecutar la parada en Bash.
+```         
++-----------------------------+----------------------+
+| CURRENT_USER()              | CURRENT_ROLE()       |
++-----------------------------+----------------------+
+| lab_lector_copias@localhost | `lab_rol_copias`@`%` |
++-----------------------------+----------------------+
++----------+
+| COUNT(*) |
++----------+
+|        5 |
++----------+
+ERROR 1142 (42000): UPDATE command denied to user 'lab_lector_copias'@'localhost' for table 'notas'
+```
+
+Cerrad la sesión del lector con `exit`. Volved a la sesión administrativa y salid también antes de ejecutar la parada en Bash.
 
 # Crear la copia física en frío
 
@@ -534,21 +594,55 @@ sudo tar --acls --xattrs -cf "$LAB/config-mysql.tar" \
 sudo chmod 600 "$LAB/fisica.tar" "$LAB/config-mysql.tar"
 ```
 
-`tar -cf` crea un archivo (`-c`) con el nombre que sigue a `-f`. `-C /var/lib mysql` hace que `tar` se sitúe en `/var/lib` y guarde la entrada relativa `mysql/`. La segunda orden hace lo mismo desde `/etc` para guardar la configuración. Los dos `tar` quedan bajo `$LAB`.
+`tar -cf` crea un archivo tar (`-c`) con el nombre que sigue a `-f`.
+
+`-C /var/lib mysql` hace que `tar` guarde las rutas de archivo en forma relativa y no absoluta, desde el directorio mysql que se encuentra en `/var/lib` La segunda orden hace lo mismo desde `/etc` para guardar la configuración. Los dos `tar` quedan bajo `$LAB`.
 
 `--acls` conserva las listas de control de acceso (ACL) y `--xattrs` incorpora los atributos extendidos. Con `sudo`, `tar` puede leer los ficheros del servicio y recoger sus propietarios y metadatos. Una vez creados, `chmod 600` deja lectura y escritura de los `tar` solo a su propietario.
+
+podemos comprobar que se han creado los archivos:
+
+``` bash
+cd ~/ifct0310-copias 
+ls -l
+```
+
+```         
+total 208552
+-rw------- 1 root root     30720 Nov 26 11:08 config-mysql.tar
+-rw------- 1 root root 213524480 Nov 26 11:00 fisica.tar
+```
 
 **Bash de Ubuntu · Registrar y revisar los ficheros de copia**
 
 ``` bash
-sudo sha256sum "$LAB/fisica.tar" "$LAB/config-mysql.tar" \
-  > "$LAB/fisica.sha256"
+sudo sha256sum "$LAB/fisica.tar" "$LAB/config-mysql.tar" > "$LAB/fisica.sha256"
 sudo tar -tf "$LAB/fisica.tar" | head -15
 ```
 
 `sha256sum` calcula una huella de cada archivo. `>` guarda la salida en `fisica.sha256`. La redirección la abre Bash con el usuario de la terminal, aunque `sudo` permita leer los `tar`. Las huellas se usarán en el paso 12 para comprobar si los archivos han cambiado.
 
-`tar -tf` lista (`-t`) el contenido del archivo indicado con `-f`. La tubería `|` entrega el listado a `head`, que muestra las primeras 15 líneas. Comprobad que el árbol empieza en `mysql/`. La comprobación de integridad se hará con el hash y la utilidad de la copia se verá en la restauración.
+`tar -tf` lista (`-t`) el contenido del archivo indicado con `-f`. La tubería `|` entrega el listado a `head`, que muestra las primeras 15 líneas.
+
+```         
+mysql/
+mysql/debian-5.7.flag
+mysql/binlog.000067
+mysql/funciones_mysql/
+mysql/funciones_mysql/cursos.ibd
+mysql/funciones_mysql/calificaciones.ibd
+mysql/funciones_mysql/fts_0000000000000484_being_deleted.ibd
+mysql/funciones_mysql/fts_0000000000000484_config.ibd
+mysql/funciones_mysql/fts_0000000000000484_being_deleted_cache.ibd
+mysql/funciones_mysql/pedidos.ibd
+mysql/funciones_mysql/fts_0000000000000484_deleted.ibd
+mysql/funciones_mysql/fts_0000000000000484_00000000000001b4_index_5.ibd
+mysql/funciones_mysql/fts_0000000000000484_00000000000001b4_index_1.ibd
+mysql/funciones_mysql/personas.ibd
+mysql/funciones_mysql/fts_0000000000000484_deleted_cache.ibd
+```
+
+Comprobad que el árbol empieza en `mysql/`. La comprobación de integridad se hará con el hash y la utilidad de la copia se verá en la restauración.
 
 **Bash de Ubuntu · Arrancar y comprobar la conexión**
 
@@ -557,11 +651,29 @@ sudo systemctl start mysql
 sudo mysql -e 'SELECT VERSION(), @@datadir'
 ```
 
-`systemctl start mysql` arranca el servicio. La consulta con `mysql -e` confirma que acepta conexiones, indica la versión y comprueba qué directorio de datos ha abierto con `@@datadir`. Tras el arranque, MySQL carga de nuevo sus valores de configuración.
+`systemctl start mysql` arranca el servicio.
 
-La copia física contiene el diccionario de MySQL, las tablas, los ficheros internos, las cuentas y los binlogs guardados hasta el apagado, según la configuración comprobada en el paso 2. Durante la restauración se usará la configuración original de esta VM. El `tar` de `/etc/mysql` queda como referencia y copia de la configuración.
+La consulta con `mysql -e` confirma que acepta conexiones, indica la versión y comprueba qué directorio de datos ha abierto con `@@datadir`. Tras el arranque, MySQL carga de nuevo sus valores de configuración.
 
-Resultado esperado. Los dos archivos existen, el listado muestra el árbol `mysql/` y la instancia vuelve a responder. Anotad cuánto duró la parada. Para sobrevivir a la pérdida de la VM, estos archivos se guardarían también en otro soporte.
+```         
++-------------------------+-----------------+
+| VERSION()               | @@datadir       |
++-------------------------+-----------------+
+| 8.4.13-0ubuntu0.26.04.2 | /var/lib/mysql/ |
++-------------------------+-----------------+
+```
+
+La copia física contiene el diccionario de MySQL, las tablas, los ficheros internos, las cuentas y los binlogs guardados hasta el apagado, según la configuración comprobada en el paso 2.
+
+Durante la restauración se usará la configuración original de esta VM.
+
+El `tar` de `/etc/mysql` queda como referencia y copia de la configuración.
+
+**Resultado esperado:**
+
+Los dos archivos existen, el listado muestra el árbol `mysql/` y la instancia vuelve a responder.
+
+Anotad cuánto duró la parada. Para sobrevivir a la pérdida de la VM, estos archivos se guardarían también en otro soporte.
 
 # Crear el volcado lógico de referencia
 
@@ -581,17 +693,61 @@ sudo mysqldump --databases academia_copias \
   --result-file="$LAB/academia_base.sql"
 ```
 
-`FLUSH BINARY LOGS` cierra el binlog activo y abre el siguiente, con otro número. Al rotarlo antes de copiar, el tramo del ejercicio empieza en un fichero reciente. El volcado fijará la posición exacta para la recuperación.
+- `FLUSH BINARY LOGS` cierra el binlog activo y abre el siguiente, con otro número. Al rotarlo antes de copiar, el tramo del ejercicio empieza en un fichero reciente. El volcado fijará la posición exacta para la recuperación.
 
-`mysqldump` genera el SQL. Las barras inversas al final de cada línea permiten continuar la misma orden en Bash. Dejad cada barra al final de su línea, sin espacios detrás.
+- `mysqldump` genera el SQL. Las barras inversas al final de cada línea permiten continuar la misma orden en Bash. Dejad cada barra al final de su línea, sin espacios detrás.
 
-`--databases academia_copias` limita el volcado a ese esquema e incluye `CREATE DATABASE` y `USE`. `--single-transaction` lee los datos de InnoDB desde una instantánea transaccional coherente. Al combinarlo con `--source-data`, se toma brevemente un bloqueo global de lectura al comienzo para fijar las coordenadas.
+- `--databases academia_copias` limita el volcado a ese esquema e incluye `CREATE DATABASE` y `USE`.
 
-`--source-data=2` deja comentada la sentencia con `SOURCE_LOG_FILE` y `SOURCE_LOG_POS`. Se lee como información de respaldo. `--set-gtid-purged=OFF` evita incluir una asignación de `GTID_PURGED`. `--no-tablespaces` omite las sentencias de creación de espacios de tablas, porque esta práctica usa el almacenamiento estándar.
+-  `--single-transaction` lee los datos de InnoDB desde una instantánea transaccional coherente. Al combinarlo con `--source-data`, se toma brevemente un bloqueo global de lectura al comienzo para fijar las coordenadas.
 
-`--routines` añade procedimientos y funciones almacenadas. `--events` añade los eventos. `--triggers` hace explícita la inclusión de disparadores, activada por defecto. Las vistas están en el volcado del esquema. Las cuentas, los roles y sus concesiones se gestionan aparte.
+- `--source-data=2` se usa en `mysqldump` para guardar en el archivo de respaldo (backup) el punto exacto del registro binario donde se tomó la copia, pero **escrito como comentario SQL** (`-- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='...', SOURCE_LOG_POS=...;` ).
 
-`--default-character-set=utf8mb4` fija la codificación de la conexión de exportación. `--result-file` escribe el SQL en `academia_base.sql`. El fichero se puede crear aunque falle el volcado. Continuad cuando la orden haya terminado correctamente.
+  ::: nota
+  Al ir comentado, MySQL **no lo ejecuta** si restauras el backup tal cual, sino que sirve como referencia informativa para que tú decidas cuándo o cómo configurar una réplica.
+
+  **`SOURCE_LOG_FILE` y `SOURCE_LOG_POS`:** indican el nombre del archivo de registro binario y la posición exacta en él desde donde debería empezar a leer una réplica (antes se llamaban `MASTER_LOG_FILE` y `MASTER_LOG_POS`).
+
+  **Por qué es útil en la práctica**
+
+  - **Restauración segura sin tocar replicación:** si restauras el backup en un servidor de pruebas o en una réplica de forma controlada, no aplica automáticamente cambios de replicación por accidente.
+
+  - **Configuración manual posterior:** puedes abrir el archivo de backup, buscar `SOURCE_LOG_FILE`, anotar el archivo y la posición, y usarlos luego cuando configures la réplica.
+  :::
+
+- `--set-gtid-purged=OFF` Impide que el archivo de respaldo incluya la sentencia `SET @@GLOBAL.GTID_PURGED = ...` al restaurar los datos. En MySQL con **GTID** (identificadores globales de transacción), `GTID_PURGED` registra qué transacciones ya no están en el *binary log* pero sí forman parte del estado actual del servidor. Si el volcado incluye `SET @@GLOBAL.GTID_PURGED`, restaurar el `.sql` intentará sobrescribir o exigir compatibilidad estricta con el historial GTID del servidor destino, lo que suele dar error si el destino ya tiene transacciones propias o usa un esquema GTID distinto.
+
+-  `--no-tablespaces` omite las sentencias de creación de espacios de tablas. Impide que el archivo de respaldo incluya sentencias `CREATE LOGFILE GROUP` o `CREATE TABLESPACE.` Al restaurar, las tablas se crean en la ubicación y esquema de almacenamiento estándar del servidor destino.
+
+- `--routines` añade procedimientos y funciones almacenadas.
+
+- `--events` añade los eventos.
+
+-  `--triggers` hace explícita la inclusión de disparadores, activada por defecto.
+
+- Las vistas están en el volcado del esquema.
+
+- Las cuentas, los roles y sus concesiones se gestionan aparte.
+
+- `--default-character-set=utf8mb4` fija la codificación de la conexión de exportación.
+
+- `--result-file` escribe el SQL en `academia_base.sql`.
+
+El fichero se puede crear aunque falle el volcado. Continuad cuando la orden haya terminado correctamente.
+
+Verificamos que el archivo se ha creado:
+
+``` bash
+ls -l "$LAB"
+```
+
+```         
+total 208568
+-rw------- 1 root     root         11461 Nov 26 11:57 academia_base.sql
+-rw------- 1 root     root         30720 Nov 26 11:08 config-mysql.tar
+-rw------- 1 sysadmin sysadmin       222 Nov 26 11:10 fisica.sha256
+-rw------- 1 root     root     213524480 Nov 26 11:00 fisica.tar
+```
 
 **Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash**
 
@@ -602,15 +758,37 @@ sed -n '/SOURCE_LOG_FILE/p' "$LAB/academia_base.sql"
 sha256sum "$LAB/academia_base.sql" > "$LAB/base.sha256"
 ```
 
-`chown` cambia propietario y grupo. Bash ejecuta `id -u` e `id -g` dentro de `$(…)` y forma la pareja de identificadores numéricos del usuario de la terminal. Así recuperáis la propiedad del fichero creado por el volcado ejecutado con `sudo`. `chmod 600` deja el SQL legible y modificable por ese propietario.
+`chown` cambia propietario y grupo. Bash ejecuta `id -u` e `id -g` dentro de `$(…)` y forma la pareja de identificadores numéricos del usuario de la terminal. Así recuperáis la propiedad del fichero creado por el volcado ejecutado con `sudo`.
 
-`sed -n '/SOURCE_LOG_FILE/p'` lee el SQL y muestra las líneas que contienen ese patrón. `-n` suprime la salida automática y `p` imprime la coincidencia. Anotad `SOURCE_LOG_FILE` y el número `SOURCE_LOG_POS`. Esa pareja indica desde dónde empezar a leer el binlog.
+```         
+-rw------- 1 sysadmin sysadmin     11461 Nov 26 11:57 academia_base.sql
+-rw------- 1 sysadmin sysadmin       115 Nov 26 12:01 base.sha256
+-rw------- 1 root     root         30720 Nov 26 11:08 config-mysql.tar
+-rw------- 1 sysadmin sysadmin       222 Nov 26 11:10 fisica.sha256
+-rw------- 1 root     root     213524480 Nov 26 11:00 fisica.tar
+```
+
+`chmod 600` deja el SQL legible y modificable por ese propietario.
+
+`sed -n '/SOURCE_LOG_FILE/p'` lee el SQL *academia_base.sql* y muestra las líneas que contienen ese patrón. `-n` suprime la salida automática y `p` imprime la coincidencia. Anotad `SOURCE_LOG_FILE` y el número `SOURCE_LOG_POS`. Esa pareja indica desde dónde empezar a leer el binlog.
+
+```         
+-- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='binlog.000093', SOURCE_LOG_POS=158;
+```
 
 `sha256sum … > "$LAB/base.sha256"` guarda la huella del SQL y el nombre del fichero para comprobarlos en el paso 13. La redirección sustituye el fichero de huellas si ya existía.
 
-Para inspeccionar variantes de `mysqldump`, `--no-data` guarda solo definiciones. Con `--no-create-info` se omiten las definiciones de tablas y con `--skip-triggers` se excluyen los triggers. Para sacar las filas así, indicad la base sin `--databases`. Para esta recuperación utilizaremos el volcado completo del esquema.
+::: nota
+Para inspeccionar variantes de `mysqldump`,
 
-Resultado esperado. Un fichero SQL del estado inicial y una línea comentada con el binlog y la posición de partida. El hash permite detectar cambios en el fichero. La restauración comprobará si sirve.
+`--no-data` guarda solo definiciones.
+
+Con `--no-create-info` se omiten las definiciones de tablas
+
+con `--skip-triggers` se excluyen los triggers.
+
+Para sacar las filas así, indicad la base sin `--databases`.
+:::
 
 Si queréis comparar el espacio que ocupa el volcado en formato comprimido, ejecutad estas órdenes en Bash.
 
