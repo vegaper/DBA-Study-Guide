@@ -205,7 +205,7 @@ drwx------ 2 sysadmin sysadmin 4096 Nov 26 09:38 /home/sysadmin/ifct0310-copias
 # Distinguir qué estamos copiando
 
 | Método | Qué conserva | Cuándo lo usaremos |
-|:-----------------------|:-----------------------|:-----------------------|
+|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:-----------------------|
 | Lógica de un esquema | Definiciones y filas como SQL. Puede incluir vistas, rutinas, triggers y eventos. | Restaurar `academia_copias` y trasladarla a MySQL para Windows. |
 | Física en frío | Ficheros de la instancia con el servicio detenido. La copia completa contiene los datos de las cuentas, guardados en el esquema de sistema `mysql`. | Recuperar la instancia de Ubuntu con la misma versión y configuración. |
 | Binlog | Secuencia de eventos registrados desde una posición. | Reaplicar cambios posteriores a una copia base hasta el punto de recuperación. |
@@ -699,7 +699,7 @@ sudo mysqldump --databases academia_copias \
 
 - `--databases academia_copias` limita el volcado a ese esquema e incluye `CREATE DATABASE` y `USE`.
 
--  `--single-transaction` lee los datos de InnoDB desde una instantánea transaccional coherente. Al combinarlo con `--source-data`, se toma brevemente un bloqueo global de lectura al comienzo para fijar las coordenadas.
+- `--single-transaction` lee los datos de InnoDB desde una instantánea transaccional coherente. Al combinarlo con `--source-data`, se toma brevemente un bloqueo global de lectura al comienzo para fijar las coordenadas.
 
 - `--source-data=2` se usa en `mysqldump` para guardar en el archivo de respaldo (backup) el punto exacto del registro binario donde se tomó la copia, pero **escrito como comentario SQL** (`-- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='...', SOURCE_LOG_POS=...;` ).
 
@@ -717,13 +717,13 @@ sudo mysqldump --databases academia_copias \
 
 - `--set-gtid-purged=OFF` Impide que el archivo de respaldo incluya la sentencia `SET @@GLOBAL.GTID_PURGED = ...` al restaurar los datos. En MySQL con **GTID** (identificadores globales de transacción), `GTID_PURGED` registra qué transacciones ya no están en el *binary log* pero sí forman parte del estado actual del servidor. Si el volcado incluye `SET @@GLOBAL.GTID_PURGED`, restaurar el `.sql` intentará sobrescribir o exigir compatibilidad estricta con el historial GTID del servidor destino, lo que suele dar error si el destino ya tiene transacciones propias o usa un esquema GTID distinto.
 
--  `--no-tablespaces` omite las sentencias de creación de espacios de tablas. Impide que el archivo de respaldo incluya sentencias `CREATE LOGFILE GROUP` o `CREATE TABLESPACE.` Al restaurar, las tablas se crean en la ubicación y esquema de almacenamiento estándar del servidor destino.
+- `--no-tablespaces` omite las sentencias de creación de espacios de tablas. Impide que el archivo de respaldo incluya sentencias `CREATE LOGFILE GROUP` o `CREATE TABLESPACE.` Al restaurar, las tablas se crean en la ubicación y esquema de almacenamiento estándar del servidor destino.
 
 - `--routines` añade procedimientos y funciones almacenadas.
 
 - `--events` añade los eventos.
 
--  `--triggers` hace explícita la inclusión de disparadores, activada por defecto.
+- `--triggers` hace explícita la inclusión de disparadores, activada por defecto.
 
 - Las vistas están en el volcado del esquema.
 
