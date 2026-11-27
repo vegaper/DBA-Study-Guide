@@ -749,7 +749,7 @@ total 208568
 -rw------- 1 root     root     213524480 Nov 26 11:00 fisica.tar
 ```
 
-**Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash**
+## Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash
 
 ``` bash
 sudo chown "$(id -u):$(id -g)" "$LAB/academia_base.sql"
@@ -757,7 +757,9 @@ chmod 600 "$LAB/academia_base.sql"
 sed -n '/SOURCE_LOG_FILE/p' "$LAB/academia_base.sql"
 sha256sum "$LAB/academia_base.sql" > "$LAB/base.sha256"
 ```
-
+```         
+-- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='binlog.000095', SOURCE_LOG_POS=158;
+```
 `chown` cambia propietario y grupo. Bash ejecuta `id -u` e `id -g` dentro de `$(…)` y forma la pareja de identificadores numéricos del usuario de la terminal. Así recuperáis la propiedad del fichero creado por el volcado ejecutado con `sudo`.
 
 ```         
@@ -772,9 +774,7 @@ sha256sum "$LAB/academia_base.sql" > "$LAB/base.sha256"
 
 `sed -n '/SOURCE_LOG_FILE/p'` lee el SQL *academia_base.sql* y muestra las líneas que contienen ese patrón. `-n` suprime la salida automática y `p` imprime la coincidencia. Anotad `SOURCE_LOG_FILE` y el número `SOURCE_LOG_POS`. Esa pareja indica desde dónde empezar a leer el binlog.
 
-```         
--- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='binlog.000093', SOURCE_LOG_POS=158;
-```
+
 
 `sha256sum … > "$LAB/base.sha256"` guarda la huella del SQL y el nombre del fichero para comprobarlos en el paso 13. La redirección sustituye el fichero de huellas si ya existía.
 
@@ -792,7 +792,7 @@ Para sacar las filas así, indicad la base sin `--databases`.
 
 Si queréis comparar el espacio que ocupa el volcado en formato comprimido, ejecutad estas órdenes en Bash.
 
-**Bash de Ubuntu · Comprimir una copia del SQL**
+## Bash de Ubuntu · Comprimir una copia del SQL
 
 ``` bash
 gzip -c "$LAB/academia_base.sql" > "$LAB/academia_base.sql.gz"
@@ -815,7 +815,15 @@ La comprobación de `gzip` valida el archivo comprimido. La restauración permit
 
 ## Confirmar el fichero de binlog
 
-Abrid `sudo mysql` desde Bash. En el cliente ejecutad `SHOW BINARY LOG STATUS;` y comparad `File` con `SOURCE_LOG_FILE` del paso 9. Confirmad que coinciden antes de seguir. Si se ha rotado el fichero, hará falta toda la cadena de binlogs desde la copia. La práctica utiliza un único fichero para los dos cambios y la incidencia. Hasta aquí, las notas y cuentas se mantienen en el estado inicial.
+Abrid `sudo mysql` desde Bash. En el cliente ejecutad `SHOW BINARY LOG STATUS;` y comparad `File` con `SOURCE_LOG_FILE` del la sección "Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash."
+```
++---------------+----------+--------------+------------------+-------------------+
+| File          | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++---------------+----------+--------------+------------------+-------------------+
+| binlog.000095 |      158 |              |                  |                   |
++---------------+----------+--------------+------------------+-------------------+
+```
+ Confirmad que coinciden antes de seguir. Si se ha rotado el fichero, hará falta toda la cadena de binlogs desde la copia. La práctica utiliza un único fichero para los dos cambios y la incidencia. Hasta aquí, las notas y cuentas se mantienen en el estado inicial.
 
 ## Confirmar las operaciones válidas
 
