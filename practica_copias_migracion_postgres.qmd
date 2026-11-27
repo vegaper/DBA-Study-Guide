@@ -10,14 +10,14 @@ Aprenderemos a recuperar las notas de una academia después de una actualizació
 # Objetivos de aprendizaje
 
 - Crear y restaurar copias lógicas y físicas, y comprobar qué contiene cada una.
-- Identificar qué operaciones están en el binlog y recuperar hasta un punto concreto.
+- Identificar qué operaciones están en el *binlog* y recuperar hasta un punto concreto.
 - Verificar cuándo se conservan las cuentas, los roles y sus privilegios.
 - Migrar estructura, filas y objetos, y comprobar que los datos mantienen su significado.
 - Registrar la pérdida de datos y el tiempo de recuperación para valorar el RPO y el RTO.
 
 # El cuaderno de notas
 
-Si a las nueve fotocopiáis un cuaderno y a las diez se estropea, la fotocopia devuelve las notas de las nueve. Un registro de los cambios os permite recuperar también las notas añadidas entre las nueve y las diez. En esta práctica, la copia nos da el punto de partida y el binlog de MySQL permite reconstruir los cambios hasta el momento elegido.
+Si a las nueve fotocopiáis un cuaderno y a las diez se estropea, la fotocopia devuelve las notas de las nueve. Un registro de los cambios os permite recuperar también las notas añadidas entre las nueve y las diez. En esta práctica, la copia nos da el punto de partida y el *binlog* de MySQL permite reconstruir los cambios hasta el momento elegido.
 
 # Contenido
 
@@ -34,8 +34,8 @@ Si a las nueve fotocopiáis un cuaderno y a las diez se estropea, la fotocopia d
 Qué haremos. Identificar los servidores y confirmar que podemos trabajar con una instancia desechable.
 
 | Equipo | Software y función |
-|:-----------------------------------|:-----------------------------------|
-| Ubuntu Server 26.04 | MySQL Community Server 8.4.x de origen, clientes mysql, mysqldump y mysqlbinlog. PostgreSQL se instala en esta VM al llegar al paso 19. |
+|:-----------------|:-----------------------------------------------------|
+| Ubuntu Server 26.04 | MySQL Community Server 8.4.x de origen, clientes mysql, mysqldump y mysqlbinlog. PostgreSQL se instala en esta VM |
 | Windows Server 2025 x64 | MySQL Community Server 8.4.x de destino y cliente mysql.exe. Usaremos PowerShell y una cuenta administrativa de MySQL. |
 | VirtualBox | Dos VM de prácticas. Usaremos consolas locales. Una carpeta compartida o la red del laboratorio sirve para trasladar una copia. |
 
@@ -60,7 +60,7 @@ sudo systemctl is-active mysql
 sudo mysql -e 'SELECT VERSION(), CURRENT_USER()'
 ```
 
-`mysql --version`, `mysqldump --version` y `mysqlbinlog --version` muestran las versiones del cliente SQL, del programa que exporta copias lógicas y del lector del binlog.
+`mysql --version`, `mysqldump --version` y `mysqlbinlog --version` muestran las versiones del cliente SQL, del programa que exporta copias lógicas y del lector del *binlog*.
 
 `systemctl is-active mysql` consulta el estado del servicio llamado `mysql`.
 
@@ -143,11 +143,11 @@ Empty set (0,00 sec)
 
 `information_schema.SCHEMATA` enumera los esquemas disponibles. `WHERE` restringe la consulta al nombre de la práctica. Si devuelve una fila, el esquema ya existe. Usad una VM de laboratorio con ese nombre libre.
 
-- En esta guía, `@@datadir` es `/var/lib/mysql/`. El fichero base del binlog y su índice están en ese directorio.
+- En esta guía, `@@datadir` es `/var/lib/mysql/`. El fichero base del *binlog* y su índice están en ese directorio.
 - Comprobad `log_bin=1`, formato `ROW`, `gtid_mode=OFF` y `binlog_encryption=0`. Con estas condiciones, podremos archivar el fichero y leerlo localmente.
-- La copia física presupone que los espacios de almacenamiento de tablas (tablespaces), los registros de rehacer y deshacer (redo y undo) y el binlog residen en ese directorio.
+- La copia física presupone que los espacios de almacenamiento de tablas (tablespaces), los registros de rehacer y deshacer (redo y undo) y el *binlog* residen en ese directorio.
 - Revisad las rutas en `/etc/mysql` y comprobad si utilizan otros discos, enlaces o un gestor externo de claves. Para este procedimiento usad una VM con la configuración descrita. En una copia real hay que incluir todos los ficheros y claves que necesite la instancia.
-- Escribid `exit` en el cliente MySQL para volver a Bash. Conservad esa sesión de Bash para los pasos siguientes. Allí se guardarán la variable de ruta `LAB` y, más adelante, el nombre y las posiciones del binlog.
+- Escribid `exit` en el cliente MySQL para volver a Bash. Conservad esa sesión de Bash para los pasos siguientes. Allí se guardarán la variable de ruta `LAB` y, más adelante, el nombre y las posiciones del *binlog*.
 
 Los volcados SQL, CSV, binlogs y copias físicas contienen datos de trabajo. Guardaremos todo bajo una carpeta privada y comprobaremos el espacio antes de copiar.
 
@@ -168,35 +168,43 @@ sudo find /var/lib/mysql -type l -print
 
 A continuación se resume qué hace cada comando y por qué se utiliza en el laboratorio para preparar el directorio de copias y revisar el espacio y los enlaces antes de respaldar los datos de MySQL:
 
-`umask 077`: Limita los permisos de lo que se cree desde esta sesión de Bash. El primer 0 deja los permisos del propietario tal como se soliciten. Cada 7 quita lectura, escritura y ejecución al grupo y a otros usuarios. Con los permisos habituales, un fichero nuevo queda en 600 (6 da lectura y escritura solo al propietario; 0 y 0 bloquean por completo a grupo y otros.) y un directorio, en 700 (7 da lectura, escritura y acceso (x) al propietario; 0 y 0 cierran el paso a grupo y otros). Los permisos anteriores se conservan.
+- `umask 077`: Limita los permisos de lo que se cree desde esta sesión de Bash. El primer 0 deja los permisos del propietario tal como se soliciten. Cada 7 quita lectura, escritura y ejecución al grupo y a otros usuarios. Con los permisos habituales, un fichero nuevo queda en 600 (6 da lectura y escritura solo al propietario; 0 y 0 bloquean por completo a grupo y otros.) y un directorio, en 700 (7 da lectura, escritura y acceso (x) al propietario; 0 y 0 cierran el paso a grupo y otros). Los permisos anteriores se conservan.
 
-`LAB="$HOME/ifct0310-copias"`: Guarda la ruta en la variable LAB. Si *HOME* vale */home/ana*, *LAB* vale */home/ana/ifct0310-copias*. Así usamos la misma ruta en todo el laboratorio. Las comillas mantienen la ruta como un único argumento al usar `$LAB`.
+- `LAB="$HOME/ifct0310-copias"`: Guarda la ruta en la variable LAB. Si *HOME* vale */home/ana*, *LAB* vale */home/ana/ifct0310-copias*. Así usamos la misma ruta en todo el laboratorio. Las comillas mantienen la ruta como un único argumento al usar `$LAB`.
 
-`mkdir -p "$LAB"`: Crea la carpeta que indica LAB. La opción `-p` crea los directorios padre que falten y permite repetir la orden si la carpeta ya existe.
+- `mkdir -p "$LAB"`: Crea la carpeta que indica LAB. La opción `-p` crea los directorios padre que falten y permite repetir la orden si la carpeta ya existe.
 
-`chmod 700 "$LAB"`: Da lectura, escritura y acceso al propietario de la carpeta. El grupo y los demás usuarios quedan con 0 permisos. Es útil cuando la carpeta ya existía, porque `umask 077` actúa al crear elementos nuevos. `chmod`, tal como está escrito, solo cambia la carpeta indicada.
+- `chmod 700 "$LAB"`: Da lectura, escritura y acceso al propietario de la carpeta. El grupo y los demás usuarios quedan con 0 permisos. Es útil cuando la carpeta ya existía, porque `umask 077` actúa al crear elementos nuevos. `chmod`, tal como está escrito, solo cambia la carpeta indicada.
 
-`sudo du -sh /var/lib/mysql`: Calcula el espacio que ocupa el directorio de datos. `-s` da un único total y `-h` lo presenta en unidades como M o G. `sudo` permite recorrer el directorio de MySQL aunque la cuenta de trabajo carezca de acceso.
+- `sudo du -sh /var/lib/mysql`: Calcula el espacio que ocupa el directorio de datos. `-s` da un único total y `-h` lo presenta en unidades como M o G. `sudo` permite recorrer el directorio de MySQL aunque la cuenta de trabajo carezca de acceso.\
+  Por ejemplo, si `du` muestra `1,2 G`, ese es el espacio que ocupa el directorio de datos. Usad el espacio libre de `df` para comprobar si caben el archivo de copia, la copia extraída, el volcado y los binlogs en los sistemas de archivos correspondientes.
 
-```         
-216M    /var/lib/mysql
-```
+  ```         
+  216M    /var/lib/mysql
+  ```
 
-`df -h /var/lib/mysql "$LAB"`: Muestra el espacio disponible en los sistemas de archivos que contienen ambas rutas. Mirad la columna Avail o Disp. Si ambas rutas están en el mismo sistema de archivos, comparten el espacio disponible.
+- `df -h /var/lib/mysql "$LAB"`: Muestra el espacio disponible en los sistemas de archivos que contienen ambas rutas. Mirad la columna Avail o Disp. Si ambas rutas están en el mismo sistema de archivos, comparten el espacio disponible.
 
-```         
-Filesystem                         Size  Used Avail Use% Mounted on
-/dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
-/dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
-```
+  ```         
+  Filesystem                         Size  Used Avail Use% Mounted on
+  /dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
+  /dev/mapper/ubuntu--vg-ubuntu--lv   28G   20G  6,8G  75% /
+  ```
 
-`sudo find /var/lib/mysql -type l -print`: Busca enlaces simbólicos dentro del directorio de MySQL. Un enlace simbólico apunta a otra ruta. `-type l` usa la letra ele minúscula y `-print` muestra los enlaces encontrados. Si aparece uno, comprobad su destino y si queda cubierto por la copia. Una salida vacía sin errores indica que no se han encontrado enlaces.
+- `sudo find /var/lib/mysql -type l -print`: Busca enlaces simbólicos dentro del directorio de MySQL. Un enlace simbólico apunta a otra ruta. `-type l` usa la letra ele minúscula y `-print` muestra los enlaces encontrados. \
+  Si aparece uno, comprobad su destino y si queda cubierto por la copia. Una salida vacía sin errores indica que no se han encontrado enlaces.
 
-Por ejemplo, si `du` muestra `1,2 G`, ese es el espacio que ocupa el directorio de datos. Usad el espacio libre de `df` para comprobar si caben el archivo de copia, la copia extraída, el volcado y los binlogs en los sistemas de archivos correspondientes.
+Comprobad también las rutas en la configuración de MySQL, tal como indica el apartado anterior. Un espacio de tablas externo puede existir aunque `find` no encuentre enlaces simbólicos.
 
-El último comando busca enlaces simbólicos. Comprobad también las rutas en la configuración de MySQL, tal como indica el apartado anterior. Un espacio de tablas externo puede existir aunque `find` no encuentre enlaces simbólicos.
+Comprobación.
 
-Comprobación. Ejecutad `ls -ld "$LAB"`. `-l` muestra el formato largo con los permisos y `-d` describe la carpeta en sí. Si la carpeta es del usuario y tiene el modo 700, veréis `drwx------`. Si abrís otra terminal, repetid `umask 077` y la asignación de `LAB` en esa sesión.
+Ejecutad `ls -ld "$LAB"`.
+
+-  `-l` muestra el formato largo con los permisos
+
+-  `-d` describe la carpeta en sí.
+
+Si la carpeta es del usuario y tiene el modo 700, veréis `drwx------`. Si abrís otra terminal, repetid `umask 077` y la asignación de `LAB` en esa sesión.
 
 ```         
 drwx------ 2 sysadmin sysadmin 4096 Nov 26 09:38 /home/sysadmin/ifct0310-copias
@@ -205,7 +213,7 @@ drwx------ 2 sysadmin sysadmin 4096 Nov 26 09:38 /home/sysadmin/ifct0310-copias
 # Distinguir qué estamos copiando
 
 | Método | Qué conserva | Cuándo lo usaremos |
-|:----------------------------|:------------------------|:-----------------|
+|:--------------------|:-----------------------------|:---------------------|
 | Lógica de un esquema | Definiciones y filas como SQL. Puede incluir vistas, rutinas, triggers y eventos. | Restaurar `academia_copias` y trasladarla a MySQL para Windows. |
 | Física en frío | Ficheros de la instancia con el servicio detenido. La copia completa contiene los datos de las cuentas, guardados en el esquema de sistema `mysql`. | Recuperar la instancia de Ubuntu con la misma versión y configuración. |
 | Binlog | Secuencia de eventos registrados desde una posición. | Reaplicar cambios posteriores a una copia base hasta el punto de recuperación. |
@@ -215,9 +223,9 @@ Una copia completa conserva todo lo que se haya incluido en su alcance. El volca
 
 Una copia incremental guarda cambios desde la última copia compatible de la cadena. Una copia diferencial guarda cambios desde la última completa. Si la completa es del lunes, para recuperar el miércoles con incrementales hacen falta la completa y los incrementales del martes y el miércoles. Con diferenciales, hacen falta la completa y la diferencial del miércoles.
 
-En esta práctica encadenaremos una copia completa y un tramo continuo de binlog. Es una estrategia de recuperación por reproducción de cambios. Para hacer copias físicas en caliente, con el servidor en marcha, se necesita una herramienta que coordine la copia con el motor, como MySQL Enterprise Backup. Comprobad qué modalidades incremental o diferencial admite la herramienta para la versión instalada.
+En esta práctica encadenaremos una copia completa y un tramo continuo de *binlog*. Es una estrategia de recuperación por reproducción de cambios. Para hacer copias físicas en caliente, con el servidor en marcha, se necesita una herramienta que coordine la copia con el motor, como MySQL Enterprise Backup. Comprobad qué modalidades incremental o diferencial admite la herramienta para la versión instalada.
 
-Un volcado es la exportación que genera un programa como `mysqldump`. En este laboratorio tendremos dos volcados MySQL en texto SQL. El primero será la base para recuperar cambios con el binlog. El segundo llevará directamente el estado recuperado a Windows. PostgreSQL recibirá las filas en CSV y el esquema se reconstruirá en su propio SQL.
+Un volcado es la exportación que genera un programa como `mysqldump`. En este laboratorio tendremos dos volcados MySQL en texto SQL. El primero será la base para recuperar cambios con el *binlog*. El segundo llevará directamente el estado recuperado a Windows. PostgreSQL recibirá las filas en CSV y el esquema se reconstruirá en su propio SQL.
 
 # Crear el esquema de prueba
 
@@ -229,7 +237,8 @@ Conservad esa conexión para los pasos 4 a 7.
 
 Antes de insertar las notas, deben existir las filas de cursos, profesores, asignaturas y alumnos a las que hacen referencia.
 
-**Cliente mysql de Ubuntu · Crear y seleccionar la base**
+## Crear y seleccionar la base
+**Cliente mysql de Ubuntu**
 
 ``` sql
 CREATE DATABASE academia_copias CHARACTER SET utf8mb4
@@ -237,9 +246,16 @@ CREATE DATABASE academia_copias CHARACTER SET utf8mb4
 USE academia_copias;
 ```
 
-`CREATE DATABASE` crea el esquema. `CHARACTER SET utf8mb4` permite almacenar caracteres Unicode, incluidas las tildes y las comillas de los ejemplos. `COLLATE utf8mb4_0900_ai_ci` establece la regla de comparación y orden. `ai` indica que ignora acentos al comparar y `ci`, que ignora diferencias entre mayúsculas y minúsculas. `USE` selecciona el esquema para las siguientes sentencias de esta conexión.
+- `CHARACTER SET utf8mb4` permite almacenar caracteres Unicode, incluidas las tildes y las comillas de los ejemplos.
 
-**Cliente mysql de Ubuntu · Crear las tablas por orden de dependencia**
+-  `COLLATE utf8mb4_0900_ai_ci` establece la regla de comparación y orden.
+
+- `ai` indica que ignora acentos al comparar
+
+- `ci`, que ignora diferencias entre mayúsculas y minúsculas.
+
+## Crear las tablas por orden de dependencia
+**Cliente mysql de Ubuntu**
 
 ``` sql
 -- Primero, las dos tablas que no dependen de otras.
@@ -301,7 +317,8 @@ CREATE TABLE notas (
 
 `UNIQUE (id_alumno, id_asignatura)` permite una sola nota por pareja de alumno y asignatura. `CHECK` acepta una nota numérica entre 0 y 10, ambos inclusive. La expresión sobre `NULL` queda indeterminada, así que la restricción también permite las pendientes. Las dos claves foráneas comprueban los identificadores de alumno y asignatura.
 
-**Cliente mysql de Ubuntu · Insertar las filas en orden**
+## Insertar las filas en orden
+**Cliente mysql de Ubuntu**
 
 ``` sql
 INSERT INTO cursos (nombre)
@@ -327,7 +344,8 @@ VALUES (1, 1, 7.00), (1, 3, NULL), (2, 1, 8.50),
 
 Los nombres con tildes y los nombres `Núñez, Ana` y `Luis "Lucho" Díaz` servirán para comprobar la codificación y el entrecomillado cuando migremos a PostgreSQL.
 
-**Cliente mysql de Ubuntu · Medir el estado de partida**
+## Medir el estado de partida
+**Cliente mysql de Ubuntu**
 
 ``` sql
 SELECT id_nota, id_alumno, id_asignatura, nota
@@ -358,7 +376,8 @@ SELECT COUNT(*) AS filas, COUNT(nota) AS calificadas,
 
 Seguimos en MySQL de Ubuntu. Crearemos cuatro objetos que luego podremos buscar y probar en cada motor. Antes de ejecutarlo, anotad la cuenta que devuelve `CURRENT_USER()`. El ejemplo de Windows se prepara para `root@localhost` en ambos servidores.
 
-**Cliente mysql de Ubuntu · Seleccionar la base y crear la vista**
+## Seleccionar la base y crear la vista
+**Cliente mysql de Ubuntu**
 
 ``` sql
 USE academia_copias;
@@ -383,7 +402,8 @@ JOIN asignaturas AS s ON s.id_asignatura = n.id_asignatura;
 +----------------+
 ```
 
-**Cliente mysql de Ubuntu · Crear el procedimiento**
+## Crear el procedimiento
+**Cliente mysql de Ubuntu**
 
 ``` sql
 -- El procedimiento filtra la vista por alumno.
@@ -398,7 +418,8 @@ WHERE n.id_alumno = p_id_alumno ORDER BY v.id_nota;
 
 `SQL SECURITY INVOKER` indica que tanto la vista como el procedimiento comprueban el acceso a los datos con los permisos de quien los llama. MySQL guarda el definidor (definer) de cada objeto. El trigger y el evento ejecutan su acción con los permisos de sus respectivos definidores.
 
-**Cliente mysql de Ubuntu · Crear el trigger y el evento**
+## Crear el trigger y el evento
+**Cliente mysql de Ubuntu**
 
 ``` sql
 -- El trigger limpia espacios al recibir un alumno.
@@ -416,7 +437,8 @@ DO SET @notas_del_evento = (SELECT COUNT(*) FROM notas);
 
 `ON SCHEDULE EVERY 1 DAY` establece una frecuencia diaria y `DISABLE` deja el evento deshabilitado. Su acción contaría las notas y las guardaría en `@notas_del_evento`, una variable de la sesión del evento. Dejamos el evento en ese estado para comprobar que el volcado conserva tanto la definición como el estado.
 
-**Cliente mysql de Ubuntu · Comprobar los objetos**
+## Comprobar los objetos
+**Cliente mysql de Ubuntu**
 
 ``` sql
 CALL consultar_notas(1);
@@ -450,7 +472,8 @@ collation_connection: utf8mb4_0900_ai_ci
 
 Usad una instancia donde estén libres la cuenta y el rol del laboratorio. Si encontráis esos nombres en una práctica anterior, comprobad su origen antes de continuar.
 
-**Cliente mysql de Ubuntu · Crear el rol y la cuenta**
+## Crear el rol y la cuenta
+**Cliente mysql de Ubuntu**
 
 ``` sql
 CREATE ROLE 'lab_rol_copias'@'%';
@@ -480,7 +503,8 @@ MySQL identifica las cuentas por usuario y host. `localhost` corresponde a la co
 
 El segundo `GRANT` asigna el rol al lector. `SET DEFAULT ROLE` hace que ese rol se active al iniciar una nueva sesión.
 
-**Cliente mysql de Ubuntu · Ver qué se ha concedido**
+## Ver qué permisos se han concedido
+**Cliente mysql de Ubuntu**
 
 ``` sql
 SHOW CREATE USER 'lab_lector_copias'@'localhost'\G;
@@ -545,7 +569,11 @@ SELECT COUNT(*) FROM v_notas;
 UPDATE notas SET nota = 1.00 WHERE id_nota = -1;
 ```
 
-`CURRENT_USER()` verifica la cuenta y `CURRENT_ROLE()` comprueba si el rol está activo. La consulta de la vista prueba el permiso de lectura. El `UPDATE` prueba el de escritura con un identificador que no existe. MySQL verifica el permiso antes de buscar y actualizar filas.
+`CURRENT_USER()` verifica la cuenta y `CURRENT_ROLE()` comprueba si el rol está activo.
+
+La consulta de la vista prueba el permiso de lectura.
+
+El `UPDATE` prueba el de escritura con un identificador que no existe. MySQL verifica el permiso antes de buscar y actualizar filas.
 
 ```         
 +-----------------------------+----------------------+
@@ -576,15 +604,16 @@ systemctl is-active mysql
 pgrep -ax mysqld
 ```
 
-`sudo mysql -e …` ejecuta la sentencia con una conexión administrativa. `SET GLOBAL innodb_fast_shutdown=0` configura el apagado lento de InnoDB para toda la instancia. `fast` significa «rápido» y `0` desactiva ese modo. Al apagarse, InnoDB termina la purga de versiones antiguas y aplica cambios pendientes en índices secundarios, si los tiene. El ajuste se hace en memoria y el servidor sigue activo hasta que se pida la parada.
+- `sudo mysql -e …` ejecuta la sentencia con una conexión administrativa. `SET GLOBAL innodb_fast_shutdown=0` configura el apagado lento de InnoDB para toda la instancia. `fast` significa «rápido» y `0` desactiva ese modo. Al apagarse, InnoDB termina la purga de versiones antiguas y aplica cambios pendientes en índices secundarios, si los tiene. El ajuste se hace en memoria y el servidor sigue activo hasta que se pida la parada.
 
-`sudo systemctl stop mysql` pide a `systemd` que detenga el servicio. Esperad a que acabe. `systemctl is-active mysql` consulta el estado y debe mostrar `inactive`. Para esa comprobación, un código de salida distinto de cero es normal cuando el servicio está parado.
+- `sudo systemctl stop mysql` pide a `systemd` que detenga el servicio. Esperad a que acabe. `systemctl is-active mysql` consulta el estado y debe mostrar `inactive`. Para esa comprobación, un código de salida distinto de cero es normal cuando el servicio está parado.
 
-`pgrep -ax mysqld` busca procesos cuyo nombre coincide exactamente con `mysqld` (`-x`) y muestra el PID y la línea de órdenes completa si encuentra alguno (`-a`). Sin procesos ni errores, su salida queda vacía.
+- `pgrep -ax mysqld` busca procesos cuyo nombre coincide exactamente con `mysqld` (`-x`) y muestra el PID y la línea de órdenes completa si encuentra alguno (`-a`). Sin procesos ni errores, su salida queda vacía.
 
 Seguid con la copia cuando el servicio esté `inactive` y `pgrep` quede sin salida. Si la parada falla o el estado es `failed`, ejecutad `sudo journalctl -u mysql -n 40`. `-u` selecciona los mensajes del servicio y `-n 40` muestra las últimas 40 entradas. Buscad la causa antes de copiar.
 
-**Bash de Ubuntu · Archivar los datos y la configuración**
+## Archivar los datos y la configuración
+**Bash de Ubuntu**
 
 ``` bash
 sudo tar --acls --xattrs -cf "$LAB/fisica.tar" \
@@ -613,7 +642,8 @@ total 208552
 -rw------- 1 root root 213524480 Nov 26 11:00 fisica.tar
 ```
 
-**Bash de Ubuntu · Registrar y revisar los ficheros de copia**
+## Registrar y revisar los ficheros de copia
+**Bash de Ubuntu**
 
 ``` bash
 sudo sha256sum "$LAB/fisica.tar" "$LAB/config-mysql.tar" > "$LAB/fisica.sha256"
@@ -644,7 +674,8 @@ mysql/funciones_mysql/fts_0000000000000484_deleted_cache.ibd
 
 Comprobad que el árbol empieza en `mysql/`. La comprobación de integridad se hará con el hash y la utilidad de la copia se verá en la restauración.
 
-**Bash de Ubuntu · Arrancar y comprobar la conexión**
+## Arrancar y comprobar la conexión
+**Bash de Ubuntu**
 
 ``` bash
 sudo systemctl start mysql
@@ -677,11 +708,12 @@ Anotad cuánto duró la parada. Para sobrevivir a la pérdida de la VM, estos ar
 
 # Crear el volcado lógico de referencia
 
-Qué haremos. Guardar estructura, datos, objetos y la posición del binlog que corresponde a la copia.
+Qué haremos. Guardar estructura, datos, objetos y la posición del *binlog* que corresponde a la copia.
 
-Reservad la instancia para el ejercicio. Evitad que se ejecuten sentencias que cambien la estructura durante el volcado, como `CREATE`, `ALTER`, `DROP` o `TRUNCATE`. Hasta que se archive el binlog, los únicos cambios de datos previstos son los del paso 10.
+Reservad la instancia para el ejercicio. Evitad que se ejecuten sentencias que cambien la estructura durante el volcado, como `CREATE`, `ALTER`, `DROP` o `TRUNCATE`. Hasta que se archive el *binlog*, los únicos cambios de datos previstos son los del paso 10.
 
-**Bash de Ubuntu · Rotar el binlog y generar el volcado**
+## Rotar el *binlog* y generar el volcado
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql -e 'FLUSH BINARY LOGS'
@@ -693,7 +725,7 @@ sudo mysqldump --databases academia_copias \
   --result-file="$LAB/academia_base.sql"
 ```
 
-- `FLUSH BINARY LOGS` cierra el binlog activo y abre el siguiente, con otro número. Al rotarlo antes de copiar, el tramo del ejercicio empieza en un fichero reciente. El volcado fijará la posición exacta para la recuperación.
+- `FLUSH BINARY LOGS` cierra el *binlog* activo y abre el siguiente, con otro número. Al rotarlo antes de copiar, el tramo del ejercicio empieza en un fichero reciente. El volcado fijará la posición exacta para la recuperación.
 
 - `mysqldump` genera el SQL. Las barras inversas al final de cada línea permiten continuar la misma orden en Bash. Dejad cada barra al final de su línea, sin espacios detrás.
 
@@ -749,7 +781,8 @@ total 208568
 -rw------- 1 root     root     213524480 Nov 26 11:00 fisica.tar
 ```
 
-## Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash
+## Ajustar permisos y registrar la posición y el hash
+**Bash de Ubuntu**
 
 ``` bash
 sudo chown "$(id -u):$(id -g)" "$LAB/academia_base.sql"
@@ -774,7 +807,7 @@ sha256sum "$LAB/academia_base.sql" > "$LAB/base.sha256"
 
 `chmod 600` deja el SQL legible y modificable por ese propietario.
 
-`sed -n '/SOURCE_LOG_FILE/p'` lee el SQL *academia_base.sql* y muestra las líneas que contienen ese patrón. `-n` suprime la salida automática y `p` imprime la coincidencia. Anotad `SOURCE_LOG_FILE` y el número `SOURCE_LOG_POS`. Esa pareja indica desde dónde empezar a leer el binlog.
+`sed -n '/SOURCE_LOG_FILE/p'` lee el SQL *academia_base.sql* y muestra las líneas que contienen ese patrón. `-n` suprime la salida automática y `p` imprime la coincidencia. Anotad `SOURCE_LOG_FILE` y el número `SOURCE_LOG_POS`. Esa pareja indica desde dónde empezar a leer el *binlog*.
 
 `sha256sum … > "$LAB/base.sha256"` guarda la huella del SQL y el nombre del fichero para comprobarlos en el paso 13. La redirección sustituye el fichero de huellas si ya existía.
 
@@ -792,7 +825,8 @@ Para sacar las filas así, indicad la base sin `--databases`.
 
 Si queréis comparar el espacio que ocupa el volcado en formato comprimido, ejecutad estas órdenes en Bash.
 
-## Bash de Ubuntu · Comprimir una copia del SQL
+## Comprimir una copia del SQL
+**Bash de Ubuntu**
 
 ``` bash
 gzip -c "$LAB/academia_base.sql" > "$LAB/academia_base.sql.gz"
@@ -813,9 +847,9 @@ La comprobación de `gzip` valida el archivo comprimido. La restauración permit
 
 # Generar cambios y simular la incidencia
 
-## Confirmar el fichero de binlog
+## Confirmar el fichero de *binlog*
 
-Abrid `sudo mysql` desde Bash. En el cliente ejecutad `SHOW BINARY LOG STATUS;` y comparad `File` con `SOURCE_LOG_FILE` del la sección "Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash."
+Abrid `sudo mysql` desde Bash. En el cliente ejecutad `SHOW BINARY LOG STATUS;` y comparad `File` con `SOURCE_LOG_FILE` de la sección "Ajustar permisos y registrar la posición y el hash".
 
 ```         
 +---------------+----------+--------------+------------------+-------------------+
@@ -829,7 +863,7 @@ Confirmad que coinciden antes de seguir. Si se ha rotado el fichero, hará falta
 
 ## Confirmar las operaciones válidas
 
-**Cliente mysql de Ubuntu · Confirmar la transacción válida**
+**Cliente mysql de Ubuntu**
 
 ``` sql
 USE academia_copias;
@@ -862,17 +896,20 @@ SELECT COUNT(*) AS filas, COUNT(nota) AS calificadas,
 +-------+-------------+-------+
 ```
 
-`SHOW BINARY LOG STATUS` devuelve la posición tras confirmar. Esta será la posición de CORTE que usaremos en el apartado "Bash de Ubuntu · Anotar la pareja de posiciones"
+- `SHOW BINARY LOG STATUS` devuelve la posición tras confirmar. Esta será la posición de CORTE que usaremos en el apartado "Anotar la pareja de posiciones". Guardad `File` y `Position` ahora.
 
-Guardad `File` y `Position` ahora. El número de `Position` es el corte. `UTC_TIMESTAMP(6)` toma una referencia horaria UTC con seis decimales de segundo y el último `SELECT` comprueba las notas modificadas.
+-  `UTC_TIMESTAMP(6)` toma una referencia horaria UTC con seis decimales de segundo
 
-Resultado válido esperado. 6 filas, 5 calificadas y suma 41,75. Antes de simular la incidencia, comprobad que el fichero sigue siendo el del volcado y que habéis anotado la posición de corte.
+- `SELECT` comprueba las notas modificadas.
+
+Comprobad que el fichero sigue siendo el del volcado y que habéis anotado la posición de corte.
 
 ## Provocar el incidente en la base desechable
 
 Comprobad que la consola sigue en `academia_copias` de la VM de prácticas. El `UPDATE` siguiente carece de `WHERE`, así que cambia las seis filas. Este es el error que queremos poder recuperar.
 
-**Cliente mysql de Ubuntu · Confirmar el cambio accidental**
+### Confirmar el cambio accidental
+**Cliente mysql de Ubuntu**
 
 ``` sql
 START TRANSACTION;
@@ -907,15 +944,16 @@ SHOW BINARY LOG STATUS;
 
 Para recuperar este caso, partiremos de la copia y reproduciremos el tramo anterior al error. Salid del cliente con `exit`.
 
-# Archivar y leer los eventos del binlog
+# Archivar y leer los eventos del *binlog*
 
-El binlog registra, entre otros eventos, los cambios confirmados en los datos. Un `SELECT` normal no queda registrado como cambio. Cuando está configurado en `ROW`, los cambios de filas se representan mediante eventos de filas. `STATEMENT` registra sentencias y `MIXED` alterna formatos según la operación. El servidor decide a partir de su configuración. En MySQL 8.4 el valor predeterminado es `ROW` y `binlog_format` está obsoleto.
+El *binlog* registra, entre otros eventos, los cambios confirmados en los datos. Un `SELECT` normal no queda registrado como cambio. Cuando está configurado en `ROW`, los cambios de filas se representan mediante eventos de filas. `STATEMENT` registra sentencias y `MIXED` alterna formatos según la operación. El servidor decide a partir de su configuración. En MySQL 8.4 el valor predeterminado es `ROW` y `binlog_format` está obsoleto.
 
 Las operaciones administrativas como `CREATE USER` y `GRANT` también pueden quedar registradas. Este ejercicio solo contiene los cambios de notas.
 
 En Bash de Ubuntu, ejecutad cada `read` por separado y contestad a su pregunta antes de pegar la siguiente línea. Introducid el nombre del fichero, sin la ruta, y las dos posiciones enteras en bytes.
 
-## Bash de Ubuntu · Anotar la pareja de posiciones
+## Anotar la pareja de posiciones
+**Bash de Ubuntu**
 
 ``` bash
 read -r -p 'Fichero de binlog: ' BIN
@@ -931,9 +969,9 @@ read -r -p 'Posición de corte: ' CORTE
 
 - `BIN` recibe el nombre de fichero del volcado.
 
--  `INICIO` recibe su `SOURCE_LOG_POS` de la posición que había al hacer la copia de seguridad. (Ver apartado: Bash de Ubuntu · Ajustar permisos y registrar la posición y el hash)
+- `INICIO` recibe su `SOURCE_LOG_POS` de la posición que había al hacer la copia de seguridad. (Ver apartado: [Ajustar permisos y registrar la posición y el hash](#ajustar-permisos-y-registrar-la-posición-y-el-hash))
 
--  `CORTE` recibe la posición del paso
+- `CORTE` recibe la posición del paso [Confirmar las operaciones válidas](#confirmar-las-operaciones-válidas)
 
 Verificad que los números son los anotados y que el inicio es menor que el corte. Conservad esta terminal abierta.
 
@@ -946,7 +984,8 @@ sysadmin@myserver:~$ read -r -p 'Posición de corte: ' CORTE
 Posición de corte: 613
 ```
 
-## Bash de Ubuntu · Cerrar el fichero y archivarlo
+## Cerrar el fichero y archivarlo
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql -e 'FLUSH BINARY LOGS'
@@ -956,9 +995,10 @@ sha256sum "$LAB/$BIN" > "$LAB/binlog.sha256"
 
 - `FLUSH BINARY LOGS` vuelve a rotar el registro. A partir de ese momento el servidor escribe en un fichero nuevo y podemos copiar el anterior, ya cerrado. La variable `BIN` debe seguir apuntando al fichero de los cambios del ejercicio.
 
-- `sudo cat` lee el binlog original con los permisos necesarios. `>` envía sus bytes directamente a un fichero con el mismo nombre en `$LAB`, abierto por Bash. La siguiente orden guarda el hash de ese archivo en `binlog.sha256`. Si la lectura falla, resolvedlo antes de usar la copia.
+- `sudo cat` lee el *binlog* original con los permisos necesarios. `>` envía sus bytes directamente a un fichero con el mismo nombre en `$LAB`, abierto por Bash. La siguiente orden guarda el hash de ese archivo en `binlog.sha256`. Si la lectura falla, resolvedlo antes de usar la copia.
 
-## Bash de Ubuntu · Preparar una lectura de los eventos
+## Preparar una lectura de los eventos
+**Bash de Ubuntu**
 
 ``` bash
 mysqlbinlog --verify-binlog-checksum \
@@ -983,7 +1023,7 @@ Buscad `### UPDATE` y `### INSERT INTO`. En `notas`, `@1` corresponde a `id_nota
 
 Ejemplo con números ilustrativos. Si el evento `Xid` de confirmación comienza en `# at 582` y muestra `end_log_pos 613`, el `COMMIT` válido termina en el byte 613. El primer evento de la transacción errónea empieza en `# at 613`. En ese caso usaríamos 613 como corte. Aplicad la misma lectura a las coordenadas de vuestra instancia.
 
-Resultado esperado. Un binlog cerrado archivado, su fichero de huellas y una salida de lectura donde podéis señalar la frontera entre transacciones. En el paso 13 generaremos otra salida que conserva los eventos ejecutables y termina exactamente en el corte.
+Resultado esperado. Un *binlog* cerrado archivado, su fichero de huellas y una salida de lectura donde podéis señalar la frontera entre transacciones. En el paso 13 generaremos otra salida que conserva los eventos ejecutables y termina exactamente en el corte.
 
 # Restaurar la copia física
 
@@ -991,7 +1031,8 @@ Antes de actuar. Solo en la VM de prácticas. Primero conservaremos intacto el d
 
 Ejecutad la comprobación previa por separado. Seguid con la parada cuando ambos archivos indiquen `OK` y aparezca «Rutas alternativas libres».
 
-## Bash de Ubuntu · Comprobar los dos tar y los nombres de destino
+## Comprobar los dos tar y los nombres de destino
+**Bash de Ubuntu**
 
 ``` bash
 sudo sha256sum -c "$LAB/fisica.sha256"
@@ -1000,11 +1041,20 @@ sudo test ! -e /var/lib/mysql.ifct0310-origen \
   && echo 'Rutas alternativas libres'
 ```
 
-`sha256sum -c` lee las rutas y las huellas de `fisica.sha256`, recalcula los hashes y compara los dos resultados. `sudo` permite leer los `tar`, que quedaron con permisos 600. Si movéis los `tar`, tened en cuenta que el fichero de huellas contiene las rutas que se usaron al generarlo.
+- `sha256sum -c` lee las rutas y las huellas de `fisica.sha256`, recalcula los hashes y compara los dos resultados.
 
-`test -e` comprueba si existe la ruta y `!` invierte la condición. `&&` ejecuta el siguiente comando solo si el anterior terminó correctamente. Así, `echo` confirma que ambos nombres están libres. Si falta ese mensaje, revisad las rutas antes de mover nada.
+- `sudo` permite leer los `tar`, que quedaron con permisos 600. Si movéis los `tar`, tened en cuenta que el fichero de huellas contiene las rutas que se usaron al generarlo.
 
-## Bash de Ubuntu · Detener MySQL antes de mover los datos
+- `test -e` comprueba si existe la ruta
+
+- `!` invierte la condición.
+
+- `&&` ejecuta el siguiente comando solo si el anterior terminó correctamente.
+
+-  `echo` confirma que ambos nombres están libres. Si falta ese mensaje, revisad las rutas antes de mover nada.
+
+## Detener MySQL antes de mover los datos
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql -e 'SET GLOBAL innodb_fast_shutdown=0'
@@ -1017,7 +1067,8 @@ Repetimos el apagado lento del paso 8. `SET GLOBAL …=0` configura la parada qu
 
 Con MySQL detenido, apartaremos el directorio que contiene la incidencia y extraeremos la copia en la ruta que espera el servicio.
 
-## Bash de Ubuntu · Apartar el original y probar la copia
+## Apartar el original y probar la copia
+**Bash de Ubuntu**
 
 ``` bash
 sudo mv -T /var/lib/mysql /var/lib/mysql.ifct0310-origen \
@@ -1035,7 +1086,8 @@ La cadena con `&&` arranca MySQL solo si el movimiento y la extracción terminan
 
 El directorio original queda disponible para volver atrás en el paso 15. Si falla el arranque, conservad el original y revisad el error. Esta restauración usa la misma revisión de MySQL, el mismo usuario del servicio, las mismas rutas y la configuración del laboratorio.
 
-## Bash de Ubuntu · Validar datos con el administrador
+## Validar datos con el administrador
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql academia_copias -e \
@@ -1044,7 +1096,8 @@ sudo mysql academia_copias -e \
 
 `mysql academia_copias -e …` abre directamente esa base, hace la consulta de control y devuelve el resultado a Bash.
 
-## Bash de Ubuntu · Probar la cuenta restaurada
+## Probar la cuenta restaurada
+**Bash de Ubuntu**
 
 ``` bash
 mysql --protocol=SOCKET -u lab_lector_copias -p academia_copias
@@ -1060,7 +1113,8 @@ Qué haremos. Reconstruir el esquema a partir del SQL e incorporar las dos opera
 
 Seguid en el directorio restaurado del paso 12. En Bash, comprobamos que el original sigue apartado y que el SQL de base coincide con su huella. Usaremos el mismo nombre de esquema para que las referencias de la vista, el procedimiento y los eventos se resuelvan correctamente.
 
-## Bash de Ubuntu · Confirmar el directorio original y las huellas
+## Confirmar el directorio original y las huellas
+**Bash de Ubuntu**
 
 ``` bash
 sudo test -d /var/lib/mysql.ifct0310-origen \
@@ -1068,11 +1122,12 @@ sudo test -d /var/lib/mysql.ifct0310-origen \
 sha256sum -c "$LAB/base.sha256" "$LAB/binlog.sha256"
 ```
 
-`test -d` comprueba que la ruta alternativa es un directorio. `&& echo` solo muestra el mensaje si existe. `sha256sum -c` lee los dos ficheros de huellas y valida, por separado, el volcado y el binlog archivado. Ambas comprobaciones deben salir bien antes de reconstruir la base.
+`test -d` comprueba que la ruta alternativa es un directorio. `&& echo` solo muestra el mensaje si existe. `sha256sum -c` lee los dos ficheros de huellas y valida, por separado, el volcado y el *binlog* archivado. Ambas comprobaciones deben salir bien antes de reconstruir la base.
 
 Generad el tramo solo después de comprobar las dos coordenadas y el fichero. `INICIO`, `CORTE` y `BIN` se conservan en la sesión de Bash del paso 11.
 
-## Bash de Ubuntu · Generar el SQL de reproducción
+## Generar el SQL de reproducción
+**Bash de Ubuntu**
 
 ``` bash
 mysqlbinlog --verify-binlog-checksum \
@@ -1089,7 +1144,8 @@ Con varios binlogs, se deben conservar y procesar en orden, desde la posición d
 
 Trabajad en la instancia restaurada del paso 12, con el directorio original apartado y la huella correcta. Vamos a eliminar únicamente la base `academia_copias` de esa instancia y reconstruirla con el SQL de referencia.
 
-## Bash de Ubuntu · Restaurar el SQL de referencia
+## Restaurar el SQL de referencia
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql -e 'DROP DATABASE academia_copias' \
@@ -1105,7 +1161,8 @@ sudo mysql academia_copias -e \
 
 La consulta de control debe devolver 5 filas, 4 calificadas y suma 31,00. Las cuentas presentes en esta instancia vienen de la restauración física. Si obtenéis el estado de referencia, aplicad el tramo completo una sola vez.
 
-## Bash de Ubuntu · Reproducir el tramo válido
+## Reproducir el tramo válido
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysql --binary-mode < "$LAB/reaplicar.sql"
@@ -1140,7 +1197,8 @@ El RPO (objetivo de punto de recuperación) expresa cuánta pérdida de datos, m
 
 Cread el volcado que viajará a Windows. El SQL ya contiene las notas recuperadas, junto con la estructura y los objetos.
 
-## Bash de Ubuntu · Exportar el estado recuperado
+## Exportar el estado recuperado
+**Bash de Ubuntu**
 
 ``` bash
 sudo mysqldump --databases academia_copias \
@@ -1165,7 +1223,8 @@ Exportad desde la instancia recuperada. Vamos a convertir las filas de las cinco
 
 Antes de copiar el programa, comprobad en Bash que `python3` está en la versión 3.12 o posterior y que el acceso administrativo local a MySQL funciona sin pedir una contraseña de MySQL.
 
-### Bash de Ubuntu · Comprobar Python y el acceso a MySQL
+### Comprobar Python y el acceso a MySQL
+**Bash de Ubuntu**
 
 ``` bash
 python3 --version
@@ -1174,7 +1233,8 @@ sudo mysql -e 'SELECT 1'
 
 La primera orden muestra la versión instalada. La segunda verifica el acceso al servidor con una consulta que devuelve el número 1. Una vez hecha la comprobación, copiad el bloque siguiente completo, desde `sudo -v` hasta la línea final `PY`.
 
-### Bash de Ubuntu · Generar los cinco CSV
+### Generar los cinco CSV
+**Bash de Ubuntu**
 
 ``` bash
 sudo -v
@@ -1225,7 +1285,8 @@ Tratamiento de las notas y del texto. `json.loads` convierte la lista JSON a val
 
 ## Comprobar la exportación y volver al original
 
-### Bash de Ubuntu · Revisar los CSV
+### Revisar los CSV
+**Bash de Ubuntu**
 
 ``` bash
 wc -l "$LAB"/csv/*.csv
@@ -1238,7 +1299,8 @@ Resultado esperado. 2 cursos, 2 profesores, 3 asignaturas, 4 alumnos y 6 notas. 
 
 Antes de apartar la instancia recuperada, comprobad que el volcado de migración y los cinco CSV están completos. La VM volverá a usar los ficheros que tenía justo antes de la restauración física, que contienen la incidencia del ejercicio.
 
-### Bash de Ubuntu · Comprobar las rutas
+### Comprobar las rutas
+**Bash de Ubuntu**
 
 ``` bash
 sudo test -d /var/lib/mysql.ifct0310-origen \
@@ -1248,7 +1310,8 @@ sudo test -d /var/lib/mysql.ifct0310-origen \
 
 `test -d` exige que el original siga en su ruta alternativa. `test ! -e` comprueba que el destino de la instancia de prueba esté libre. La cadena con `&&` muestra el mensaje cuando las dos comprobaciones son correctas. Si falta el mensaje, revisad las rutas antes de detener o mover nada.
 
-### Bash de Ubuntu · Detener el servicio actual
+### Detener el servicio actual
+**Bash de Ubuntu**
 
 ``` bash
 sudo systemctl stop mysql
@@ -1260,7 +1323,8 @@ pgrep -ax mysqld
 
 Si existe `/var/lib/mysql`, ejecutad la secuencia completa con MySQL detenido. Si la extracción falló antes de crear ese directorio, ejecutad desde el segundo `mv`, sin el `&&` inicial de esa línea, y seguid con el arranque y la consulta.
 
-### Bash de Ubuntu · Devolver el directorio original a su sitio
+### Devolver el directorio original a su sitio
+**Bash de Ubuntu**
 
 ``` bash
 sudo mv -T /var/lib/mysql /var/lib/mysql.ifct0310-prueba \
@@ -1284,7 +1348,8 @@ Si MySQL Community Server ya está instalado, comprobadlo con los comandos de ab
 
 Cread la carpeta de destino y copiad `academia_recuperada.sql` mediante una carpeta compartida. Si tenéis acceso SSH a Ubuntu y el cliente OpenSSH en Windows, podéis usar el comando `scp` de la segunda parte. Sustituid `usuario` e `IP_UBUNTU` por los de vuestra VM.
 
-### PowerShell de Windows · Preparar la carpeta
+### Preparar la carpeta
+**PowerShell de Windows**
 
 ``` powershell
 New-Item -ItemType Directory -Path C:\IFCT0310\copias -Force
@@ -1292,7 +1357,8 @@ New-Item -ItemType Directory -Path C:\IFCT0310\copias -Force
 
 `New-Item` crea un elemento. `-ItemType Directory` especifica que es un directorio y `-Path` indica dónde. `-Force` permite reutilizar la carpeta si ya existe. Ejecutad esta orden con una cuenta que tenga permiso para crearla.
 
-### PowerShell de Windows · Transferencia opcional por SSH
+### Transferencia opcional por SSH
+**PowerShell de Windows**
 
 ``` powershell
 Set-Location -LiteralPath 'C:\IFCT0310\copias'
@@ -1301,7 +1367,8 @@ scp usuario@IP_UBUNTU:ifct0310-copias/academia_recuperada.sql .
 
 `Set-Location` cambia a la carpeta de destino y `-LiteralPath` toma esa ruta literalmente. `scp` lee por SSH el fichero de la cuenta de Ubuntu. La ruta tras los dos puntos es relativa a su carpeta personal. El punto final indica el directorio actual de Windows.
 
-### PowerShell de Windows · Comparar la huella
+### Comparar la huella
+**PowerShell de Windows**
 
 ``` powershell
 Get-FileHash 'C:\IFCT0310\copias\academia_recuperada.sql' `
@@ -1312,7 +1379,8 @@ Get-FileHash 'C:\IFCT0310\copias\academia_recuperada.sql' `
 
 Comparad la columna `Hash` de PowerShell con la huella anotada en Ubuntu. Las letras mayúsculas y minúsculas representan el mismo valor hexadecimal. Si difiere algún carácter, revisad qué fichero habéis trasladado antes de importarlo.
 
-### PowerShell de Windows · Comprobar servicio y ejecutable
+### Comprobar servicio y ejecutable
+**PowerShell de Windows**
 
 ``` powershell
 Get-Service -Name '*MySQL*'
@@ -1322,7 +1390,8 @@ Test-Path $mysql
 
 `Get-Service -Name '*MySQL*'` busca servicios cuyo nombre coincide con ese patrón. Mirad el estado de la instancia de prácticas. `$mysql` guarda la ruta de `mysql.exe`. Las comillas mantienen los espacios del nombre de carpeta. `Test-Path` comprueba que la ruta existe.
 
-### PowerShell de Windows · Consultar la versión y conectar
+### Consultar la versión y conectar
+**PowerShell de Windows**
 
 ``` powershell
 & $mysql --version
@@ -1331,7 +1400,8 @@ Test-Path $mysql
 
 `&` ejecuta el programa cuya ruta contiene `$mysql`. `--version` muestra la versión del cliente. La última orden conecta como `root` con `-u root`, pide la contraseña MySQL con `-p` y selecciona `utf8mb4` para la conexión.
 
-### Cliente mysql de Windows · Identificar el servidor
+### Identificar el servidor
+**Cliente mysql de Windows**
 
 ``` sql
 SELECT VERSION(), CURRENT_USER(), @@lower_case_table_names;
@@ -1343,7 +1413,8 @@ Resultado esperado. Servicio `Running`, `Test-Path` igual a `True`, cliente 8.4.
 
 Dentro del cliente MySQL de Windows, verificad primero que el esquema y la cuenta de la actividad están libres.
 
-### Cliente mysql de Windows · Verificar que el destino está libre
+### Verificar que el destino está libre
+**Cliente mysql de Windows**
 
 ``` sql
 SELECT SCHEMA_NAME FROM information_schema.SCHEMATA
@@ -1357,7 +1428,8 @@ La primera consulta revisa el nombre del esquema en `information_schema`. La seg
 
 Comprobad que existe la cuenta que figura como definidor en el volcado (paso 6). El ejemplo usa `root@localhost`. Si el definidor es otro, verificad su existencia y los permisos para crear los objetos antes de seguir. Ejecutad `SOURCE` primero y revisad si muestra errores antes de comprobar el esquema.
 
-### Cliente mysql de Windows · Importar el fichero SQL
+### Importar el fichero SQL
+**Cliente mysql de Windows**
 
 ``` sql
 SOURCE C:/IFCT0310/copias/academia_recuperada.sql
@@ -1365,7 +1437,8 @@ SOURCE C:/IFCT0310/copias/academia_recuperada.sql
 
 `SOURCE` es una orden del cliente `mysql`. Lee y ejecuta el SQL del fichero accesible desde Windows. Usad barras normales (`/`) en la ruta. El volcado contiene `CREATE DATABASE` y `USE`, además de las tablas, filas y objetos.
 
-### Cliente mysql de Windows · Verificar objetos, datos y cuentas
+### Verificar objetos, datos y cuentas
+**Cliente mysql de Windows**
 
 ``` sql
 USE academia_copias;
@@ -1449,7 +1522,8 @@ Si una migración debe conservar una contraseña, el administrador puede prepara
 
 Volved a la terminal Bash del laboratorio en Ubuntu. Instalaremos PostgreSQL en esa VM y crearemos una base independiente. Verificad contra la versión instalada los servicios y paquetes. La guía utiliza autenticación local `peer`, en la que PostgreSQL comprueba el usuario del sistema para identificar el rol de conexión.
 
-## Bash de Ubuntu · Consultar e instalar el paquete
+## Consultar e instalar el paquete
+**Bash de Ubuntu**
 
 ``` bash
 apt-cache policy postgresql
@@ -1459,7 +1533,8 @@ sudo apt install postgresql
 
 `apt-cache policy postgresql` muestra la versión instalada y la candidata que conoce el gestor de paquetes. `apt update` actualiza los índices de paquetes y `apt install postgresql` instala el paquete y sus dependencias. Si ya está instalado, podéis pasar a comprobar el servicio. En caso de necesitar la versión candidata actualizada, repetid `apt-cache policy` tras `apt update`.
 
-## Bash de Ubuntu · Comprobar clúster y conexión
+## Comprobar clúster y conexión
+**Bash de Ubuntu**
 
 ``` bash
 sudo systemctl is-active postgresql
@@ -1487,7 +1562,8 @@ Bash expande `"$USER"` al usuario de la terminal antes de invocar `sudo`. `creat
 
 En `psql`, comprobamos dónde estamos conectados y creamos las dos tablas independientes.
 
-## Cliente psql de Ubuntu · Crear cursos y profesores
+## Crear cursos y profesores
+**Cliente psql de Ubuntu**
 
 ``` sql
 \conninfo
@@ -1514,7 +1590,8 @@ Resultado esperado. Base `academia_pg`, codificación `UTF8` y dos tablas creada
 
 En la misma sesión `psql`.
 
-### Cliente psql de Ubuntu · Completar el esquema
+### Completar el esquema
+**Cliente psql de Ubuntu**
 
 ``` sql
 CREATE TABLE asignaturas (
@@ -1559,7 +1636,8 @@ La colación determina, entre otras cosas, cómo se comparan y se ordenan las ca
 
 Salid de `psql` con `\q`. Vamos a abrir una nueva sesión desde la carpeta de los CSV. `\copy` lee ficheros que están al alcance del cliente, con los permisos del usuario de Bash. La cuenta de PostgreSQL debe además tener permiso de inserción en las tablas.
 
-## Bash de Ubuntu · Abrir psql en la carpeta de exportación
+## Abrir psql en la carpeta de exportación
+**Bash de Ubuntu**
 
 ``` bash
 cd "$LAB/csv"
@@ -1570,7 +1648,8 @@ psql -X -v ON_ERROR_STOP=1 -d academia_pg
 
 Ejecutad cada `\copy` en su propia línea. Los ficheros contienen todas las columnas en el orden del DDL y carecen de cabecera.
 
-## Cliente psql de Ubuntu · Cargar los cinco CSV dentro de una transacción
+## Cargar los cinco CSV dentro de una transacción
+**Cliente psql de Ubuntu**
 
 ``` sql
 BEGIN;
@@ -1585,7 +1664,8 @@ BEGIN;
 
 Esperad, en orden, `COPY 2`, `COPY 2`, `COPY 3`, `COPY 4` y `COPY 6`. Si hay un error, ejecutad `ROLLBACK;` para descartar la carga entera, corregid el fichero o la ruta y volved a empezar con `BEGIN;`. Si salís de `psql` con la transacción aún abierta, PostgreSQL la revierte al desconectar. Ejecutad el bloque siguiente al obtener los cinco recuentos previstos.
 
-## Cliente psql de Ubuntu · Confirmar y contrastar el contenido
+## Confirmar y contrastar el contenido
+**Cliente psql de Ubuntu**
 
 ``` sql
 COMMIT;
@@ -1609,7 +1689,8 @@ Resultado esperado. 6 filas, 5 calificadas y suma 41,75. Las notas 1, 2 y 6 tien
 
 Al cargar los ID explícitos de los CSV, no se pide el siguiente número a las secuencias de identidad. Por eso ajustaremos cada secuencia al mayor ID que se ha cargado. En esta práctica, todas las tablas tienen filas.
 
-### Cliente psql de Ubuntu · Colocar las secuencias al final de los datos
+### Colocar las secuencias al final de los datos
+**Cliente psql de Ubuntu**
 
 ``` sql
 SELECT setval(pg_get_serial_sequence('cursos','id_curso')::regclass,
@@ -1632,7 +1713,8 @@ Resultado esperado. 2, 2, 3, 4 y 6. En una tabla vacía, conservad su secuencia 
 
 ## Crear el equivalente de la vista y de la consulta
 
-### Cliente psql de Ubuntu · Crear una vista y una función de consulta
+### Crear una vista y una función de consulta
+**Cliente psql de Ubuntu**
 
 ``` sql
 CREATE VIEW v_notas AS
@@ -1660,7 +1742,8 @@ Resultado esperado. `SELECT * FROM consultar_notas(1)` devuelve las dos notas de
 
 En PostgreSQL, un trigger de fila ejecuta una función que devuelve `trigger`. Primero crearemos la función y después la asociaremos a las inserciones de `alumnos`.
 
-### Cliente psql de Ubuntu · Crear la función del trigger y asociarla
+### Crear la función del trigger y asociarla
+**Cliente psql de Ubuntu**
 
 ``` sql
 CREATE FUNCTION limpiar_nombre_alumno()
@@ -1680,7 +1763,8 @@ La función usa `LANGUAGE plpgsql`. `BEGIN` y `END` delimitan su bloque de instr
 
 `BEFORE INSERT … FOR EACH ROW` llama a la función para cada alumno antes de almacenarlo. `EXECUTE FUNCTION` indica qué función ejecutará ese trigger.
 
-### Cliente psql de Ubuntu · Probar con una fila temporal
+### Probar con una fila temporal
+**Cliente psql de Ubuntu**
 
 ``` sql
 BEGIN;
@@ -1701,7 +1785,8 @@ En MySQL habéis restaurado los objetos escritos en su propio lenguaje. En Postg
 
 Salid de `psql` con `\q`. Abriremos una sesión como administrador de PostgreSQL para dar acceso de lectura a las cinco tablas y la vista. La ejecución de la función quedará reservada al propietario y al administrador. Si los roles del laboratorio ya existen, comprobad su procedencia antes de reutilizarlos.
 
-## Bash de Ubuntu · Conectar como administrador
+## Conectar como administrador
+**Bash de Ubuntu**
 
 ``` bash
 sudo -u postgres psql -X -d academia_pg
@@ -1709,7 +1794,8 @@ sudo -u postgres psql -X -d academia_pg
 
 `sudo -u postgres` selecciona el usuario del sistema que podrá entrar mediante `peer`. `psql -X` evita ajustes personales y `-d` elige la base que administraremos.
 
-## Cliente psql de Ubuntu · Crear roles y conceder lectura
+## Crear roles y conceder lectura
+**Cliente psql de Ubuntu**
 
 ``` sql
 CREATE ROLE lab_rol_lectura_pg NOLOGIN;
@@ -1730,7 +1816,8 @@ REVOKE EXECUTE ON FUNCTION consultar_notas(integer) FROM PUBLIC;
 
 `GRANT lab_rol_lectura_pg TO lab_lectura_pg` entrega la pertenencia al rol de lectura. En esta configuración, el lector hereda sus permisos. `REVOKE EXECUTE` retira de `PUBLIC` la ejecución de la función `consultar_notas` con un parámetro `integer`. El propietario mantiene su permiso.
 
-## Cliente psql de Ubuntu · Probar permisos efectivos
+## Probar permisos efectivos
+**Cliente psql de Ubuntu**
 
 ``` sql
 SET ROLE lab_lectura_pg;
@@ -1744,7 +1831,8 @@ RESET ROLE;
 
 `SET ROLE` comprueba los permisos dentro de una sesión ya autenticada. Para probar también el inicio de sesión, salid con `\q` y usad la conexión local por TCP, si el servidor escucha y `pg_hba.conf` admite el acceso de ese rol con contraseña.
 
-## Bash de Ubuntu · Probar el inicio de sesión del lector
+## Probar el inicio de sesión del lector
+**Bash de Ubuntu**
 
 ``` bash
 psql -X -h 127.0.0.1 -U lab_lectura_pg -W -d academia_pg
@@ -1760,7 +1848,8 @@ Después de la migración, el destino necesita su propia copia. Usaremos `pg_dum
 
 Usad un nombre de verificación libre. Si `academia_pg_verif` existe, revisad qué contiene y elegid con el docente otra base vacía para restaurar. Ejecutad cada bloque por separado y comprobad los mensajes antes de continuar.
 
-## Bash de Ubuntu · Crear el archivo y ver su índice
+## Crear el archivo y ver su índice
+**Bash de Ubuntu**
 
 ``` bash
 pg_dump -Fc -d academia_pg -f "$LAB/academia_pg.dump"
@@ -1769,7 +1858,8 @@ pg_restore -l "$LAB/academia_pg.dump" | head -20
 
 `pg_dump` exporta la base indicada con `-d`. `-Fc` selecciona el formato personalizado, que permite a `pg_restore` examinar el índice y restaurar objetos, y `-f` indica el fichero de salida. `pg_restore -l` lista el índice del archivo. `| head -20` muestra sus primeras 20 líneas para una revisión rápida.
 
-## Bash de Ubuntu · Restaurar en otra base
+## Restaurar en otra base
+**Bash de Ubuntu**
 
 ``` bash
 sudo -u postgres createdb -O "$USER" academia_pg_verif
@@ -1792,7 +1882,8 @@ Resultado esperado. La base de comprobación tiene 6 filas, 5 calificadas y suma
 
 `pg_dump` copia una base concreta y puede incluir las concesiones de sus objetos, pero las definiciones de roles pertenecen al clúster. Para respaldar esos elementos globales, PostgreSQL ofrece `pg_dumpall --globals-only`. En este ejemplo el administrador puede exportarlos sin incluir hashes de las contraseñas.
 
-## Bash de Ubuntu · Exportar los objetos globales
+## Exportar los objetos globales
+**Bash de Ubuntu**
 
 ``` bash
 sudo -u postgres pg_dumpall --globals-only --no-role-passwords \
@@ -1812,7 +1903,7 @@ Para una restauración que conserve propietarios y permisos, preparad primero lo
 |:-------------------------|:---------------------------------------------|
 | El SQL acaba sin errores, pero la aplicación falla. | Comprobad filas, objetos, definidores, credenciales y permisos. Repetid las pruebas con una cuenta que tenga los permisos de la aplicación. |
 | La instancia copiada no arranca. | Comprobad la parada limpia, espacio, permisos, versión, rutas, dependencias y `journalctl -u mysql`. Aplicad el retorno del paso 15 si procede. |
-| El binlog archivado no coincide con el volcado. | Verificad fichero y posición del volcado. Si hubo rotación, necesitáis todos los ficheros de la cadena y respetar su orden. |
+| El *binlog* archivado no coincide con el volcado. | Verificad fichero y posición del volcado. Si hubo rotación, necesitáis todos los ficheros de la cadena y respetar su orden. |
 | PITR devuelve una clave duplicada. | Revisad si ya aplicasteis el tramo o si la posición inicial es incorrecta. Volved a una base limpia y repetid la recuperación del tramo una sola vez. |
 | Windows devuelve `Access denied` para la cuenta de lectura. | Revisad `CREATE USER`, el host de la cuenta y el rol activo. Usad `CURRENT_USER()` y `CURRENT_ROLE()` una vez conectados. |
 | La carga de CSV falla en una clave foránea o al insertar el siguiente ID. | Cargad primero las tablas referenciadas. Confirmad que ajustasteis las secuencias tras importar los ID. |
@@ -1837,12 +1928,12 @@ Guardad al menos una copia fuera de la VM y protegida contra cambios accidentale
 | Tras la recuperación PITR | 6 | 5 | 41,75 |
 | MySQL en Windows y PostgreSQL | 6 | 5 | 41,75 |
 
-La copia lógica permite reconstruir el esquema y sus objetos dentro del alcance del volcado. La copia física de instancia recupera los ficheros y el estado de las cuentas a la hora de la copia. Para alcanzar un momento posterior hace falta una copia base coherente y un tramo continuo del binlog. Migrar de motor implica adaptar el esquema, los objetos y la autenticación.
+La copia lógica permite reconstruir el esquema y sus objetos dentro del alcance del volcado. La copia física de instancia recupera los ficheros y el estado de las cuentas a la hora de la copia. Para alcanzar un momento posterior hace falta una copia base coherente y un tramo continuo del *binlog*. Migrar de motor implica adaptar el esquema, los objetos y la autenticación.
 
 Entregad un registro breve con estas evidencias.
 
 - Versiones de servidor y herramientas. Nombre y hash de cada copia comprobada.
-- Fichero del binlog, posición de inicio y posición de corte. Identificad el evento que marca el final de la transacción válida.
+- Fichero del *binlog*, posición de inicio y posición de corte. Identificad el evento que marca el final de la transacción válida.
 - Salidas de recuentos y de las notas 1, 2 y 6. Comparad el estado de la copia base, la recuperación y ambos destinos.
 - Pruebas de inicio de sesión, consulta permitida y actualización denegada. Omitid contraseñas y hashes de autenticación.
 - Hora UTC del incidente, del último cambio válido y de la verificación. Indicad los dos tiempos calculados en el paso 14 y si se cumplen los objetivos de la actividad.
@@ -1850,19 +1941,19 @@ Entregad un registro breve con estas evidencias.
 # Preguntas de razonamiento y soluciones
 
 1.  ¿Qué habría ocurrido al cortar justo antes del `COMMIT` de la transacción válida? Ambos cambios pertenecen a la misma transacción. Hay que conservar el evento que la confirma. Si la reproducción queda a medias y la sesión termina, las operaciones sin confirmar quedan revertidas.
-2.  ¿Por qué hay que conservar la copia base si ya tenemos el binlog? El tramo de binlog parte de un estado concreto. Sus cambios sobre filas existentes y sus referencias necesitan ese estado inicial. Un hueco en el tramo rompe la cadena de recuperación.
+2.  ¿Por qué hay que conservar la copia base si ya tenemos el *binlog*? El tramo de *binlog* parte de un estado concreto. Sus cambios sobre filas existentes y sus referencias necesitan ese estado inicial. Un hueco en el tramo rompe la cadena de recuperación.
 3.  ¿Cómo sabemos que un usuario que ve la vista no puede cambiar una nota? Hacemos las dos pruebas con el usuario efectivo. La consulta devuelve filas y el servidor deniega el `UPDATE` aunque se use una condición que no encuentre ninguna fila.
 4.  ¿Por qué se comprueban `COUNT(nota)` y la suma además de `COUNT(*)`? El error del laboratorio deja las seis filas, pero convierte una pendiente en un cero y cambia todas las calificaciones. El recuento total de filas es insuficiente para detectar ese daño.
 5.  Si el fichero de copia SQL crea una vista con `DEFINER`, ¿dónde queda la cuenta? La definición del objeto guarda una referencia al definidor. La cuenta existe en la instancia si se recreó administrativamente, se restauraron las cuentas como parte de una copia compatible o ya existía.
-6.  Se produjo un incidente a las 10:00. El último cambio válido recuperado es de las 09:58 y el servicio queda verificado a las 10:24. ¿Se cumplen los objetivos del laboratorio? La distancia observada al punto de recuperación es de 2 minutos y el tiempo hasta verificar el servicio es de 24 minutos. Ambos quedan dentro de los objetivos de 5 y 30 minutos. El binlog permite comprobar además si hubo alguna transacción válida en esos dos minutos.
+6.  Se produjo un incidente a las 10:00. El último cambio válido recuperado es de las 09:58 y el servicio queda verificado a las 10:24. ¿Se cumplen los objetivos del laboratorio? La distancia observada al punto de recuperación es de 2 minutos y el tiempo hasta verificar el servicio es de 24 minutos. Ambos quedan dentro de los objetivos de 5 y 30 minutos. El *binlog* permite comprobar además si hubo alguna transacción válida en esos dos minutos.
 7.  ¿Puede perderse la copia física si estaba en la propia VM? Sí. Puede quedar inaccesible junto con el original. Para recuperar tras la pérdida de la VM hay que conservar copias verificadas en un soporte independiente.
 
 # Documentación de referencia
 
 - MySQL 8.4 · mysqldump
 - MySQL 8.4 · Copias físicas de InnoDB
-- MySQL 8.4 · Configuración y formatos del binlog
-- MySQL 8.4 · Recuperación por posición en el binlog
+- MySQL 8.4 · Configuración y formatos del *binlog*
+- MySQL 8.4 · Recuperación por posición en el *binlog*
 - MySQL 8.4 · mysqlbinlog
 - MySQL 8.4 · Tratamiento de contraseñas en los registros
 - MySQL 8.4 · SHOW CREATE USER
